@@ -11,8 +11,13 @@ config_version=5
 [application]
 
 config/name="Bravi"
+run/main_scene="res://scenes/ui/commission_select.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
+
+[autoload]
+
+GameSession="*res://scripts/game_session.gd"
 
 [display]
 

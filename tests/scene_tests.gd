@@ -53,5 +53,25 @@ func t14_scene() -> String:
 			errs.append("600프레임 동안 상대가 예비 동작에 들어가지 않음")
 		if not is_equal_approx(core.time, 10.0) and not core.ended:
 			errs.append("코어 시각 %.3f (기대 10.0)" % core.time)
+
+		# 섣부른 공격의 표시 경로: 새 판에서 대기 중인 상대를 공격하고 HUD와 상대 뷰가 이벤트를 받게 한다.
+		duel.call("start_duel")
+		core = duel.get("core")  # start_duel이 코어를 새로 만든다
+		var waited := 0
+		while waited < 600 and not (core.distance == DuelTypes.Distance.ENGAGE \
+				and core.brain.state == DuelTypes.OpponentState.IDLE):
+			duel.call("advance", 1.0 / 60.0)
+			waited += 1
+		# 돌아올 칸이 있어야 "+1" 글자 분기까지 지난다.
+		core.brain.posture -= 1
+		core.press_attack()
+		for i in 40:
+			duel.call("advance", 1.0 / 60.0)
+		var rash_blocked := 0
+		for ev in core.record.of_type(DuelRecord.ATTACK):
+			if ev["rash"] and ev["posture_gain"] == 1:
+				rash_blocked += 1
+		if rash_blocked != 1:
+			errs.append("대기 중인 상대를 공격했는데 칸을 돌려준 섣부른 공격이 %d개 (기대 1)" % rash_blocked)
 	duel.free()
 	return "OK" if errs.is_empty() else ", ".join(errs)

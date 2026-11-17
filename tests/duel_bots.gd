@@ -19,6 +19,8 @@ extends RefCounted
 ##   want_distance: int — 이 간격이 될 때까지 전진한다.
 ##   attack_at: {time, aim} — 코어 시각 time을 지난 첫 tick에 공격한다.
 ##   attack_before_strike: {index, lead, aim} — index번째 공격의 타격 lead초 전을 지난 첫 tick에 공격한다.
+##   follow_up: {aim, max} — 내 공격의 판정 이벤트를 받으면, 입력이 받아들여지는 가장 이른 tick에
+##       aim으로 한 번 더 공격한다. max는 횟수 제한(없거나 -1이면 무제한).
 
 const DT := preload("res://scripts/duel/duel_types.gd")
 
@@ -30,6 +32,7 @@ var cfg: Dictionary = {}
 ## 지금까지 본 상대 공격(예비 동작) 수.
 var tells_seen := 0
 var counters_done := 0
+var follow_ups_done := 0
 
 var _parry_press_at := INF
 var _timed_attack_at := INF
@@ -83,6 +86,12 @@ func _on_event(ev: Dictionary) -> void:
 			_on_tell(ev)
 		DuelRecord.STRIKE:
 			_on_strike(ev)
+		DuelRecord.ATTACK:
+			if cfg.has("follow_up"):
+				var limit := int(cfg["follow_up"].get("max", -1))
+				if limit < 0 or follow_ups_done < limit:
+					follow_ups_done += 1
+					_pending_attack = cfg["follow_up"]["aim"]
 		DuelRecord.STAGGER_START:
 			if cfg.has("finisher"):
 				_pending_attack = cfg["finisher"]

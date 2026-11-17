@@ -6,7 +6,7 @@ extends CanvasLayer
 const DT := preload("res://scripts/duel/duel_types.gd")
 
 const LOG_LINES := 3
-const HELP_TEXT := "좌클릭 공격 · 우클릭 막기 (떼고 있다가 고리가 띠에 들어올 때 누르면 패리) · 마우스 위치로 방향·높이 · W/S 간격 · R 다시 하기 · F1 디버그"
+const HELP_TEXT := "좌클릭 공격 · 우클릭 막기 (떼고 있다가 고리가 띠에 들어올 때 누르면 패리) · 마우스 위치로 방향·높이 · W/S 간격 · R 다시 하기 · Esc 의뢰 선택 · F1 디버그\n빈틈이 아닐 때 공격하면 상대가 자세를 되찾는다"
 
 
 ## 자세 칸. 채워진 칸과 빈 칸을 사각형으로 그린다.
@@ -34,6 +34,36 @@ class PostureCells extends Control:
 			draw_rect(rect, fill_color if i < filled else empty_color)
 
 
+## 조건의 게이지(0~100). value는 채워진 막대, pending은 그 위에 옅게 이어 붙인 "지금 끝나면 더해질 양".
+class Meter extends Control:
+	const BAR_WIDTH := 180.0
+	var label := ""
+	var value := 0
+	var pending := 0
+
+	func set_values(p_label: String, p_value: int, p_pending: int) -> void:
+		if p_label == label and p_value == value and p_pending == pending:
+			return
+		label = p_label
+		value = p_value
+		pending = p_pending
+		queue_redraw()
+
+	func _draw() -> void:
+		var bar := Rect2(0, 3, BAR_WIDTH, size.y - 6)
+		draw_rect(bar, Color(1, 1, 1, 0.16))
+		var filled := BAR_WIDTH * clampf(value / 100.0, 0.0, 1.0)
+		var extra := BAR_WIDTH * clampf((value + pending) / 100.0, 0.0, 1.0) - filled
+		draw_rect(Rect2(0, bar.position.y, filled, bar.size.y), Color(0.95, 0.35, 0.3))
+		if extra > 0.0:
+			draw_rect(Rect2(filled, bar.position.y, extra, bar.size.y), Color(0.95, 0.35, 0.3, 0.38))
+		var text := "%s %d" % [label, value]
+		if pending > 0:
+			text += " (지금 끝나면 +%d)" % pending
+		draw_string(ThemeDB.fallback_font, Vector2(BAR_WIDTH + 10, size.y - 6), text,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 15)
+
+
 var _root: Control
 var _opponent_label: Label
 var _opponent_cells: PostureCells
@@ -43,10 +73,11 @@ var _distance_label: Label
 var _time_label: Label
 var _aim_label: Label
 var _log_label: Label
-var _end_label: Label
-var _end_panel: ColorRect
+var _condition_label: Label
+var _meter: Meter
 var _debug_label: Label
 var _log: Array[String] = []
+var _commission: Commission
 
 
 func _ready() -> void:
@@ -71,20 +102,19 @@ func _ready() -> void:
 	_aim_label = _add_label(Vector2(1.0, 1.0), Rect2(-440, -108, 420, 60), 18, HORIZONTAL_ALIGNMENT_RIGHT)
 	# 최근 사건: 왼쪽 가운데
 	_log_label = _add_label(Vector2(0.0, 0.5), Rect2(20, -60, 420, 100), 20, HORIZONTAL_ALIGNMENT_LEFT)
-	# 조작 안내: 아래 가운데
-	var help := _add_label(Vector2(0.5, 1.0), Rect2(-620, -30, 1240, 24), 14, HORIZONTAL_ALIGNMENT_CENTER)
+	# 조작 안내: 아래 가운데 (두 줄)
+	var help := _add_label(Vector2(0.5, 1.0), Rect2(-620, -48, 1240, 44), 14, HORIZONTAL_ALIGNMENT_CENTER)
 	help.text = HELP_TEXT
 	help.modulate = Color(1, 1, 1, 0.7)
-	# 종료 글자: 가운데 (뒤에 어두운 판)
-	_end_panel = ColorRect.new()
-	_end_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_end_panel.color = Color(0, 0, 0, 0.72)
-	_place(_end_panel, Vector2(0.5, 0.5), Rect2(-400, -100, 800, 200))
-	_end_panel.visible = false
-	_root.add_child(_end_panel)
-	_end_label =_add_label(Vector2(0.5, 0.5), Rect2(-400, -90, 800, 180), 40, HORIZONTAL_ALIGNMENT_CENTER)
-	_end_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_end_label.visible = false
+	# 의뢰 조건과 조건의 게이지: 왼쪽 위, 간격 아래
+	_condition_label = _add_label(Vector2(0.0, 0.0), Rect2(20, 50, 310, 70), 15, HORIZONTAL_ALIGNMENT_LEFT)
+	_condition_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_condition_label.add_theme_color_override("font_color", Color(0.95, 0.8, 0.3))
+	_meter = Meter.new()
+	_meter.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_place(_meter, Vector2(0.0, 0.0), Rect2(20, 126, 310, 22))
+	_meter.visible = false
+	_root.add_child(_meter)
 	# 디버그: 오른쪽 가운데 (기본 꺼짐)
 	_debug_label = _add_label(Vector2(1.0, 0.5), Rect2(-380, -110, 360, 220), 16, HORIZONTAL_ALIGNMENT_RIGHT)
 	_debug_label.visible = false
@@ -93,8 +123,13 @@ func _ready() -> void:
 func reset() -> void:
 	_log.clear()
 	_log_label.text = ""
-	_end_label.visible = false
-	_end_panel.visible = false
+
+
+## 의뢰 조건을 상시 표시한다. null이면 자유 결투다.
+func set_commission(commission: Commission) -> void:
+	_commission = commission
+	_condition_label.text = "\n".join(commission.describe()) if commission != null else "자유 결투 (의뢰 없음)"
+	_meter.visible = false
 
 
 func toggle_debug() -> void:
@@ -132,33 +167,30 @@ func refresh(core: DuelCore) -> void:
 		state = "결투 종료"
 	_aim_label.text = "%s\n내 상태: %s" % [aim, state]
 
-	if core.ended and not _end_label.visible:
-		_end_label.text = "%s\n결투 시간 %.1f초\nR: 다시 하기" % [_end_title(core), core.record.elapsed]
-		_end_label.visible = true
-		_end_panel.visible = true
+	# 조건의 게이지. 조건이 무엇인지는 모른다: 비어 있지 않은 첫 live_meter를 그린다.
+	var meter := {}
+	if _commission != null:
+		for condition in _commission.conditions:
+			if condition != null:
+				meter = condition.live_meter(core.record)
+				if not meter.is_empty():
+					break
+	_meter.visible = not meter.is_empty()
+	if not meter.is_empty():
+		_meter.set_values(str(meter["label"]), int(meter["value"]), int(meter["pending"]))
 
 	if _debug_label.visible:
 		var brain := core.brain
 		var remain := brain.state_end - core.time
-		_debug_label.text = "[디버그]\n상대 상태: %s\n남은 시간: %s\n연속 막힘: %d\n공격: %s\n내 상태 남은 시간: %s\n막기 쿨다운: %.2f" % [
+		_debug_label.text = "[디버그]\n상대 상태: %s\n남은 시간: %s\n연속 막힘: %d\n공격: %s\n내 상태 남은 시간: %s\n막기 쿨다운: %.2f\n지금 누르면 섣부른 공격: %s" % [
 			DT.OPPONENT_STATE_NAMES[brain.state],
 			("%.2f" % remain) if is_finite(remain) else "-",
 			brain.blocked_streak,
 			brain.current_attack.attack_name if brain.current_attack != null else "-",
 			("%.2f" % (core.player_state_end - core.time)) if is_finite(core.player_state_end) else "-",
 			maxf(core.guard_cooldown_end - core.time, 0.0),
+			"예" if core.is_rash_now() else "아니오",
 		]
-
-
-func _end_title(core: DuelCore) -> String:
-	match core.end_reason:
-		DT.EndReason.OPPONENT_HIT:
-			return "승리 — 유효타!"
-		DT.EndReason.PLAYER_DEFEATED:
-			return "패배 — 유효타를 맞음"
-		DT.EndReason.TIME_UP:
-			return "시간 초과"
-	return core.record.end_detail
 
 
 func _describe(ev: Dictionary) -> String:
@@ -181,6 +213,10 @@ func _describe(ev: Dictionary) -> String:
 				DT.AttackResult.WHIFF:
 					return "헛침 (멀리)"
 				DT.AttackResult.BLOCKED:
+					if ev["rash"]:
+						if ev["posture_gain"] > 0:
+							return "섣부른 공격 — 상대 자세 +%d" % ev["posture_gain"]
+						return "섣부른 공격 — 빈틈이 아니다"
 					return "닿지 않음 — %s" % part
 				DT.AttackResult.GRAZE:
 					return "스침 — %s" % part

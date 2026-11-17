@@ -26,6 +26,7 @@ const COLOR_TOUCHED := Color(1.0, 1.0, 1.0)
 const TINT_AMOUNT := 0.8
 const FLASH_TIME := 0.1
 const TOUCH_FLASH_TIME := 0.18
+const DEFLECT_TEXT_TIME := 0.6
 
 ## 포즈 좌표의 기준: 가슴 중앙의 어깨 높이.
 const CHEST := Vector2(0, -180)
@@ -63,6 +64,9 @@ var _clock := 0.0
 var _flash_until := -INF
 var _touched_part := -1
 var _touched_until := -INF
+## 섣부른 공격을 받아넘겼을 때 상태 글자 자리에 잠깐 띄우는 글자.
+var _deflect_text := ""
+var _deflect_until := -INF
 
 var _ring_active := false
 var _ring_remaining := 0.0
@@ -107,6 +111,7 @@ func setup(opponent: OpponentData, weapon: WeaponData) -> void:
 	_parry_window = weapon.parry_window
 	_flash_until = -INF
 	_touched_until = -INF
+	_deflect_until = -INF
 	_ring_active = false
 	_snap = true
 	_feather.visible = true
@@ -137,6 +142,11 @@ func on_event(ev: Dictionary) -> void:
 				_touched_until = _clock + TOUCH_FLASH_TIME
 			if result == DT.AttackResult.HIT and ev["part"] == DT.Part.HAT:
 				_feather.visible = false
+			if result == DT.AttackResult.BLOCKED and ev["rash"]:
+				_deflect_text = "받아넘김"
+				if ev["posture_gain"] > 0:
+					_deflect_text += " +%d" % ev["posture_gain"]
+				_deflect_until = _clock + DEFLECT_TEXT_TIME
 
 
 ## display_time은 표시용 시각(코어 시계 + 물리 보간). delta는 부드러운 이동과 번쩍임에만 쓴다.
@@ -213,6 +223,10 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 			shape.color = base.lerp(tint as Color, TINT_AMOUNT)
 		else:
 			shape.color = base
+
+	# 받아넘김 글자는 상태 글자가 비어 있을 때만 보인다(예비 동작에 들어가면 공격 이름이 우선).
+	if text == "" and _clock < _deflect_until:
+		text = _deflect_text
 
 	# --- 상태 글자와 고리는 간격에 따라 커지거나 움직이지 않게 한다.
 	_state_label.text = text

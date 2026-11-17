@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="Commission" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/commission/commission.gd" id="1_commission"]
+[ext_resource type="Script" path="res://scripts/commission/commission_condition.gd" id="2_condition"]
+[ext_resource type="Script" path="res://scripts/commission/throw_undetected_condition.gd" id="3_throw"]
+[ext_resource type="Resource" path="res://data/opponents/opponent_01.tres" id="4_opponent"]
+
+[sub_resource type="Resource" id="condition_throw"]
+script = ExtResource("3_throw")
+
+[resource]
+script = ExtResource("1_commission")
+client_name = "바르톨로의 누이 이네스"
+dialogue = "오라버니는 한 번만 이기면 체면이 서서 이 무모한 결투질을 그만둘 거예요. 져 주세요. 다만 봐줬다는 걸 알면 더 날뛸 테니, 제대로 싸우다 진 것처럼 보여야 해요. 금방 쓰러지거나 가만히 서서 맞으면 눈치챌 거예요.
+오라버니는 찌르기는 금방 거둬들이지만 베고 나면 한참 허우적대요. 공격이 자꾸 막히면 성질을 못 이기고 크게 휘두르고요. 몇 번은 막고 받아쳐 주세요. 그렇다고 이겨 버리시면 안 돼요."
+opponent = ExtResource("4_opponent")
+conditions = Array[ExtResource("2_condition")]([SubResource("condition_throw")])
+base_reward = 40
+tip_max = 30

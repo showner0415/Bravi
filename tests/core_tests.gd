@@ -22,6 +22,8 @@ const SIM_DELTA := 1.0 / 60.0
 ## T13 통과 기준(초): "막기만 하고 베기 뒤에만 받아치는 봇"의 평균 판 길이.
 const GUARD_MEAN_MIN := 40.0
 const GUARD_MEAN_MAX := 60.0
+## "막을 때마다 받아치는 봇"의 평균이 막기 봇의 평균보다 이만큼(초) 이상 길어야 한다.
+const RASH_MEAN_GAP := 15.0
 
 const AIM_MID_THRUST := [DT.Direction.CENTER, DT.Height.MID]
 const AIM_HIGH_CUT := [DT.Direction.RIGHT, DT.Height.HIGH]
@@ -52,6 +54,7 @@ func list(_tree: SceneTree) -> Array:
 		{"id": "T11", "name": "빈틈 창과 여유 0.1초", "fn": t11_margins},
 		{"id": "T12", "name": "플레이어 상태표", "fn": t12_player_states},
 		{"id": "T13", "name": "판 길이 (자유 결투, 시드 %d개)" % SIM_SEEDS, "fn": t13_duel_length},
+		{"id": "T23", "name": "섣부른 공격: 빈틈이 아닐 때 낸 공격은 상대 자세를 돌려줌", "fn": t23_rash_attack},
 	]
 
 
@@ -75,6 +78,7 @@ func _copy_opponent() -> OpponentData:
 	o.posture_max = base.posture_max
 	o.stagger_time = base.stagger_time
 	o.stagger_recover_posture = base.stagger_recover_posture
+	o.rash_attack_posture_gain = base.rash_attack_posture_gain
 	o.idle_time_min = base.idle_time_min
 	o.idle_time_max = base.idle_time_max
 	o.approach_delay = base.approach_delay
@@ -121,18 +125,35 @@ func _make_opp(kind: String, with_habit := false, posture := -1) -> OpponentData
 	return o
 
 
-func _make_core(opp: OpponentData, seed_value: int) -> DuelCore:
+## _make_opp에 섣부른 공격 회복량을 직접 적은 것(.tres 값을 조정해도 시나리오가 흔들리지 않게).
+func _make_rash_opp(kind: String, gain: int, with_habit := false) -> OpponentData:
+	var o := _make_opp(kind, with_habit)
+	o.rash_attack_posture_gain = gain
+	return o
+
+
+## 전부 막고, 첫 받아치기는 중단 찌르기, 둘째는 상단 베기.
+func _cfg_mid_then_high() -> Dictionary:
+	var calls: Array[int] = [0]
+	var counter := func(_ev: Dictionary) -> Variant:
+		calls[0] += 1
+		return AIM_MID_THRUST if calls[0] == 1 else AIM_HIGH_CUT
+	return {"counter_fn": counter, "max_counters": 2}
+
+
+func _make_core(opp: OpponentData, seed_value: int,
+		conditions: Array[CommissionCondition] = []) -> DuelCore:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_value
 	var core := DuelCore.new()
-	core.setup(load(RULES_PATH), load(WEAPON_PATH), opp, rng)
+	core.setup(load(RULES_PATH), load(WEAPON_PATH), opp, rng, conditions)
 	return core
 
 
 func _run(opp: OpponentData, cfg: Dictionary, stop: Callable, delta := BASE_DELTA,
-		max_time := 40.0, seed_value := 1) -> Run:
+		max_time := 40.0, seed_value := 1, conditions: Array[CommissionCondition] = []) -> Run:
 	var r := Run.new()
-	r.core = _make_core(opp, seed_value)
+	r.core = _make_core(opp, seed_value, conditions)
 	r.bot = Bot.new(r.core, cfg)
 	while not r.core.ended and r.core.time < max_time:
 		r.core.tick(delta)
@@ -182,7 +203,7 @@ func _signature(r: Run) -> Array[String]:
 			DuelRecord.STRIKE:
 				out.append("strike:%d" % ev["result"])
 			DuelRecord.ATTACK:
-				out.append("attack:%d:%d" % [ev["result"], ev["part"]])
+				out.append("attack:%d:%d:%s:%d" % [ev["result"], ev["part"], ev["rash"], ev["posture_gain"]])
 			DuelRecord.DISTANCE:
 				out.append("distance:%d" % ev["distance"])
 			DuelRecord.STAGGER_START:
@@ -300,7 +321,8 @@ func _build_scenarios() -> void:
 			_expect(e, ev["result"] == AR.GRAZE, "스침이 아님")
 			_expect(e, ev["part"] == DT.Part.TORSO, "부위가 몸통이 아님")
 			_expect(e, ev["opponent_posture"] == r.core.opponent_data.posture_max - 1, "상대 자세 -1이 아님")
-			_expect(e, ev["opponent_state"] == DT.OpponentState.IDLE, "스침 시각에 회수가 끝나지 않음"))
+			_expect(e, ev["opponent_state"] == DT.OpponentState.IDLE, "스침 시각에 회수가 끝나지 않음")
+			_expect(e, ev["rash"] == false, "빈틈에 낸 공격이 섣부른 공격으로 판단됨"))
 
 	_add("2b 막힌 찌르기 뒤 중단 찌르기", "T2",
 		func() -> OpponentData: return _make_opp("thrust"),
@@ -309,7 +331,9 @@ func _build_scenarios() -> void:
 		func(r: Run, e: Array[String]) -> void:
 			var ev := _ev(r, DuelRecord.ATTACK)
 			_expect(e, ev["result"] == AR.BLOCKED, "막힘이 아님")
-			_expect(e, ev["opponent_posture"] == r.core.opponent_data.posture_max, "상대 자세가 변함"))
+			_expect(e, ev["opponent_posture"] == r.core.opponent_data.posture_max, "상대 자세가 변함")
+			_expect(e, ev["rash"] == true, "막힌 찌르기 뒤 공격이 섣부른 공격이 아님")
+			_expect(e, ev["posture_gain"] == 0, "자세가 가득인데 칸이 돌아옴"))
 
 	# ---------------- T3 막힌 베기 뒤 상단 베기
 	_add("3a 교전에서는 닿지 않음", "T3",
@@ -320,7 +344,8 @@ func _build_scenarios() -> void:
 			var ev := _ev(r, DuelRecord.ATTACK)
 			_expect(e, ev["distance"] == DT.Distance.ENGAGE, "간격이 교전이 아님")
 			_expect(e, ev["result"] == AR.BLOCKED, "막힘이 아님")
-			_expect(e, ev["opponent_posture"] == r.core.opponent_data.posture_max, "상대 자세가 변함"))
+			_expect(e, ev["opponent_posture"] == r.core.opponent_data.posture_max, "상대 자세가 변함")
+			_expect(e, ev["rash"] == false, "빈틈에 누른 느린 공격이 섣부른 공격으로 판단됨"))
 
 	_add("3b 밀착에서는 모자 스침", "T3",
 		func() -> OpponentData: return _make_opp("cut"),
@@ -343,7 +368,8 @@ func _build_scenarios() -> void:
 			var ev := _ev(r, DuelRecord.ATTACK)
 			_expect(e, _ev(r, DuelRecord.STRIKE)["result"] == SR.PARRIED, "패리가 아님")
 			_expect(e, ev["result"] == AR.GRAZE, "스침이 아님")
-			_expect(e, ev["part"] == DT.Part.HAT, "부위가 모자가 아님"))
+			_expect(e, ev["part"] == DT.Part.HAT, "부위가 모자가 아님")
+			_expect(e, ev["rash"] == false, "패리 뒤 공격이 섣부른 공격으로 판단됨"))
 
 	_add("4b 패리당한 찌르기 뒤 중단 찌르기", "T4",
 		func() -> OpponentData: return _make_opp("thrust"),
@@ -414,7 +440,8 @@ func _build_scenarios() -> void:
 			var ev := _ev(r, DuelRecord.ATTACK)
 			_expect(e, ev["distance"] == DT.Distance.ENGAGE, "간격이 교전이 아님")
 			_expect(e, ev["result"] == AR.BLOCKED, "막힘이 아님")
-			_expect(e, ev["opponent_posture"] == r.core.opponent_data.posture_max, "상대 자세가 변함"))
+			_expect(e, ev["opponent_posture"] == r.core.opponent_data.posture_max, "상대 자세가 변함")
+			_expect(e, ev["rash"] == true, "대기 중 공격이 섣부른 공격이 아님"))
 
 	_add("6b 예비 중 낸 공격은 막히고, 맞으면 IN_ATTACK", "T6",
 		func() -> OpponentData: return _make_opp("thrust"),
@@ -430,7 +457,8 @@ func _build_scenarios() -> void:
 				_expect(e, strike["situation"] == DT.Situation.IN_ATTACK, "상황이 IN_ATTACK이 아님")
 			var ev := _ev(r, DuelRecord.ATTACK)
 			_expect(e, ev["result"] == AR.BLOCKED, "내 공격이 막힘이 아님")
-			_expect(e, ev["opponent_posture"] == r.core.opponent_data.posture_max, "상대 자세가 변함"))
+			_expect(e, ev["opponent_posture"] == r.core.opponent_data.posture_max, "상대 자세가 변함")
+			_expect(e, ev["rash"] == true, "예비 중 공격이 섣부른 공격이 아님"))
 
 	# ---------------- T7 간격
 	_add("7a 멀리에서 헛침, 상대 접근", "T7",
@@ -440,6 +468,7 @@ func _build_scenarios() -> void:
 		_stop_at(DuelRecord.DISTANCE),
 		func(r: Run, e: Array[String]) -> void:
 			_expect(e, _ev(r, DuelRecord.ATTACK).get("result") == AR.WHIFF, "멀리에서 낸 공격이 헛침이 아님")
+			_expect(e, _ev(r, DuelRecord.ATTACK).get("rash") == false, "멀리에서 낸 공격이 섣부른 공격으로 판단됨")
 			var ev := _ev(r, DuelRecord.DISTANCE)
 			_expect(e, ev["distance"] == DT.Distance.ENGAGE, "교전으로 바뀌지 않음")
 			_expect(e, ev["by"] == "opponent", "상대가 접근한 것이 아님")
@@ -456,7 +485,9 @@ func _build_scenarios() -> void:
 			_expect(e, _ev(r, DuelRecord.STRIKE)["result"] == SR.WHIFF, "상대 공격이 헛침이 아님")
 			var ev := _ev(r, DuelRecord.ATTACK)
 			_expect(e, ev["distance"] == DT.Distance.ENGAGE, "전진하지 않음")
-			_expect(e, ev["result"] == AR.BLOCKED, "닿지 않음(막힘)이 아님"))
+			_expect(e, ev["result"] == AR.BLOCKED, "닿지 않음(막힘)이 아님")
+			# 헛친 빈틈이 끝난 직후지만 유예 안이라 섣부른 공격이 아니다.
+			_expect(e, ev["rash"] == false, "헛친 베기 뒤 전진 + 찌르기가 섣부른 공격으로 판단됨"))
 
 	var retreat_on_big := func(a: AttackData, _i: int) -> StringName:
 		return &"retreat" if a.is_big else &"hold"
@@ -493,6 +524,7 @@ func _build_scenarios() -> void:
 			var hit := _ev(r, DuelRecord.ATTACK, 2)
 			_expect(e, not hit.is_empty() and hit["result"] == AR.HIT, "두 번째 공격이 유효타가 아님")
 			_expect(e, hit.get("part") == DT.Part.TORSO, "부위가 몸통이 아님")
+			_expect(e, graze.get("rash") == false and hit.get("rash") == false, "빈틈·무너짐에 낸 공격이 섣부른 공격으로 판단됨")
 			_expect(e, r.core.end_reason == DT.EndReason.OPPONENT_HIT, "자유 결투가 유효타로 끝나지 않음"))
 
 	_add("8b 무너진 상대에게 상단 베기", "T8",
@@ -518,6 +550,76 @@ func _build_scenarios() -> void:
 			_expect(e, r.core.brain.state == DT.OpponentState.IDLE, "무너짐 뒤 IDLE이 아님")
 			_expect(e, not r.core.ended, "결투가 끝남"))
 
+	# ---------------- T23 섣부른 공격
+	var parry_first := func(_a: AttackData, i: int) -> StringName: return &"parry" if i == 1 else &"hold"
+
+	_add("23a 막힌 찌르기 뒤 공격은 칸을 돌려줌", "T23",
+		func() -> OpponentData: return _make_rash_opp("thrust", 1),
+		func() -> Dictionary: return {"guard_fn": parry_first, "counter_fn": counter_mid, "max_counters": 2},
+		_stop_at(DuelRecord.ATTACK, 2),
+		func(r: Run, e: Array[String]) -> void:
+			var top := r.core.opponent_data.posture_max
+			var first := _ev(r, DuelRecord.ATTACK, 1)
+			var second := _ev(r, DuelRecord.ATTACK, 2)
+			_expect(e, first["result"] == AR.GRAZE and first["rash"] == false, "패리 뒤 첫 공격이 섣부르지 않은 스침이 아님")
+			_expect(e, first["opponent_posture"] == top - 1, "첫 공격 뒤 상대 자세 -1이 아님")
+			_expect(e, _ev(r, DuelRecord.STRIKE, 2)["result"] == SR.BLOCKED, "둘째 찌르기가 막힘이 아님")
+			_expect(e, second["result"] == AR.BLOCKED, "둘째 공격이 막힘이 아님")
+			_expect(e, second["rash"] == true, "둘째 공격이 섣부른 공격이 아님")
+			_expect(e, second["posture_gain"] == 1, "돌아온 칸 %d (기대 1)" % second["posture_gain"])
+			_expect(e, second["opponent_posture"] == top, "상대 자세가 최대로 돌아오지 않음")
+			_expect(e, r.core.player_posture == r.core.rules.player_posture_max, "내 자세가 변함"))
+
+	_add("23b 빈틈에 누른 느린 공격은 대가 없음", "T23",
+		func() -> OpponentData: return _make_rash_opp("cut", 1),
+		_cfg_mid_then_high,
+		_stop_at(DuelRecord.ATTACK, 2),
+		func(r: Run, e: Array[String]) -> void:
+			var second := _ev(r, DuelRecord.ATTACK, 2)
+			_expect(e, _ev(r, DuelRecord.ATTACK, 1)["result"] == AR.GRAZE, "첫 공격이 스침이 아님")
+			_expect(e, second["distance"] == DT.Distance.ENGAGE, "간격이 교전이 아님")
+			_expect(e, second["result"] == AR.BLOCKED, "둘째 공격이 막힘이 아님")
+			_expect(e, second["rash"] == false, "빈틈에 누른 공격이 섣부른 공격으로 판단됨")
+			_expect(e, second["posture_gain"] == 0, "칸이 돌아옴")
+			_expect(e, second["opponent_posture"] == r.core.opponent_data.posture_max - 1, "상대 자세가 최대 -1이 아님"))
+
+	_add("23c 스침 뒤 같은 빈틈에 한 번 더", "T23",
+		func() -> OpponentData: return _make_rash_opp("cut", 1),
+		func() -> Dictionary:
+			return {"guard_fn": guard_all, "counter_fn": counter_mid, "max_counters": 1,
+				"follow_up": {"aim": AIM_MID_THRUST, "max": 1}},
+		_stop_at(DuelRecord.ATTACK, 2),
+		func(r: Run, e: Array[String]) -> void:
+			var second := _ev(r, DuelRecord.ATTACK, 2)
+			_expect(e, _ev(r, DuelRecord.ATTACK, 1)["result"] == AR.GRAZE, "첫 공격이 스침이 아님")
+			_expect(e, second["result"] == AR.BLOCKED, "둘째 공격이 막힘이 아님")
+			_expect(e, second["rash"] == true, "둘째 공격이 섣부른 공격이 아님")
+			_expect(e, second["posture_gain"] == 1, "돌아온 칸 %d (기대 1)" % second["posture_gain"])
+			_expect(e, second["opponent_posture"] == r.core.opponent_data.posture_max, "상대 자세가 최대로 돌아오지 않음"))
+
+	_add("23d 섣부른 공격은 연속 막힘을 바꾸지 않음", "T23",
+		func() -> OpponentData: return _make_rash_opp("thrust", 1, true),
+		func() -> Dictionary: return {"guard_fn": guard_all, "counter_fn": counter_mid, "max_counters": 3},
+		_stop_at(DuelRecord.TELL_START, 4),
+		func(r: Run, e: Array[String]) -> void:
+			var attacks := r.core.record.of_type(DuelRecord.ATTACK)
+			_expect(e, attacks.size() == 3, "공격 수 %d (기대 3)" % attacks.size())
+			for a in attacks:
+				_expect(e, a["result"] == AR.BLOCKED and a["rash"] == true, "막힌 찌르기 뒤 공격이 섣부른 막힘이 아님")
+			var tells := r.core.record.of_type(DuelRecord.TELL_START)
+			for i in mini(tells.size(), 4):
+				_expect(e, (tells[i]["attack"] as AttackData).is_big == (i == 3), "%d번째 공격의 종류가 다름" % (i + 1)))
+
+	_add("23e 회복량 0이면 규칙이 꺼짐", "T23",
+		func() -> OpponentData: return _make_rash_opp("thrust", 0),
+		func() -> Dictionary: return {"guard_fn": parry_first, "counter_fn": counter_mid, "max_counters": 2},
+		_stop_at(DuelRecord.ATTACK, 2),
+		func(r: Run, e: Array[String]) -> void:
+			var second := _ev(r, DuelRecord.ATTACK, 2)
+			_expect(e, second["result"] == AR.BLOCKED and second["rash"] == true, "둘째 공격이 섣부른 막힘이 아님")
+			_expect(e, second["posture_gain"] == 0, "회복량 0인데 칸이 돌아옴")
+			_expect(e, second["opponent_posture"] == r.core.opponent_data.posture_max - 1, "상대 자세가 최대 -1이 아님"))
+
 
 # ================================================================ 개별 테스트
 
@@ -534,7 +636,7 @@ func t9_time_up() -> String:
 
 func t10_delta_invariance() -> String:
 	var errs: Array[String] = []
-	var groups := ["T2", "T3", "T4", "T5", "T7", "T8"]
+	var groups := ["T2", "T3", "T4", "T5", "T7", "T8", "T23"]
 	var ran := 0
 	for s in _scenarios:
 		if not groups.has(s["group"]):
@@ -618,6 +720,26 @@ func t11_margins() -> String:
 		if margin < MARGIN - EPS:
 			errs.append("%s (창 %.3f) × %s (%.3f): %s쪽 여유 %.3f" % [
 				row[0], window, row[2], needed, "닿는" if reaches else "닿지 않는", margin])
+	# 섣부른 공격 판단의 경계 — 계획 002의 추가 행.
+	# [상황, 누르는 시각, 빈틈 인정이 끝나는 시각, 섣부른 공격이어야 하는가]
+	var grace: float = (load(RULES_PATH) as DuelRules).opening_grace
+	var fastest_tell := INF
+	for a in o.attacks:
+		fastest_tell = minf(fastest_tell, a.tell_time * o.close_tell_multiplier)
+	var rash_rows: Array = []
+	for c in [cut, cut_r]:
+		rash_rows.append(["헛친 %s 뒤 전진을 마치자마자 누름" % c.attack_name, step,
+			c.recovery_time * o.whiff_recovery_multiplier + grace, false])
+	rash_rows.append(["스침 뒤 가장 빨리 다시 누름", w.recover_time, grace, true])
+	rash_rows.append(["다음 타격을 막고 곧바로 누름", o.idle_time_min + fastest_tell, grace, true])
+	for row in rash_rows:
+		var pressed: float = row[1]
+		var closes: float = row[2]
+		var rash: bool = row[3]
+		var rash_margin := (pressed - closes) if rash else (closes - pressed)
+		if rash_margin < MARGIN - EPS:
+			errs.append("%s (누름 %.4f, 빈틈 인정 끝 %.4f): %s쪽 여유 %.4f" % [
+				row[0], pressed, closes, "섣부른" if rash else "섣부르지 않은", rash_margin])
 	# 쿨다운이 패리 창보다 짧으면 한 패리 창 안에 "새로 누름"이 두 번 들어간다.
 	if w.guard_cooldown < w.parry_window:
 		errs.append("막기 재입력 쿨다운 %.2f < 패리 창 %.2f" % [w.guard_cooldown, w.parry_window])
@@ -699,6 +821,39 @@ func t12_player_states() -> String:
 	return _result(errs, ", ")
 
 
+func t23_rash_attack() -> String:
+	var errs: Array[String] = []
+	var scenarios := _group_test("T23")
+	if scenarios != "OK":
+		errs.append(scenarios)
+
+	# 빈틈이 끝나는 세 경로(회수의 예정 종료, 스침, 무너짐 종료)가 모두 빈틈 인정 유예를 시작한다.
+	var grace := 0.15
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 1
+	var S := DT.OpponentState
+	for from: int in [S.RECOVERY, S.STAGGER]:
+		var from_name: String = DT.OPPONENT_STATE_NAMES[from]
+		var brain := OpponentBrain.new(_make_opp("cut", false, 3), rng)
+		_expect(errs, not brain.in_opening(0.0, grace), "시작하자마자 빈틈 인정 구간임")
+		brain.state = from
+		_expect(errs, brain.in_opening(5.0, 0.0), "%s인데 빈틈 인정 구간이 아님" % from_name)
+		if from == S.STAGGER:
+			brain.end_stagger(5.0)
+		else:
+			brain.start_idle(5.0)
+		_expect(errs, brain.in_opening(5.0 + grace - 0.01, grace), "%s 종료 뒤 유예 안인데 빈틈 인정이 아님" % from_name)
+		_expect(errs, not brain.in_opening(5.0 + grace, grace), "유예와 같은 시각이 빈틈 인정 구간임")
+		# 대기 시간만 새로 재는 것(멀리를 벗어날 때)은 유예를 다시 시작하지 않는다.
+		brain.start_idle(9.0)
+		_expect(errs, not brain.in_opening(9.0, grace), "IDLE에서 다시 잰 대기가 유예를 시작함")
+	var grazed := OpponentBrain.new(_make_opp("cut", false, 3), rng)
+	grazed.state = S.RECOVERY
+	grazed.on_grazed(5.0)
+	_expect(errs, grazed.in_opening(5.1, grace) and not grazed.in_opening(5.0 + grace, grace), "스침으로 끝난 빈틈의 유예가 다름")
+	return _result(errs, " / ")
+
+
 func _advance(core: DuelCore, seconds: float, delta: float) -> void:
 	var until := core.time + seconds
 	while core.time + delta * 0.5 < until:
@@ -726,37 +881,73 @@ func _cfg_guard_only() -> Dictionary:
 	}
 
 
+## 막을 때마다(찌르기든 베기든) 받아치는 봇. 막힌 찌르기 뒤의 공격은 섣부른 공격이다.
+func _cfg_always_counter() -> Dictionary:
+	return {
+		"guard_fn": func(_a: AttackData, _i: int) -> StringName: return &"hold",
+		"counter_fn": func(_ev: Dictionary) -> Variant: return AIM_MID_THRUST,
+		"finisher": AIM_MID_THRUST,
+	}
+
+
+## 베기 뒤에는 늘 받아치고, 막힌 찌르기 뒤에는 세 번에 한 번 섣불리 치는 봇(난수 없이 순번으로).
+func _cfg_rash_one_in_three() -> Dictionary:
+	var thrusts: Array[int] = [0]
+	var counter := func(ev: Dictionary) -> Variant:
+		if float(ev["recovery"]) > 0.0:
+			return AIM_MID_THRUST
+		thrusts[0] += 1
+		return AIM_MID_THRUST if thrusts[0] % 3 == 0 else null
+	return {"counter_fn": counter, "finisher": AIM_MID_THRUST}
+
+
 ## 시드 1..SIM_SEEDS로 판을 돌려 길이 통계를 낸다.
-func _simulate(opp: OpponentData, cfg_fn: Callable) -> Dictionary:
+## lengths는 시드 순서의 판 길이, rash와 regained는 판당 평균 섣부른 공격 수와 상대가 되찾은 칸 수.
+func _simulate(opp: OpponentData, cfg_fn: Callable,
+		conditions: Array[CommissionCondition] = []) -> Dictionary:
 	var total := 0.0
 	var shortest := INF
 	var longest := 0.0
 	var timeouts := 0
 	var wins := 0
 	var losses := 0
+	var lengths: Array[float] = []
+	var rash := 0
+	var regained := 0
 	var never := func(_record: DuelRecord) -> int: return -1
 	for s in range(1, SIM_SEEDS + 1):
-		var r := _run(opp, cfg_fn.call(), never, SIM_DELTA, 10000.0, s)
+		var r := _run(opp, cfg_fn.call(), never, SIM_DELTA, 10000.0, s, conditions)
 		var length := r.core.record.elapsed
+		lengths.append(length)
+		for ev in r.core.record.of_type(DuelRecord.ATTACK):
+			if ev["rash"]:
+				rash += 1
+			regained += int(ev["posture_gain"])
 		total += length
 		shortest = minf(shortest, length)
 		longest = maxf(longest, length)
 		match r.core.end_reason:
 			DT.EndReason.TIME_UP:
 				timeouts += 1
-			DT.EndReason.OPPONENT_HIT:
+			DT.EndReason.OPPONENT_HIT, DT.EndReason.CONDITION:
+				# 의뢰 조건이 끝낸 판도 상대의 유효타로 끝난 것이다.
 				wins += 1
 			DT.EndReason.PLAYER_DEFEATED:
 				losses += 1
 	return {
 		"mean": total / SIM_SEEDS, "min": shortest, "max": longest,
 		"timeouts": timeouts, "wins": wins, "losses": losses,
+		"lengths": lengths, "rash": float(rash) / SIM_SEEDS, "regained": float(regained) / SIM_SEEDS,
 	}
 
 
 func _stat_line(label: String, st: Dictionary) -> String:
 	return "  INFO %s: 평균 %.1f초 (최소 %.1f, 최대 %.1f), 승 %d / 패 %d / 시간 초과 %d" % [
 		label, st["mean"], st["min"], st["max"], st["wins"], st["losses"], st["timeouts"]]
+
+
+func _rash_suffix(st: Dictionary) -> String:
+	return ", 섣부른 공격 %.1f회/판, 상대가 되찾은 칸 %.1f/판" % [st["rash"], st["regained"]]
 
 
 func t13_duel_length() -> String:
@@ -775,6 +966,21 @@ func t13_duel_length() -> String:
 	_expect(errs, guard["mean"] >= GUARD_MEAN_MIN and guard["mean"] <= GUARD_MEAN_MAX,
 		"막기 봇 평균 %.1f초가 %.0f~%.0f초 밖" % [guard["mean"], GUARD_MEAN_MIN, GUARD_MEAN_MAX])
 	_expect(errs, guard["timeouts"] * 10 <= SIM_SEEDS, "막기 봇 시간 초과 %d판 (10%% 초과)" % guard["timeouts"])
+
+	# 섣부른 공격의 대가: 막을 때마다 받아치면 가려서 받아치는 것보다 분명히 나빠야 한다.
+	var always := _simulate(real, _cfg_always_counter)
+	print(_stat_line("막을 때마다 받아치는 봇", always) + _rash_suffix(always))
+	var shorter := 0
+	for i in SIM_SEEDS:
+		if always["lengths"][i] < guard["lengths"][i] - EPS:
+			shorter += 1
+	_expect(errs, shorter == 0, "막을 때마다 받아치는 봇이 막기 봇보다 짧은 시드 %d개" % shorter)
+	_expect(errs, always["mean"] >= guard["mean"] + RASH_MEAN_GAP,
+		"막을 때마다 받아치는 봇 평균 %.1f초가 막기 봇 평균 + %.0f초(%.1f초)보다 짧음" % [
+			always["mean"], RASH_MEAN_GAP, guard["mean"] + RASH_MEAN_GAP])
+	# 참고용(통과 조건 아님): 가끔 잘못 읽는 플레이.
+	var sometimes := _simulate(real, _cfg_rash_one_in_three)
+	print(_stat_line("(참고) 막힌 찌르기 세 번에 한 번 섣불리 치는 봇", sometimes) + _rash_suffix(sometimes))
 
 	# 참고용(통과 조건 아님): 상대 자세 칸 수에 따른 판 길이.
 	for posture in [8, 11, 14]:

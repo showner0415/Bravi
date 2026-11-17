@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="Commission" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/commission/commission.gd" id="1_commission"]
+[ext_resource type="Script" path="res://scripts/commission/commission_condition.gd" id="2_condition"]
+[ext_resource type="Script" path="res://scripts/commission/target_part_condition.gd" id="3_target_part"]
+[ext_resource type="Resource" path="res://data/opponents/opponent_01.tres" id="4_opponent"]
+
+[sub_resource type="Resource" id="condition_feather"]
+script = ExtResource("3_target_part")
+target_part = 1
+
+[resource]
+script = ExtResource("1_commission")
+client_name = "모자 장인 클라라"
+dialogue = "바르톨로가 쓰고 다니는 그 모자, 값도 안 치르고 가져간 제 물건이에요. 깃털만 잘라 주세요. 옷깃 하나 건드리지 말고요. 그 사람이 다치면 제가 곤란해져요.
+바짝 붙거나 칼을 쳐내야 모자에 손이 닿을 거예요. 그 사람은 찌르기는 금방 거둬들이지만 베고 나면 한참 허우적대요. 공격이 자꾸 막히면 성질을 못 이기고 크게 휘두른다니, 그때를 노려도 좋고요."
+opponent = ExtResource("4_opponent")
+conditions = Array[ExtResource("2_condition")]([SubResource("condition_feather")])
+base_reward = 45
+tip_max = 25

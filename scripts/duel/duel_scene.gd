@@ -7,6 +7,7 @@ const DT := preload("res://scripts/duel/duel_types.gd")
 const RULES_PATH := "res://data/duel_rules.tres"
 const WEAPON_PATH := "res://data/weapons/rapier.tres"
 const DEFAULT_OPPONENT_PATH := "res://data/opponents/opponent_01.tres"
+const SELECT_PATH := "res://scenes/ui/commission_select.tscn"
 
 ## 의뢰. 비어 있으면 /root/GameSession에서 받고, 그것도 없으면 자유 결투다.
 @export var commission: Commission
@@ -23,6 +24,8 @@ var _display_time := 0.0
 @onready var _opponent_view: OpponentView = $OpponentView
 @onready var _sword_view: PlayerSwordView = $PlayerSwordView
 @onready var _hud: DuelHud = $HUD
+@onready var _result_panel: ResultPanel = $ResultPanel
+@onready var _beeper: Beeper = $Beeper
 
 
 func _ready() -> void:
@@ -46,13 +49,18 @@ func start_duel() -> void:
 		rng.seed = rng_seed
 	else:
 		rng.randomize()
+	var conditions: Array[CommissionCondition] = []
+	if commission != null:
+		conditions = commission.conditions
 	core = DuelCore.new()
-	core.setup(load(RULES_PATH), weapon, opponent, rng)
+	core.setup(load(RULES_PATH), weapon, opponent, rng, conditions)
 	core.event.connect(_on_core_event)
 	_display_time = 0.0
 	_opponent_view.setup(opponent, weapon)
 	_sword_view.setup()
 	_hud.reset()
+	_hud.set_commission(commission)
+	_result_panel.hide_result()
 	_update_views(0.0)
 
 
@@ -65,6 +73,8 @@ func advance(delta: float) -> void:
 	if mouse_aim_enabled:
 		_update_aim_from_mouse()
 	core.tick(delta)
+	if core.ended and not _result_panel.is_showing():
+		_result_panel.show_result(core, commission)
 	_display_time = core.time
 	# 부드러운 이동과 번쩍임의 시간은 _process가 흘린다(여기서 또 흘리면 두 배가 된다).
 	_update_views(0.0)
@@ -96,7 +106,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		core.step(1)
 	elif event.is_action_pressed(&"step_back"):
 		core.step(-1)
-	# back(Esc)은 의뢰 선택 화면이 생기는 작업 6에서 연결한다.
+	elif event.is_action_pressed(&"back"):
+		# 의뢰 선택으로 돌아간다. 다른 씬 아래에 붙어 있을 때(테스트)는 아무것도 하지 않는다.
+		if get_tree().current_scene == self:
+			get_tree().change_scene_to_file(SELECT_PATH)
 
 
 func _update_aim_from_mouse() -> void:
@@ -121,6 +134,7 @@ func _on_core_event(ev: Dictionary) -> void:
 	_opponent_view.on_event(ev)
 	_sword_view.on_event(ev)
 	_hud.on_event(ev)
+	_beeper.on_event(ev)
 
 
 ## 화면 크기에 맞춰 배치한다(stretch aspect가 expand라 뷰포트가 커질 수 있다).

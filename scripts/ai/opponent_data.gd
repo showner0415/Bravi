@@ -13,6 +13,8 @@ extends Resource
 @export var stagger_time := 1.5
 ## 무너짐이 끝났을 때 돌아오는 자세.
 @export var stagger_recover_posture := 4
+## 섣부른 공격(빈틈이 아닐 때 낸 공격)을 받아넘겼을 때 돌아오는 자세. 0이면 대가가 없다.
+@export var rash_attack_posture_gain := 1
 
 @export_group("리듬")
 ## 공격 사이 대기 시간 범위(초).

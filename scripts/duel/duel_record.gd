@@ -9,10 +9,10 @@ const TELL_START := &"tell_start"
 ## 상대 타격 판정. attack, result(StrikeResult), situation(Situation 또는 -1),
 ## recovery(초), recovery_end, player_posture
 const STRIKE := &"strike"
-## 플레이어 공격 시작. direction, height, part, judge_time
+## 플레이어 공격 시작. direction, height, part, judge_time, rash(섣부른 공격인가)
 const ATTACK_START := &"attack_start"
-## 플레이어 공격 판정. result(AttackResult), direction, height, part, distance,
-## opponent_posture, opponent_state(판정 직후)
+## 플레이어 공격 판정. result(AttackResult), direction, height, part, distance(판정 시각의 간격),
+## pressed_distance(누른 순간의 간격), opponent_posture, opponent_state(판정 직후), rash, posture_gain(섣부른 공격으로 상대가 되찾은 칸 수)
 const ATTACK := &"attack"
 ## 간격 변경. distance, by("player"/"opponent")
 const DISTANCE := &"distance"

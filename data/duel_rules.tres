@@ -6,3 +6,4 @@
 script = ExtResource("1_rules")
 time_limit = 90.0
 player_posture_max = 3
+opening_grace = 0.15

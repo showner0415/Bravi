@@ -6,7 +6,9 @@ extends SceneTree
 const TEST_FILES: Array[String] = [
 	"res://tests/project_tests.gd",
 	"res://tests/core_tests.gd",
+	"res://tests/commission_tests.gd",
 	"res://tests/scene_tests.gd",
+	"res://tests/flow_tests.gd",
 ]
 
 var _started := false

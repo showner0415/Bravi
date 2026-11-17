@@ -38,6 +38,8 @@ var weapon: WeaponData
 var opponent_data: OpponentData
 var brain: OpponentBrain
 var record: DuelRecord
+## 의뢰의 조건 목록. 비어 있으면 자유 결투다(어느 쪽이든 유효타 또는 시간 초과로 끝난다).
+var conditions: Array[CommissionCondition] = []
 
 var time := 0.0
 var distance: int = Dist.FAR
@@ -61,6 +63,10 @@ var guard_cooldown_end := -INF
 var attack_direction: int = Dir.CENTER
 var attack_height: int = Hgt.MID
 var attack_part: int = Part.TORSO
+## 진행 중인 공격이 섣부른 공격인가(빈틈이 아닌 상대에게 누름).
+var attack_rash := false
+## 진행 중인 공격을 누른 순간의 간격.
+var attack_pressed_distance: int = Dist.FAR
 var step_target: int = Dist.FAR
 
 # "간격이 멀리이고 상대가 IDLE"이 시작된 시각 + 접근 지연. 조건이 깨지면 INF.
@@ -71,10 +77,11 @@ var _flushing := false
 
 
 func setup(p_rules: DuelRules, p_weapon: WeaponData, p_opponent: OpponentData,
-		rng: RandomNumberGenerator) -> void:
+		rng: RandomNumberGenerator, p_conditions: Array[CommissionCondition] = []) -> void:
 	rules = p_rules
 	weapon = p_weapon
 	opponent_data = p_opponent
+	conditions = p_conditions
 	record = DuelRecord.new()
 	brain = OpponentBrain.new(opponent_data, rng)
 	player_posture = rules.player_posture_max
@@ -96,6 +103,11 @@ func current_aim_part() -> int:
 	return aim_part(aim_direction, aim_height, opponent_data.sword_side)
 
 
+## 지금 공격을 누르면 섣부른 공격인가: 간격이 멀리가 아니고 빈틈 인정 구간 밖이다.
+func is_rash_now() -> bool:
+	return distance != Dist.FAR and not brain.in_opening(time, rules.opening_grace)
+
+
 # ---------------------------------------------------------------- 입력
 
 func set_aim(direction: int, height: int) -> void:
@@ -115,13 +127,16 @@ func press_attack() -> void:
 	attack_direction = aim_direction
 	attack_height = aim_height
 	attack_part = current_aim_part()
+	# 섣부른 공격인지도 누른 순간에 정해지고 그 뒤로 바뀌지 않는다.
+	attack_rash = is_rash_now()
+	attack_pressed_distance = distance
 	var windup := weapon.windup_for(attack_direction, attack_height, distance)
 	player_state = PlS.WINDUP
 	player_state_start = time
 	player_state_end = time + windup
 	_emit(DuelRecord.ATTACK_START, {
 		"direction": attack_direction, "height": attack_height, "part": attack_part,
-		"judge_time": player_state_end,
+		"judge_time": player_state_end, "rash": attack_rash,
 	})
 
 
@@ -179,6 +194,8 @@ func tick(delta: float) -> void:
 				_enter_guard(time, false)
 			_Ev.TIME_LIMIT:
 				_end(End.TIME_UP, "시간 초과")
+		# 조건은 전이마다 묻는다. 종료 시각이 tick 경계가 아니라 그 전이의 시각이 되게 한다.
+		_check_conditions()
 	if not ended:
 		time = target
 	record.elapsed = time
@@ -321,16 +338,21 @@ func _judge_attack() -> void:
 		staggered = brain.on_grazed(time)
 	elif brain.state == OpS.STAGGER and time < brain.state_end:
 		result = AR.HIT
+	# 섣부른 공격이 막히면 상대가 자세를 되찾는다. 상대의 상태·타이머·연속 막힘은 건드리지 않는다.
+	var posture_gain := 0
+	if attack_rash and result == AR.BLOCKED:
+		posture_gain = brain.regain_posture()
 	_emit(DuelRecord.ATTACK, {
 		"result": result, "direction": attack_direction, "height": attack_height,
-		"part": attack_part, "distance": distance,
+		"part": attack_part, "distance": distance, "pressed_distance": attack_pressed_distance,
 		"opponent_posture": brain.posture, "opponent_state": brain.state,
+		"rash": attack_rash, "posture_gain": posture_gain,
 	})
 	if staggered:
 		_emit(DuelRecord.STAGGER_START, {"end_time": brain.state_end})
 	_refresh_approach(time)
-	if result == AR.HIT:
-		# 조건이 없는 자유 결투는 상대가 유효타를 맞으면 끝난다.
+	if result == AR.HIT and conditions.is_empty():
+		# 조건이 없는 자유 결투는 상대가 유효타를 맞으면 끝난다. 의뢰가 있으면 조건이 정한다.
 		_end(End.OPPONENT_HIT, "상대에게 유효타")
 
 
@@ -359,6 +381,19 @@ func _leave_guard(now: float) -> void:
 
 
 # ---------------------------------------------------------------- 종료와 이벤트
+
+## 의뢰 조건 중 하나라도 종료를 말하면 끝낸다.
+func _check_conditions() -> void:
+	if ended:
+		return
+	for condition in conditions:
+		if condition == null:
+			continue
+		var reason := condition.check_end(record)
+		if reason != "":
+			_end(End.CONDITION, reason)
+			return
+
 
 func _end(reason: int, detail: String) -> void:
 	if ended:

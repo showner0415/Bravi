@@ -21,6 +21,8 @@ var current_attack: AttackData = null
 var current_is_habit := false
 ## 지금 예비 동작의 길이(밀착 배율 적용 후).
 var tell_duration := 0.0
+## 가장 최근 빈틈(RECOVERY·STAGGER)이 끝난 시각.
+var opening_end := -INF
 
 
 func _init(p_data: OpponentData, p_rng: RandomNumberGenerator) -> void:
@@ -31,6 +33,9 @@ func _init(p_data: OpponentData, p_rng: RandomNumberGenerator) -> void:
 
 ## 대기를 새로 시작한다. 대기 시간을 새로 뽑는다.
 func start_idle(now: float) -> void:
+	# 빈틈에서 나오는 모든 경로(회수의 예정 종료, 스침, 무너짐 종료)가 여기를 지난다.
+	if state == S.RECOVERY or state == S.STAGGER:
+		opening_end = now
 	state = S.IDLE
 	state_start = now
 	state_end = now + rng.randf_range(data.idle_time_min, data.idle_time_max)
@@ -97,6 +102,20 @@ func on_grazed(now: float) -> bool:
 func end_stagger(now: float) -> void:
 	posture = data.stagger_recover_posture
 	start_idle(now)
+
+
+## 지금이 빈틈 인정 구간인가: 빈틈(RECOVERY·STAGGER) 동안과 그것이 끝난 뒤 grace초가 지나기 전.
+func in_opening(now: float, grace: float) -> bool:
+	if state == S.RECOVERY or state == S.STAGGER:
+		return true
+	return now < opening_end + grace
+
+
+## 섣부른 공격을 받아넘기고 자세를 되찾는다. 실제로 오른 칸 수를 돌려준다(최대값에서 자른다).
+func regain_posture() -> int:
+	var before := posture
+	posture = mini(posture + maxi(data.rash_attack_posture_gain, 0), data.posture_max)
+	return posture - before
 
 
 func _count_blocked() -> void:
