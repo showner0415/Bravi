@@ -19,6 +19,9 @@ const EPS := 1e-6
 # 판 길이 시뮬레이션 상수. 수치 조정 전후를 비교할 수 있게 고정한다.
 const SIM_SEEDS := 30  # 시드 1..30
 const SIM_DELTA := 1.0 / 60.0
+## T13 통과 기준(초): "막기만 하고 베기 뒤에만 받아치는 봇"의 평균 판 길이.
+const GUARD_MEAN_MIN := 40.0
+const GUARD_MEAN_MAX := 60.0
 
 const AIM_MID_THRUST := [DT.Direction.CENTER, DT.Height.MID]
 const AIM_HIGH_CUT := [DT.Direction.RIGHT, DT.Height.HIGH]
@@ -763,14 +766,14 @@ func t13_duel_length() -> String:
 	print("  INFO 판 길이 시뮬레이션: 시드 1..%d, delta 1/%d, 상대 자세 %d" % [
 		SIM_SEEDS, roundi(1.0 / SIM_DELTA), real.posture_max])
 
+	# 패리 봇은 참고용이다(통과 조건 아님). 기준은 막기 봇의 평균이다.
 	var parry := _simulate(real, _cfg_parry_all)
 	print(_stat_line("전부 패리하고 받아치는 봇", parry))
-	_expect(errs, parry["mean"] >= 30.0, "패리 봇 평균 %.1f초 < 30초" % parry["mean"])
 
 	var guard := _simulate(real, _cfg_guard_only)
 	print(_stat_line("막기만 하고 베기 뒤에만 받아치는 봇", guard))
-	_expect(errs, guard["mean"] >= 30.0 and guard["mean"] <= rules.time_limit,
-		"막기 봇 평균 %.1f초가 30~%.0f초 밖" % [guard["mean"], rules.time_limit])
+	_expect(errs, guard["mean"] >= GUARD_MEAN_MIN and guard["mean"] <= GUARD_MEAN_MAX,
+		"막기 봇 평균 %.1f초가 %.0f~%.0f초 밖" % [guard["mean"], GUARD_MEAN_MIN, GUARD_MEAN_MAX])
 	_expect(errs, guard["timeouts"] * 10 <= SIM_SEEDS, "막기 봇 시간 초과 %d판 (10%% 초과)" % guard["timeouts"])
 
 	# 참고용(통과 조건 아님): 상대 자세 칸 수에 따른 판 길이.
