@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="DuelRules" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/duel/duel_rules.gd" id="1_rules"]
+
+[resource]
+script = ExtResource("1_rules")
+time_limit = 90.0
+player_posture_max = 3

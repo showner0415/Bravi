@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/duel/weapon_data.gd" id="1_weapon"]
+
+[resource]
+script = ExtResource("1_weapon")
+weapon_name = "레이피어"
+thrust_windup = 0.2
+cut_windup = 0.35
+high_multiplier = 2.0
+recover_time = 0.3
+parry_window = 0.18
+guard_cooldown = 0.2
+step_time = 0.3
+close_windup_multiplier = 0.6
