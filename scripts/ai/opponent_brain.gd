@@ -23,6 +23,8 @@ var current_is_habit := false
 var tell_duration := 0.0
 ## 가장 최근 빈틈(RECOVERY·STAGGER)이 끝난 시각.
 var opening_end := -INF
+## 공격 가방(data.attack_bag_sets가 1 이상일 때만 쓴다). 판마다 새로 만든다.
+var _bag: Array[AttackData] = []
 
 
 func _init(p_data: OpponentData, p_rng: RandomNumberGenerator) -> void:
@@ -60,13 +62,14 @@ func start_tell(now: float, is_close: bool) -> void:
 
 
 ## 타격 결과를 받아 회수(또는 대기)로 넘어간다. 회수 시간을 돌려준다.
-func resolve_strike(now: float, result: int) -> float:
+## braced: 막혔지만 버티기였다(표시된 공격을 들고만 있던 막기로 받음). 막힘으로 세되 빈틈이 없다.
+func resolve_strike(now: float, result: int, braced := false) -> float:
 	var recovery := 0.0
 	match result:
 		R.WHIFF:
 			recovery = current_attack.recovery_time * data.whiff_recovery_multiplier
 		R.BLOCKED:
-			recovery = current_attack.recovery_time
+			recovery = 0.0 if braced else current_attack.recovery_time
 			_count_blocked()
 		R.PARRIED:
 			recovery = current_attack.recovery_time + data.parried_recovery_bonus
@@ -95,6 +98,11 @@ func on_grazed(now: float) -> bool:
 		current_attack = null
 		current_is_habit = false
 		return true
+	# 버릇 식히기: 닿으면 연속 막힘을 처음부터 다시 센다(그 버릇이 켜 둔 경우에만).
+	for habit in data.habits:
+		if habit.trigger == HabitData.Trigger.BLOCKED_STREAK and habit.reset_on_touched:
+			blocked_streak = 0
+			break
 	start_idle(now)
 	return false
 
@@ -132,6 +140,14 @@ func _choose_attack() -> void:
 			current_attack = habit.response
 			current_is_habit = true
 			return
+	current_is_habit = false
+	# 공격 가방을 쓰면 가방에서 한 장 꺼낸다. 가방을 못 채우는 데이터면 아래의 독립 추첨으로 간다.
+	if data.attack_bag_sets > 0:
+		if _bag.is_empty():
+			_refill_bag()
+		if not _bag.is_empty():
+			current_attack = _bag.pop_back()
+			return
 	var total := 0.0
 	for atk in data.attacks:
 		total += atk.weight
@@ -142,4 +158,27 @@ func _choose_attack() -> void:
 		if pick < 0.0:
 			current_attack = atk
 			break
-	current_is_habit = false
+
+
+## 가방에 남은 장 수. 가방을 쓰지 않으면 -1.
+func bag_remaining() -> int:
+	return _bag.size() if data.attack_bag_sets > 0 else -1
+
+
+## 가방을 채워 섞는다. 일반 공격마다 "반올림한 가중치 x attack_bag_sets"장이고,
+## 가중치가 0보다 크면 적어도 한 장은 넣는다(반올림으로 공격이 말없이 사라지지 않게).
+## 섞기는 주입받은 rng만 쓴다(전역 난수를 쓰는 Array.shuffle()은 시드로 재현되지 않는다).
+## data의 배열은 고치지 않는다.
+func _refill_bag() -> void:
+	_bag.clear()
+	for atk in data.attacks:
+		if atk.weight <= 0.0:
+			continue
+		var cards := maxi(roundi(atk.weight), 1) * data.attack_bag_sets
+		for i in cards:
+			_bag.append(atk)
+	for i in range(_bag.size() - 1, 0, -1):
+		var j := rng.randi_range(0, i)
+		var tmp := _bag[i]
+		_bag[i] = _bag[j]
+		_bag[j] = tmp

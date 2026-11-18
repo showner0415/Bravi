@@ -64,7 +64,7 @@ var _clock := 0.0
 var _flash_until := -INF
 var _touched_part := -1
 var _touched_until := -INF
-## 섣부른 공격을 받아넘겼을 때 상태 글자 자리에 잠깐 띄우는 글자.
+## 섣부른 공격을 받아넘겼을 때("받아넘김")나 버티기가 됐을 때("밀어붙임") 상태 글자 자리에 잠깐 띄우는 글자.
 var _deflect_text := ""
 var _deflect_until := -INF
 
@@ -135,6 +135,10 @@ func on_event(ev: Dictionary) -> void:
 	match ev["type"]:
 		DuelRecord.STRIKE:
 			_flash_until = _clock + FLASH_TIME
+			if ev["braced"]:
+				# 들고만 있던 막기로 표시된 공격을 버텼다: 빈틈이 없다는 것을 상태 글자 자리에 잠깐 띄운다.
+				_deflect_text = "밀어붙임"
+				_deflect_until = _clock + DEFLECT_TEXT_TIME
 		DuelRecord.ATTACK:
 			var result: int = ev["result"]
 			if result == DT.AttackResult.GRAZE or result == DT.AttackResult.HIT:
@@ -184,6 +188,9 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 			exact = true
 			tint = atk.pose_color
 			text = atk.attack_name + ("!!" if atk.is_big else "")
+			# 표시된 공격은 예비 동작 내내, 지금의 막기가 버티기만 되는지 받아내는지 알려 준다.
+			if atk.needs_raised_guard and core.player_state == DT.PlayerState.GUARD:
+				text += "\n" + ("막기를 뗐다 다시 올려라" if core.would_brace_now() else "받아낼 준비")
 			_ring_active = true
 			_ring_remaining = maxf(brain.state_end - display_time, 0.0)
 			_ring.position = RING_POSITION[atk.direction] * inverse

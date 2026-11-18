@@ -137,7 +137,8 @@ func _on_core_event(ev: Dictionary) -> void:
 	_beeper.on_event(ev)
 
 
-## 화면 크기에 맞춰 배치한다(stretch aspect가 expand라 뷰포트가 커질 수 있다).
+## 화면 크기에 맞춰 배치한다. stretch aspect가 keep이라 뷰포트는 늘 1280x720이지만,
+## 그 설정이 바뀌어도 따라가도록 크기를 직접 읽는다.
 func _layout() -> void:
 	var size := get_viewport_rect().size
 	_opponent_view.anchor = Vector2(size.x * 0.5, size.y * 0.62)

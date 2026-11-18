@@ -7,7 +7,9 @@ extends RefCounted
 ## 상대 예비 동작 시작. attack, strike_time, duration, is_habit
 const TELL_START := &"tell_start"
 ## 상대 타격 판정. attack, result(StrikeResult), situation(Situation 또는 -1),
-## recovery(초), recovery_end, player_posture
+## recovery(초), recovery_end, player_posture,
+## braced(들고만 있던 막기로 표시된 공격을 버텼는가. 버티기면 recovery는 0),
+## posture_loss(이 타격으로 실제로 깎인 내 자세 칸 수. 닿지 않았거나 유효타면 0)
 const STRIKE := &"strike"
 ## 플레이어 공격 시작. direction, height, part, judge_time, rash(섣부른 공격인가)
 const ATTACK_START := &"attack_start"

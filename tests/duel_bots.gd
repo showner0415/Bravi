@@ -8,7 +8,10 @@ extends RefCounted
 ##
 ## 설정(cfg) 키 — 전부 선택:
 ##   guard_fn(attack: AttackData, index: int) -> StringName
-##       &"hold" 막기 유지 / &"parry" 패리 / &"wrong" 틀린 방향 막기 / &"none" 무방비 / &"retreat" 후퇴
+##       &"hold" 막기 유지 / &"keep" 누르고만 있기 / &"parry" 패리 / &"wrong" 틀린 방향 막기
+##       / &"none" 무방비 / &"retreat" 후퇴
+##       &"hold"는 표시된 공격(needs_raised_guard)의 예비 동작이 보이면 막기를 뗐다가 곧바로 다시 누른다
+##       (쿨다운 뒤 막기로 돌아온다 = 올린 막기). &"keep"은 떼지 않는다(들고만 있던 막기).
 ##       index는 1부터 세는 상대 공격 순번. 없으면 항상 &"hold".
 ##   counter_fn(strike_ev: Dictionary) -> Variant
 ##       막힘·패리 직후 받아칠 조준 [direction, height] 또는 null. 없으면 받아치지 않는다.
@@ -19,6 +22,10 @@ extends RefCounted
 ##   want_distance: int — 이 간격이 될 때까지 전진한다.
 ##   attack_at: {time, aim} — 코어 시각 time을 지난 첫 tick에 공격한다.
 ##   attack_before_strike: {index, lead, aim} — index번째 공격의 타격 lead초 전을 지난 첫 tick에 공격한다.
+##   regrip_before_strike: {index, lead} — index번째 공격의 타격 lead초 전을 지난 첫 tick에
+##       막기를 뗐다가 곧바로 다시 누른다.
+##   counter_delay: float — 받아치기를 타격 시각 + 이 값(초)을 지난 첫 tick에 누른다(사람의 늦은 손).
+##       없으면 타격과 같은 tick에 누른다. 무너진 상대에게 넣는 finisher에는 적용하지 않는다.
 ##   follow_up: {aim, max} — 내 공격의 판정 이벤트를 받으면, 입력이 받아들여지는 가장 이른 tick에
 ##       aim으로 한 번 더 공격한다. max는 횟수 제한(없거나 -1이면 무제한).
 
@@ -35,6 +42,10 @@ var counters_done := 0
 var follow_ups_done := 0
 
 var _parry_press_at := INF
+var _regrip_at := INF
+var _delayed_counter_at := INF
+var _delayed_counter_aim: Array = []
+var _delayed_counter_release := false
 var _timed_attack_at := INF
 var _timed_attack_aim: Array = []
 var _pending_steps: Array[int] = []
@@ -57,6 +68,17 @@ func update() -> void:
 	if _parry_press_at <= core.time:
 		_parry_press_at = INF
 		core.set_guard(true)
+	if _regrip_at <= core.time:
+		_regrip_at = INF
+		core.set_guard(false)
+		core.set_guard(true)
+	var can_attack := core.player_state == DT.PlayerState.READY or core.player_state == DT.PlayerState.GUARD
+	if _delayed_counter_at <= core.time and can_attack:
+		_delayed_counter_at = INF
+		_attack(_delayed_counter_aim)
+		if _delayed_counter_release:
+			core.set_guard(false)
+		return
 	if _timed_attack_at <= core.time:
 		_timed_attack_at = INF
 		_attack(_timed_attack_aim)
@@ -106,6 +128,11 @@ func _on_tell(ev: Dictionary) -> void:
 	match mode:
 		&"hold":
 			core.set_aim(atk.direction, DT.Height.MID)
+			if atk.needs_raised_guard:
+				core.set_guard(false)
+			core.set_guard(true)
+		&"keep":
+			core.set_aim(atk.direction, DT.Height.MID)
 			core.set_guard(true)
 		&"wrong":
 			core.set_aim((atk.direction + 1) % 3, DT.Height.MID)
@@ -125,6 +152,10 @@ func _on_tell(ev: Dictionary) -> void:
 		if int(abs_cfg["index"]) == tells_seen:
 			_timed_attack_at = float(ev["strike_time"]) - float(abs_cfg["lead"])
 			_timed_attack_aim = abs_cfg["aim"]
+	if cfg.has("regrip_before_strike"):
+		var regrip_cfg: Dictionary = cfg["regrip_before_strike"]
+		if int(regrip_cfg["index"]) == tells_seen:
+			_regrip_at = float(ev["strike_time"]) - float(regrip_cfg["lead"])
 
 
 func _on_strike(ev: Dictionary) -> void:
@@ -140,6 +171,12 @@ func _on_strike(ev: Dictionary) -> void:
 			return
 		counters_done += 1
 		var parrying := result == DT.StrikeResult.PARRIED
+		var delay := float(cfg.get("counter_delay", 0.0))
+		if delay > 0.0:
+			_delayed_counter_at = float(ev["t"]) + delay
+			_delayed_counter_aim = aim
+			_delayed_counter_release = parrying
+			return
 		_attack(aim)
 		if parrying:
 			# 패리 봇은 막기를 눌러 두지 않는다(다음 패리를 새로 눌러야 하므로).

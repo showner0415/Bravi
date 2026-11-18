@@ -108,6 +108,17 @@ func is_rash_now() -> bool:
 	return distance != Dist.FAR and not brain.in_opening(time, rules.opening_grace)
 
 
+## 지금 타격이 오면 버티기가 되는가: 상대가 표시된 공격의 예비 동작 중이고,
+## 내 막기가 그 예비 동작이 시작되기 전부터 이어진 것(들고만 있던 막기)이다.
+## 예비 동작이 시작된 시각 이후에 들어간 막기는 경로와 상관없이 올린 막기다.
+func would_brace_now() -> bool:
+	if brain.state != OpS.TELL or brain.current_attack == null:
+		return false
+	if not brain.current_attack.needs_raised_guard:
+		return false
+	return player_state == PlS.GUARD and guard_enter_time < brain.state_start
+
+
 # ---------------------------------------------------------------- 입력
 
 func set_aim(direction: int, height: int) -> void:
@@ -258,11 +269,15 @@ func _resolve_strike() -> void:
 	var atk := brain.current_attack
 	var result: int
 	var situation := -1
+	var braced := false
+	var posture_loss := 0
 	if distance == Dist.FAR:
 		result = SR.WHIFF
 	elif player_state == PlS.GUARD and aim_direction == atk.direction:
 		var in_window := guard_enter_time >= time - weapon.parry_window
 		result = SR.PARRIED if (guard_fresh and in_window) else SR.BLOCKED
+		# 표시된 공격을 들고만 있던 막기로 받으면 막히기는 하지만 빈틈이 없다. 상대는 아직 TELL이다.
+		braced = result == SR.BLOCKED and would_brace_now()
 	else:
 		match player_state:
 			PlS.GUARD:
@@ -272,15 +287,20 @@ func _resolve_strike() -> void:
 			_:
 				situation = Sit.UNGUARDED
 		if player_posture > 0:
-			player_posture -= 1
+			# 밀착에서 맞으면 더 많이 깎인다(상대 데이터의 값). 0 아래로는 내려가지 않는다.
+			var loss := 1
+			if distance == Dist.CLOSE:
+				loss = maxi(opponent_data.close_hit_posture_loss, 1)
+			posture_loss = mini(loss, player_posture)
+			player_posture -= posture_loss
 			result = SR.GRAZE
 		else:
 			result = SR.HIT
-	var recovery := brain.resolve_strike(time, result)
+	var recovery := brain.resolve_strike(time, result, braced)
 	_emit(DuelRecord.STRIKE, {
 		"attack": atk, "result": result, "situation": situation,
 		"recovery": recovery, "recovery_end": time + recovery,
-		"player_posture": player_posture,
+		"player_posture": player_posture, "braced": braced, "posture_loss": posture_loss,
 	})
 	if result == SR.HIT:
 		_end(End.PLAYER_DEFEATED, "유효타를 맞음")

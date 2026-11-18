@@ -13,6 +13,9 @@ extends Resource
 @export var weight := 1.0
 ## 큰 공격(버릇 반응 등). 표시를 더 과장한다.
 @export var is_big := false
+## 표시된 공격: 예비 동작이 시작된 뒤에 올린 막기(또는 패리)만 받아낸다.
+## 그 전부터 들고만 있던 막기는 버티기만 한다(막힘이지만 빈틈이 없다).
+@export var needs_raised_guard := false
 
 @export_group("예비 동작 포즈 (임시 — 4단계에서 애니메이션 이름으로 대체)")
 ## 예비 동작 시작 때 팔(어깨 관절)의 위치. 가슴 중앙의 어깨 높이 기준(화면 좌표, 좌우 대칭).

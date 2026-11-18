@@ -349,4 +349,28 @@ func t20_lengths() -> String:
 			continue
 		_expect(errs, st["mean"] >= 30.0 and st["mean"] <= limit, "%s 평균 %.1f초가 30~%.0f초 밖" % [row[0], st["mean"], limit])
 		_expect(errs, st["timeouts"] * 10 <= Core.SIM_SEEDS, "%s 시간 초과 %d판 (10%% 초과)" % [row[0], st["timeouts"]])
+
+	# 참고용(통과 조건 아님): 받아치기를 늦게 누르는 손. 밀착에서 막힌 베기 뒤의 상단 베기는
+	# 타격 뒤 0.13초 안에 눌러야 닿는다(빈틈 0.55초 − 밀착 상단 베기 0.42초).
+	for row in [
+		["(참고) 깃털 · 밀착에서 막기만 · 0.10초 늦게 누름", _cfg_feather_close, 0.10],
+		["(참고) 깃털 · 밀착에서 막기만 · 0.20초 늦게 누름", _cfg_feather_close, 0.20],
+		["(참고) 깃털 · 교전에서 베기를 패리 · 0.20초 늦게 누름", _cfg_feather_parry, 0.20],
+	]:
+		var base_cfg: Callable = row[1]
+		var delay: float = row[2]
+		var late_cfg := func() -> Dictionary:
+			var cfg: Dictionary = base_cfg.call()
+			cfg["counter_delay"] = delay
+			return cfg
+		print(_h.call("_stat_line", row[0], _h.call("_simulate", real, late_cfg, feather)))
+
+	# 참고용(통과 조건 아님): 버릇 식히기(장치 D)를 켜고 버릇 횟수를 2로 했을 때의 깃털.
+	var cooled: OpponentData = _h.call("_real_with_habit", true, 2)
+	for row in [
+		["(참고) 식히기 켬 · 횟수 2 · 깃털 · 교전에서 베기를 패리", _cfg_feather_parry],
+		["(참고) 식히기 켬 · 횟수 2 · 깃털 · 교전에서 막기만", _cfg_feather_engage_guard],
+	]:
+		var st: Dictionary = _h.call("_simulate", cooled, row[1], feather)
+		print(str(_h.call("_stat_line", row[0], st)) + ", 큰 베기 %.1f회/판" % st["big"])
 	return _result(errs)

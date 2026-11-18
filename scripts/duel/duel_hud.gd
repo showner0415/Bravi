@@ -9,6 +9,25 @@ const LOG_LINES := 3
 const HELP_TEXT := "좌클릭 공격 · 우클릭 막기 (떼고 있다가 고리가 띠에 들어올 때 누르면 패리) · 마우스 위치로 방향·높이 · W/S 간격 · R 다시 하기 · Esc 의뢰 선택 · F1 디버그\n빈틈이 아닐 때 공격하면 상대가 자세를 되찾는다"
 
 
+## 조작 안내 전체. 둘째 줄의 뒷부분은 상대 데이터에서 조립한다(장치를 끈 상대에게 틀린 안내를 하지 않게).
+static func help_text(opponent: OpponentData) -> String:
+	var text := HELP_TEXT
+	if opponent == null:
+		return text
+	var marked: AttackData = null
+	for atk in opponent.attacks:
+		if atk.needs_raised_guard:
+			marked = atk
+	for habit in opponent.habits:
+		if habit.response != null and habit.response.needs_raised_guard:
+			marked = habit.response
+	if marked != null:
+		text += " · %s는 막기를 뗐다 다시 올려야 받아낸다" % marked.attack_name
+	if opponent.close_hit_posture_loss > 1:
+		text += " · 밀착에서 맞으면 자세 %d칸" % opponent.close_hit_posture_loss
+	return text
+
+
 ## 자세 칸. 채워진 칸과 빈 칸을 사각형으로 그린다.
 class PostureCells extends Control:
 	var total := 0
@@ -76,6 +95,7 @@ var _log_label: Label
 var _condition_label: Label
 var _meter: Meter
 var _debug_label: Label
+var _help_label: Label
 var _log: Array[String] = []
 var _commission: Commission
 
@@ -102,10 +122,18 @@ func _ready() -> void:
 	_aim_label = _add_label(Vector2(1.0, 1.0), Rect2(-440, -108, 420, 60), 18, HORIZONTAL_ALIGNMENT_RIGHT)
 	# 최근 사건: 왼쪽 가운데
 	_log_label = _add_label(Vector2(0.0, 0.5), Rect2(20, -60, 420, 100), 20, HORIZONTAL_ALIGNMENT_LEFT)
-	# 조작 안내: 아래 가운데 (두 줄)
-	var help := _add_label(Vector2(0.5, 1.0), Rect2(-620, -48, 1240, 44), 14, HORIZONTAL_ALIGNMENT_CENTER)
-	help.text = HELP_TEXT
-	help.modulate = Color(1, 1, 1, 0.7)
+	# 조작 안내: 아래 가운데 (두 줄). 내 손과 겹치는 자리라 글자가 묻히지 않게 어두운 띠를 깐다.
+	var help_bar := ColorRect.new()
+	help_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	help_bar.color = Color(0.08, 0.08, 0.1, 0.85)
+	help_bar.anchor_right = 1.0
+	help_bar.anchor_top = 1.0
+	help_bar.anchor_bottom = 1.0
+	help_bar.offset_top = -50.0
+	_root.add_child(help_bar)
+	_help_label = _add_label(Vector2(0.5, 1.0), Rect2(-620, -48, 1240, 44), 14, HORIZONTAL_ALIGNMENT_CENTER)
+	_help_label.text = HELP_TEXT
+	_help_label.modulate = Color(1, 1, 1, 0.7)
 	# 의뢰 조건과 조건의 게이지: 왼쪽 위, 간격 아래
 	_condition_label = _add_label(Vector2(0.0, 0.0), Rect2(20, 50, 310, 70), 15, HORIZONTAL_ALIGNMENT_LEFT)
 	_condition_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -116,7 +144,7 @@ func _ready() -> void:
 	_meter.visible = false
 	_root.add_child(_meter)
 	# 디버그: 오른쪽 가운데 (기본 꺼짐)
-	_debug_label = _add_label(Vector2(1.0, 0.5), Rect2(-380, -110, 360, 220), 16, HORIZONTAL_ALIGNMENT_RIGHT)
+	_debug_label = _add_label(Vector2(1.0, 0.5), Rect2(-380, -130, 360, 260), 16, HORIZONTAL_ALIGNMENT_RIGHT)
 	_debug_label.visible = false
 
 
@@ -150,6 +178,9 @@ func refresh(core: DuelCore) -> void:
 	var opp := core.opponent_data
 	_opponent_label.text = "%s — 자세 %d/%d" % [opp.display_name, core.brain.posture, opp.posture_max]
 	_opponent_cells.set_values(opp.posture_max, core.brain.posture)
+	var help := help_text(opp)
+	if _help_label.text != help:
+		_help_label.text = help
 	_player_label.text = "내 자세 %d/%d" % [core.player_posture, core.rules.player_posture_max]
 	_player_cells.set_values(core.rules.player_posture_max, core.player_posture)
 	_distance_label.text = "간격: %s" % DT.DISTANCE_NAMES[core.distance]
@@ -182,7 +213,8 @@ func refresh(core: DuelCore) -> void:
 	if _debug_label.visible:
 		var brain := core.brain
 		var remain := brain.state_end - core.time
-		_debug_label.text = "[디버그]\n상대 상태: %s\n남은 시간: %s\n연속 막힘: %d\n공격: %s\n내 상태 남은 시간: %s\n막기 쿨다운: %.2f\n지금 누르면 섣부른 공격: %s" % [
+		var bag := brain.bag_remaining()
+		_debug_label.text = "[디버그]\n상대 상태: %s\n남은 시간: %s\n연속 막힘: %d\n공격: %s\n내 상태 남은 시간: %s\n막기 쿨다운: %.2f\n지금 누르면 섣부른 공격: %s\n지금 타격이 오면 버티기: %s\n가방에 남은 장 수: %s" % [
 			DT.OPPONENT_STATE_NAMES[brain.state],
 			("%.2f" % remain) if is_finite(remain) else "-",
 			brain.blocked_streak,
@@ -190,6 +222,8 @@ func refresh(core: DuelCore) -> void:
 			("%.2f" % (core.player_state_end - core.time)) if is_finite(core.player_state_end) else "-",
 			maxf(core.guard_cooldown_end - core.time, 0.0),
 			"예" if core.is_rash_now() else "아니오",
+			"예" if core.would_brace_now() else "아니오",
+			str(bag) if bag >= 0 else "-",
 		]
 
 
@@ -198,13 +232,19 @@ func _describe(ev: Dictionary) -> String:
 		DuelRecord.STRIKE:
 			match ev["result"]:
 				DT.StrikeResult.BLOCKED:
+					if ev["braced"]:
+						return "버텼다 — 빈틈 없음 (들고만 있던 막기)"
+					if (ev["attack"] as AttackData).needs_raised_guard:
+						return "받아냄!"
 					return "막음"
 				DT.StrikeResult.PARRIED:
 					return "패리!"
 				DT.StrikeResult.WHIFF:
 					return "상대가 헛침"
 				DT.StrikeResult.GRAZE:
-					return "스침당함 — 내 자세 -1 (%s)" % DT.SITUATION_NAMES[ev["situation"]]
+					var loss: int = ev["posture_loss"]
+					return "스침당함 — 내 자세 -%d%s (%s)" % [
+						loss, " (밀착)" if loss >= 2 else "", DT.SITUATION_NAMES[ev["situation"]]]
 				DT.StrikeResult.HIT:
 					return "유효타를 맞음! (%s)" % DT.SITUATION_NAMES[ev["situation"]]
 		DuelRecord.ATTACK:
