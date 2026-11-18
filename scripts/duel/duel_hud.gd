@@ -6,12 +6,16 @@ extends CanvasLayer
 const DT := preload("res://scripts/duel/duel_types.gd")
 
 const LOG_LINES := 3
-const HELP_TEXT := "좌클릭 공격 · 우클릭 막기 (떼고 있다가 고리가 띠에 들어올 때 누르면 패리) · 마우스 위치로 방향·높이 · W/S 간격 · R 다시 하기 · Esc 의뢰 선택 · F1 디버그\n빈틈이 아닐 때 공격하면 상대가 자세를 되찾는다"
+const HELP_RETRY := " · R 다시 하기 · Esc 의뢰 선택"
+const HELP_TEXT := "좌클릭 공격 · 우클릭 막기 (떼고 있다가 고리가 띠에 들어올 때 누르면 패리) · 마우스 위치로 방향·높이 · W/S 간격" + HELP_RETRY + " · F1 디버그\n빈틈이 아닐 때 공격하면 상대가 자세를 되찾는다"
 
 
 ## 조작 안내 전체. 둘째 줄의 뒷부분은 상대 데이터에서 조립한다(장치를 끈 상대에게 틀린 안내를 하지 않게).
-static func help_text(opponent: OpponentData) -> String:
+static func help_text(opponent: OpponentData, p_day_mode := false) -> String:
 	var text := HELP_TEXT
+	if p_day_mode:
+		# 하루 중의 결투는 한 번뿐이다. 다시 하기와 나가기를 안내하지 않는다.
+		text = text.replace(HELP_RETRY, "")
 	if opponent == null:
 		return text
 	var marked: AttackData = null
@@ -96,6 +100,8 @@ var _condition_label: Label
 var _meter: Meter
 var _debug_label: Label
 var _help_label: Label
+## 하루 플레이 중의 결투인가(조작 안내에서 다시 하기·나가기를 뺀다).
+var day_mode := false
 var _log: Array[String] = []
 var _commission: Commission
 
@@ -178,7 +184,7 @@ func refresh(core: DuelCore) -> void:
 	var opp := core.opponent_data
 	_opponent_label.text = "%s — 자세 %d/%d" % [opp.display_name, core.brain.posture, opp.posture_max]
 	_opponent_cells.set_values(opp.posture_max, core.brain.posture)
-	var help := help_text(opp)
+	var help := help_text(opp, day_mode)
 	if _help_label.text != help:
 		_help_label.text = help
 	_player_label.text = "내 자세 %d/%d" % [core.player_posture, core.rules.player_posture_max]

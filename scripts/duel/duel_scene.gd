@@ -8,9 +8,16 @@ const RULES_PATH := "res://data/duel_rules.tres"
 const WEAPON_PATH := "res://data/weapons/rapier.tres"
 const DEFAULT_OPPONENT_PATH := "res://data/opponents/opponent_01.tres"
 const SELECT_PATH := "res://scenes/ui/commission_select.tscn"
+## 하루 모드에서 결과를 넘기는 액션(Space / Enter).
+const ACCEPT_ACTION := &"ui_accept"
+const DAY_FOOTER := "Space / Enter: 의뢰소로 돌아간다"
 
 ## 의뢰. 비어 있으면 /root/GameSession에서 받고, 그것도 없으면 자유 결투다.
 @export var commission: Commission
+
+## 하루 플레이의 상태. 비어 있으면 /root/GameSession의 것을 본다.
+## 있고 그 단계가 결투면 하루 모드다: 의뢰는 day의 지금 의뢰이고, 결투는 한 번뿐이다.
+var day: DayState
 
 ## 끄면 마우스 위치로 조준을 덮어쓰지 않는다(테스트가 코어에 직접 조준을 넣을 때).
 var mouse_aim_enabled := true
@@ -20,6 +27,10 @@ var rng_seed := -1
 var core: DuelCore
 
 var _display_time := 0.0
+## 하루 모드인가. _ready에서 한 번 정한다(정산으로 넘긴 뒤 같은 씬에서 R·Esc가 살아나지 않게).
+var _day_mode := false
+## 하루 모드에서 결투 결과를 day에 이미 넘겼는가.
+var _day_reported := false
 
 @onready var _opponent_view: OpponentView = $OpponentView
 @onready var _sword_view: PlayerSwordView = $PlayerSwordView
@@ -29,8 +40,15 @@ var _display_time := 0.0
 
 
 func _ready() -> void:
-	if commission == null:
-		var session := get_node_or_null(^"/root/GameSession")
+	var session := get_node_or_null(^"/root/GameSession")
+	if day == null and session != null and session.get("day") is DayState:
+		day = session.get("day")
+	_day_mode = day != null and day.phase == DayState.Phase.DUEL
+	if _day_mode:
+		commission = day.current_commission()
+		_hud.day_mode = true
+		_result_panel.footer_text = DAY_FOOTER
+	elif commission == null:
 		if session != null and session.get("commission") is Commission:
 			commission = session.get("commission")
 	get_viewport().size_changed.connect(_layout)
@@ -92,6 +110,12 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _day_mode and (event.is_action_pressed(&"retry") or event.is_action_pressed(&"back")):
+		# 하루 중의 결투는 한 번뿐이다. 다시 하기와 나가기를 듣지 않는다.
+		return
+	if _day_mode and event.is_action_pressed(ACCEPT_ACTION):
+		_finish_day_duel()
+		return
 	if event.is_action_pressed(&"retry"):
 		start_duel()
 	elif event.is_action_pressed(&"debug_toggle"):
@@ -157,3 +181,17 @@ func _draw() -> void:
 		var rect := Rect2(Vector2(cell.x * core.aim_direction, cell.y * core.aim_height), cell)
 		draw_rect(rect, Color(1, 1, 1, 0.05))
 		draw_rect(rect, Color(1, 1, 1, 0.25), false, 2.0)
+
+
+## 하루 모드: 끝난 결투의 기록을 day에 넘기고 정산 화면으로 간다. 한 번만 넘긴다.
+func _finish_day_duel() -> void:
+	if _day_reported or not core.ended or not _result_panel.is_showing():
+		return
+	if not day.finish_duel(core.record):
+		return
+	_day_reported = true
+	# 다른 씬 아래에 붙어 있을 때(테스트)는 씬을 바꾸지 않는다.
+	if get_tree().current_scene == self:
+		var session := get_node_or_null(^"/root/GameSession")
+		if session != null:
+			session.call("go_to_phase_scene")

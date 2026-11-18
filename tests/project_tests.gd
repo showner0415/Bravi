@@ -40,6 +40,9 @@ func t0_input_actions() -> String:
 				errs.append("%s 가 키가 아님" % action)
 			elif (ev as InputEventKey).physical_keycode != row[2]:
 				errs.append("%s physical_keycode %d" % [action, (ev as InputEventKey).physical_keycode])
+	# 화면을 넘기는 키(Space / Enter)는 엔진의 기본 액션을 쓴다. 이벤트가 여럿이라 위의 표에 넣지 않는다.
+	if not InputMap.has_action("ui_accept"):
+		errs.append("ui_accept 액션 없음")
 	return _result(errs, ", ")
 
 

@@ -7,8 +7,12 @@ const DT := preload("res://scripts/duel/duel_types.gd")
 
 const PANEL_SIZE := Vector2(820, 490)
 
+const DEFAULT_FOOTER := "R: 다시 하기 · Esc: 의뢰 선택"
+
 ## 화면에 표시한 충족도. 의뢰가 없는 자유 결투는 -1이다.
 var shown_score := -1
+## 맨 아래 안내 글. 하루 플레이 중의 결투는 다른 글을 넣는다.
+var footer_text := DEFAULT_FOOTER
 
 var _panel: ColorRect
 var _title: Label
@@ -67,7 +71,7 @@ func show_result(core: DuelCore, commission: Commission) -> void:
 		_score.text = _end_text(core)
 	lines.append("결투 시간 %.1f초" % record.elapsed)
 	_details.text = "\n".join(lines)
-	_footer.text = "R: 다시 하기 · Esc: 의뢰 선택"
+	_footer.text = footer_text
 	_panel.visible = true
 
 

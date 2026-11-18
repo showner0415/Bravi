@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="DayData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/economy/day_data.gd" id="1_day"]
+[ext_resource type="Script" path="res://scripts/commission/commission.gd" id="2_commission"]
+[ext_resource type="Resource" path="res://data/commissions/first_blood.tres" id="3_first"]
+[ext_resource type="Resource" path="res://data/commissions/feather_cut.tres" id="4_feather"]
+[ext_resource type="Resource" path="res://data/commissions/throw_match.tres" id="5_throw"]
+
+[resource]
+script = ExtResource("1_day")
+commissions = Array[ExtResource("2_commission")]([ExtResource("3_first"), ExtResource("4_feather"), ExtResource("5_throw")])

@@ -1,8 +1,10 @@
 extends Control
-## 의뢰 선택 화면. data/commissions의 의뢰마다 카드 하나를 만든다(전부 코드로, 애셋 없음).
+## 의뢰 선택 화면(연습). data/commissions의 의뢰마다 카드 하나를 만든다(전부 코드로, 애셋 없음).
+## Esc로 처음 화면에 돌아간다.
 
 const COMMISSION_DIR := "res://data/commissions"
 const DUEL_PATH := "res://scenes/duel/duel.tscn"
+const TITLE_PATH := "res://scenes/ui/title.tscn"
 
 
 func _ready() -> void:
@@ -22,7 +24,7 @@ func _ready() -> void:
 	margin.add_child(column)
 
 	var title := Label.new()
-	title.text = "명예 결투 대리 의뢰소 — 오늘의 의뢰"
+	title.text = "연습 — 의뢰를 골라 결투  (Esc: 처음 화면)"
 	title.add_theme_font_size_override("font_size", 30)
 	column.add_child(title)
 
@@ -96,3 +98,9 @@ func _start(commission: Commission) -> void:
 	if session != null:
 		session.set("commission", commission)
 	get_tree().change_scene_to_file(DUEL_PATH)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	# 다른 씬 아래에 붙어 있을 때(테스트)는 아무 데도 가지 않는다.
+	if event.is_action_pressed(&"back") and get_tree().current_scene == self:
+		get_tree().change_scene_to_file(TITLE_PATH)
