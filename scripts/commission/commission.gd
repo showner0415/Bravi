@@ -6,11 +6,21 @@ extends Resource
 ## 의뢰인의 사연 대사. 상대 버릇의 힌트를 담는다.
 @export_multiline var dialogue := ""
 @export var opponent: OpponentData
+## 이 의뢰의 결투에서 상대가 모자를 쓰는가. 모자는 상대의 고정 부위가 아니다.
+## 참이면 조준 상단의 베기 두 칸이 모자에 걸린다. 모자를 노리는 조건을 가진 의뢰는 참이어야 한다.
+@export var opponent_wears_hat := false
 @export var conditions: Array[CommissionCondition] = []
 @export var base_reward := 0
 @export var tip_max := 0
-## 평판 변화. 키: "accept", "success", "fail".
+## 평판 변화. 맡은 의뢰의 정산 때 한 번 더해진다(ReputationRules.settle_items).
+## "accept": 맡았으면 결과와 상관없이 / "success": 해냈을 때(충족도가 팁 문턱을 넘음) / "fail": 해내지 못했을 때(충족도 0).
 @export var reputation_effect := {"accept": 0, "success": 0, "fail": 0}
+## 의뢰인의 한마디 둘. 선택이다(비어 있으면 그 줄이 없을 때의 동작이다).
+## 해냈을 때: 정산에서 충족도가 팁 문턱을 넘으면 공통 문구 대신 나온다.
+## 흠 없이 해냈다고 단정하지 않는다(문턱과 100 사이의 점수에서도 나온다).
+@export_multiline var success_line := ""
+## 돌려보냈을 때: 다음 화면(다음 손님의 카운터 또는 폐점)의 흐린 한 줄로 나온다.
+@export_multiline var decline_line := ""
 
 
 ## 조건 설명을 한 줄씩.

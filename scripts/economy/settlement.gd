@@ -11,6 +11,11 @@ const REACTION_NONE := "…부탁드린 건 이게 아니었는데요. 이래서
 const REACTION_PARTIAL := "부탁드린 대로는 아니었지만, 애써 주신 만큼은 쳐 드릴게요."
 const REACTION_GOOD := "거의 부탁드린 그대로였어요. 고맙습니다, 조금 더 얹었어요."
 const REACTION_PERFECT := "부탁드린 그대로예요! 더 바랄 게 없네요. 넉넉히 넣었으니 받아 주세요."
+const MISSED_NOTE := "오늘은 더 싸울 수 없다 — 문밖의 손님 %d명은 돌아간다"
+# 전액 기준치의 한 줄. 기준치가 100보다 작을 때만 낸다. T33이 이 화면에서 찾는 낱말은 쓰지 않는다.
+const FULL_PAY_MET := "기준치 %d 이상 — 보수를 전부 받는다"
+const FULL_PAY_MET_BASE_ONLY := "기준치 %d 이상 — 기본 보수를 전부 받는다"
+const FULL_PAY_MISSED := "기준치 %d에 못 미쳐 깎였다"
 
 ## 하루 플레이의 상태. 비어 있으면 /root/GameSession의 것을 본다.
 var day: DayState
@@ -40,8 +45,9 @@ func _ready() -> void:
 
 
 func _build(result: Dictionary) -> void:
-	var header := Ui.add_label(self, "%d일차 · 의뢰 %d/%d 정산" % [
-		day.day_number, day.index + 1, day.commission_count()], 22)
+	var rules := day.effective_rules()
+	var header := Ui.add_label(self, "%d일차 · 오늘의 결투 %d/%d 정산" % [
+		day.day_number, day.results.size(), rules.duels_per_day], 22)
 	header.name = "Header"
 	header.position = Vector2(32, 20)
 
@@ -52,11 +58,23 @@ func _build(result: Dictionary) -> void:
 	Ui.add_counter_band(self)
 
 	var bubble := Ui.add_panel(self, Rect2(410, 70, 830, 96))
-	var reaction := Ui.add_wrapped(bubble, reaction_for(result["score"], day.rules.tip_floor), 22)
+	# 팁 문턱을 넘겼고 그 의뢰인의 한마디가 있으면 공통 문구 대신 그것을 보여 준다.
+	var words := reaction_for(result["score"], rules.tip_floor)
+	var own_words := String(result.get("success_line", ""))
+	if int(result["score"]) > rules.tip_floor and own_words != "":
+		words = own_words
+	var reaction := Ui.add_wrapped(bubble, words, 22)
 	reaction.name = "Reaction"
 
 	var ledger := Ui.add_panel(self, Rect2(410, 186, 830, 324), 10)
 	Ui.add_label(ledger, "충족도 %d" % result["score"], 34, Ui.GOLD)
+	var threshold := int(result.get("full_pay_score", 100))
+	if threshold < 100:
+		var note_text := FULL_PAY_MISSED
+		if result.get("full_pay", false):
+			note_text = FULL_PAY_MET if rules.full_pay_covers_tip else FULL_PAY_MET_BASE_ONLY
+		var note := Ui.add_label(ledger, note_text % threshold, 18, Ui.DIM)
+		note.name = "FullPayNote"
 	Ui.add_label(ledger, "기본 보수   %d / %d" % [result["base"], result["base_max"]], 22)
 	Ui.add_label(ledger, "팁   %d / %d" % [result["tip"], result["tip_max"]], 22)
 	shown_total = int(result["total"])
@@ -65,11 +83,41 @@ func _build(result: Dictionary) -> void:
 	if result["injured"]:
 		Ui.add_wrapped(ledger, "유효타를 맞았다 — 치료비 %d (가게를 닫을 때 낸다)" % result["medical_fee"], 20, Ui.RED)
 
+	# 평판 줄: 장부 패널과 버튼 사이. 결과에 평판이 없으면(평판이 없는 하루) 만들지 않는다.
+	if result.has("reputation_before") and day.has_reputation():
+		var line := Ui.add_label(self, reputation_line(result, day.reputation_rules), 18, Ui.GOLD)
+		line.name = "ReputationLine"
+		line.position = Vector2(432, 512)
+		line.size = Vector2(808, 28)
+
 	var proceed := Ui.add_button(self, "다음 의뢰인" if day.has_next_commission() else "가게를 닫는다", 28, "Proceed")
 	proceed.position = Vector2(900, 590)
 	proceed.size = Vector2(320, 76)
 	proceed.pressed.connect(_proceed)
 	proceed.grab_focus()
+
+	if day.duels_left() <= 0 and day.waiting_count() > 0:
+		# 결투 수가 찼는데 손님이 남았다. 그 손님들은 만나지 못한다.
+		var missed := Ui.add_wrapped(self, MISSED_NOTE % day.waiting_count(), 18, Ui.DIM)
+		missed.name = "MissedNote"
+		missed.position = Vector2(410, 604)
+		missed.size = Vector2(460, 52)
+
+
+## 정산의 평판 줄: "평판 9 → 11 · 해냈다 +1 · 흠 없이 +1". 항목이 없으면 "평판 9 — 그대로".
+## 별이 바뀌었으면 "별 3 → 4"를 붙인다.
+static func reputation_line(result: Dictionary, rules: ReputationRules) -> String:
+	var before := int(result.get("reputation_before", 0))
+	var after := int(result.get("reputation_after", before))
+	var items: Array = result.get("reputation_items", [])
+	if items.is_empty():
+		return "평판 %d — 그대로" % before
+	var parts: Array[String] = ["평판 %d → %d" % [before, after]]
+	for item: Array in items:
+		parts.append("%s %+d" % [item[0], int(item[1])])
+	if rules != null and rules.stars(before) != rules.stars(after):
+		parts.append("별 %d → %d" % [rules.stars(before), rules.stars(after)])
+	return " · ".join(PackedStringArray(parts))
 
 
 func _proceed() -> void:

@@ -28,6 +28,16 @@ extends RefCounted
 ##       없으면 타격과 같은 tick에 누른다. 무너진 상대에게 넣는 finisher에는 적용하지 않는다.
 ##   follow_up: {aim, max} — 내 공격의 판정 이벤트를 받으면, 입력이 받아들여지는 가장 이른 tick에
 ##       aim으로 한 번 더 공격한다. max는 횟수 제한(없거나 -1이면 무제한).
+##   lunge: {height} — 선공 쓰기. 상대가 방심했고(게이지가 다 찼다) 간격이 교전일 때, 상대가 대기로 돌아간 직후
+##       (in_out과 같은 두 순간)에 막기를 풀고 한 걸음 물러난다. 멀리에 닿아 "지금 좌클릭하면 런지"이면
+##       가운데·height로 누른다. 물러나기 전에 막기를 누르고 있었으면 런지의 판정 직후 다시 누른다
+##       (런지 뒤에 "새로 올린 막기"를 공짜로 얻지 않게). 게이지가 차기 전에는 아무것도 하지 않는다.
+##       빈틈 없는 막기 뒤에도 치는 설정, follow_up, in_out과 함께 쓰지 않는다.
+##   in_out: {enter, leave} — 들어갔다 나오기. 엉킴 게이지가 enter 이하이고 간격이 교전이면 밀착으로 들어가고,
+##       leave 이상이고 간격이 밀착이면 교전으로 나온다. 이동은 상대가 대기로 돌아간 직후에만 한다:
+##       막은 타격에 빈틈이 없었던 순간, 또는 내 공격의 판정이 끝난 순간. 그때 막기를 풀고 이동한다.
+##       다음 예비 동작이 시작되면 guard_fn대로 다시 막는다. follow_up과 함께 쓰지 않는다
+##       (밀려남으로 사라진 공격에는 판정 이벤트가 오지 않는다).
 
 const DT := preload("res://scripts/duel/duel_types.gd")
 
@@ -50,6 +60,18 @@ var _timed_attack_at := INF
 var _timed_attack_aim: Array = []
 var _pending_steps: Array[int] = []
 var _pending_attack: Variant = null
+## 선공 쓰기: 물러나는 중인가(멀리에 닿으면 런지를 누른다), 물러나기 전에 막기를 누르고 있었는가.
+var _lunge_armed := false
+var _lunge_regrip := false
+
+
+## 첫 피를 내는 봇의 설정: 막고, 빈틈이 생기는 공격 뒤에 중단 찌르기, 무너지면 중단 찌르기.
+## 테스트(T16·T22·T30·T32)와 하루 통째 스모크가 함께 쓴다.
+static func first_blood_cfg() -> Dictionary:
+	var aim := [DT.Direction.CENTER, DT.Height.MID]
+	var counter := func(ev: Dictionary) -> Variant:
+		return aim if float(ev["recovery"]) > 0.0 else null
+	return {"counter_fn": counter, "finisher": aim}
 
 
 func _init(p_core: DuelCore, p_cfg: Dictionary = {}) -> void:
@@ -91,6 +113,17 @@ func update() -> void:
 		if ready:
 			core.step(_pending_steps.pop_front())
 		return
+	if _lunge_armed:
+		if not ready:
+			return
+		# 물러나는 걸음이 끝났다. 런지가 나가는 때면 누른다(상대가 먼저 다가왔으면 누르지 않는다).
+		_lunge_armed = false
+		if core.is_lunge_now():
+			_attack([DT.Direction.CENTER, int(cfg["lunge"].get("height", DT.Height.MID))])
+		elif _lunge_regrip:
+			_lunge_regrip = false
+			core.set_guard(true)
+		return
 	if _pending_attack != null:
 		if ready or guarding:
 			var aim: Array = _pending_attack
@@ -109,6 +142,12 @@ func _on_event(ev: Dictionary) -> void:
 		DuelRecord.STRIKE:
 			_on_strike(ev)
 		DuelRecord.ATTACK:
+			if ev.get("lunge", false) and _lunge_regrip:
+				# 물러나기 전에 누르고 있던 막기를 다시 누른다(회수가 끝나면 들고만 있던 막기로 돌아온다).
+				_lunge_regrip = false
+				core.set_guard(true)
+			_in_out()
+			_lunge_retreat()
 			if cfg.has("follow_up"):
 				var limit := int(cfg["follow_up"].get("max", -1))
 				if limit < 0 or follow_ups_done < limit:
@@ -161,6 +200,10 @@ func _on_tell(ev: Dictionary) -> void:
 func _on_strike(ev: Dictionary) -> void:
 	var result: int = ev["result"]
 	if result == DT.StrikeResult.BLOCKED or result == DT.StrikeResult.PARRIED:
+		# 빈틈이 없는 타격을 막았다: 상대는 대기로 돌아갔다. 들어가거나 나올 기회다.
+		if is_zero_approx(float(ev["recovery"])):
+			_in_out()
+			_lunge_retreat()
 		if not cfg.has("counter_fn"):
 			return
 		var limit := int(cfg.get("max_counters", -1))
@@ -189,6 +232,41 @@ func _on_strike(ev: Dictionary) -> void:
 			return
 		_pending_steps = [1]
 		_pending_attack = aim
+
+
+## 들어갔다 나오기: 지금의 게이지와 간격으로 이동을 정한다. 이동하기로 했으면 막기를 풀고 걸음을 예약한다
+## (걸음은 READY가 되는 첫 tick에 나간다).
+func _in_out() -> void:
+	if not cfg.has("in_out") or core.ended or not _pending_steps.is_empty():
+		return
+	# 무너진 상대 앞에서는 움직이지 않는다(끝내기가 먼저다. 무너져 있는 동안에는 게이지도 차지 않는다).
+	if core.brain.state == DT.OpponentState.STAGGER:
+		return
+	var io: Dictionary = cfg["in_out"]
+	var gauge := core.bind_gauge()
+	var direction := 0
+	if core.distance == DT.Distance.ENGAGE and gauge <= float(io["enter"]):
+		direction = 1
+	elif core.distance == DT.Distance.CLOSE and gauge >= float(io["leave"]):
+		direction = -1
+	if direction == 0:
+		return
+	core.set_guard(false)
+	_pending_steps = [direction]
+
+
+## 선공 쓰기: 상대가 방심했으면 막기를 풀고 멀리로 물러난다(런지는 멀리에 닿은 뒤 update가 누른다).
+func _lunge_retreat() -> void:
+	if not cfg.has("lunge") or core.ended or _lunge_armed or not _pending_steps.is_empty():
+		return
+	if core.distance != DT.Distance.ENGAGE or core.complacency() < 1.0:
+		return
+	if core.brain.state == DT.OpponentState.STAGGER:
+		return
+	_lunge_regrip = core.guard_held
+	core.set_guard(false)
+	_pending_steps = [-1]
+	_lunge_armed = true
 
 
 func _attack(aim: Array) -> void:

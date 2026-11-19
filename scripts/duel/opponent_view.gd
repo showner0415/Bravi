@@ -27,6 +27,9 @@ const TINT_AMOUNT := 0.8
 const FLASH_TIME := 0.1
 const TOUCH_FLASH_TIME := 0.18
 const DEFLECT_TEXT_TIME := 0.6
+## 머리를 노린 공격을 피할 때 고개를 젖히는 시간(초)과 각도.
+const DODGE_TIME := 0.3
+const DODGE_HEAD_ROTATION := -0.35
 
 ## 포즈 좌표의 기준: 가슴 중앙의 어깨 높이.
 const CHEST := Vector2(0, -180)
@@ -38,6 +41,9 @@ const STRIKE_ROTATION: Array[float] = [-120.0, 180.0, 120.0]
 const STAGGER_ARM_DROP := Vector2(0, 50)
 const STAGGER_SWORD_ROTATION := 165.0
 const STAGGER_HEAD_ROTATION := 0.4
+## 방심한 대기 포즈: 팔은 그대로 두고 칼끝만 내린다(무너짐과 헷갈리지 않게 팔은 떨어뜨리지 않는다).
+const COMPLACENT_SWORD_ROTATION := -140.0
+const COMPLACENT_TEXT := "방심"
 
 ## 간격별 크기와 세로 이동(표시만).
 const DISTANCE_SCALE: Array[float] = [0.55, 0.85, 1.1]
@@ -67,6 +73,7 @@ var _touched_until := -INF
 ## 섣부른 공격을 받아넘겼을 때("받아넘김")나 버티기가 됐을 때("밀어붙임") 상태 글자 자리에 잠깐 띄우는 글자.
 var _deflect_text := ""
 var _deflect_until := -INF
+var _dodge_until := -INF
 
 var _ring_active := false
 var _ring_remaining := 0.0
@@ -74,6 +81,7 @@ var _ring_remaining := 0.0
 var _snap := true
 
 @onready var _head: Node2D = $Torso/Head
+@onready var _hat: CanvasItem = $Torso/Head/Hat
 @onready var _arm: Node2D = $Torso/Arm
 @onready var _sword: Node2D = $Torso/Arm/Hand/Sword
 @onready var _feather: CanvasItem = $Torso/Head/Hat/Feather
@@ -106,14 +114,18 @@ func _ready() -> void:
 	_state_label.z_index = 9
 
 
-func setup(opponent: OpponentData, weapon: WeaponData) -> void:
+## has_hat: 이 판의 상대가 모자를 쓰는가. 모자는 고정 부위가 아니라 의뢰가 씌운다.
+## 쓰지 않으면 모자 파츠를 숨긴다(노드는 그대로 둔다. 자식인 깃털과 글자도 함께 숨는다).
+func setup(opponent: OpponentData, weapon: WeaponData, has_hat := false) -> void:
 	_sword_side = opponent.sword_side
 	_parry_window = weapon.parry_window
 	_flash_until = -INF
 	_touched_until = -INF
 	_deflect_until = -INF
+	_dodge_until = -INF
 	_ring_active = false
 	_snap = true
+	_hat.visible = has_hat
 	_feather.visible = true
 	_head.rotation = 0.0
 	_arm.position = _shoulder()
@@ -146,6 +158,9 @@ func on_event(ev: Dictionary) -> void:
 				_touched_until = _clock + TOUCH_FLASH_TIME
 			if result == DT.AttackResult.HIT and ev["part"] == DT.Part.HAT:
 				_feather.visible = false
+			if ev["dodged"]:
+				# 얼굴을 지킨다: 고개를 젖혀 피한다.
+				_dodge_until = _clock + DODGE_TIME
 			if result == DT.AttackResult.BLOCKED and ev["rash"]:
 				_deflect_text = "받아넘김"
 				if ev["posture_gain"] > 0:
@@ -177,6 +192,13 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 	var head_target := 0.0
 	var exact := false
 	_ring_active = false
+	# 머리를 지키는 상대의 머리는 크게 열린 회수에서만 빈틈 색으로 물든다("파랗게 물든 부위가 열린 부위").
+	var head_closed := false
+
+	# 방심했고 대기 중이면 칼끝을 내린다. 예비 동작·회수·무너짐 중에는 그 상태의 표시가 우선이다.
+	var complacent := brain.state == DT.OpponentState.IDLE and core.has_lunge() and core.complacency() >= 1.0
+	if complacent:
+		sword_target = COMPLACENT_SWORD_ROTATION
 
 	match brain.state:
 		DT.OpponentState.TELL:
@@ -201,6 +223,11 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 				sword_target = STRIKE_ROTATION[atk.direction]
 			tint = COLOR_RECOVERY
 			text = "빈틈"
+			if core.opponent_data.guards_head:
+				if brain.wide_open:
+					text = "크게 열림!"
+				else:
+					head_closed = true
 		DT.OpponentState.STAGGER:
 			arm_target = _shoulder() + STAGGER_ARM_DROP
 			sword_target = STAGGER_SWORD_ROTATION
@@ -214,11 +241,14 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 	else:
 		_arm.position = _arm.position.lerp(arm_target, smooth)
 		_sword.rotation_degrees = lerpf(_sword.rotation_degrees, sword_target, smooth)
+	if _clock < _dodge_until:
+		head_target = DODGE_HEAD_ROTATION
 	_head.rotation = lerpf(_head.rotation, head_target, smooth)
 
 	# --- 색: 상태 색, 타격 순간의 빨강 번쩍임, 닿은 부위의 흰 번쩍임
 	if _clock < _flash_until:
 		tint = COLOR_STRIKE
+		head_closed = false
 	for part in PART_PATHS:
 		var shape := _shape_of(part)
 		if shape == null:
@@ -226,6 +256,8 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 		var base: Color = _base_colors[part]
 		if part == _touched_part and _clock < _touched_until:
 			shape.color = COLOR_TOUCHED
+		elif part == DT.Part.HEAD and head_closed:
+			shape.color = base
 		elif tint != null and TINTED.has(part):
 			shape.color = base.lerp(tint as Color, TINT_AMOUNT)
 		else:
@@ -234,6 +266,9 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 	# 받아넘김 글자는 상태 글자가 비어 있을 때만 보인다(예비 동작에 들어가면 공격 이름이 우선).
 	if text == "" and _clock < _deflect_until:
 		text = _deflect_text
+	# 방심: 대기 중이고 다른 글자가 없을 때만 보인다. 빈틈의 색은 쓰지 않는다(파란색은 "보통 공격이 닿는다"는 뜻이다).
+	if text == "" and complacent:
+		text = COMPLACENT_TEXT
 
 	# --- 상태 글자와 고리는 간격에 따라 커지거나 움직이지 않게 한다.
 	_state_label.text = text

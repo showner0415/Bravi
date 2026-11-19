@@ -23,6 +23,8 @@ var day: DayState
 var mouse_aim_enabled := true
 ## 0 이상이면 이 시드로 상대의 난수를 고정한다(테스트용).
 var rng_seed := -1
+## 비어 있지 않으면 로드한 무기 대신 이 무기로 판을 만든다(테스트용).
+var test_weapon: WeaponData
 
 var core: DuelCore
 
@@ -61,7 +63,7 @@ func start_duel() -> void:
 	var opponent: OpponentData = load(DEFAULT_OPPONENT_PATH)
 	if commission != null and commission.opponent != null:
 		opponent = commission.opponent
-	var weapon: WeaponData = load(WEAPON_PATH)
+	var weapon: WeaponData = test_weapon if test_weapon != null else load(WEAPON_PATH)
 	var rng := RandomNumberGenerator.new()
 	if rng_seed >= 0:
 		rng.seed = rng_seed
@@ -70,11 +72,17 @@ func start_duel() -> void:
 	var conditions: Array[CommissionCondition] = []
 	if commission != null:
 		conditions = commission.conditions
+	var rules: DuelRules = load(RULES_PATH)
+	if _day_mode:
+		# 하루 모드: 가진 업그레이드가 적용된 사본을 쓴다. 연습과 자유 결투는 기본 규칙 그대로다.
+		rules = day.effective_duel_rules(rules)
+	# 모자는 상대의 고정 부위가 아니라 의뢰가 씌운다(깃털 자르기). 의뢰가 없으면 모자도 없다.
+	var has_hat := commission != null and commission.opponent_wears_hat
 	core = DuelCore.new()
-	core.setup(load(RULES_PATH), weapon, opponent, rng, conditions)
+	core.setup(rules, weapon, opponent, rng, conditions, has_hat)
 	core.event.connect(_on_core_event)
 	_display_time = 0.0
-	_opponent_view.setup(opponent, weapon)
+	_opponent_view.setup(opponent, weapon, has_hat)
 	_sword_view.setup()
 	_hud.reset()
 	_hud.set_commission(commission)

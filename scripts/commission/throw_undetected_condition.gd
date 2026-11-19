@@ -98,7 +98,8 @@ func _tally(record: DuelRecord) -> Dictionary:
 				distance = ev["distance"]
 			DuelRecord.ATTACK:
 				# 공격 없이 버틴 시계는 교전·밀착에서 낸 공격의 판정 시각에 0으로 돌아간다.
-				if ev["pressed_distance"] != DuelTypes.Distance.FAR:
+				# 멀리에서 누른 공격은 닿지 않는 헛손질이라 세지 않는다. 런지는 멀리에서 누르지만 닿는 공격이라 센다.
+				if ev["pressed_distance"] != DuelTypes.Distance.FAR or ev.get("lunge", false):
 					idle_clock = 0.0
 				if ev["result"] == DuelTypes.AttackResult.GRAZE or ev["result"] == DuelTypes.AttackResult.HIT:
 					touches += 1

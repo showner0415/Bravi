@@ -7,15 +7,15 @@
 # 3. Judges the run: exit code 0, an "ALL PASS n/n" line, and no ERROR lines in the output.
 #    All three are required. Exits 0 on pass, 1 on fail.
 #
-# Godot path: -Godot argument, else the GODOT environment variable, else the default below.
+# Godot path: -Godot argument, else the GODOT environment variable, else the candidates in
+# tests/godot_path.ps1.
 param(
-	[string]$Godot = $env:GODOT
+	[string]$Godot
 )
 
-if (-not $Godot) {
-	$Godot = 'C:\godot\Godot_v4.7.2-stable_win64_console.exe'
-}
-if (-not (Test-Path -LiteralPath $Godot)) {
+. "$PSScriptRoot\godot_path.ps1"
+$Godot = Find-Godot $Godot
+if (-not (Test-Path -LiteralPath $Godot -PathType Leaf)) {
 	Write-Output "RESULT: FAIL (Godot not found: $Godot  -- pass -Godot <path> or set GODOT)"
 	exit 1
 }

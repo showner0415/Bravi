@@ -5,6 +5,7 @@
 [resource]
 script = ExtResource("1_rules")
 tip_floor = 70
+full_pay_score = 80
 rent = 60
 medical_fee = 20
 starting_money = 0

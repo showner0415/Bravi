@@ -33,6 +33,8 @@ func list(_tree: SceneTree) -> Array:
 		{"id": "T18", "name": "지기: 의심도와 게이지", "fn": t18_throw},
 		{"id": "T19", "name": "같은 봇이 세 의뢰에서 다른 결과", "fn": t19_same_bot},
 		{"id": "T20", "name": "의뢰별 판 길이 (시드 %d개)" % Core.SIM_SEEDS, "fn": t20_lengths},
+		{"id": "T41", "name": "첫 피: 손은 피, 머리 스침 감점은 꺼져 있다", "fn": t41_first_blood_parts},
+		{"id": "T44", "name": "유효타만 보는 조건과 일정의 비중", "fn": t44_hit_only},
 	]
 
 
@@ -197,6 +199,87 @@ func t16_first_blood() -> String:
 	return _result(errs)
 
 
+# ================================================================ T41 첫 피: 손과 머리 스침
+
+const VARIANT_FIRST_BLOOD_PATHS: Array[String] = [
+	"res://data/commissions/variants/first_blood_poor.tres",
+	"res://data/commissions/variants/first_blood_usurer.tres",
+]
+
+
+## 모자 없는 판(게임의 기본)에서 끝까지 돌린 코어. _duel은 모자를 쓴 판을 만든다.
+func _bare_duel(opp: OpponentData, cfg: Dictionary, conditions: Array[CommissionCondition]) -> DuelCore:
+	var never := func(_record: DuelRecord) -> int: return -1
+	return _h.call("_run", opp, cfg, never, Core.BASE_DELTA, 200.0, 1, conditions, false).core
+
+
+## 머리를 스쳐도 닿는 테스트용 상대(머리를 지키지 않는다). 스침마다 1칸이다.
+func _first_blood_opp(posture: int) -> OpponentData:
+	return _h.call("_make_opp", "cut", false, posture)
+
+
+func t41_first_blood_parts() -> String:
+	var errs: Array[String] = []
+	var AR := DT.AttackResult
+
+	# ---- 기본값의 조건: 머리 스침은 채점하지 않는다(지금의 채점)
+	var plain := FirstBloodCondition.new()
+	_expect(errs, plain.risky_graze_penalty == 0, "기본값의 머리 스침 감점이 0이 아님")
+	_expect(errs, plain.describe().contains("손") and not plain.describe().contains("스치기만"), "기본값의 설명 글이 다름: %s" % plain.describe())
+
+	# 머리를 두 번 스친 뒤 몸통 유효타 → 100점
+	var a := _bare_duel(_first_blood_opp(2), _cfg_counter(AIM_HIGH_THRUST, {"finisher": AIM_MID_THRUST}), _one(plain))
+	var a_hits := _attacks(a)
+	_expect(errs, a.end_reason == DT.EndReason.CONDITION, "[41a] 조건으로 끝나지 않음")
+	_expect(errs, a_hits.size() == 3 and a_hits[0]["part"] == DT.Part.HEAD and a_hits[0]["result"] == AR.GRAZE \
+		and a_hits[1]["part"] == DT.Part.HEAD and a_hits[2]["result"] == AR.HIT and a_hits[2]["part"] == DT.Part.TORSO,
+		"[41a] 머리 스침 둘과 몸통 유효타가 아님")
+	_expect(errs, plain.evaluate(a.record) == 100, "[41a] 점수 %d (기대 100)" % plain.evaluate(a.record))
+	_expect(errs, not " ".join(plain.explain(a.record)).contains("머리 스침"), "[41a] 감점이 꺼져 있는데 내역에 머리 스침 줄이 있음")
+
+	# 칼 든 손 유효타(모자 없는 판, 칼 쪽 상단 베기로 끝냄) → 100점
+	var hand_opp := _first_blood_opp(1)
+	var hand_aim := [hand_opp.sword_side, DT.Height.HIGH]
+	var b := _bare_duel(hand_opp, _cfg_counter(AIM_MID_THRUST, {"finisher": hand_aim}), _one(plain))
+	var b_hits := _attacks(b)
+	_expect(errs, b.end_reason == DT.EndReason.CONDITION, "[41b] 조건으로 끝나지 않음")
+	_expect(errs, b_hits.size() == 2 and b_hits[1]["result"] == AR.HIT and b_hits[1]["part"] == DT.Part.SWORD_HAND, "[41b] 칼 든 손 유효타가 아님")
+	_expect(errs, plain.evaluate(b.record) == 100, "[41b] 점수 %d (기대 100)" % plain.evaluate(b.record))
+
+	# ---- 감점을 10으로 적은 조건
+	var strict := FirstBloodCondition.new()
+	strict.risky_graze_penalty = 10
+	_expect(errs, strict.describe().contains("스치기만"), "감점을 켠 조건의 설명 글에 스침 문구가 없음")
+
+	# 머리를 두 번 스친 뒤 몸통 유효타 → 80점, 내역에 머리 스침 줄
+	var c := _bare_duel(_first_blood_opp(2), _cfg_counter(AIM_HIGH_THRUST, {"finisher": AIM_MID_THRUST}), _one(strict))
+	_expect(errs, strict.evaluate(c.record) == 80, "[41c] 점수 %d (기대 80)" % strict.evaluate(c.record))
+	_expect(errs, " ".join(strict.explain(c.record)).contains("머리 스침 2회"), "[41c] 내역에 머리 스침 줄이 없음")
+
+	# 머리를 한 번 스친 뒤 머리 유효타 → 30점
+	var d := _bare_duel(_first_blood_opp(1), _cfg_counter(AIM_HIGH_THRUST, {"finisher": AIM_HIGH_THRUST}), _one(strict))
+	_expect(errs, strict.evaluate(d.record) == 30, "[41d] 점수 %d (기대 30)" % strict.evaluate(d.record))
+
+	# 몸통을 세 번 스친 뒤 몸통 유효타 → 100점
+	var e := _bare_duel(_first_blood_opp(3), _cfg_counter(AIM_MID_THRUST, {"finisher": AIM_MID_THRUST}), _one(strict))
+	_expect(errs, _attacks(e).size() == 4 and strict.evaluate(e.record) == 100, "[41e] 점수 %d (기대 100)" % strict.evaluate(e.record))
+
+	# ---- 감점이 커도 0 아래로 내려가지 않는다
+	var harsh := FirstBloodCondition.new()
+	harsh.risky_graze_penalty = 50
+	var f := _bare_duel(_first_blood_opp(3), _cfg_counter(AIM_HIGH_THRUST, {"finisher": AIM_MID_THRUST}), _one(harsh))
+	_expect(errs, _attacks(f).size() == 4 and harsh.evaluate(f.record) == 0, "[41f] 점수 %d (기대 0)" % harsh.evaluate(f.record))
+
+	# ---- 로드한 세 첫 피 의뢰는 감점이 꺼져 있다(계획 007이 켜지 않기로 한 것. 켜려면 이 줄도 함께 고친다)
+	var paths: Array[String] = [FIRST_BLOOD_PATH]
+	paths.append_array(VARIANT_FIRST_BLOOD_PATHS)
+	for path in paths:
+		var commission := load(path) as Commission
+		var condition := commission.conditions[0] as FirstBloodCondition if commission != null else null
+		_expect(errs, condition != null and condition.risky_graze_penalty == 0, "[%s] 머리 스침 감점이 켜져 있거나 첫 피 조건이 아님" % path)
+	return _result(errs)
+
+
 # ================================================================ T17 깃털
 
 func t17_feather() -> String:
@@ -238,6 +321,127 @@ func t17_feather() -> String:
 	var d := _duel(_h.call("_make_opp", "thrust"), {"guard_fn": none}, conds)
 	_expect(errs, d.end_reason == DT.EndReason.PLAYER_DEFEATED, "[17d] 패배로 끝나지 않음")
 	_expect(errs, cond.evaluate(d.record) == 0, "[17d] 점수 %d (기대 0)" % cond.evaluate(d.record))
+	return _result(errs)
+
+
+# ================================================================ T44 유효타만 보는 조건
+
+const SCHEDULE_PATH := "res://data/day_schedule.tres"
+const KIND_FIRST_BLOOD := "첫 피"
+const KIND_TARGET_HIT_ONLY := "지정 부위·유효타만"
+const KIND_TARGET_GRAZE := "지정 부위·스침도"
+const KIND_THROW := "지기"
+const KIND_OTHER := "그 밖"
+const KINDS: Array[String] = [KIND_FIRST_BLOOD, KIND_TARGET_HIT_ONLY, KIND_TARGET_GRAZE, KIND_THROW, KIND_OTHER]
+
+
+## 의뢰의 종류(첫 조건으로 본다).
+func _kind(commission: Commission) -> String:
+	if commission == null or commission.conditions.is_empty():
+		return KIND_OTHER
+	var condition := commission.conditions[0]
+	if condition is FirstBloodCondition:
+		return KIND_FIRST_BLOOD
+	if condition is TargetPartCondition:
+		return KIND_TARGET_HIT_ONLY if (condition as TargetPartCondition).graze_penalty <= 0 else KIND_TARGET_GRAZE
+	if condition is ThrowUndetectedCondition:
+		return KIND_THROW
+	return KIND_OTHER
+
+
+func t44_hit_only() -> String:
+	var errs: Array[String] = []
+	var AR := DT.AttackResult
+	var close := {"want_distance": DT.Distance.CLOSE, "finisher": AIM_HIGH_CUT}
+
+	# ---- 유효타만 보는 조건(스침 감점 0, 지정 부위 모자)
+	var hit_only := TargetPartCondition.new()
+	hit_only.target_part = DT.Part.HAT
+	hit_only.graze_penalty = 0
+
+	# 몸통을 세 번 스친 뒤 모자 유효타 → 조건으로 끝나고 100점, 내역에 스침 줄이 없다
+	var a := _duel(_h.call("_make_opp", "cut", false, 3),
+		_cfg_counter_sequence([AIM_MID_THRUST, AIM_MID_THRUST, AIM_MID_THRUST], close), _one(hit_only))
+	var a_hits := _attacks(a)
+	_expect(errs, a.end_reason == DT.EndReason.CONDITION, "[44a] 조건으로 끝나지 않음")
+	_expect(errs, a_hits.size() == 4, "[44a] 공격 수 %d (기대 4: 몸통 스침 셋, 모자 유효타)" % a_hits.size())
+	if a_hits.size() == 4:
+		for i in 3:
+			_expect(errs, a_hits[i]["result"] == AR.GRAZE and a_hits[i]["part"] == DT.Part.TORSO, "[44a] %d번째 공격이 몸통 스침이 아님" % (i + 1))
+		_expect(errs, a_hits[3]["result"] == AR.HIT and a_hits[3]["part"] == DT.Part.HAT, "[44a] 넷째 공격이 모자 유효타가 아님")
+	_expect(errs, hit_only.evaluate(a.record) == 100, "[44a] 점수 %d (기대 100)" % hit_only.evaluate(a.record))
+	_expect(errs, not " ".join(hit_only.explain(a.record)).contains("스침"), "[44a] 유효타만 보는데 내역에 스침 줄이 있음")
+
+	# 무너진 상대의 몸통에 유효타 한 번 뒤 모자 유효타 → 70점. 몸통 유효타로는 끝나지 않는다.
+	var b_cfg := _cfg_counter(AIM_HIGH_CUT, {
+		"want_distance": DT.Distance.CLOSE, "finisher": AIM_MID_THRUST,
+		"follow_up": {"aim": AIM_HIGH_CUT},
+	})
+	var b := _duel(_h.call("_make_opp", "cut", false, 1), b_cfg, _one(hit_only))
+	var b_hits := _attacks(b)
+	_expect(errs, b.end_reason == DT.EndReason.CONDITION, "[44b] 조건으로 끝나지 않음")
+	_expect(errs, b_hits.size() == 3 and b_hits[1]["result"] == AR.HIT and b_hits[1]["part"] == DT.Part.TORSO \
+		and b_hits[2]["result"] == AR.HIT and b_hits[2]["part"] == DT.Part.HAT, "[44b] 몸통 유효타 뒤 모자 유효타가 아님")
+	_expect(errs, hit_only.evaluate(b.record) == 70, "[44b] 점수 %d (기대 70)" % hit_only.evaluate(b.record))
+
+	# 모자를 못 자르고 지면 0점
+	var none := func(_a: AttackData, _i: int) -> StringName: return &"none"
+	var c := _duel(_h.call("_make_opp", "thrust"), {"guard_fn": none}, _one(hit_only))
+	_expect(errs, c.end_reason == DT.EndReason.PLAYER_DEFEATED, "[44c] 패배로 끝나지 않음")
+	_expect(errs, hit_only.evaluate(c.record) == 0, "[44c] 점수 %d (기대 0)" % hit_only.evaluate(c.record))
+
+	# ---- 스침도 보는 조건(스크립트 기본값): 몸통을 두 번 스친 뒤 모자 유효타 → 80점
+	var with_graze := TargetPartCondition.new()
+	with_graze.target_part = DT.Part.HAT
+	_expect(errs, with_graze.graze_penalty == 10, "스크립트 기본값의 스침 감점 %d (기대 10)" % with_graze.graze_penalty)
+	var d := _duel(_h.call("_make_opp", "cut", false, 3),
+		_cfg_counter_sequence([AIM_MID_THRUST, AIM_MID_THRUST, AIM_HIGH_CUT], close), _one(with_graze))
+	_expect(errs, d.end_reason == DT.EndReason.CONDITION, "[44d] 조건으로 끝나지 않음")
+	_expect(errs, with_graze.evaluate(d.record) == 80, "[44d] 점수 %d (기대 80)" % with_graze.evaluate(d.record))
+	_expect(errs, " ".join(with_graze.explain(d.record)).contains("다른 부위 스침 2회"), "[44d] 스침도 보는데 내역에 스침 줄이 없음")
+
+	# ---- 설명 글이 종류를 말한다
+	var hit_text := hit_only.describe()
+	var graze_text := with_graze.describe()
+	_expect(errs, hit_text.contains("유효타만 본다") and not hit_text.contains("스치기만"), "유효타만 보는 조건의 설명 글이 다름: %s" % hit_text)
+	_expect(errs, graze_text.contains("스침도 본다") and graze_text.contains("스치기만"), "스침도 보는 조건의 설명 글이 다름: %s" % graze_text)
+	_expect(errs, FirstBloodCondition.new().describe().contains("유효타만 본다"), "기본값의 첫 피 조건의 설명 글에 '유효타만 본다'가 없음")
+
+	# ---- 로드한 깃털 의뢰: 구조만 본다(스침 감점의 값은 조율값이라 통과 조건이 아니다)
+	var feather := load(FEATHER_PATH) as Commission
+	var feather_cond := feather.conditions[0] as TargetPartCondition if feather != null and feather.conditions.size() == 1 else null
+	_expect(errs, feather_cond != null and feather_cond.target_part == DT.Part.HAT, "깃털 의뢰의 조건이 모자를 노리는 TargetPartCondition이 아님")
+
+	# ---- INFO (통과 조건 아님): 일정의 손님 자리를 종류별로 센다
+	var schedule := load(SCHEDULE_PATH) as DaySchedule
+	if schedule == null:
+		errs.append("%s 가 DaySchedule로 로드되지 않음" % SCHEDULE_PATH)
+		return _result(errs)
+	var counts := {}
+	for kind in KINDS:
+		counts[kind] = 0
+	var day_lines: Array[String] = []
+	for i in schedule.days.size():
+		var names: Array[String] = []
+		if schedule.days[i] != null:
+			for commission in schedule.days[i].commissions:
+				var kind := _kind(commission)
+				counts[kind] += 1
+				names.append(kind)
+		day_lines.append("  INFO %d일차: %s" % [i + 1, " → ".join(PackedStringArray(names))])
+	var parts: Array[String] = []
+	for kind in KINDS:
+		if kind != KIND_OTHER or counts[kind] > 0:
+			parts.append("%s %d" % [kind, counts[kind]])
+	var fewest := true
+	for kind in [KIND_FIRST_BLOOD, KIND_TARGET_HIT_ONLY, KIND_THROW]:
+		if counts[KIND_TARGET_GRAZE] >= counts[kind]:
+			fewest = false
+	print("  INFO 일정의 손님 자리: %s — 스침도 보는 의뢰가 가장 적은가: %s" % [", ".join(PackedStringArray(parts)), "예" if fewest else "아니오"])
+	for line in day_lines:
+		print(line)
+	if feather_cond != null:
+		print("  INFO 로드한 깃털 의뢰의 스침 감점 %d (%s)" % [feather_cond.graze_penalty, _kind(feather)])
 	return _result(errs)
 
 

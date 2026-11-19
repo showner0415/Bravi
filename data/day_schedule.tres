@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="DaySchedule" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/economy/day_schedule.gd" id="1_schedule"]
+[ext_resource type="Script" path="res://scripts/economy/day_data.gd" id="2_day"]
+[ext_resource type="Resource" path="res://data/days/day_01.tres" id="3_day01"]
+[ext_resource type="Resource" path="res://data/days/day_02.tres" id="4_day02"]
+[ext_resource type="Resource" path="res://data/days/day_03.tres" id="5_day03"]
+[ext_resource type="Resource" path="res://data/days/day_04.tres" id="6_day04"]
+
+[resource]
+script = ExtResource("1_schedule")
+days = Array[ExtResource("2_day")]([ExtResource("3_day01"), ExtResource("4_day02"), ExtResource("5_day03"), ExtResource("6_day04")])

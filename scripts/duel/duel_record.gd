@@ -11,13 +11,19 @@ const TELL_START := &"tell_start"
 ## braced(들고만 있던 막기로 표시된 공격을 버텼는가. 버티기면 recovery는 0),
 ## posture_loss(이 타격으로 실제로 깎인 내 자세 칸 수. 닿지 않았거나 유효타면 0)
 const STRIKE := &"strike"
-## 플레이어 공격 시작. direction, height, part, judge_time, rash(섣부른 공격인가)
+## 플레이어 공격 시작. direction, height, part, judge_time, rash(섣부른 공격인가), lunge(런지인가)
 const ATTACK_START := &"attack_start"
 ## 플레이어 공격 판정. result(AttackResult), direction, height, part, distance(판정 시각의 간격),
-## pressed_distance(누른 순간의 간격), opponent_posture, opponent_state(판정 직후), rash, posture_gain(섣부른 공격으로 상대가 되찾은 칸 수)
+## pressed_distance(누른 순간의 간격), opponent_posture, opponent_state(판정 직후), rash, posture_gain(섣부른 공격으로 상대가 되찾은 칸 수),
+## cells(이 공격으로 실제로 깎인 상대 자세 칸 수. 스침이 아니면 0),
+## dodged(머리를 노렸는데 상대가 피했는가. 피했으면 result는 BLOCKED다),
+## lunge(런지인가. 런지는 멀리에서 눌러 교전에 닿으며 판정한다: pressed_distance는 멀리, distance는 교전이다)
 const ATTACK := &"attack"
-## 간격 변경. distance, by("player"/"opponent")
+## 간격 변경. distance, by("player"/"opponent"/"bind" — bind는 엉킴으로 밀려난 것)
 const DISTANCE := &"distance"
+## 엉킴이 다 차서 밀려나기 시작함. end_time(교전에 닿는 시각),
+## cancelled_attack(예비 중이던 공격이 판정 없이 사라졌는가)
+const SHOVE := &"shove"
 ## 상대 무너짐 시작. end_time
 const STAGGER_START := &"stagger_start"
 ## 상대 무너짐 끝. posture(회복된 자세)

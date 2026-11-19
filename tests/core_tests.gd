@@ -20,8 +20,9 @@ const EPS := 1e-6
 const SIM_SEEDS := 30  # 시드 1..30
 const SIM_DELTA := 1.0 / 60.0
 ## T13 통과 기준(초): "막기만 하고 베기 뒤에만 받아치는 봇"의 평균 판 길이.
-const GUARD_MEAN_MIN := 40.0
-const GUARD_MEAN_MAX := 60.0
+## 상대 자세 9에 맞춰 40~60초에서 옮겼다(계획 009). 하한은 설계 원칙 1의 아래쪽(30초)이고 폭은 그대로다.
+const GUARD_MEAN_MIN := 30.0
+const GUARD_MEAN_MAX := 50.0
 ## "막을 때마다 받아치는 봇"의 평균이 막기 봇의 평균보다 이만큼(초) 이상 길어야 한다.
 const RASH_MEAN_GAP := 15.0
 ## "막기를 누르고만 있는 봇"의 평균이 막기 봇의 평균보다 이만큼(초) 이상 길어야 한다(올려 막기).
@@ -218,19 +219,34 @@ func _cfg_mid_then_high() -> Dictionary:
 	return {"counter_fn": counter, "max_counters": 2}
 
 
+## 로드한 무기의 사본에 엉킴의 세 값을 직접 적은 것. 차는 시간이 0이면 엉킴 없는 무기다.
+## 로드한 Resource는 고치지 않는다.
+func _weapon(bind_time := 0.0, release_time := 0.0, shove_time := 0.45) -> WeaponData:
+	var w := (load(WEAPON_PATH) as WeaponData).duplicate() as WeaponData
+	w.close_bind_time = bind_time
+	w.close_bind_release_time = release_time
+	w.close_shove_time = shove_time
+	return w
+
+
+## has_hat: 상대가 모자를 쓴 판인가. 기본은 참이다 — 이 파일과 commission_tests의 시나리오는
+## 상단 베기 = 모자를 전제로 한다. 모자 없는 판(게임의 기본)은 거짓을 넘겨 만든다.
+## weapon: 내 무기. null이면 엉킴 없는 무기다 — 기존 시나리오와 측정은 "엉킴 없는 판"이다.
+## 엉킴을 보는 테스트는 값을 직접 적은 무기를 넘긴다.
 func _make_core(opp: OpponentData, seed_value: int,
-		conditions: Array[CommissionCondition] = []) -> DuelCore:
+		conditions: Array[CommissionCondition] = [], has_hat := true, weapon: WeaponData = null) -> DuelCore:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_value
 	var core := DuelCore.new()
-	core.setup(load(RULES_PATH), load(WEAPON_PATH), opp, rng, conditions)
+	core.setup(load(RULES_PATH), weapon if weapon != null else _weapon(), opp, rng, conditions, has_hat)
 	return core
 
 
 func _run(opp: OpponentData, cfg: Dictionary, stop: Callable, delta := BASE_DELTA,
-		max_time := 40.0, seed_value := 1, conditions: Array[CommissionCondition] = []) -> Run:
+		max_time := 40.0, seed_value := 1, conditions: Array[CommissionCondition] = [],
+		has_hat := true, weapon: WeaponData = null) -> Run:
 	var r := Run.new()
-	r.core = _make_core(opp, seed_value, conditions)
+	r.core = _make_core(opp, seed_value, conditions, has_hat, weapon)
 	r.bot = Bot.new(r.core, cfg)
 	while not r.core.ended and r.core.time < max_time:
 		r.core.tick(delta)
@@ -461,8 +477,14 @@ func _build_scenarios() -> void:
 		func() -> Dictionary: return {"guard_fn": parry_all, "counter_fn": counter_high, "max_counters": 1},
 		_stop_at(DuelRecord.ATTACK),
 		func(r: Run, e: Array[String]) -> void:
-			_expect(e, _ev(r, DuelRecord.STRIKE)["result"] == SR.PARRIED, "패리가 아님")
-			_expect(e, _ev(r, DuelRecord.ATTACK)["result"] == AR.BLOCKED, "막힘이 아님"))
+			var strike := _ev(r, DuelRecord.STRIKE)
+			_expect(e, strike["result"] == SR.PARRIED, "패리가 아님")
+			# 닿는 쪽인지는 데이터가 정한다: 패리당한 찌르기의 빈틈이 상단 베기의 예비 시간보다 길면 스침이다.
+			var windup := r.core.weapon.windup_for(AIM_HIGH_CUT[0], AIM_HIGH_CUT[1], DT.Distance.ENGAGE)
+			var reaches: bool = float(strike["recovery"]) > windup
+			var want: int = AR.GRAZE if reaches else AR.BLOCKED
+			_expect(e, _ev(r, DuelRecord.ATTACK)["result"] == want, "빈틈 %.2f초에 상단 베기 %.2f초인데 %s이 아님" % [
+				strike["recovery"], windup, "스침" if reaches else "막힘"]))
 
 	# ---------------- T5 버릇
 	_add("5a 3연속 막힘 뒤 큰 베기, 막고 상단 베기", "T5",
@@ -960,7 +982,8 @@ func t11_margins() -> String:
 	rows.append(["패리당한 찌르기", thrust_parried, "중단 베기", mid_cut, true])
 	rows.append(["패리당한 찌르기", thrust_parried, "상단 찌르기", high_thrust, true])
 	rows.append(["패리당한 찌르기", thrust_parried, "밀착 상단 베기", close_high_cut, true])
-	rows.append(["패리당한 찌르기", thrust_parried, "상단 베기", high_cut, false])
+	# 닿는 쪽인지는 패리 덧붙임이 정한다(조율값). 어느 쪽이든 여유 0.1초는 지켜야 한다.
+	rows.append(["패리당한 찌르기", thrust_parried, "상단 베기", high_cut, thrust_parried > high_cut])
 	var big_whiffed := big.recovery_time * o.whiff_recovery_multiplier
 	rows.append(["큰 베기(막힘)", big.recovery_time, "상단 베기", high_cut, true])
 	rows.append(["헛친 큰 베기", big_whiffed, "전진 + 찌르기", step + mid_thrust, true])
@@ -1259,7 +1282,7 @@ func _cfg_rash_one_in_three() -> Dictionary:
 ## 시드 1..SIM_SEEDS로 판을 돌려 길이 통계를 낸다.
 ## lengths는 시드 순서의 판 길이, rash와 regained는 판당 평균 섣부른 공격 수와 상대가 되찾은 칸 수.
 func _simulate(opp: OpponentData, cfg_fn: Callable,
-		conditions: Array[CommissionCondition] = []) -> Dictionary:
+		conditions: Array[CommissionCondition] = [], has_hat := true, weapon: WeaponData = null) -> Dictionary:
 	var total := 0.0
 	var shortest := INF
 	var longest := 0.0
@@ -1270,9 +1293,11 @@ func _simulate(opp: OpponentData, cfg_fn: Callable,
 	var rash := 0
 	var regained := 0
 	var habit_tells := 0
+	var big_grazes := 0
+	var dodges := 0
 	var never := func(_record: DuelRecord) -> int: return -1
 	for s in range(1, SIM_SEEDS + 1):
-		var r := _run(opp, cfg_fn.call(), never, SIM_DELTA, 10000.0, s, conditions)
+		var r := _run(opp, cfg_fn.call(), never, SIM_DELTA, 10000.0, s, conditions, has_hat, weapon)
 		var length := r.core.record.elapsed
 		lengths.append(length)
 		habit_tells += r.core.record.count_where(DuelRecord.TELL_START, "is_habit", true)
@@ -1280,6 +1305,10 @@ func _simulate(opp: OpponentData, cfg_fn: Callable,
 			if ev["rash"]:
 				rash += 1
 			regained += int(ev["posture_gain"])
+			if int(ev["cells"]) >= 2:
+				big_grazes += 1
+			if ev["dodged"]:
+				dodges += 1
 		total += length
 		shortest = minf(shortest, length)
 		longest = maxf(longest, length)
@@ -1296,6 +1325,8 @@ func _simulate(opp: OpponentData, cfg_fn: Callable,
 		"timeouts": timeouts, "wins": wins, "losses": losses,
 		"lengths": lengths, "rash": float(rash) / SIM_SEEDS, "regained": float(regained) / SIM_SEEDS,
 		"big": float(habit_tells) / SIM_SEEDS,
+		# 판당 2칸 이상 깎은 스침의 수, 머리를 노렸다가 피해진 공격의 수.
+		"big_grazes": float(big_grazes) / SIM_SEEDS, "dodges": float(dodges) / SIM_SEEDS,
 	}
 
 

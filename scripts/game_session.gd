@@ -3,6 +3,9 @@ extends Node
 
 const DAY_PATH := "res://data/days/day_01.tres"
 const ECONOMY_PATH := "res://data/economy_rules.tres"
+const CATALOG_PATH := "res://data/upgrade_catalog.tres"
+const SCHEDULE_PATH := "res://data/day_schedule.tres"
+const REPUTATION_PATH := "res://data/reputation_rules.tres"
 const TITLE_PATH := "res://scenes/ui/title.tscn"
 const SELECT_PATH := "res://scenes/ui/commission_select.tscn"
 # 씬 경로는 문자열로 둔다(preload하면 아직 없는 씬 때문에 이 스크립트가 로드되지 않는다).
@@ -31,10 +34,13 @@ static func scene_for_phase(phase: int) -> String:
 	return TITLE_PATH
 
 
-## 하루 플레이를 새로 시작한다(1일차, 시작 소지금).
+## 하루 플레이를 새로 시작한다(1일차, 시작 소지금, 시작 평판, 가진 업그레이드 없음).
 func start_day_play() -> void:
 	commission = null
-	day = DayState.new(load(ECONOMY_PATH) as EconomyRules, load(DAY_PATH) as DayData)
+	# 날마다의 손님은 일정이 준다. day_01은 일정이 그날의 하루를 주지 못할 때의 대체값이다.
+	day = DayState.new(load(ECONOMY_PATH) as EconomyRules, load(DAY_PATH) as DayData,
+		load(CATALOG_PATH) as UpgradeCatalog, load(SCHEDULE_PATH) as DaySchedule,
+		load(REPUTATION_PATH) as ReputationRules)
 
 
 ## 하루 플레이를 버린다.

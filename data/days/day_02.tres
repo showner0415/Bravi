@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="DayData" load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/economy/day_data.gd" id="1_day"]
+[ext_resource type="Script" path="res://scripts/commission/commission.gd" id="2_commission"]
+[ext_resource type="Resource" path="res://data/commissions/variants/first_blood_poor.tres" id="3_poor"]
+[ext_resource type="Resource" path="res://data/commissions/variants/legs_only.tres" id="4_legs"]
+[ext_resource type="Resource" path="res://data/commissions/variants/throw_bet.tres" id="5_bet"]
+[ext_resource type="Resource" path="res://data/commissions/feather_cut.tres" id="6_feather"]
+[ext_resource type="Resource" path="res://data/commissions/first_blood.tres" id="7_first"]
+[ext_resource type="Resource" path="res://data/commissions/throw_match.tres" id="8_throw"]
+[ext_resource type="Resource" path="res://data/commissions/variants/first_blood_usurer.tres" id="9_usurer"]
+
+[resource]
+script = ExtResource("1_day")
+commissions = Array[ExtResource("2_commission")]([ExtResource("3_poor"), ExtResource("4_legs"), ExtResource("5_bet"), ExtResource("6_feather"), ExtResource("7_first"), ExtResource("8_throw"), ExtResource("9_usurer")])
+base_guests = 5

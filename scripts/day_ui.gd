@@ -124,6 +124,28 @@ static func add_counter_band(parent: Control) -> void:
 	parent.add_child(top)
 
 
+## 방금 돌려보낸 손님의 한마디(흐린 한 줄, 노드 이름 DeclinedLine). 카운터와 폐점이 함께 쓴다.
+## declined는 DayState.last_declined다. 돌려보낸 손님이 없거나 한마디가 비어 있으면 만들지 않고 null을 돌려준다.
+static func add_declined_line(parent: Control, declined: Dictionary, rect: Rect2) -> Label:
+	var line := String(declined.get("line", ""))
+	if line == "":
+		return null
+	var label := add_wrapped(parent, "돌려보낸 손님 — %s: %s" % [declined.get("client_name", ""), line], 16, DIM)
+	label.name = "DeclinedLine"
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.position = rect.position
+	label.size = rect.size
+	return label
+
+
+## 평판을 글로: "평판 9 · 별 3/5". 카운터·정산·폐점이 함께 쓴다. 평판이 없는 day면 빈 글이다.
+## 별은 숫자로 적는다(별 문자는 글꼴에 없을 수 있다).
+static func reputation_text(day: DayState) -> String:
+	if day == null or not day.has_reputation():
+		return ""
+	return "평판 %d · 별 %d/%d" % [day.reputation, day.reputation_stars(), day.reputation_rules.max_stars()]
+
+
 ## 화면에 보이는 글자(Label과 Button)를 전부 이어 붙인다. 테스트가 쓴다.
 static func all_text(node: Node) -> String:
 	var parts: Array[String] = []

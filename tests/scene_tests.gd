@@ -3,6 +3,7 @@ extends RefCounted
 
 const OPPONENT_VIEW_PATH := "res://scenes/duel/opponent_view.tscn"
 const DUEL_PATH := "res://scenes/duel/duel.tscn"
+const WEAPON_PATH := "res://data/weapons/rapier.tres"
 const Bot := preload("res://tests/duel_bots.gd")
 
 ## 이후 아트와 리깅의 기준이 되는 파츠 경로 7개.
@@ -20,6 +21,7 @@ func list(tree: SceneTree) -> Array:
 	return [
 		{"id": "T14", "name": "상대 파츠 경로 7개, 결투 씬 600프레임", "fn": t14_scene},
 		{"id": "T24", "name": "실제 입력 이벤트: 마우스 조준, 좌·우클릭, W/S, F1, Esc, R", "fn": t24_real_input},
+		{"id": "T42", "name": "씬: 모자, 조준 윗줄, 칸 수와 머리 지키기의 표시", "fn": t42_hat_and_display},
 	]
 
 
@@ -85,6 +87,10 @@ func t14_scene() -> String:
 ## F1 디버그의 포맷 문자열이 오류 없이 도는지 본다. 기대값은 로드한 상대 데이터에서 끌어온다
 ## (스위치 표의 값을 바꿔도 이 테스트는 통과해야 한다).
 func _brace_and_close_hit(duel: Node, errs: Array[String]) -> void:
+	# 이 판은 엉킴 없는 무기로 돌린다(막기를 누른 채 밀착에 오래 머문다). 엉킴이 있는 씬 경로는 T48이 본다.
+	var no_bind := (load(WEAPON_PATH) as WeaponData).duplicate() as WeaponData
+	no_bind.close_bind_time = 0.0
+	duel.set("test_weapon", no_bind)
 	duel.call("start_duel")
 	var core: DuelCore = duel.get("core")
 	var hud := duel.get_node("HUD")
@@ -248,5 +254,167 @@ func t24_real_input() -> String:
 	elif new_core.time != 0.0 or new_core.player_state != DuelTypes.PlayerState.READY:
 		errs.append("R 뒤의 새 판이 처음 상태가 아님")
 
+	duel.free()
+	return "OK" if errs.is_empty() else ", ".join(errs)
+
+
+# ================================================================ T42 모자와 표시
+
+const FEATHER_PATH := "res://data/commissions/feather_cut.tres"
+const FIRST_BLOOD_PATH := "res://data/commissions/first_blood.tres"
+const HAT_PATH := ^"OpponentView/Torso/Head/Hat"
+
+
+## 결투 씬을 붙인다(마우스 조준 끔, 시드 1). commission이 null이면 의뢰 없는 결투다.
+func _spawn_duel(commission: Commission) -> Node:
+	var duel: Node = (load(DUEL_PATH) as PackedScene).instantiate()
+	if commission != null:
+		duel.set("commission", commission)
+	duel.set("mouse_aim_enabled", false)
+	duel.set("rng_seed", 1)
+	_tree.root.add_child(duel)
+	return duel
+
+
+## 그 조준으로 한 프레임 흘린 뒤의 조준 글자.
+func _aim_text(duel: Node, direction: int, height: int) -> String:
+	var core: DuelCore = duel.get("core")
+	core.set_aim(direction, height)
+	duel.call("advance", 1.0 / 60.0)
+	return (duel.get_node("HUD").get("_aim_label") as Label).text
+
+
+func t42_hat_and_display() -> String:
+	var errs: Array[String] = []
+	var D := DuelTypes.Direction
+	var H := DuelTypes.Height
+	var P := DuelTypes.Part
+
+	# ---- 깃털 의뢰: 모자를 쓴 판
+	var feather := _spawn_duel(load(FEATHER_PATH) as Commission)
+	var core: DuelCore = feather.get("core")
+	var sword_side: int = core.opponent_data.sword_side
+	var off_side: int = D.RIGHT if sword_side == D.LEFT else D.LEFT
+	if not core.opponent_has_hat:
+		errs.append("깃털 의뢰의 판이 모자를 쓴 판이 아님")
+	if not (feather.get_node(HAT_PATH) as CanvasItem).visible:
+		errs.append("깃털 의뢰인데 모자 파츠가 보이지 않음")
+	core.set_aim(off_side, H.HIGH)
+	if core.current_aim_part() != P.HAT:
+		errs.append("깃털 의뢰의 반대쪽 상단 베기가 모자가 아님")
+	feather.call("start_duel")
+	core = feather.get("core")
+	if not core.opponent_has_hat or not (feather.get_node(HAT_PATH) as CanvasItem).visible:
+		errs.append("깃털 의뢰에서 새 판을 시작하니 모자가 사라짐")
+	feather.free()
+
+	# ---- 첫 피 의뢰와 의뢰 없는 결투: 모자 없는 판
+	for commission: Commission in [load(FIRST_BLOOD_PATH) as Commission, null]:
+		var label := "첫 피 의뢰" if commission != null else "의뢰 없는 결투"
+		var bare := _spawn_duel(commission)
+		var bare_core: DuelCore = bare.get("core")
+		if bare_core.opponent_has_hat or (bare.get_node(HAT_PATH) as CanvasItem).visible:
+			errs.append("[%s] 모자를 쓴 판이거나 모자 파츠가 보임" % label)
+		bare_core.set_aim(off_side, H.HIGH)
+		if bare_core.current_aim_part() != P.HEAD:
+			errs.append("[%s] 반대쪽 상단 베기가 머리가 아님" % label)
+		bare_core.set_aim(sword_side, H.HIGH)
+		if bare_core.current_aim_part() != P.SWORD_HAND:
+			errs.append("[%s] 칼 쪽 상단 베기가 칼 든 손이 아님" % label)
+		bare.free()
+
+	# ---- 조준 글자와 조작 안내(기대값은 로드한 상대에서 끌어온다)
+	var duel := _spawn_duel(null)
+	core = duel.get("core")
+	var opp := core.opponent_data
+	# 모자 없는 판에서 부위마다의 조준.
+	var aims := {
+		P.HEAD: [D.CENTER, H.HIGH], P.SWORD_HAND: [sword_side, H.HIGH],
+		P.TORSO: [D.CENTER, H.MID], P.SWORD_ARM: [sword_side, H.MID], P.LEGS: [D.CENTER, H.LOW],
+	}
+	var help: String = (duel.get_node("HUD").get("_help_label") as Label).text
+	for part: int in aims:
+		var text := _aim_text(duel, aims[part][0], aims[part][1])
+		var heavy := opp.graze_cells(part) >= 2
+		if text.contains("칸)") != heavy:
+			errs.append("[조준 글자] %s(%d칸): '%s'" % [DuelTypes.PART_NAMES[part], opp.graze_cells(part), text])
+	help = (duel.get_node("HUD").get("_help_label") as Label).text
+	for part: int in aims:
+		if opp.graze_cells(part) >= 2 and not help.contains(DuelTypes.PART_NAMES[part]):
+			errs.append("[조작 안내] 2칸 이상인 %s의 이름이 없음" % DuelTypes.PART_NAMES[part])
+	if help.contains("머리는 ") != opp.guards_head:
+		errs.append("[조작 안내] 머리 지키기 안내의 유무가 상대 데이터와 다름")
+
+	# ---- 표시 경로(F1 디버그를 켠 채): 칼 든 팔 스침, 큰 베기 뒤 칼 든 손 스침, 머리를 노려 피해짐
+	duel.call("start_duel")
+	core = duel.get("core")
+	duel.get_node("HUD").call("toggle_debug")
+	var has_big := false
+	for habit in opp.habits:
+		has_big = has_big or (habit.response != null and habit.response.is_big)
+	var plain_counters: Array[int] = [0]
+	var counter := func(ev: Dictionary) -> Variant:
+		if float(ev["recovery"]) <= 0.0:
+			return null
+		if (ev["attack"] as AttackData).is_big:
+			return [sword_side, H.HIGH]
+		# 그냥 막힌 베기 뒤: 처음에는 머리(지키면 피한다), 그다음부터는 칼 든 팔.
+		plain_counters[0] += 1
+		return [D.CENTER, H.HIGH] if plain_counters[0] == 1 else [sword_side, H.MID]
+	var bot: RefCounted = Bot.new(core, {"counter_fn": counter})
+	var state_label := duel.get_node("OpponentView/StateLabel") as Label
+	var log_label := duel.get_node("HUD").get("_log_label") as Label
+	var plain_texts: Array[String] = []
+	var big_texts: Array[String] = []
+	var saw := {"arm": false, "hand": false, "dodged": false, "cells_log": false, "dodge_log": false}
+	var frames := 0
+	while frames < 5400 and not core.ended:
+		duel.call("advance", 1.0 / 60.0)
+		bot.call("update")
+		frames += 1
+		if core.brain.state == DuelTypes.OpponentState.RECOVERY and core.brain.current_attack != null:
+			if core.brain.current_attack.is_big:
+				big_texts.append(state_label.text)
+			elif not core.brain.wide_open:
+				plain_texts.append(state_label.text)
+		if log_label.text.contains("(-"):
+			saw["cells_log"] = true
+		if log_label.text.contains("머리를 피했다"):
+			saw["dodge_log"] = true
+		for ev in core.record.of_type(DuelRecord.ATTACK):
+			if ev["result"] == DuelTypes.AttackResult.GRAZE and ev["part"] == P.SWORD_ARM:
+				saw["arm"] = true
+			if ev["result"] == DuelTypes.AttackResult.GRAZE and ev["part"] == P.SWORD_HAND:
+				saw["hand"] = true
+			if ev["dodged"]:
+				saw["dodged"] = true
+		if saw["arm"] and (saw["hand"] or not has_big) and (saw["dodged"] or not opp.guards_head) and frames > 600:
+			break
+	if not saw["arm"]:
+		errs.append("[표시] 칼 든 팔을 스치지 못함")
+	if has_big and not saw["hand"]:
+		errs.append("[표시] 큰 베기 뒤에 칼 든 손을 스치지 못함")
+	if opp.guards_head:
+		if not saw["dodged"] or not saw["dodge_log"]:
+			errs.append("[표시] 머리를 노린 공격이 피해지지 않았거나 기록 줄이 없음")
+	elif saw["dodged"]:
+		errs.append("[표시] 머리를 지키지 않는 상대가 피함")
+	if (opp.graze_cells(P.SWORD_ARM) >= 2 or (has_big and opp.graze_cells(P.SWORD_HAND) >= 2)) and not saw["cells_log"]:
+		errs.append("[표시] 2칸 스침의 기록 줄에 깎인 칸 수가 없음")
+
+	# ---- 상태 글자: 그냥 막힌 베기의 회수는 "빈틈", 큰 베기의 회수는 머리를 지키는 상대면 "크게 열림!"
+	for text in plain_texts:
+		if text != "빈틈":
+			errs.append("[상태 글자] 그냥 막힌 베기의 회수 중 글자가 '%s'" % text)
+			break
+	var want_big := "크게 열림!" if opp.guards_head else "빈틈"
+	for text in big_texts:
+		if text != want_big:
+			errs.append("[상태 글자] 큰 베기의 회수 중 글자가 '%s' (기대 '%s')" % [text, want_big])
+			break
+	if plain_texts.is_empty():
+		errs.append("[상태 글자] 그냥 막힌 베기의 회수를 한 번도 보지 못함")
+	if has_big and big_texts.is_empty():
+		errs.append("[상태 글자] 큰 베기의 회수를 한 번도 보지 못함")
 	duel.free()
 	return "OK" if errs.is_empty() else ", ".join(errs)

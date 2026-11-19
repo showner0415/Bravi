@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="UpgradeCatalog" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/economy/upgrade_catalog.gd" id="1_catalog"]
+[ext_resource type="Script" path="res://scripts/economy/upgrade_data.gd" id="2_upgrade"]
+[ext_resource type="Resource" path="res://data/upgrades/medicine_box.tres" id="3_medicine"]
+[ext_resource type="Resource" path="res://data/upgrades/parlor_chair.tres" id="4_chair"]
+[ext_resource type="Resource" path="res://data/upgrades/padded_vest.tres" id="5_vest"]
+
+[resource]
+script = ExtResource("1_catalog")
+upgrades = Array[ExtResource("2_upgrade")]([ExtResource("3_medicine"), ExtResource("4_chair"), ExtResource("5_vest")])

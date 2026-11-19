@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/economy/upgrade_data.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"padded_vest"
+display_name = "누빈 조끼"
+description = "내 자세가 1칸 늘어난다. 져 줘야 하는 의뢰에서는 한 번 더 맞아야 한다"
+branch = 0
+price = 90
+target = 1
+property = &"player_posture_max"
+amount = 1.0

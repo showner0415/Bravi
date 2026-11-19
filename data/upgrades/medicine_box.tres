@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/economy/upgrade_data.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"medicine_box"
+display_name = "상비약 상자"
+description = "치료비가 10 줄어든다"
+branch = 2
+price = 30
+target = 0
+property = &"medical_fee"
+amount = -10.0

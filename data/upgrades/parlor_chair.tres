@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/economy/upgrade_data.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"parlor_chair"
+display_name = "응접실 의자"
+description = "팁이 30% 늘어난다"
+branch = 2
+price = 60
+target = 0
+property = &"tip_bonus_percent"
+amount = 30.0
