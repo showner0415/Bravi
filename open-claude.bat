@@ -1,14 +1,5 @@
 @echo off
-rem Opens Claude Code in this project folder. Extra arguments are passed through
+rem Pulls all branches (Opus 5.5, effort medium), then opens Claude Code
+rem with Opus 5.5 at effort high. Extra arguments are passed through
 rem (for example: open-claude.bat --continue).
-cd /d "%~dp0"
-
-where claude >nul 2>nul
-if %errorlevel%==0 (
-    claude %*
-) else if exist "%USERPROFILE%\.local\bin\claude.exe" (
-    "%USERPROFILE%\.local\bin\claude.exe" %*
-) else (
-    echo claude was not found on PATH or in %USERPROFILE%\.local\bin
-    pause
-)
+call "%~dp0tools\launch-claude.bat" claude-opus-5-5 high %*
