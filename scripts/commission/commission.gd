@@ -14,7 +14,11 @@ extends Resource
 @export var tip_max := 0
 ## 평판 변화. 맡은 의뢰의 정산 때 한 번 더해진다(ReputationRules.settle_items).
 ## "accept": 맡았으면 결과와 상관없이 / "success": 해냈을 때(충족도가 팁 문턱을 넘음) / "fail": 해내지 못했을 때(충족도 0).
+## "win": 이겼을 때(유효타를 넣고 지지 않음. 충족도가 0보다 클 때만). 선택이고 없으면 0이다.
 @export var reputation_effect := {"accept": 0, "success": 0, "fail": 0}
+## 흥정("값을 올려 부른다")의 눈높이. 0이면 흥정할 수 없는 손님이다(버튼이 없다).
+## 1~5면 지금 평판의 별에서 이 값을 뺀 차로 받아 줄 확률이 정해진다(EconomyRules.haggle_chance_for). 값이 낮을수록 잘 받아 준다.
+@export var haggle_min_stars := 1
 ## 의뢰인의 한마디 둘. 선택이다(비어 있으면 그 줄이 없을 때의 동작이다).
 ## 해냈을 때: 정산에서 충족도가 팁 문턱을 넘으면 공통 문구 대신 나온다.
 ## 흠 없이 해냈다고 단정하지 않는다(문턱과 100 사이의 점수에서도 나온다).

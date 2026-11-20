@@ -163,8 +163,11 @@ func refresh_shop() -> void:
 		_proceed.grab_focus()
 
 
-## 폐점의 평판 두 줄: "평판 9 → 13 · 별 3 → 4 (다음 별까지 3)" / "내일의 손님 6명 (보통 5명)".
-## 둘째 줄의 괄호는 내일의 기준 손님 수가 있을 때만 붙는다.
+## 폐점의 평판 두 줄:
+##   "평판 20 → 37 · 별 3 → 4 · 38부터 별 5 — 손님 +1, 보수 +10% → +20%" / "내일의 손님 6명 (보통 5명) · 내일의 보수 +10%".
+## 첫 줄의 뒤쪽은 다음 별이 되는 점수와 그때 달라지는 것이다. 손님 수는 차이로, 기본 보수는 지금 별의 비율에서
+## 다음 별의 비율로 적는다. 달라지지 않는 쪽은 빼고, 별이 가득이면 "(별이 가득 찼다)"다.
+## 둘째 줄의 괄호는 내일의 기준 손님 수가 있을 때만, 내일의 보수는 0이 아닐 때만 붙는다.
 static func reputation_ledger_text(p_day: DayState) -> String:
 	var rules := p_day.reputation_rules
 	var before := int(p_day.closing_summary().get("reputation_start", p_day.reputation))
@@ -174,11 +177,29 @@ static func reputation_ledger_text(p_day: DayState) -> String:
 	var stars_after := rules.stars(after)
 	first += " · 별 %d → %d" % [stars_before, stars_after] if stars_before != stars_after else " · 별 %d" % stars_after
 	var to_next := rules.to_next_star(after)
-	first += " (다음 별까지 %d)" % to_next if to_next > 0 else " (별이 가득 찼다)"
+	if to_next > 0:
+		var next_star := stars_after + 1
+		first += " · %d부터 별 %d" % [after + to_next, next_star]
+		var guest_gain := rules.guest_change(next_star) - rules.guest_change(stars_after)
+		var pay_now := rules.pay_change(stars_after)
+		var pay_next := rules.pay_change(next_star)
+		var changes: Array[String] = []
+		if guest_gain != 0:
+			changes.append("손님 %+d" % guest_gain)
+		if pay_next != pay_now:
+			changes.append("보수 %+d%% → %+d%%" % [pay_now, pay_next])
+		if not changes.is_empty():
+			first += " — " + ", ".join(PackedStringArray(changes))
+	else:
+		first += " (별이 가득 찼다)"
 	var second := "내일의 손님 %d명" % p_day.tomorrow_guests()
 	var base := p_day.tomorrow_base_guests()
 	if base > 0:
 		second += " (보통 %d명)" % base
+	# 내일의 기본 보수 덧붙임은 지금 평판의 별이 정한다(내일을 시작할 때의 별이다).
+	var tomorrow_pay := rules.pay_change(stars_after)
+	if tomorrow_pay != 0:
+		second += " · 내일의 보수 %+d%%" % tomorrow_pay
 	return first + "\n" + second
 
 

@@ -138,12 +138,20 @@ static func add_declined_line(parent: Control, declined: Dictionary, rect: Rect2
 	return label
 
 
-## 평판을 글로: "평판 9 · 별 3/5". 카운터·정산·폐점이 함께 쓴다. 평판이 없는 day면 빈 글이다.
+## 평판을 글로: "평판 30 · 별 4/5 (다음 38) · 보수 +10%". 카운터가 쓴다. 평판이 없는 day면 빈 글이다.
+## "(다음 N)"은 다음 별이 되는 점수이고 별이 가득이면 없다. 보수는 오늘의 기본 보수 덧붙임이고 0이면 적지 않는다.
 ## 별은 숫자로 적는다(별 문자는 글꼴에 없을 수 있다).
 static func reputation_text(day: DayState) -> String:
 	if day == null or not day.has_reputation():
 		return ""
-	return "평판 %d · 별 %d/%d" % [day.reputation, day.reputation_stars(), day.reputation_rules.max_stars()]
+	var text := "평판 %d · 별 %d/%d" % [day.reputation, day.reputation_stars(), day.reputation_rules.max_stars()]
+	var to_next := day.reputation_rules.to_next_star(day.reputation)
+	if to_next > 0:
+		text += " (다음 %d)" % (day.reputation + to_next)
+	var pay_percent := day.reputation_pay_percent()
+	if pay_percent != 0:
+		text += " · 보수 %+d%%" % pay_percent
+	return text
 
 
 ## 화면에 보이는 글자(Label과 Button)를 전부 이어 붙인다. 테스트가 쓴다.

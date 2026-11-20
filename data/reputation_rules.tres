@@ -5,9 +5,11 @@
 [resource]
 script = ExtResource("1_rules")
 enabled = true
-start = 9
+start = 20
 min_value = 0
-max_value = 20
-star_thresholds = PackedInt32Array(4, 8, 12, 16)
+max_value = 44
+star_thresholds = PackedInt32Array(8, 16, 24, 38)
 guest_delta = PackedInt32Array(-2, -1, 0, 1, 2)
-perfect_bonus = 1
+perfect_bonus = 2
+pay_percent = PackedInt32Array(-20, -10, 0, 10, 20)
+day_scale = PackedInt32Array(100, 150, 200)

@@ -11,6 +11,8 @@ extends RefCounted
 ## 업그레이드는 폐점에서 사고, 그 효과는 다음 날부터 난다(사는 때가 그날의 정산과 지출이 끝난 뒤다).
 
 enum Phase { COUNTER, DUEL, SETTLEMENT, CLOSING }
+## 지금 손님과의 흥정("값을 올려 부른다"). 한 손님에게 한 번뿐이고 되돌릴 수 없다.
+enum Haggle { NONE, AGREED, REFUSED }
 
 ## 기본 경제 규칙. 업그레이드가 적용된 것은 effective_rules()다.
 var rules: EconomyRules
@@ -48,11 +50,17 @@ var _summary: Dictionary = {}
 var _guest_count := 0
 ## 오늘을 시작할 때의 평판.
 var day_start_reputation := 0
+## 흥정의 결과와, 그 흥정을 한 손님의 순번. 순번이 지금 손님과 다르면 흥정은 없는 것이다(haggle_state).
+var _haggle: int = Haggle.NONE
+var _haggle_index := -1
+## 흥정의 주사위. 테스트는 haggle(roll)로 결과를 고정한다.
+var _rng := RandomNumberGenerator.new()
 
 
 ## 일정(p_schedule)이 있으면 p_data는 대체값이다: 일정이 그날의 하루를 주지 못할 때만 쓴다.
 func _init(p_rules: EconomyRules, p_data: DayData, p_catalog: UpgradeCatalog = null,
 		p_schedule: DaySchedule = null, p_reputation: ReputationRules = null) -> void:
+	_rng.randomize()
 	rules = p_rules
 	data = p_data
 	_fallback_data = p_data
@@ -88,9 +96,11 @@ static func pay_score(score: int, p_rules: EconomyRules) -> int:
 ## 기본 보수는 보수에 쓰는 충족도에 비례하고, 팁은 그것이 tip_floor를 넘는 만큼에 비례한다.
 ## full_pay_covers_tip이 거짓이면 팁만 원래 충족도로 계산한다.
 ## 팁에는 tip_bonus_percent가 덧붙는다(0이면 덧붙임이 없을 때와 같은 값이다).
+## 기본 보수에는 base_bonus_percent가 덧붙는다. 충족도 비례와 한 식에서 곱하고 한 번 반올림한다
+## (0이면 덧붙임이 없을 때와 같은 정수다. 100 + 덧붙임은 0 아래로 내려가지 않는다).
 static func payout(score: int, base_reward: int, tip_max: int, p_rules: EconomyRules) -> Dictionary:
 	var paid := pay_score(score, p_rules)
-	var base := round_div(base_reward, paid, 100)
+	var base := round_div(base_reward * maxi(100 + p_rules.base_bonus_percent, 0), paid, 10000)
 	var tip := 0
 	var tip_score := paid if p_rules.full_pay_covers_tip else clampi(score, 0, 100)
 	var tip_floor := clampi(p_rules.tip_floor, 0, 100)
@@ -104,6 +114,11 @@ static func boosted_tip_max(tip_max: int, p_rules: EconomyRules) -> int:
 	return round_div(tip_max, 100 + p_rules.tip_bonus_percent, 100)
 
 
+## 덧붙임이 든 기본 보수의 최대. 충족도 100에서 payout이 주는 기본 보수와 같은 값이다.
+static func boosted_base_max(base_reward: int, p_rules: EconomyRules) -> int:
+	return round_div(base_reward, maxi(100 + p_rules.base_bonus_percent, 0), 100)
+
+
 ## 결투 한 건의 정산. record는 끝난 결투의 기록이다. 돌려주는 값은 숫자와 글뿐이다.
 static func settle(commission: Commission, record: DuelRecord, p_rules: EconomyRules) -> Dictionary:
 	var score := clampi(commission.evaluate(record), 0, 100)
@@ -114,7 +129,7 @@ static func settle(commission: Commission, record: DuelRecord, p_rules: EconomyR
 		"client_name": commission.client_name,
 		"score": score,
 		"base": int(pay["base"]),
-		"base_max": commission.base_reward,
+		"base_max": boosted_base_max(commission.base_reward, p_rules),
 		"tip": int(pay["tip"]),
 		"tip_max": boosted_tip_max(commission.tip_max, p_rules),
 		"total": int(pay["base"]) + int(pay["tip"]),
@@ -127,6 +142,14 @@ static func settle(commission: Commission, record: DuelRecord, p_rules: EconomyR
 		"elapsed": record.elapsed,
 		"success_line": commission.success_line,
 	}
+
+
+## 이긴 결투인가: 내가 상대에게 넣은 유효타가 하나 이상 있고, 유효타를 맞고 지지 않았다.
+## 기록의 ATTACK은 내 공격이다(상대의 공격은 STRIKE).
+static func is_win(record: DuelRecord) -> bool:
+	if record == null or record.end_reason == DuelTypes.EndReason.PLAYER_DEFEATED:
+		return false
+	return record.count_where(DuelRecord.ATTACK, "result", DuelTypes.AttackResult.HIT) > 0
 
 
 # ---------------------------------------------------------------- 읽기
@@ -144,6 +167,13 @@ func has_reputation() -> bool:
 ## 지금 평판의 별 수. 평판이 없으면 0.
 func reputation_stars() -> int:
 	return reputation_rules.stars(reputation) if has_reputation() else 0
+
+
+## 오늘의 기본 보수 덧붙임(%). 오늘을 시작할 때의 평판의 별로 정하고 그날 안에는 바뀌지 않는다. 평판이 없으면 0.
+func reputation_pay_percent() -> int:
+	if not has_reputation():
+		return 0
+	return reputation_rules.pay_change(reputation_rules.stars(day_start_reputation))
 
 
 ## 내일의 하루. 일정이 주는 날이고, 없으면 처음 받은 DayData다.
@@ -248,6 +278,66 @@ func effective_rules() -> EconomyRules:
 	return UpgradeData.applied(rules, UpgradeData.Target.ECONOMY, owned_upgrades()) as EconomyRules
 
 
+## 정산에 쓰는 경제 규칙: 가진 업그레이드에 오늘의 평판(별)의 기본 보수 덧붙임을 더한 것. 사본이다.
+## 정산과 카운터가 같은 것을 쓴다. 평판이 없거나 덧붙임이 0이면 effective_rules()와 같은 값이다.
+## 팁은 별과 상관없다. 지금 손님이 흥정을 받아 줬으면 기본 보수에 흥정의 덧붙임을 더하고 전액 기준치를
+## 흥정의 값으로 바꾼다. 거절당한 손님이면 팁의 덧붙임에서 감점을 뺀다(−100 아래로는 내려가지 않는다).
+func settle_rules() -> EconomyRules:
+	return _rules_with_haggle(haggle_state())
+
+
+## 지금 손님이 흥정을 받아 줬다고 쳤을 때의 경제 규칙. 사본이고 읽기만 한다(상태를 바꾸지 않는다).
+## 카운터가 흥정 전의 보수 줄("받아 주면 기본 보수 N")에 쓴다. 이미 받아 준 뒤면 settle_rules()와 같은 값이다.
+func haggle_preview_rules() -> EconomyRules:
+	return _rules_with_haggle(Haggle.AGREED)
+
+
+## 지금 손님이 흥정을 거절했다고 쳤을 때의 경제 규칙. 사본이고 읽기만 한다(상태를 바꾸지 않는다).
+## 카운터가 흥정 전의 "거절당하면 팁 최대 N"에 쓴다.
+func haggle_refused_rules() -> EconomyRules:
+	return _rules_with_haggle(Haggle.REFUSED)
+
+
+## 흥정의 상태(Haggle)가 그렇다고 쳤을 때 지금 손님의 판에 쓰는 경제 규칙. 사본이고 상태를 바꾸지 않는다.
+func _rules_with_haggle(p_haggle: int) -> EconomyRules:
+	var economy := effective_rules()
+	economy.base_bonus_percent += reputation_pay_percent()
+	if p_haggle == Haggle.AGREED:
+		economy.base_bonus_percent += economy.haggle_bonus_percent
+		economy.full_pay_score = economy.haggle_full_pay_score
+	elif p_haggle == Haggle.REFUSED and economy.haggle_refuse_tip_cut_percent > 0:
+		economy.tip_bonus_percent = maxi(economy.tip_bonus_percent - economy.haggle_refuse_tip_cut_percent, -100)
+	return economy
+
+
+## 지금 손님과의 흥정의 결과(Haggle). 흥정한 손님의 순번이 지금 손님과 다르면 NONE이다.
+func haggle_state() -> int:
+	return _haggle if _haggle_index == index else Haggle.NONE
+
+
+## 지금 값을 올려 부를 수 있는가: 카운터이고, 흥정이 켜져 있고(덧붙임이 0보다 큼),
+## 흥정할 수 있는 손님이고(haggle_min_stars가 0보다 큼), 이 손님에게 아직 흥정하지 않았다.
+func can_haggle() -> bool:
+	var commission := current_commission()
+	if phase != Phase.COUNTER or commission == null:
+		return false
+	if effective_rules().haggle_bonus_percent <= 0 or commission.haggle_min_stars <= 0:
+		return false
+	return haggle_state() == Haggle.NONE
+
+
+## 지금 흥정하면 받아 줄 확률(%, 0~100). 흥정할 수 없는 손님이면 0, 평판이 없으면 100이다.
+## 평판이 있으면 지금 평판의 별과 손님의 값의 차로 경제 규칙의 표에서 읽는다.
+## 화면은 이 값을 보여 주지 않는다(사용자 결정 2026-11-20). 판정(haggle)과 테스트가 쓴다.
+func haggle_chance() -> int:
+	var commission := current_commission()
+	if commission == null or commission.haggle_min_stars <= 0:
+		return 0
+	if not has_reputation():
+		return 100
+	return effective_rules().haggle_chance_for(reputation_stars() - commission.haggle_min_stars)
+
+
 ## 기본 결투 규칙을 받아, 가진 업그레이드가 적용된 사본을 돌려준다.
 func effective_duel_rules(base: DuelRules) -> DuelRules:
 	return UpgradeData.applied(base, UpgradeData.Target.DUEL, owned_upgrades()) as DuelRules
@@ -279,16 +369,38 @@ func decline() -> bool:
 	return true
 
 
+## 카운터에서 값을 올려 부른다. 손님이 받아 주거나 거절한다(확률에 따른 무작위). 한 손님에게 한 번뿐이고
+## 되돌릴 수 없다. 올려 부를 수 없으면 아무것도 바꾸지 않고 false를 돌려준다. 그 뒤에도 맡거나 돌려보낼 수 있다.
+## roll은 0~99의 주사위다. 음수면 뽑는다. 확률(haggle_chance)보다 작으면 받아 준다. 테스트는 roll로 결과를 고정한다.
+func haggle(roll := -1) -> bool:
+	if not can_haggle():
+		return false
+	if roll < 0:
+		roll = _rng.randi_range(0, 99)
+	_haggle = Haggle.AGREED if roll < haggle_chance() else Haggle.REFUSED
+	_haggle_index = index
+	return true
+
+
 ## 결투가 끝났다. 기록을 정산해 결과 목록에 넣고 수입을 소지금에 더한다 → 정산.
 func finish_duel(record: DuelRecord) -> bool:
 	if phase != Phase.DUEL or record == null:
 		return false
 	var commission := current_commission()
-	var economy := effective_rules()
+	# 오늘의 평판(별)이 기본 보수의 비율을 바꾼다. 그날을 시작할 때의 별로 정해져 있다.
+	var economy := settle_rules()
 	var result := settle(commission, record, economy)
+	var won := is_win(record)
+	result["won"] = won
+	result["reputation_pay_percent"] = reputation_pay_percent()
+	# 흥정을 받아 준 판이면 그 덧붙임(%)을 싣는다. 아니면 0이다.
+	result["haggle_percent"] = economy.haggle_bonus_percent if haggle_state() == Haggle.AGREED else 0
+	# 흥정을 거절당한 판이면 팁의 감점(%)을 싣는다. 아니면 0이다.
+	result["haggle_tip_cut_percent"] = economy.haggle_refuse_tip_cut_percent if haggle_state() == Haggle.REFUSED else 0
 	if has_reputation():
-		# 평판은 맡은 의뢰의 정산 때 한 번 움직인다. 돈은 건드리지 않는다.
-		var items := reputation_rules.settle_items(commission.reputation_effect, int(result["score"]), economy.tip_floor)
+		# 평판은 맡은 의뢰의 정산 때 한 번 움직인다. 이 판의 돈은 이 평판과 상관없다(기본 보수의 비율은 오늘을 시작할 때의 별이다).
+		var items := reputation_rules.settle_items(commission.reputation_effect, int(result["score"]), economy.tip_floor,
+			won, reputation_rules.scale_for_day(day_number))
 		result["reputation_before"] = reputation
 		reputation = reputation_rules.clamp_value(reputation + ReputationRules.items_total(items))
 		result["reputation_after"] = reputation
@@ -339,6 +451,8 @@ func _begin_day() -> void:
 	declined = []
 	last_declined = {}
 	_summary = {}
+	_haggle = Haggle.NONE
+	_haggle_index = -1
 	day_start_reputation = reputation
 	_guest_count = _guests_for(data)
 	# 손님이 없거나 맡을 수 있는 결투가 없으면 곧바로 폐점이다.

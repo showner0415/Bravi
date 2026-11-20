@@ -16,6 +16,8 @@ const MISSED_NOTE := "오늘은 더 싸울 수 없다 — 문밖의 손님 %d명
 const FULL_PAY_MET := "기준치 %d 이상 — 보수를 전부 받는다"
 const FULL_PAY_MET_BASE_ONLY := "기준치 %d 이상 — 기본 보수를 전부 받는다"
 const FULL_PAY_MISSED := "기준치 %d에 못 미쳐 깎였다"
+# 흥정을 받아 준 판의 한 줄. 기준치 줄의 자리에 나온다(%d는 흥정한 판의 전액 기준치다).
+const HAGGLE_NOTE := "흥정한 값 — %d점이어야 팁까지 전부 받는다"
 
 ## 하루 플레이의 상태. 비어 있으면 /root/GameSession의 것을 본다.
 var day: DayState
@@ -69,14 +71,35 @@ func _build(result: Dictionary) -> void:
 	var ledger := Ui.add_panel(self, Rect2(410, 186, 830, 324), 10)
 	Ui.add_label(ledger, "충족도 %d" % result["score"], 34, Ui.GOLD)
 	var threshold := int(result.get("full_pay_score", 100))
-	if threshold < 100:
+	var haggle_pay := int(result.get("haggle_percent", 0))
+	if haggle_pay > 0:
+		# 흥정을 받아 준 판: 기준치 줄의 자리에 흥정의 조건을 적는다.
+		var haggle_note := Ui.add_label(ledger, HAGGLE_NOTE % threshold, 18, Ui.DIM)
+		haggle_note.name = "HaggleNote"
+	elif threshold < 100:
 		var note_text := FULL_PAY_MISSED
 		if result.get("full_pay", false):
 			note_text = FULL_PAY_MET if rules.full_pay_covers_tip else FULL_PAY_MET_BASE_ONLY
 		var note := Ui.add_label(ledger, note_text % threshold, 18, Ui.DIM)
 		note.name = "FullPayNote"
-	Ui.add_label(ledger, "기본 보수   %d / %d" % [result["base"], result["base_max"]], 22)
-	Ui.add_label(ledger, "팁   %d / %d" % [result["tip"], result["tip_max"]], 22)
+	# 오늘의 평판(별)이나 흥정이 기본 보수의 비율을 바꿨으면 그 비율을 뒤에 붙인다(0이 아닌 것만).
+	# 최대(base_max)도 덧붙임이 든 값이다.
+	var base_text := "기본 보수   %d / %d" % [result["base"], result["base_max"]]
+	var star_pay := int(result.get("reputation_pay_percent", 0))
+	var bonus_parts: Array[String] = []
+	if star_pay != 0:
+		bonus_parts.append("평판 %+d%%" % star_pay)
+	if haggle_pay > 0:
+		bonus_parts.append("흥정 +%d%%" % haggle_pay)
+	if not bonus_parts.is_empty():
+		base_text += "  (%s)" % " · ".join(PackedStringArray(bonus_parts))
+	Ui.add_label(ledger, base_text, 22)
+	# 흥정을 거절당한 판이면 팁의 감점을 뒤에 붙인다. 최대(tip_max)는 이미 깎인 값이다.
+	var tip_text := "팁   %d / %d" % [result["tip"], result["tip_max"]]
+	var tip_cut := int(result.get("haggle_tip_cut_percent", 0))
+	if tip_cut > 0:
+		tip_text += "  (흥정 거절 %+d%%)" % [-tip_cut]
+	Ui.add_label(ledger, tip_text, 22)
 	shown_total = int(result["total"])
 	Ui.add_label(ledger, "받은 돈   %d" % shown_total, 28)
 	Ui.add_label(ledger, "소지금   %d" % day.money, 20, Ui.DIM)
