@@ -21,3 +21,7 @@ reputation_effect = {"accept": -6, "success": 0, "fail": -2}
 haggle_min_stars = 2
 success_line = "하! 판돈은 무사하오. 맞는 연기가 제법이더군. 약속한 몫이오. 다음 판에도 부탁하리다."
 decline_line = "허, 깨끗한 척하시긴. 칼잡이가 여기뿐인 줄 아시오?"
+fail_line = "판돈이 통째로 날아갔소. 당신 몫? 남은 게 있어야 주지. 오늘은 재수가 옴 붙었군."
+partial_line = "지긴 졌는데 연기가 서툴렀소. 판이 수상하다고 내 몫을 떼였소. 당신 몫도 그만큼 깎이오."
+haggle_agree_line = "배짱 한번 좋군. 좋소, 그 값에 하지. 대신 티가 털끝만큼도 나면 안 되오."
+haggle_refuse_line = "허, 욕심이 과하시군. 처음 값이오. 덤은 줄어들 줄 아시오."

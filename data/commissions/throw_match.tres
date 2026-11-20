@@ -21,3 +21,7 @@ reputation_effect = {"accept": 0, "success": 3, "fail": -1}
 haggle_min_stars = 4
 success_line = "오라버니가 온 동네에 자랑하고 다녀요. 제 힘으로 이긴 줄 알아요. 아프셨을 텐데, 고맙습니다."
 decline_line = "…그렇지요. 져 달라는 부탁이 쉬울 리 없지요. 폐를 끼쳤어요."
+fail_line = "오라버니는 내일도 칼을 차고 나가겠지요. 부탁드린 건 이게 아니에요. 보수는 못 드려요."
+partial_line = "지기는 지셨는데 오라버니가 고개를 갸웃해요. 봐준 게 아니냐고요. 보수는 다 드릴 수가 없어요."
+haggle_agree_line = "알겠어요, 그 값에 해요. 대신 오라버니가 조금도 눈치채면 안 돼요."
+haggle_refuse_line = "죄송해요, 그 값은 어렵겠어요. 처음 값으로 해요. 덤도 줄여야겠어요."

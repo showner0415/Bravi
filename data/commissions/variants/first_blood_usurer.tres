@@ -21,3 +21,7 @@ reputation_effect = {"accept": -4, "success": 0, "fail": -1, "win": 1}
 haggle_min_stars = 5
 success_line = "좋소. 그자도 이제 입조심을 하겠지. 약속대로 넉넉히 넣었소. 돈이 급하면 언제든 오시오."
 decline_line = "내 돈이 싫다? 별일이군. 후회나 마시오."
+fail_line = "피 한 방울 못 봤다? 돈값을 못 하는 칼이군. 한 푼도 없소. 이 일은 없던 것으로 하지."
+partial_line = "얼굴은 두라 했을 텐데. 눈에 띄는 상처는 내게도 손해요. 그만큼 제하고 치르겠소."
+haggle_agree_line = "값을 더 부른다? 좋소, 치르지. 대신 흠이 하나라도 있으면 그만큼 제하겠소."
+haggle_refuse_line = "내게서 돈을 더 뜯겠다? 처음 값이오. 얹어 주려던 것도 줄이겠소."

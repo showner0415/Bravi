@@ -24,3 +24,7 @@ reputation_effect = {"accept": 0, "success": 3, "fail": -1, "win": 1}
 haggle_min_stars = 4
 success_line = "깃털이 잘려 나갔다면서요! 그 사람 얼굴이 볼만했겠어요. 고마워요."
 decline_line = "어머, 그런가요. 모자값은 영영 못 받겠네요…"
+fail_line = "깃털 하나만 부탁드렸는데… 이제 모자값 얘기는 꺼내지도 못하겠어요. 보수는 못 드려요."
+partial_line = "깃털은 잘렸지만 그 사람을 다치게 하셨잖아요. 제가 곤란해진다고 했는데… 보수는 깎을게요."
+haggle_agree_line = "좋아요, 그 값에 해요. 대신 깃털만이에요. 몸에는 상처 하나 없어야 해요."
+haggle_refuse_line = "모자값도 못 받은 사람한테 너무하세요. 처음 값으로 해요. 덤은 줄일게요."

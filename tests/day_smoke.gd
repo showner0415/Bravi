@@ -14,6 +14,8 @@ extends Node
 ## 2일차부터는 1일차 폐점에서 만든다(2일차의 손님 수가 1일차 뒤의 평판에 달렸다).
 ## 2일차의 손님이 셋보다 적거나 결투 수가 둘보다 적으면 돌려보내기 구간을 건너뛰고, 첫 손님만 맡은 뒤 나간다.
 ##
+## 저장은 끄고 돈다(GameSession.save_path를 비운다). 저장과 이어서 하기는 tests/save_tests.gd와 playtester가 본다.
+##
 ## 화면 확인: 헤드리스가 아니고 "-- --shots=<폴더>"를 받으면 화면마다 PNG를 그 폴더에 저장한다.
 
 
@@ -79,6 +81,9 @@ class Driver extends Node:
 	var _wait := 2
 	var _shots_dir := ""
 	var _shot_index := 0
+	## 스모크가 끄기 전의 저장 경로와 그 파일의 내용. 끝에서 파일이 그대로인지 견준다.
+	var _real_save_path := ""
+	var _real_save_before := ""
 
 	func _ready() -> void:
 		for arg in OS.get_cmdline_user_args():
@@ -104,6 +109,14 @@ class Driver extends Node:
 
 	## 지나는 씬의 순서를 일정·목록·규칙에서 만든다. 몰 수 없는 설정이면 false.
 	func plan() -> bool:
+		# 저장을 끈다. 처음 화면이 늘 버튼 둘이고 "가게를 연다"가 새 1일차다(실제 저장 파일을 읽지도 쓰지도 않는다).
+		var session := _session()
+		if session == null:
+			_fail("GameSession 오토로드가 없음")
+			return false
+		_real_save_path = String(session.get("save_path"))
+		_real_save_before = _file_text(_real_save_path)
+		session.set("save_path", "")
 		_rules = load(Session.ECONOMY_PATH) as EconomyRules
 		_schedule = load(Session.SCHEDULE_PATH) as DaySchedule
 		_fallback = load(Session.DAY_PATH) as DayData
@@ -242,12 +255,21 @@ class Driver extends Node:
 		var session := _session()
 		return session.get("day") as DayState if session != null else null
 
+	## 그 파일의 내용. 경로가 비었거나 파일이 없으면 "<없음>"이다.
+	func _file_text(path: String) -> String:
+		if path == "" or not FileAccess.file_exists(path):
+			return "<없음>"
+		return FileAccess.get_file_as_string(path)
+
 	## 한 번에 끝나는 화면.
 	func _drive_once(scene: Node) -> void:
 		var session := _session()
 		var day := _day()
 		match _step["kind"]:
 			&"title_open":
+				if scene.find_child("Continue", true, false) != null:
+					_fail("저장을 껐는데 처음 화면에 Continue가 있음")
+					return
 				_shot("title")
 				_press_or_fail(scene, "Proceed")
 			&"counter_accept":
@@ -298,6 +320,10 @@ class Driver extends Node:
 				if session.get("commission") != null:
 					_fail("하루 플레이를 시작했는데 연습의 의뢰가 남아 있음")
 					return
+				if _file_text(_real_save_path) != _real_save_before:
+					_fail("스모크가 실제 저장 파일을 바꿈")
+					return
+				print("DAY SMOKE 저장: 꺼짐, 실제 저장 파일 그대로")
 				_succeed()
 
 	## 카운터에서 손님을 맡는다.

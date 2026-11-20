@@ -14,6 +14,11 @@ enum Phase { COUNTER, DUEL, SETTLEMENT, CLOSING }
 ## 지금 손님과의 흥정("값을 올려 부른다"). 한 손님에게 한 번뿐이고 되돌릴 수 없다.
 enum Haggle { NONE, AGREED, REFUSED }
 
+## 저장의 형식 버전. 다른 버전의 저장은 읽지 않는다(옮기지 않는다).
+const SAVE_VERSION := 1
+## 흥정 주사위의 씨앗이 가질 수 있는 가장 큰 값(randi의 범위).
+const DICE_SEED_MAX := 4294967295
+
 ## 기본 경제 규칙. 업그레이드가 적용된 것은 effective_rules()다.
 var rules: EconomyRules
 ## 오늘의 손님. 일정이 있으면 하루를 시작할 때마다 일정에서 가져온 것이다.
@@ -27,13 +32,16 @@ var _fallback_data: DayData
 ## 평판의 규칙. null이거나 enabled가 거짓이면 평판이 없다.
 var reputation_rules: ReputationRules
 
-# --- 날을 넘는 것 (갈라내는 것은 저장을 만들 때 한다. 계획 005 결정 54) ---
+# --- 날을 넘는 것 (저장에 드는 것. saved_state / restore) ---
 var day_number := 1
 var money := 0
 ## 가진 업그레이드의 id. 효과를 낼 때 목록에서 찾는다.
 var owned: Array[StringName] = []
 ## 평판. 맡은 의뢰의 정산 때 움직인다. 평판이 없으면 0에서 움직이지 않는다.
 var reputation := 0
+## 흥정 주사위의 씨앗. 새로 시작할 때 한 번 뽑고 저장에 든다.
+## 같은 가게의 같은 날 같은 순번의 손님은 같은 주사위다(haggle_roll).
+var dice_seed := 0
 
 # --- 하루의 것 ---
 var phase: int = Phase.COUNTER
@@ -53,7 +61,7 @@ var day_start_reputation := 0
 ## 흥정의 결과와, 그 흥정을 한 손님의 순번. 순번이 지금 손님과 다르면 흥정은 없는 것이다(haggle_state).
 var _haggle: int = Haggle.NONE
 var _haggle_index := -1
-## 흥정의 주사위. 테스트는 haggle(roll)로 결과를 고정한다.
+## 흥정 주사위의 씨앗을 뽑는다(새로 시작할 때 한 번).
 var _rng := RandomNumberGenerator.new()
 
 
@@ -61,6 +69,7 @@ var _rng := RandomNumberGenerator.new()
 func _init(p_rules: EconomyRules, p_data: DayData, p_catalog: UpgradeCatalog = null,
 		p_schedule: DaySchedule = null, p_reputation: ReputationRules = null) -> void:
 	_rng.randomize()
+	dice_seed = _rng.randi()
 	rules = p_rules
 	data = p_data
 	_fallback_data = p_data
@@ -141,6 +150,8 @@ static func settle(commission: Commission, record: DuelRecord, p_rules: EconomyR
 		"lines": commission.explain(record),
 		"elapsed": record.elapsed,
 		"success_line": commission.success_line,
+		"fail_line": commission.fail_line,
+		"partial_line": commission.partial_line,
 	}
 
 
@@ -338,9 +349,78 @@ func haggle_chance() -> int:
 	return effective_rules().haggle_chance_for(reputation_stars() - commission.haggle_min_stars)
 
 
+## 지금 손님의 흥정 주사위(0~99). 씨앗·날 번호·손님의 순번이 같으면 늘 같은 값이다
+## (하루를 다시 해도 다시 뽑히지 않는다). 상태를 바꾸지 않는다.
+func haggle_roll() -> int:
+	var dice := RandomNumberGenerator.new()
+	dice.seed = dice_seed * 1000003 + day_number * 1009 + index
+	return dice.randi_range(0, 99)
+
+
 ## 기본 결투 규칙을 받아, 가진 업그레이드가 적용된 사본을 돌려준다.
 func effective_duel_rules(base: DuelRules) -> DuelRules:
 	return UpgradeData.applied(base, UpgradeData.Target.DUEL, owned_upgrades()) as DuelRules
+
+
+# ---------------------------------------------------------------- 저장
+
+static func _is_number(value: Variant) -> bool:
+	return typeof(value) == TYPE_INT or typeof(value) == TYPE_FLOAT
+
+
+## 읽을 수 있는 저장인가: 버전이 같고 날과 소지금이 숫자다.
+static func is_readable_save(saved: Dictionary) -> bool:
+	var version: Variant = saved.get("version")
+	if not _is_number(version) or int(version) != SAVE_VERSION:
+		return false
+	return _is_number(saved.get("day")) and _is_number(saved.get("money"))
+
+
+## 저장할 것: 다음에 열 날의 아침. 폐점이면 내일이고, 아직 아무도 맡거나 돌려보내지 않은 아침이면 오늘이다.
+## 하루 중(그 뒤부터 폐점 전까지)에는 빈 Dictionary다(적을 아침이 없다). 상태를 바꾸지 않는다.
+func saved_state() -> Dictionary:
+	var day_to_open := 0
+	if phase == Phase.CLOSING:
+		day_to_open = day_number + 1
+	elif phase == Phase.COUNTER and index == 0 and results.is_empty() and declined.is_empty():
+		day_to_open = day_number
+	if day_to_open <= 0:
+		return {}
+	var ids: Array[String] = []
+	for owned_id in owned:
+		ids.append(String(owned_id))
+	return {"version": SAVE_VERSION, "day": day_to_open, "money": money, "owned": ids,
+		"reputation": reputation, "dice_seed": dice_seed}
+
+
+## 저장된 아침으로 되돌리고 그날을 시작한다. 읽을 수 없는 저장이면 아무것도 바꾸지 않고 false다.
+## 값은 믿지 않는다: 날은 1 이상, 가진 것은 목록에 있는 것만, 평판은 범위로 자른다.
+func restore(saved: Dictionary) -> bool:
+	if not is_readable_save(saved):
+		return false
+	day_number = maxi(int(saved["day"]), 1)
+	money = int(saved["money"])
+	owned = _known_ids(saved.get("owned"))
+	var saved_reputation: Variant = saved.get("reputation")
+	if has_reputation() and _is_number(saved_reputation):
+		reputation = reputation_rules.clamp_value(int(saved_reputation))
+	var saved_seed: Variant = saved.get("dice_seed")
+	if _is_number(saved_seed):
+		dice_seed = clampi(int(saved_seed), 0, DICE_SEED_MAX)
+	_begin_day()
+	return true
+
+
+## 저장된 id 가운데 목록에 있는 것. 목록의 순서이고 겹치지 않는다.
+func _known_ids(value: Variant) -> Array[StringName]:
+	var kept: Array[StringName] = []
+	if catalog == null or not (value is Array):
+		return kept
+	var wanted: Array = value
+	for upgrade in catalog.upgrades:
+		if upgrade != null and wanted.has(String(upgrade.id)) and not kept.has(upgrade.id):
+			kept.append(upgrade.id)
+	return kept
 
 
 # ---------------------------------------------------------------- 전환
@@ -371,12 +451,13 @@ func decline() -> bool:
 
 ## 카운터에서 값을 올려 부른다. 손님이 받아 주거나 거절한다(확률에 따른 무작위). 한 손님에게 한 번뿐이고
 ## 되돌릴 수 없다. 올려 부를 수 없으면 아무것도 바꾸지 않고 false를 돌려준다. 그 뒤에도 맡거나 돌려보낼 수 있다.
-## roll은 0~99의 주사위다. 음수면 뽑는다. 확률(haggle_chance)보다 작으면 받아 준다. 테스트는 roll로 결과를 고정한다.
+## roll은 0~99의 주사위다. 음수면 지금 손님의 정해진 주사위(haggle_roll)를 쓴다. 확률(haggle_chance)보다 작으면
+## 받아 준다. 테스트는 roll로 결과를 고정한다.
 func haggle(roll := -1) -> bool:
 	if not can_haggle():
 		return false
 	if roll < 0:
-		roll = _rng.randi_range(0, 99)
+		roll = haggle_roll()
 	_haggle = Haggle.AGREED if roll < haggle_chance() else Haggle.REFUSED
 	_haggle_index = index
 	return true

@@ -21,3 +21,7 @@ reputation_effect = {"accept": 0, "success": 3, "fail": -1, "win": 1}
 haggle_min_stars = 3
 success_line = "깔끔하오. 얼굴은 멀쩡하고 내 체면은 섰으니 더 바랄 게 없소. 장날에 들르시오."
 decline_line = "…그렇소? 알겠소, 다른 칼을 찾아보리다."
+fail_line = "피 한 방울 못 보고 돌아왔소? 그자가 장터에서 또 떠들 것이오. 이래서는 값을 치를 수 없소."
+partial_line = "피는 봤소만, 얼굴은 건드리지 말랬잖소. 장날마다 그 흉터를 마주쳐야 하오. 값은 깎겠소."
+haggle_agree_line = "장사꾼에게 값을 올려 부르시는군. 좋소, 대신 한 치의 흠도 없어야 하오."
+haggle_refuse_line = "셈이 맞지 않소. 처음 값으로 하되, 얹어 주려던 덤은 줄이겠소."

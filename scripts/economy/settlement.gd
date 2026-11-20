@@ -5,7 +5,7 @@ const Ui := preload("res://scripts/day_ui.gd")
 
 const CLIENT_POS := Vector2(120, 164)
 
-# 의뢰인의 반응. 충족도 구간 넷의 공통 문구다(의뢰별 대사는 아직 없다).
+# 의뢰인의 반응. 충족도 구간 넷의 공통 문구다. 의뢰에 그 구간의 한마디가 없을 때 나온다(reaction_words).
 # 승패가 아니라 "부탁한 대로 됐는가"를 말한다. 져 달라는 의뢰인에게도 말이 되어야 한다.
 const REACTION_NONE := "…부탁드린 건 이게 아니었는데요. 이래서는 보수를 드릴 수가 없어요."
 const REACTION_PARTIAL := "부탁드린 대로는 아니었지만, 애써 주신 만큼은 쳐 드릴게요."
@@ -34,6 +34,19 @@ static func reaction_for(score: int, tip_floor: int) -> String:
 	return REACTION_PARTIAL if score <= tip_floor else REACTION_GOOD
 
 
+## 이 판의 반응. 그 구간의 의뢰인의 한마디(결과의 fail_line / partial_line / success_line)가 있으면 그것이고,
+## 비어 있으면 공통 문구다. 구간은 reaction_for와 같다(0 이하 / 팁 문턱 이하 / 그 위).
+static func reaction_words(result: Dictionary, tip_floor: int) -> String:
+	var score := int(result.get("score", 0))
+	var key := "success_line"
+	if score <= 0:
+		key = "fail_line"
+	elif score <= tip_floor:
+		key = "partial_line"
+	var own_words := String(result.get(key, ""))
+	return own_words if own_words != "" else reaction_for(score, tip_floor)
+
+
 func _ready() -> void:
 	var session := get_node_or_null(^"/root/GameSession")
 	if day == null and session != null and session.get("day") is DayState:
@@ -60,11 +73,8 @@ func _build(result: Dictionary) -> void:
 	Ui.add_counter_band(self)
 
 	var bubble := Ui.add_panel(self, Rect2(410, 70, 830, 96))
-	# 팁 문턱을 넘겼고 그 의뢰인의 한마디가 있으면 공통 문구 대신 그것을 보여 준다.
-	var words := reaction_for(result["score"], rules.tip_floor)
-	var own_words := String(result.get("success_line", ""))
-	if int(result["score"]) > rules.tip_floor and own_words != "":
-		words = own_words
+	# 그 구간의 의뢰인의 한마디가 있으면 공통 문구 대신 그것을 보여 준다.
+	var words := reaction_words(result, rules.tip_floor)
 	var reaction := Ui.add_wrapped(bubble, words, 22)
 	reaction.name = "Reaction"
 

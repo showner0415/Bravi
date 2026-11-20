@@ -24,7 +24,7 @@ const HAGGLE_HINTS: Array[String] = [
 	"흥정: 가게의 이름을 보고 값을 치를 손님이다",
 	"흥정: 아주 이름난 가게라야 값을 올려 줄 손님이다",
 ]
-# 흥정에 대한 손님의 대답. 성향 한 줄의 자리에 바뀌어 나온다.
+# 흥정에 대한 손님의 대답(공통 문구). 의뢰에 그 대답이 없을 때 나온다. 성향 한 줄의 자리에 바뀌어 나온다.
 const HAGGLE_AGREED := "좋습니다, 그 값에 하지요. 대신 흠 하나 없이 부탁드립니다."
 const HAGGLE_REFUSED := "그 값은 못 드립니다. 처음 값으로 하지요 — 얹어 드리려던 것은 좀 줄이겠습니다."
 # 흥정 전의 성향 한 줄 뒤에 붙는 거절의 대가(%d는 거절당했을 때의 팁 최대). 감점이 있을 때만 붙는다.
@@ -38,6 +38,8 @@ const PAY_LINE := "기본 보수 %d · 팁 최대 %d"
 const PAY_TAIL_OFFER := " (받아 주면 기본 보수 %d, 대신 100점이어야 팁까지 다 받는다)"
 const PAY_TAIL_AGREED := " · 100점이어야 다 받는다"
 const PAY_TAIL_REFUSED := " · 거절당해 팁이 깎였다"
+# "오늘은 그만" 아래의 한 줄.
+const QUIT_NOTE := "오늘 한 일은 남지 않는다 — 이어서 하면 오늘 아침부터다"
 
 ## 하루 플레이의 상태. 비어 있으면 /root/GameSession의 것을 본다.
 var day: DayState
@@ -164,6 +166,10 @@ func _build(commission: Commission) -> void:
 	quit.position = Vector2(40, 650)
 	quit.size = Vector2(170, 42)
 	quit.pressed.connect(_quit)
+	# 하루 중에 그만두면 버려지는 것을 누르기 전에 알린다(저장은 하루 단위다).
+	var quit_note := Ui.add_label(self, QUIT_NOTE, 13, Ui.DIM)
+	quit_note.name = "QuitNote"
+	quit_note.position = Vector2(40, 694)
 
 	# 버튼은 의뢰인이 들어오는 것을 기다리지 않고 처음부터 눌린다.
 	# 어떤 버튼에도 포커스를 두지 않는다(정산에서 넘어온 Space가 사연을 읽기도 전에 대신 고르지 않게).
@@ -188,9 +194,9 @@ func _refresh_haggle() -> void:
 	if _haggle_line != null:
 		var hint_text: String = HAGGLE_HINTS[haggle_hint_index(commission.haggle_min_stars)]
 		if state == DayState.Haggle.AGREED:
-			hint_text = HAGGLE_AGREED
+			hint_text = commission.haggle_agree_line if commission.haggle_agree_line != "" else HAGGLE_AGREED
 		elif state == DayState.Haggle.REFUSED:
-			hint_text = HAGGLE_REFUSED
+			hint_text = commission.haggle_refuse_line if commission.haggle_refuse_line != "" else HAGGLE_REFUSED
 		elif day.can_haggle():
 			# 흥정 전: 거절당했을 때의 팁 최대를 미리 보여 준다. 받아 줄 확률은 보여 주지 않는다.
 			var refused_rules := day.haggle_refused_rules()

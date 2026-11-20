@@ -22,3 +22,7 @@ reputation_effect = {"accept": 0, "success": 3, "fail": -1, "win": 1}
 haggle_min_stars = 3
 success_line = "절뚝거리며 나가는 걸 제자들과 창가에서 봤어요. 속이 다 시원하네요."
 decline_line = "그래요… 춤으로 갚아 줄 수도 없는 노릇이고. 알겠어요."
+fail_line = "다리에 한 줄, 그것만 부탁드렸는데요. 박자를 통째로 놓치셨네요. 보수는 드릴 수 없어요."
+partial_line = "다리에 긋기는 하셨는데 다른 데까지 건드리셨네요. 군더더기가 많았어요. 보수는 깎을게요."
+haggle_agree_line = "좋아요, 그 값에 하죠. 대신 다리에만, 한 줄만이에요. 군더더기 없이요."
+haggle_refuse_line = "무도회를 한 번 열 값이네요. 처음 값으로 하죠. 덤은 줄일게요."

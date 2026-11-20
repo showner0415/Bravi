@@ -5,6 +5,7 @@ extends Control
 const Ui := preload("res://scripts/day_ui.gd")
 
 const SHOP_HINT := "살 것이 있다 — 고르거나, 그냥 '다음 날을 연다'를 누른다"
+const SAVED_NOTE := "저장했다 — 끄고 다시 켜도 %d일차 아침부터 이어진다"
 
 ## 하루 플레이의 상태. 비어 있으면 /root/GameSession의 것을 본다.
 var day: DayState
@@ -103,6 +104,15 @@ func _build(summary: Dictionary) -> void:
 	quit.position = Vector2(32, 638)
 	quit.size = Vector2(220, 46)
 	quit.pressed.connect(_quit)
+
+	# 이 실행에서 내일의 아침을 적는 데 성공했을 때만 알린다(세션이 없거나 저장이 꺼져 있으면 없다).
+	var session := get_node_or_null(^"/root/GameSession")
+	if session != null and int(session.get("saved_day")) == day.day_number + 1:
+		var saved_note := Ui.add_label(self, SAVED_NOTE % (day.day_number + 1), 16, Ui.DIM)
+		saved_note.name = "SavedNote"
+		saved_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		saved_note.position = Vector2(268, 650)
+		saved_note.size = Vector2(590, 24)
 
 	refresh_shop()
 
@@ -206,7 +216,15 @@ static func reputation_ledger_text(p_day: DayState) -> String:
 ## 눌리지 않는 버튼의 신호가 코드로 발사돼도 day가 거절하므로 아무것도 바뀌지 않는다.
 func _buy(upgrade: UpgradeData) -> void:
 	if day != null and day.buy(upgrade):
+		_save_now()
 		refresh_shop()
+
+
+## 내일의 아침을 다시 적는다(산 뒤에는 소지금과 가진 것이 바뀌었다). 테스트가 붙인 화면에서는 적지 않는다.
+func _save_now() -> void:
+	var session := get_node_or_null(^"/root/GameSession")
+	if session != null and is_inside_tree() and get_tree().current_scene == self:
+		session.call("save_game")
 
 
 func _next_day() -> void:

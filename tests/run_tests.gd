@@ -6,6 +6,7 @@ extends SceneTree
 ##   새 class_name 스크립트를 더한 뒤에는 먼저 <godot> --headless --path <프로젝트> --import 로
 ##   클래스 캐시(.godot/, 깃에 없음)를 갱신해야 한다. 안 하면 테스트 파일이 파스 오류로 로드되지 않는다.
 ## 통과 판정: 종료 코드 0, 마지막 줄 "ALL PASS n/n", 출력에 SCRIPT ERROR / ERROR: 없음.
+## 오토로드 GameSession이 떠 있으면 저장을 끄고 돈다(save_path를 비운다). 실제 저장 파일을 읽지 않는다.
 
 const TEST_FILES: Array[String] = [
 	"res://tests/project_tests.gd",
@@ -19,6 +20,8 @@ const TEST_FILES: Array[String] = [
 	"res://tests/lunge_tests.gd",
 	"res://tests/reputation_tests.gd",
 	"res://tests/haggle_tests.gd",
+	"res://tests/save_tests.gd",
+	"res://tests/client_line_tests.gd",
 ]
 
 var _started := false
@@ -45,6 +48,15 @@ func _process(_delta: float) -> bool:
 		quit(_exit_code)
 		return true
 	_started = true
+
+	# 오토로드 GameSession이 떠 있으면 저장을 끈다. 테스트가 붙인 처음 화면이 실제 저장 파일을 읽지 않게 한다
+	# (스모크와 같은 장치). --script 실행에 오토로드가 뜨는지에 기대지 않는다: 없으면 할 일이 없다.
+	var session := root.get_node_or_null(^"GameSession")
+	if session == null:
+		print("RUNNER 저장: 오토로드 GameSession 없음")
+	else:
+		print("RUNNER 저장: 오토로드 GameSession 있음, save_path '%s'를 비움" % str(session.get("save_path")))
+		session.set("save_path", "")
 
 	var tests: Array = []
 	for path in TEST_FILES:
