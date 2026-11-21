@@ -1,0 +1,31 @@
+Task: call your image generation tool exactly once to create exactly one image. You may use the code tool only to make that one call. Pass both attached images to the image generation tool as referenced images by their paths: {WORKDIR}\in-1.png and {WORKDIR}\in-2.png. Do not run shell commands. Do not read, create, change or delete any file. Do not use a browser, web search, computer use, apps or any other tool. Do not retry. When the image is done, reply with one line: done.
+
+Image: Landscape, 1536x1024 pixels. One sheet of separate body parts of the same character for cutout animation in a 2D duel game.
+
+Subject: the same character as in the first referenced image: Bartolo, a vain and quarrelsome gentleman duelist from a Renaissance-era Italian town.
+
+Pose and layout:
+- The first referenced image is the character: draw exactly the same character, colors and style.
+- The second referenced image shows where each part goes: follow it.
+- Ten parts, all from the front:
+  1. the same head drawn three times without hat, each with a short neck stub, with three expressions: smug and haughty, flustered and caught off guard, dizzy and dazed;
+  2. the hat without the feather;
+  3. the feather alone, lying sideways;
+  4. the torso without arms and legs, with the shoulders and the base of the neck complete and the ruff collar;
+  5. the sword arm from shoulder to wrist as one straight piece, sleeve only, with a rounded top; it is short, as in the sketch;
+  6. the fist alone, as if gripping;
+  7. the rapier alone: blade, guard and grip, pointing straight up;
+  8. the legs from the waist down: breeches, stockings and shoes.
+- Draw each part complete, including the areas that would be hidden behind other parts.
+- Clear empty space between all parts. No part touches another. No labels, no numbers, no guide lines, no dots.
+
+Style:
+- Big head, simple face: dot eyes, simple eyebrows, a small mouth. The three heads show the three expressions listed above and are clearly the same man.
+- Hand-inked outlines in very dark warm brown. The line weight varies: thicker on the outer contour, thinner inside, tapered ends, slightly rough edges.
+- Flat fills from a muted, faded earthy palette: parchment beige, faded brick red, olive green, dusty grey-blue, ochre, wood brown, warm skin tones.
+- Exactly one flat shadow tone per color. No gradients, no soft shading, no highlights, no texture inside the fills.
+- The outlines are the darkest color in the image. Every fill is clearly lighter than the outlines, and the shadow tones are also clearly lighter than the outlines.
+
+Colors to avoid on the figure: bright saturated yellow, orange, red, blue, purple or green, and pure white. Large areas such as the doublet, sleeves and breeches are greyish and low in saturation.
+
+Background: one plain flat light grey color, about #D8D8D8, everywhere around the parts. No floor, no cast shadow, no scenery, no frame, no text, no letters, no signature, no watermark.

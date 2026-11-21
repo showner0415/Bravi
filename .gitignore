@@ -4,3 +4,5 @@
 # 참고 스크린샷(상용 게임의 이미지)은 로컬에만 둔다 (계획 020, 결정 178)
 /docs/style/reference/*
 !/docs/style/reference/README.md
+# 생성 그림의 원본·손질본·넣은 그림은 로컬에만 둔다. 고른 것만 docs/style/basis/로 올린다 (계획 021, 결정 189)
+/docs/style/generated/

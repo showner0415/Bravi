@@ -1,0 +1,16 @@
+Task: call your image generation tool exactly once to create exactly one image. You may use the code tool only to make that one call. Pass the attached sketch to the image generation tool as a referenced image by its path: {WORKDIR}\in-1.png. Do not run shell commands. Do not read, create, change or delete any file. Do not use a browser, web search, computer use, apps or any other tool. Do not retry. When the image is done, reply with one line: done.
+
+Image: Landscape, 1536x1024 pixels. Background for a duel scene in a 2D game. The top and bottom 80 pixels may be cropped, so keep important things inside the middle band.
+
+Subject: a town square in a Renaissance-era Italian town after sunset. Rooftops, chimneys and a bell tower of distant houses stand as dark silhouettes against the dusk sky and cross the whole picture. On the left the rim of a stone fountain with a column. On the right a market stall with its awning rolled up and wooden crates. Paving stones. No people, no animals.
+
+Composition:
+- Follow the attached sketch for the composition.
+- The area right behind the duelist, the middle 35 percent of the width from top to bottom, has no linework and no small details. Large dark shapes of the place may continue into it as flat tones (the ground, a far wall, a strip of night sky).
+- Everywhere else the place is clearly recognizable even if the top and bottom bands are covered.
+- The edge between the detailed parts and the calm middle is not a straight vertical line, and the left and right sides are not mirror images.
+- No arches, no curtains, no stage, no audience, no railings or balustrades, no spotlights, no floor lines that meet in the center, no frame around the center, no glowing lights.
+
+Style: old hand-colored engraving look, dark brown ink linework, hatching and cross-hatching near the edges, faded parchment and umber tones, dark evening light overall. No text, no signature.
+
+Colors to avoid in the image: bright saturated yellow, orange, red, blue, purple or green, and pure white. The central dark area has no bright or saturated color.

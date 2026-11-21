@@ -1,0 +1,24 @@
+Task: call your image generation tool exactly once to create exactly one image. You may use the code tool only to make that one call. Pass the attached sketch to the image generation tool as a referenced image by its path: {WORKDIR}\in-1.png. Do not run shell commands. Do not read, create, change or delete any file. Do not use a browser, web search, computer use, apps or any other tool. Do not retry. When the image is done, reply with one line: done.
+
+Image: one full-body character for a 2D duel game. Portrait, 1024x1536 pixels.
+
+Subject: Bartolo, a vain and quarrelsome gentleman duelist from a Renaissance-era Italian town. Doublet with buttons and a small ruff collar, breeches, stockings, plain shoes, a small low-crowned hat with one long feather. He holds a rapier.
+
+Pose and layout (the figure will be cut into separate parts, so keep the parts apart):
+- Follow the attached sketch for the pose, the proportions and the place of every part. Keep the same large head size.
+- Strictly front view, facing the viewer, standing upright, head straight, feet apart.
+- His sword arm is on the viewer's left. It hangs down beside the body with a clear gap between the arm and the torso. The arm is short, as in the sketch: the hand is at waist height, just above the belt and higher than the hips. The hand holds the rapier with the blade pointing up and leaning outward, away from the body, so the blade crosses neither the body nor the head.
+- His other hand is hidden behind his back.
+- The feather lies sideways toward the viewer's right, not upward.
+- Nothing covers the face. The whole figure is inside the image with a margin. Nothing is cropped.
+
+Style:
+- Big head, simple face: dot eyes, simple eyebrows, a small mouth. His character shows in the expression: smug and touchy.
+- Hand-inked outlines in very dark warm brown. The line weight varies: thicker on the outer contour, thinner inside, tapered ends, slightly rough edges.
+- Flat fills from a muted, faded earthy palette: parchment beige, faded brick red, olive green, dusty grey-blue, ochre, wood brown, warm skin tones.
+- Exactly one flat shadow tone per color. No gradients, no soft shading, no highlights, no texture inside the fills.
+- The outlines are the darkest color in the image. Every fill is clearly lighter than the outlines, and the shadow tones are also clearly lighter than the outlines.
+
+Colors to avoid on the figure: bright saturated yellow, orange, red, blue, purple or green, and pure white. Large areas such as the doublet, sleeves and breeches are greyish and low in saturation.
+
+Background: one plain flat light grey color, about #D8D8D8, everywhere around the figure. No floor, no cast shadow, no scenery, no frame, no text, no letters, no signature, no watermark.

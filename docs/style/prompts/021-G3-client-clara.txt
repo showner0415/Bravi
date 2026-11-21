@@ -1,0 +1,21 @@
+Task: call your image generation tool exactly once to create exactly one image. You may use the code tool only to make that one call. Pass the attached sketch to the image generation tool as a referenced image by its path: {WORKDIR}\in-1.png. Do not run shell commands. Do not read, create, change or delete any file. Do not use a browser, web search, computer use, apps or any other tool. Do not retry. When the image is done, reply with one line: done.
+
+Image: Portrait, 1024x1536 pixels. One shop customer from the waist up for a counter scene in a 2D game.
+
+Subject: Clara, a hat maker from a Renaissance-era Italian town, a woman in her thirties. A vain duelist took a hat from her shop without paying; she wants only its feather cut and nobody hurt, because trouble would come back to her. She wears a small stylish hat of her own making with a ribbon, a muted olive green dress and a parchment colored work apron with two pins on it, hair in a bun. Her hands are clasped in front of the apron.
+
+Pose and layout:
+- Front view or a slight three-quarter view, head straight, both hands visible at waist level (she stands behind a shop counter that is not drawn).
+- Follow the attached sketch for the proportions and the framing. Keep the same large head size.
+- Nothing covers the face. The whole figure from the waist up is inside the image with a margin.
+
+Style:
+- Big head, simple face: dot eyes, simple eyebrows, a small mouth. Her character shows in the expression: worried, polite and a little flustered, eyebrows raised in the middle.
+- Hand-inked outlines in very dark warm brown. The line weight varies: thicker on the outer contour, thinner inside, tapered ends, slightly rough edges.
+- Flat fills from a muted, faded earthy palette: parchment beige, faded brick red, olive green, dusty grey-blue, ochre, wood brown, warm skin tones.
+- Exactly one flat shadow tone per color. No gradients, no soft shading, no highlights, no texture inside the fills.
+- The outlines are the darkest color in the image. Every fill is clearly lighter than the outlines, and the shadow tones are also clearly lighter than the outlines.
+
+Colors to avoid on the figure: bright saturated yellow, orange, red, blue, purple or green, and pure white. Large areas such as the clothes are muted and low in saturation.
+
+Background: one plain flat light grey color, about #D8D8D8, everywhere around the figure. No floor, no cast shadow, no scenery, no frame, no text, no letters, no signature, no watermark.
