@@ -1,3 +1,6 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
+# 참고 스크린샷(상용 게임의 이미지)은 로컬에만 둔다 (계획 020, 결정 178)
+/docs/style/reference/*
+!/docs/style/reference/README.md

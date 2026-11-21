@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>화풍 다리 견본</title>
+<style>
+/* 색은 모두 여기에 둔다(계획 020 작업 3). 페이지의 스크립트도 이 값을 읽는다. */
+:root {
+  --ink: #3B2A1E; --ink-soft: #6B5440;
+  --parch-1: #E9D8B4; --parch-2: #D2B98C; --parch-3: #A8895E;
+  --stage-dark: #5E4C39; --stage-dark-2: #7A6449;
+  --red: #A5533F; --green: #6F7F4F; --blue: #5C6F7E; --ochre: #C08A3E; --wood: #7A5232;
+  --skin-1: #EBC49F; --skin-2: #C98E66; --skin-3: #8E5E40;
+  /* 신호색: 지금 코드의 값 그대로(결정 181) */
+  --sig-thrust: #FFE640; --sig-cut: #FFBF33; --sig-big: #FF801A; --sig-strike: #F23333;
+  --sig-recovery: #4D80F2; --sig-stagger: #A659D9; --sig-touched: #FFFFFF;
+  --sig-aim: #FFFF66; --sig-band: #4DFF80;
+  --sw-ready: #D9D9E6; --sw-guard: #4DD973; --sw-fresh: #66F2FF; --sw-parry: #FFD933;
+  --sw-grazed: #F24040; --sw-windup: #FFE64D; --sw-bind: #FF7333;
+  /* 결투 무대의 가운데. 기본은 짙은 무대(결정 182) */
+  --stage-c: var(--stage-dark); --stage-c2: var(--stage-dark-2);
+}
+body.stage-light { --stage-c: #E9D8B4; --stage-c2: #DCC9A2; }
+
+/* A 깔끔한 사람, B 잉크로 이은 사람, C 판화로 기운 사람 — 인물의 선·칠·그림자만 다르다(결정 180) */
+.bridge-a {
+  --line: #1E1A17; --lw: 6;
+  --c-doublet: #4A6F94; --c-doublet-sh: #3D5670;
+  --c-legs: #7E5E48; --c-legs-sh: #634A39;
+  --c-skin: #F0C29A; --c-skin-sh: #D59C72;
+  --c-hat: #B04A3A; --c-hat-sh: #8C3A2E;
+  --c-feather: #F4EEDC; --c-steel: #D7DADF; --c-hair: #3A2A20;
+  --c-collar: #F2EEE4; --c-boot: #2E2622;
+  --c-coat: #3F8A5A; --c-coat-sh: #2F6A45; --c-cap: #8A3A52;
+  --c-glove: #8A6040; --c-glove-sh: #6E4C33; --c-psleeve: #5A6E4A;
+}
+.bridge-b {
+  --line: #3B2A1E; --lw: 4.6;
+  --c-doublet: #5C6F7E; --c-doublet-sh: #4A5A67;
+  --c-legs: #6B5440; --c-legs-sh: #57442F;
+  --c-skin: #EBC49F; --c-skin-sh: #C98E66;
+  --c-hat: #A5533F; --c-hat-sh: #84422F;
+  --c-feather: #E9D8B4; --c-steel: #CFC8BA; --c-hair: #3B2A1E;
+  --c-collar: #E9D8B4; --c-boot: #3B2A1E;
+  --c-coat: #6F7F4F; --c-coat-sh: #59663F; --c-cap: #7E4A4A;
+  --c-glove: #7A5232; --c-glove-sh: #634228; --c-psleeve: #5E6648;
+}
+.bridge-c {
+  --line: #3B2A1E; --lw: 4.6;
+  --c-doublet: #7A8384; --c-doublet-sh: #7A8384;
+  --c-legs: #8C7A66; --c-legs-sh: #8C7A66;
+  --c-skin: #E6CBA8; --c-skin-sh: #E6CBA8;
+  --c-hat: #A86A56; --c-hat-sh: #A86A56;
+  --c-feather: #E9D8B4; --c-steel: #CBC2B2; --c-hair: #4A3A2C;
+  --c-collar: #E2D3B4; --c-boot: #4A3A2C;
+  --c-coat: #8A9070; --c-coat-sh: #8A9070; --c-cap: #957068;
+  --c-glove: #8C7056; --c-glove-sh: #8C7056; --c-psleeve: #7E826A;
+}
+
+/* 파츠는 칠 층과 선 층 둘이다. 상태 색은 칠 층에만 80% 섞는다(Godot의 base.lerp(tint, 0.8)과 같은 셈) */
+.fill > * { fill: var(--base); stroke: none; }
+.opp.tint-on .tinted > .fill > * { fill: color-mix(in srgb, var(--base) 20%, var(--tint) 80%); }
+.line > * { fill: none; stroke: var(--line); stroke-width: var(--lw); stroke-linejoin: round; stroke-linecap: round; }
+.line > .ink { fill: var(--line); stroke: none; }
+.line > .eye-w { fill: var(--c-collar); }
+.line > .thin { stroke-width: calc(var(--lw) * 0.55); }
+.line > .thick { stroke-width: calc(var(--lw) * 1.35); }
+.line > .hatch { display: none; fill: url(#hatch); stroke: none; }
+.bridge-c .line > .hatch { display: inline; }
+.bridge-b .line, .bridge-c .line { filter: url(#inkline); }
+.bridge-c .opp .fill, .bridge-c .client .fill, .bridge-c .phand .fill { filter: url(#grain); }
+.sig-blade { fill: var(--sw-state); }
+
+.ink-edge { display: none; }
+body.stage-light .ink-edge { display: inline; }
+.light-note { display: none; }
+body.stage-light .light-note { display: inline; }
+
+.ui { font-family: "Batang", "BatangChe", "Gungsuh", serif; fill: var(--ink); }
+.state { font: bold 28px "Malgun Gothic", sans-serif; fill: #FFFFFF; stroke: #000000; stroke-width: 8; paint-order: stroke; stroke-linejoin: round; }
+
+html, body { margin: 0; background: #2A2018; color: #E9D8B4; font-family: "Batang", serif; }
+header { max-width: 1240px; margin: 0 auto; padding: 20px; line-height: 1.6; }
+header h1 { margin: 0 0 8px; font-size: 26px; }
+header ol li { margin-bottom: 8px; }
+header button { font: inherit; font-size: 17px; padding: 6px 16px; margin: 6px 0 12px; background: #E9D8B4; color: #3B2A1E; border: 2px solid #3B2A1E; cursor: pointer; }
+section { max-width: 1280px; margin: 0 auto 40px; }
+section h2 { font-size: 20px; margin: 0 20px 8px; }
+section p.cap { margin: 8px 20px 0; font-size: 15px; line-height: 1.5; }
+svg.scene { width: 100%; height: auto; display: block; background: #D2B98C; }
+.gray svg.scene { filter: grayscale(1); }
+body.solo header, body.solo section, body.solo h2, body.solo p.cap { display: none; }
+body.solo section.solo-target { display: block; margin: 0; max-width: none; }
+body.solo svg.scene { width: 1280px; height: 720px; }
+body.solo { overflow: hidden; }
+</style>
+</head>
+<body>
+<header>
+  <h1>화풍 다리 견본 — 계획 020</h1>
+  <p><b>보는 법</b>: A·B·C는 얼굴·비례·자리·배경이 같고, 인물(상대·의뢰인·내 손)의 <b>선·칠·그림자만</b> 다릅니다. 결투의 무대는 아래 단추로 짙은 쪽과 밝은 쪽을 바꿔 봅니다. 완성 그림이 아니라 방향을 고르는 견본입니다. 글꼴은 자리만 잡았습니다(글꼴은 계획 021에서 고릅니다). 상대의 자세·색·글자·고리는 지금 게임의 값 그대로입니다.</p>
+  <p>A 깔끔한 사람 — 고른 굵기의 검은 선, 맑은 칠, 평평한 그림자 한 단계 · B 잉크로 이은 사람 — 굵기가 변하는 고동색 잉크 선, 배경과 같은 바랜 칠 · C 판화로 기운 사람 — B의 선에 더 바랜 칠, 종이 결, 빗금 그림자</p>
+  <button id="stageBtn" type="button">무대 바꾸기 — 지금: 짙은 무대</button>
+  <ol>
+    <li><b>셋 가운데 어느 쪽이 가까운가요?</b> A / B / C / 섞기. 축마다 골라도 됩니다 — 선(고른 검정 / 굵기가 변하는 고동 잉크) · 칠(맑은 / 바랜 / 더 바랜, 종이 결) · 그림자(평평한 한 단계 / 빗금).</li>
+    <li><b>결투의 무대</b>(위 단추로 바꿔 보세요):
+      <br>· 짙은 무대 — 상대 뒤가 짙은 잉크 톤입니다. 고리·조준 테두리는 지금 게임 그대로 또렷하고(<span id="q2-dark-sig"></span>), 예비 동작으로 물든 몸도 무대와 밝기가 갈립니다(찌르기 <span id="q2-dark-thrust"></span>, 베기 <span id="q2-dark-cut"></span>, 큰 베기 <span id="q2-dark-big"></span>).
+      <br>· 밝은 양피지 무대 — 포션 크래프트에 더 가깝습니다. 고리·조준 테두리는 잉크 테두리를 둘러야 보이고(테두리 없이는 <span id="q2-light-sig"></span>), <b>예비 동작으로 물든 몸이 양피지와 거의 같은 밝기가 됩니다</b>(찌르기 <span id="q2-light-thrust"></span>, 베기 <span id="q2-light-cut"></span>, 큰 베기 <span id="q2-light-big"></span>). 찌르기·베기는 색상과 잉크 선으로만 읽게 됩니다.
+      <br>(숫자는 A·B·C의 상대 몸통 칠로 셈한 범위입니다. 자세한 값은 맨 아래 가까이의 "팔레트와 대비"에 있습니다. 밝은 무대의 잉크 테두리는 지금 게임에 없는 제안입니다.)</li>
+    <li><b>얼굴과 비례</b>: 지금 크기가 좋다 / 머리를 더 키운다 / 줄인다. 상대의 머리는 두 줄 상태 글자(올려 막기를 읽는 때)를 가리지 않아야 해서, 교전 거리에서 모자를 쓴 판은 지금 게임의 약 1.4배, 모자 없는 판은 약 2배까지입니다. 깃털은 옆으로 눕힌 꼴입니다. 의뢰인은 이 한계가 없습니다.</li>
+    <li><b>싫은 것</b>이 있으면 한 줄로.</li>
+  </ol>
+</header>
+<main id="main">
+<section id="a-duel" class="bridge-a"><h2>A · 결투 — 큰 베기의 예비 동작(진행 0.25), 갓 올린 막기</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg><p class="cap">교전(크기 0.85). 깃털 자르기의 판이라 모자를 썼다. 조준은 가운데·중단(몸통). 상태 글자는 두 줄(큰 베기!! / 받아낼 준비). 팔이 얼굴 앞에 오는 것은 지금 게임의 자세 그대로다. 내 손은 보이게 아래 안내 띠 위에 그렸다(게임은 띠가 위다).</p></section>
+<section id="b-duel" class="bridge-b"><h2>B · 결투 — 같은 장면</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="c-duel" class="bridge-c"><h2>C · 결투 — 같은 장면</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="a-states" class="bridge-a"><h2>A · 상태 넷</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg><p class="cap">칠 색으로 갈리고 선은 그대로다. 표정은 덧붙는 단서이고 지금 게임에는 없다.</p></section>
+<section id="b-states" class="bridge-b"><h2>B · 상태 넷</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="c-states" class="bridge-c"><h2>C · 상태 넷</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="a-far" class="bridge-a"><h2>A · 멀리 — 방심(칼끝을 내린다)</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg><p class="cap">멀리(크기 0.55). 모자를 쓰지 않은 판. 얼굴과 칼끝이 이 크기에서 보이는지.</p></section>
+<section id="b-far" class="bridge-b"><h2>B · 멀리 — 방심</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="c-far" class="bridge-c"><h2>C · 멀리 — 방심</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="a-counter" class="bridge-a"><h2>A · 카운터</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg><p class="cap">지금 카운터의 자리. 의뢰인은 포목상 에밀리오. 인물이 배경 앞에 떠 보이는지, 붙어 보이는지.</p></section>
+<section id="b-counter" class="bridge-b"><h2>B · 카운터</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="c-counter" class="bridge-c"><h2>C · 카운터</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="palette"><h2>팔레트와 대비</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg><p class="cap">값은 이 페이지의 &lt;style&gt;에서 읽어 셈했다. 대비는 상대 몸통 칠 A·B·C와 신호색을 80%로 섞은 색으로 셈한다.</p></section>
+<section id="a-states-gray" class="bridge-a gray"><h2>A · 상태 넷(흑백)</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg><p class="cap">색을 빼도 자세(팔·칼·고개)로 갈리는지 보는 메인의 확인용.</p></section>
+<section id="b-states-gray" class="bridge-b gray"><h2>B · 상태 넷(흑백)</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="c-states-gray" class="bridge-c gray"><h2>C · 상태 넷(흑백)</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+</main>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <pattern id="hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(40)">
+      <line x1="0" y1="0" x2="0" y2="7" stroke="#3B2A1E" stroke-width="1.6"/>
+    </pattern>
+    <pattern id="hatchBg" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(-35)">
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#6B5440" stroke-width="1.1"/>
+    </pattern>
+    <pattern id="crossBg" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#6B5440" stroke-width="1.1"/>
+      <line x1="0" y1="0" x2="6" y2="0" stroke="#6B5440" stroke-width="0.8"/>
+    </pattern>
+    <!-- B·C의 선: 오른쪽 아래가 두꺼워지는 겹침과 거친 가장자리 -->
+    <filter id="inkline" x="-10%" y="-10%" width="120%" height="120%">
+      <feOffset in="SourceGraphic" dx="1.4" dy="1.7" result="o"/>
+      <feMerge result="m"><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge>
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="4" result="n"/>
+      <feDisplacementMap in="m" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <!-- C의 칠: 옅은 종이 결 -->
+    <filter id="grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="2" seed="7" result="t"/>
+      <feColorMatrix in="t" type="matrix" values="0 0 0 0 0.23  0 0 0 0 0.16  0 0 0 0 0.12  0 0 0 0.6 -0.22" result="specks"/>
+      <feComposite in="specks" in2="SourceAlpha" operator="in" result="sp"/>
+      <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="sp"/></feMerge>
+    </filter>
+    <!-- 배경의 양피지 -->
+    <filter id="paper" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.02" numOctaves="3" seed="2" result="big"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="5" result="fine"/>
+      <feColorMatrix in="big" type="matrix" values="0 0 0 0 0.36  0 0 0 0 0.25  0 0 0 0 0.15  0 0 0 0.45 -0.14" result="blot"/>
+      <feColorMatrix in="fine" type="matrix" values="0 0 0 0 0.3  0 0 0 0 0.2  0 0 0 0 0.12  0 0 0 0.3 -0.08" result="grit"/>
+      <feMerge result="all"><feMergeNode in="SourceGraphic"/><feMergeNode in="blot"/><feMergeNode in="grit"/></feMerge>
+      <feComposite in="all" in2="SourceAlpha" operator="in"/>
+    </filter>
+  </defs>
+</svg>
+
+<script>
+"use strict";
+
+// ---------------------------------------------------------------- 상대 (결정 12의 이름·계층·관절)
+// 관절 자리는 scenes/duel/opponent_view.tscn과 같다: 목 (0,-200), 모자는 머리 꼭대기, 손목은 어깨 아래 105, 칼자루는 손목 아래 15.
+// 머리 높이 104(지금 78), 모자 45: 교전에서 446 - (200+104+45)*0.85 = 149.4 ≥ 142(두 줄 상태 글자의 아래 끝).
+const TORSO = "M-62,-198 Q-72,-198 -71,-186 L-60,-10 Q-59,0 -48,0 L48,0 Q59,0 60,-10 L71,-186 Q72,-198 62,-198 Z";
+const P = {
+  breech: "M-57,0 L57,0 L60,56 Q59,74 36,74 L13,74 Q12,40 0,38 Q-12,40 -13,74 L-36,74 Q-59,74 -60,56 Z",
+  breechSh: "M34,0 L57,0 L60,56 Q59,74 36,74 L28,74 Q32,30 34,0 Z",
+  stockL: "M-45,72 L-19,72 L-21,152 L-43,152 Z", stockR: "M19,72 L45,72 L43,152 L21,152 Z",
+  stockSh: "M36,72 L45,72 L43,152 L36,152 Z M-28,72 L-19,72 L-21,152 L-28,152 Z",
+  shoeL: "M-44,148 L-20,148 Q-16,160 -18,170 L-58,170 Q-60,158 -44,148 Z",
+  shoeR: "M20,148 L44,148 Q60,158 58,170 L18,170 Q16,160 20,148 Z",
+  torsoSh: "M42,-198 L62,-198 Q72,-198 71,-186 L60,-10 Q59,0 48,0 L34,0 Z",
+  belt: "M-59,-30 L59,-30 L58,-14 L-58,-14 Z",
+  face: "M-46,-8 Q-56,-52 -50,-78 Q-44,-104 0,-104 Q44,-104 50,-78 Q56,-52 46,-8 Q28,6 0,6 Q-28,6 -46,-8 Z",
+  faceSh: "M30,-100 Q44,-100 50,-78 Q56,-52 46,-8 Q36,1 24,4 Q40,-40 30,-100 Z",
+  earL: "M-49,-64 Q-63,-62 -61,-47 Q-59,-35 -47,-38 Z", earR: "M49,-64 Q63,-62 61,-47 Q59,-35 47,-38 Z",
+  hair: "M-52,-66 Q-56,-100 -30,-110 Q0,-117 30,-110 Q56,-100 52,-66 Q44,-84 26,-86 Q8,-98 -8,-90 Q-30,-94 -44,-80 Q-48,-74 -52,-66 Z",
+  nose: "M-5,-62 Q-16,-40 -11,-31 Q0,-24 12,-31 Q15,-42 5,-62 Z",
+  mustache: "M-34,-20 Q-20,-34 0,-26 Q20,-34 34,-20 Q40,-10 30,-12 Q16,-22 0,-18 Q-16,-22 -30,-12 Q-40,-10 -34,-20 Z",
+  goatee: "M-7,-6 Q0,7 7,-6 Q0,-2 -7,-6 Z",
+  brim: "M-74,0 Q-78,-12 -52,-14 L52,-14 Q78,-12 74,0 Q40,8 0,8 Q-40,8 -74,0 Z",
+  crown: "M-38,-12 L-33,-42 Q0,-48 33,-42 L38,-12 Z",
+  crownSh: "M18,-44 Q28,-43 33,-42 L38,-12 L26,-12 Z",
+  band: "M-38,-12 L-37,-22 L37,-22 L38,-12 Z",
+  feather: "M30,-28 Q78,-50 152,-30 Q106,-14 34,-18 Z",
+  sleeve: "M-17,2 Q-17,-10 0,-10 Q17,-10 17,2 L15,96 L-15,96 Z",
+  sleeveSh: "M6,-8 Q17,-6 17,2 L15,96 L7,96 Z",
+  cuff: "M-18,90 L18,90 L17,104 L-17,104 Z",
+  fist: "M-17,0 L17,0 Q20,14 17,28 Q0,34 -17,28 Q-20,14 -17,0 Z",
+  blade: "M-4.5,-24 L-4.5,-174 L0,-192 L4.5,-174 L4.5,-24 Z",
+  guard: "M-27,-25 Q-31,-20 -27,-15 L27,-15 Q31,-20 27,-25 Z",
+  grip: "M-4,-15 L4,-15 L4,4 L-4,4 Z",
+};
+const sh = (cls, d, base) => `<path class="${cls}" d="${d}" style="--base: var(${base})"/>`;
+const f = (d, base) => `<path d="${d}" style="--base: var(${base})"/>`;
+const l = (d, cls = "") => `<path${cls ? ` class="${cls}"` : ""} d="${d}"/>`;
+
+const FACES = {
+  idle: `${l("M-30,-70 Q-18,-76 -8,-71", "thick")}${l("M8,-71 Q18,-76 30,-70", "thick")}<circle class="ink" cx="-18" cy="-58" r="4.6"/><circle class="ink" cx="18" cy="-58" r="4.6"/>${l("M-8,-9 Q0,-6 8,-9")}`,
+  angry: `${l("M-31,-77 L-7,-66", "thick")}${l("M7,-66 L31,-77", "thick")}<circle class="ink" cx="-18" cy="-57" r="4.6"/><circle class="ink" cx="18" cy="-57" r="4.6"/><rect class="eye-w" x="-12" y="-15" width="24" height="10" rx="2"/>${l("M-4,-15 L-4,-5 M4,-15 L4,-5", "thin")}`,
+  focus: `${l("M-30,-73 L-8,-68", "thick")}${l("M8,-68 L30,-73", "thick")}${l("M-25,-58 L-11,-58")}<circle class="ink" cx="18" cy="-58" r="4.6"/>${l("M-9,-9 L9,-9")}`,
+  oops: `${l("M-30,-80 Q-18,-88 -8,-82", "thick")}${l("M8,-82 Q18,-88 30,-80", "thick")}<circle class="eye-w" cx="-18" cy="-58" r="8.5"/><circle class="eye-w" cx="18" cy="-58" r="8.5"/>${l("M-18,-58 m-8.5,0 a8.5,8.5 0 1,0 17,0 a8.5,8.5 0 1,0 -17,0", "thin")}${l("M18,-58 m-8.5,0 a8.5,8.5 0 1,0 17,0 a8.5,8.5 0 1,0 -17,0", "thin")}<circle class="ink" cx="-18" cy="-57" r="3.4"/><circle class="ink" cx="18" cy="-57" r="3.4"/><ellipse class="ink" cx="0" cy="-8" rx="7" ry="8"/>`,
+  dizzy: `${l("M-30,-74 Q-18,-84 -8,-74", "thick")}${l("M8,-80 Q18,-72 30,-78", "thick")}${l("M-24,-64 L-12,-52 M-12,-64 L-24,-52")}${l("M12,-64 L24,-52 M24,-64 L12,-52")}${l("M-12,-8 q4,-4 8,0 q4,4 8,0 q4,-4 8,0")}`,
+  smug: `${l("M-30,-74 Q-18,-80 -8,-74", "thick")}${l("M8,-74 Q18,-80 30,-74", "thick")}${l("M-27,-60 Q-18,-55 -9,-60")}${l("M9,-60 Q18,-55 27,-60")}${l("M-10,-9 Q2,-4 12,-12")}`,
+};
+
+function opp(o) {
+  // o: x, y, s(크기), hat, arm[절대 자리], sword(도), head(도), tint(변수 이름), headClosed, aim, face
+  const tint = o.tint ? ` tint-on" style="--tint: var(${o.tint})` : "";
+  const headTint = o.headClosed ? "" : "tinted";
+  const aim = o.aim ? `<g class="aim-outline"><path class="ink-edge" d="${TORSO}" fill="none" stroke="#3B2A1E" stroke-width="9.7"/><path d="${TORSO}" fill="none" stroke="var(--sig-aim)" stroke-width="5"/></g>` : "";
+  return `<g class="opp${tint}" transform="translate(${o.x},${o.y}) scale(${o.s})">
+  <g data-part="Legs" class="tinted">
+    <g class="fill">${f(P.breech, "--c-legs")}${sh("sh", P.breechSh, "--c-legs-sh")}${f(P.stockL, "--c-collar")}${f(P.stockR, "--c-collar")}${sh("sh", P.stockSh, "--c-legs-sh")}${f(P.shoeL, "--c-boot")}${f(P.shoeR, "--c-boot")}</g>
+    <g class="line"><path class="hatch" d="${P.breechSh}"/><path class="hatch" d="${P.stockSh}"/>${l(P.breech)}${l(P.stockL)}${l(P.stockR)}${l(P.shoeL)}${l(P.shoeR)}${l("M-36,10 Q-30,40 -38,66 M36,10 Q30,40 38,66", "thin")}${l("M-46,78 L-18,78 M18,78 L46,78", "thin")}</g>
+  </g>
+  <g data-part="Torso" class="tinted">
+    <g class="fill">${f(TORSO, "--c-doublet")}${sh("sh", P.torsoSh, "--c-doublet-sh")}${f(P.belt, "--c-boot")}<ellipse cx="0" cy="-198" rx="44" ry="12" style="--base: var(--c-collar)"/></g>
+    <g class="line"><path class="hatch" d="${P.torsoSh}"/>${l(TORSO)}${l("M-36,-190 Q-40,-100 -32,-34 M36,-190 Q40,-100 32,-34", "thin")}${l(P.belt)}<rect x="-9" y="-33" width="18" height="22" rx="2"/><circle class="ink" cx="0" cy="-168" r="3.4"/><circle class="ink" cx="0" cy="-143" r="3.4"/><circle class="ink" cx="0" cy="-118" r="3.4"/><circle class="ink" cx="0" cy="-93" r="3.4"/><circle class="ink" cx="0" cy="-68" r="3.4"/><ellipse cx="0" cy="-198" rx="44" ry="12"/>${l("M-30,-205 q5,8 10,0 q5,8 10,0 q5,8 10,0 q5,8 10,0 q5,8 10,0 q5,8 10,0", "thin")}</g>
+    <g data-part="Head" class="${headTint}" transform="translate(0,-200) rotate(${o.head || 0})">
+      <g class="fill">${f(P.earL, "--c-skin")}${f(P.earR, "--c-skin")}${f(P.face, "--c-skin")}${sh("sh", P.faceSh, "--c-skin-sh")}${f(P.hair, "--c-hair")}${f(P.nose, "--c-skin-sh")}${f(P.mustache, "--c-hair")}${f(P.goatee, "--c-hair")}</g>
+      <g class="line"><path class="hatch" d="${P.faceSh}"/>${l(P.earL)}${l(P.earR)}${l(P.face)}${l(P.hair)}${l(P.nose)}${l(P.mustache)}${FACES[o.face || "idle"]}</g>
+      <g data-part="Hat" transform="translate(0,-104)"${o.hat ? "" : ` style="display:none"`}>
+        <g class="fill">${f(P.crown, "--c-hat")}${sh("sh", P.crownSh, "--c-hat-sh")}${f(P.band, "--c-hat-sh")}${f(P.brim, "--c-hat")}</g>
+        <g class="line"><path class="hatch" d="${P.crownSh}"/>${l(P.crown)}${l(P.band, "thin")}${l(P.brim)}</g>
+        <g data-part="Feather">
+          <g class="fill">${f(P.feather, "--c-feather")}</g>
+          <g class="line">${l(P.feather)}${l("M32,-23 Q90,-36 150,-30", "thin")}${l("M60,-30 l8,-9 M80,-34 l8,-8 M100,-35 l8,-7 M120,-34 l8,-5 M66,-27 l9,6 M88,-29 l9,6 M110,-30 l8,5", "thin")}</g>
+        </g>
+      </g>
+    </g>
+    <g data-part="Arm" class="tinted" transform="translate(${o.arm[0]},${o.arm[1]})">
+      <g class="fill">${f(P.sleeve, "--c-doublet")}${sh("sh", P.sleeveSh, "--c-doublet-sh")}${f(P.cuff, "--c-collar")}</g>
+      <g class="line"><path class="hatch" d="${P.sleeveSh}"/>${l(P.sleeve)}${l(P.cuff)}</g>
+      <g data-part="Hand" class="tinted" transform="translate(0,105)">
+        <g class="fill">${f(P.fist, "--c-skin")}</g>
+        <g class="line">${l(P.fist)}${l("M-9,8 L-9,14 M0,8 L0,15 M9,8 L9,14", "thin")}</g>
+        <g data-part="Sword" transform="translate(0,15) rotate(${o.sword})">
+          <g class="fill">${f(P.blade, "--c-steel")}${f(P.grip, "--c-boot")}${f(P.guard, "--c-steel")}<circle cx="0" cy="8" r="5" style="--base: var(--c-steel)"/></g>
+          <g class="line">${l(P.blade)}${l("M0,-30 L0,-168", "thin")}${l(P.guard)}${l("M-24,-18 Q-28,8 0,10", "thin")}<circle cx="0" cy="8" r="5"/></g>
+        </g>
+      </g>
+    </g>
+    ${aim}
+  </g>
+</g>`;
+}
+
+// ---------------------------------------------------------------- 내 손과 칼 (player_sword_view: 칼 전체가 상태 색이다)
+function playerHand(x, y, stateVar, bladeWidth) {
+  return `<g class="phand" transform="translate(${x},${y})" style="--sw-state: var(${stateVar})">
+  <g transform="scale(${bladeWidth},1)">
+    <path class="sig-blade" d="M-6,-240 L6,-240 L9,-10 L-9,-10 Z"/><path class="sig-blade" d="M-40,-10 L40,-10 L40,4 L-40,4 Z"/>
+    <g class="line"><path d="M-6,-240 L6,-240 L9,-10 L-9,-10 Z"/><path d="M-40,-10 L40,-10 L40,4 L-40,4 Z"/><path class="thin" d="M0,-225 L0,-20"/></g>
+  </g>
+  <g class="fill">${f("M-44,78 L44,78 L52,150 L-52,150 Z", "--c-psleeve")}${f("M-36,2 Q-38,40 -34,86 L34,86 Q38,40 36,2 Q0,-6 -36,2 Z", "--c-glove")}${sh("sh", "M16,0 Q36,0 36,2 Q38,40 34,86 L20,86 Q26,40 16,0 Z", "--c-glove-sh")}${f("M-40,74 L40,74 L42,92 L-42,92 Z", "--c-collar")}</g>
+  <g class="line"><path class="hatch" d="M16,0 Q36,0 36,2 Q38,40 34,86 L20,86 Q26,40 16,0 Z"/>${l("M-44,78 L-52,150 M44,78 L52,150")}${l("M-36,2 Q-38,40 -34,86 L34,86 Q38,40 36,2 Q0,-6 -36,2 Z")}${l("M-26,20 Q0,14 26,20 M-28,42 Q0,36 28,42", "thin")}${l("M-40,74 L40,74 L42,92 L-42,92 Z")}</g>
+</g>`;
+}
+
+// ---------------------------------------------------------------- 결투의 무대 (판화 무늬는 가장자리, 상대 뒤 가운데는 조용하게. 결정 182)
+function spectators(x0, flip) {
+  let s = "";
+  for (let i = 0; i < 5; i++) {
+    const x = flip ? x0 - i * 46 : x0 + i * 46;
+    const y = 418 + (i % 2) * 14;
+    s += `<path d="M${x - 24},${y + 50} Q${x - 22},${y + 18} ${x},${y + 16} Q${x + 22},${y + 18} ${x + 24},${y + 50} Z" fill="var(--parch-3)" stroke="var(--ink-soft)" stroke-width="2"/>`;
+    s += `<circle cx="${x}" cy="${y}" r="15" fill="var(--parch-2)" stroke="var(--ink-soft)" stroke-width="2"/>`;
+    s += `<path d="M${x - 24},${y + 50} Q${x - 22},${y + 18} ${x},${y + 16} Q${x + 22},${y + 18} ${x + 24},${y + 50} Z" fill="url(#hatchBg)" opacity="0.6"/>`;
+  }
+  return s;
+}
+function balustrade(xa, xb) {
+  let s = `<rect x="${xa}" y="476" width="${xb - xa}" height="12" fill="var(--parch-3)" stroke="var(--ink)" stroke-width="2"/>`;
+  for (let x = xa + 10; x < xb - 10; x += 26) {
+    s += `<path d="M${x},488 q-6,18 0,36 q6,18 0,36 l12,0 q-6,-18 0,-36 q6,-18 0,-36 Z" fill="var(--parch-2)" stroke="var(--ink-soft)" stroke-width="1.6"/>`;
+  }
+  return s + `<rect x="${xa}" y="560" width="${xb - xa}" height="10" fill="var(--parch-3)" stroke="var(--ink)" stroke-width="2"/>`;
+}
+function duelStage() {
+  let folds = "";
+  for (let x = 320; x < 980; x += 58) folds += `<rect x="${x}" y="60" width="20" height="560" fill="var(--stage-c2)" opacity="0.45"/>`;
+  let masonry = "";
+  for (let k = 0, y = 40; y < 600; k++, y += 38) {
+    masonry += `<path d="M0,${y} L262,${y} M1018,${y} L1280,${y}" stroke="var(--ink-soft)" stroke-width="1.2" opacity="0.55"/>`;
+    const off = k % 2 ? 0 : 30;
+    for (let x = off; x < 262; x += 60) masonry += `<path d="M${x},${y} L${x},${y + 38}" stroke="var(--ink-soft)" stroke-width="1" opacity="0.45"/>`;
+    for (let x = 1018 + off; x < 1280; x += 60) masonry += `<path d="M${x},${y} L${x},${y + 38}" stroke="var(--ink-soft)" stroke-width="1" opacity="0.45"/>`;
+  }
+  let floor = "";
+  for (let i = -8; i <= 8; i++) floor += `<path d="M${640 + i * 30},600 L${640 + i * 150},720" stroke="var(--ink-soft)" stroke-width="1.2" opacity="0.6"/>`;
+  return `<rect width="1280" height="720" fill="var(--parch-2)" filter="url(#paper)"/>
+  ${masonry}
+  <path d="M290,600 L290,190 Q290,58 640,58 Q990,58 990,190 L990,600 Z" fill="var(--stage-c)"/>
+  <g>${folds}</g>
+  <path d="M290,600 L290,190 Q290,58 640,58 Q990,58 990,190 L990,600" fill="none" stroke="var(--ink)" stroke-width="5"/>
+  <path d="M270,600 L270,186 Q270,38 640,38 Q1010,38 1010,186 L1010,600" fill="none" stroke="var(--ink)" stroke-width="2.5"/>
+  <rect x="246" y="150" width="46" height="450" fill="var(--parch-1)" stroke="var(--ink)" stroke-width="2.5"/><rect x="270" y="150" width="22" height="450" fill="url(#crossBg)"/>
+  <rect x="988" y="150" width="46" height="450" fill="var(--parch-1)" stroke="var(--ink)" stroke-width="2.5"/><rect x="1012" y="150" width="22" height="450" fill="url(#crossBg)"/>
+  ${spectators(30, false)}${spectators(1250, true)}
+  ${balustrade(0, 246)}${balustrade(1034, 1280)}
+  <rect x="0" y="600" width="1280" height="120" fill="var(--parch-3)"/>${floor}
+  <path d="M0,600 L1280,600" stroke="var(--ink)" stroke-width="3"/>`;
+}
+
+// ---------------------------------------------------------------- HUD (자리와 글은 지금 duel_hud.gd 그대로, 꾸밈만 양피지)
+function panel(x, y, w, h) {
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="var(--parch-1)" stroke="var(--ink)" stroke-width="2"/><rect x="${x + 4}" y="${y + 4}" width="${w - 8}" height="${h - 8}" fill="none" stroke="var(--ink-soft)" stroke-width="0.8"/>`;
+}
+function cells(cx, y, n, filled, color, centered) {
+  const w = 24, g = 4, total = n * w + (n - 1) * g;
+  const x0 = centered ? cx - total / 2 : cx;
+  let s = "";
+  for (let i = 0; i < n; i++) s += `<rect x="${x0 + i * (w + g)}" y="${y}" width="${w}" height="14" fill="${i < filled ? color : "var(--parch-2)"}" stroke="var(--ink)" stroke-width="1.4"/>`;
+  return s;
+}
+function wrap(text, n) {
+  const out = []; let line = "";
+  for (const word of text.split(" ")) {
+    if ((line + " " + word).trim().length > n && line) { out.push(line); line = word; } else line = (line + " " + word).trim();
+  }
+  if (line) out.push(line);
+  return out;
+}
+function tspans(lines, x, y, dy) { return lines.map((t, i) => `<tspan x="${x}" y="${y + i * dy}">${t}</tspan>`).join(""); }
+function duelHud(h) {
+  return `${panel(334, 4, 612, 58)}<text class="ui" x="640" y="28" text-anchor="middle" font-size="18">바르톨로 — 자세 9/9</text>${cells(640, 40, 9, 9, "var(--ochre)", true)}
+  ${panel(10, 6, 330, 150)}<text class="ui" x="20" y="38" font-size="24">간격: ${h.dist}</text>
+  <text class="ui" x="160" y="34" font-size="15">엉킴</text><rect x="196" y="21" width="134" height="16" fill="var(--parch-2)" stroke="var(--ink)" stroke-width="1.2"/>
+  <text class="ui" font-size="15" fill="var(--red)" style="fill: var(--red)">${tspans(wrap(h.cond, 21), 20, 66, 19)}</text>
+  <rect x="20" y="128" width="310" height="18" fill="var(--parch-2)" stroke="var(--ink)" stroke-width="1.2"/><rect x="20" y="128" width="${h.meter}" height="18" fill="var(--green)"/><text class="ui" x="26" y="142" font-size="13">충족도</text>
+  ${panel(900, 6, 372, 58)}<text class="ui" x="1260" y="30" text-anchor="end" font-size="20">남은 시간 72.4초 · 경과 17.6초</text>
+  <text class="ui" x="914" y="54" font-size="15">${h.complCaption}</text><rect x="960" y="41" width="150" height="16" fill="var(--parch-2)" stroke="var(--ink)" stroke-width="1.2"/><rect x="960" y="41" width="${150 * h.compl}" height="16" fill="var(--ochre)"/>
+  ${panel(10, 556, 340, 58)}<text class="ui" x="20" y="588" font-size="18">내 자세 3/3</text>${cells(20, 596, 3, 3, "var(--green)", false)}
+  ${panel(780, 550, 492, 64)}<text class="ui" text-anchor="end" font-size="18">${tspans([h.aim, "내 상태: " + h.me], 1260, 576, 24)}</text>
+  <rect x="0" y="616" width="1280" height="104" fill="var(--parch-1)" opacity="0.92"/><path d="M0,616 L1280,616" stroke="var(--ink)" stroke-width="2.5"/>
+  <text class="ui" text-anchor="middle" font-size="14" opacity="0.8">${tspans(["좌클릭 공격 · 우클릭 막기 (떼고 있다가 고리가 띠에 들어올 때 누르면 패리) · 마우스 위치로 방향·높이 · W/S 간격 · F1 디버그", "빈틈이 아닐 때 공격하면 상대가 자세를 되찾는다"], 640, 700, 18)}</text>`;
+}
+function stateText(lines, cx, y0) {
+  return `<text class="state" text-anchor="middle">${tspans(lines, cx, y0 + 32, 40)}</text>`;
+}
+function ring() {
+  // 큰 베기의 고리: 화면 (640, 306), 남은 0.825초 x 240 = 198, 띠 240 x 0.18 = 43.2
+  return `<g transform="translate(640,306)">
+    <circle class="ink-edge" r="43.2" fill="none" stroke="#3B2A1E" stroke-width="7"/>
+    <circle r="43.2" fill="var(--sig-band)" fill-opacity="0.22" stroke="var(--sig-band)" stroke-opacity="0.95" stroke-width="3"/>
+    <circle class="ink-edge" r="198" fill="none" stroke="#3B2A1E" stroke-width="9"/>
+    <circle r="198" fill="none" stroke="#FFFFFF" stroke-opacity="0.95" stroke-width="5"/>
+    <circle class="ink-edge" r="6" fill="#3B2A1E"/>
+    <circle r="4" fill="#FFFFFF" fill-opacity="0.9"/>
+  </g>`;
+}
+const LIGHT_NOTE = `<text class="ui light-note" x="20" y="640" font-size="14" font-weight="bold">밝은 무대 — 제안: 고리·조준 테두리에 잉크 테두리(지금 게임에 없다)</text>`;
+
+const COND_FEATHER = "모자로 끝내기 — 유효타만 본다. 모자에 유효타 한 번. 스침은 어디든 괜찮고, 다른 곳의 유효타는 감점.";
+const COND_FIRST = "첫 피 — 유효타만 본다. 상대의 몸통·팔·손·다리에 유효타 한 번. 머리를 치면 감점.";
+
+// ---------------------------------------------------------------- 장면
+function sceneDuel() {
+  // 큰 베기의 예비 동작, 진행 0.25: 팔 = CHEST + (0,-150).lerp((0,60), 0.25) = (0, -277.5), 칼 lerp(0, 180, 0.25) = 45도
+  return duelStage()
+    + opp({ x: 640, y: 446, s: 0.85, hat: true, arm: [0, -277.5], sword: 45, tint: "--sig-big", aim: true, face: "angry" })
+    + duelHud({ dist: "교전", cond: COND_FEATHER, meter: 0, aim: "조준: 찌르기 · 중단 → 몸통", me: "막기 — 가운데", compl: 0, complCaption: "경계" })
+    + playerHand(640, 625, "--sw-fresh", 1.8)
+    + ring()
+    + stateText(["큰 베기!!", "받아낼 준비"], 640, 62)
+    + LIGHT_NOTE;
+}
+function sceneFar() {
+  // 멀리: 크기 0.55, 원점 (640, 406). 방심: 팔은 어깨, 칼만 -140도
+  return duelStage()
+    + opp({ x: 640, y: 406, s: 0.55, hat: false, arm: [-65, -180], sword: -140, aim: true, face: "smug" })
+    + duelHud({ dist: "멀리", cond: COND_FIRST, meter: 0, aim: "조준: 런지 · 중단 → 몸통", me: "준비", compl: 1, complCaption: "방심!" })
+    + playerHand(640, 650, "--sw-ready", 1)
+    + stateText(["방심"], 640, 62);
+}
+const STATES = [
+  { cap: ["① 대기", "칠·글자 없음. 팔은 어깨, 칼 -25°"], o: { arm: [-65, -180], sword: -25, face: "idle" }, text: [] },
+  { cap: ["② 찌르기의 예비 동작(진행 0.3)", "노랑 80%. 밝은 무대에서 묻히는지"], o: { arm: [0, -211], sword: 180, tint: "--sig-thrust", face: "focus" }, text: ["찌르기"] },
+  { cap: ["③ 빈틈 — 왼쪽 베기가 막힌 뒤", "파랑 80%. 머리는 물들지 않는다"], o: { arm: [-120, -140], sword: -120, tint: "--sig-recovery", headClosed: true, face: "oops" }, text: ["빈틈"] },
+  { cap: ["④ 무너짐", "보라 80%. 팔 처짐, 칼 165°, 고개 22.9°"], o: { arm: [-65, -130], sword: 165, head: 22.9, tint: "--sig-stagger", face: "dizzy" }, text: ["무너짐!"] },
+];
+function sceneStates() {
+  let s = `<rect width="1280" height="720" fill="var(--parch-2)" filter="url(#paper)"/>`;
+  STATES.forEach((st, i) => {
+    let folds = "";
+    for (let x = 14; x < 320; x += 58) folds += `<rect x="${x}" y="0" width="20" height="610" fill="var(--stage-c2)" opacity="0.45"/>`;
+    s += `<svg x="${i * 320}" y="0" width="320" height="720" viewBox="0 0 320 720" overflow="hidden">
+      <rect width="320" height="610" fill="var(--stage-c)"/>${folds}
+      <rect y="600" width="320" height="40" fill="var(--parch-3)"/><path d="M0,600 L320,600" stroke="var(--ink)" stroke-width="3"/>
+      ${opp(Object.assign({ x: 160, y: 506, s: 0.55, hat: false }, st.o))}
+      ${st.text.length ? stateText(st.text, 160, 62) : ""}
+      <rect y="640" width="320" height="80" fill="var(--parch-1)"/><path d="M0,640 L320,640" stroke="var(--ink)" stroke-width="2"/>
+      <text class="ui" font-size="15">${tspans(st.cap, 12, 664, 22)}</text>
+      <text class="ui" x="308" y="708" text-anchor="end" font-size="11" opacity="0.7">크기 0.55 (교전은 0.85)</text>
+    </svg>`;
+    if (i > 0) s += `<path d="M${i * 320},0 L${i * 320},720" stroke="var(--ink)" stroke-width="3"/>`;
+  });
+  return s + `<text class="ui light-note" x="640" y="632" text-anchor="middle" font-size="13">밝은 무대 — 무대 가운데가 양피지일 때</text>`;
+}
+
+// ---------------------------------------------------------------- 카운터 (counter.gd _build의 자리)
+const EMILIO_TEXT = "바르톨로 그 작자가 장터 한복판에서 내 이름을 더럽혔소. 피 한 방울이면 족하오. 죽일 것까진 없고, 얼굴은 건드리지 마시오. 다음 장날에도 마주쳐야 하니.";
+function client() {
+  // 자리 (120, 164), 크기 220 x 390 안. 카운터 띠(y 540)가 아랫부분을 가린다.
+  const coat = "M40,206 Q110,176 180,206 L208,392 L12,392 Z";
+  const coatSh = "M150,192 Q168,198 180,206 L208,392 L176,392 Z";
+  const head = "M38,128 Q30,56 110,48 Q190,56 182,128 Q184,196 110,206 Q36,196 38,128 Z";
+  const headSh = "M150,58 Q190,72 182,128 Q184,196 110,206 Q170,170 150,58 Z";
+  const cap = "M34,96 Q38,36 110,32 Q182,36 186,96 Q150,74 110,76 Q70,74 34,96 Z";
+  return `<g class="client" transform="translate(120,164)">
+  <g class="fill">${f(coat, "--c-coat")}${sh("sh", coatSh, "--c-coat-sh")}<ellipse cx="110" cy="204" rx="52" ry="14" style="--base: var(--c-collar)"/>${f(head, "--c-skin")}${sh("sh", headSh, "--c-skin-sh")}${f(cap, "--c-cap")}${f("M96,116 Q86,146 92,158 Q110,166 128,158 Q132,140 124,116 Z", "--c-skin-sh")}${f("M62,168 Q86,150 110,160 Q134,150 158,168 Q164,184 146,180 Q128,170 110,176 Q92,170 74,180 Q56,184 62,168 Z", "--c-hair")}</g>
+  <g class="line"><path class="hatch" d="${coatSh}"/><path class="hatch" d="${headSh}"/>${l(coat)}${l(head)}${l(cap)}${l("M110,34 L110,20", "thick")}<circle class="ink" cx="110" cy="18" r="6"/>${l("M96,116 Q86,146 92,158 Q110,166 128,158 Q132,140 124,116")}${l("M62,168 Q86,150 110,160 Q134,150 158,168 Q164,184 146,180 Q128,170 110,176 Q92,170 74,180 Q56,184 62,168 Z")}
+    ${l("M56,92 Q72,82 90,90", "thick")}${l("M130,90 Q148,82 164,92", "thick")}<circle class="ink" cx="72" cy="110" r="7"/><circle class="ink" cx="148" cy="110" r="7"/>${l("M100,190 Q110,186 120,190")}<ellipse cx="110" cy="204" rx="52" ry="14"/>
+    ${l("M110,220 L110,380", "thin")}<circle class="ink" cx="110" cy="240" r="4"/><circle class="ink" cx="110" cy="270" r="4"/><circle class="ink" cx="110" cy="300" r="4"/>${l("M70,230 Q62,300 58,380 M150,230 Q158,300 162,380", "thin")}</g>
+</g>`;
+}
+function button(x, y, w, h, text, size) {
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" fill="var(--parch-1)" stroke="var(--ink)" stroke-width="2.5"/><rect x="${x + 4}" y="${y + 4}" width="${w - 8}" height="${h - 8}" rx="2" fill="none" stroke="var(--ink-soft)" stroke-width="1"/><text class="ui" x="${x + w / 2}" y="${y + h / 2 + size * 0.36}" text-anchor="middle" font-size="${size}">${text}</text>`;
+}
+function sceneCounter() {
+  let shelves = "";
+  for (let i = 0; i < 4; i++) {
+    const y = 120 + i * 90;
+    shelves += `<rect x="18" y="${y}" width="84" height="8" fill="var(--wood)" stroke="var(--ink)" stroke-width="1.6"/>`;
+    for (let k = 0; k < 3; k++) shelves += `<path d="M${30 + k * 26},${y} L${36 + k * 26},${y - 70}" stroke="var(--ink)" stroke-width="3"/><path d="M${24 + k * 26},${y - 14} L${44 + k * 26},${y - 16}" stroke="var(--ink)" stroke-width="3"/>`;
+  }
+  let beams = "";
+  for (let x = 0; x < 1280; x += 160) beams += `<rect x="${x}" y="0" width="22" height="540" fill="url(#hatchBg)" opacity="0.5"/>`;
+  const dlg = wrap(EMILIO_TEXT, 40);
+  return `<rect width="1280" height="720" fill="var(--parch-1)" filter="url(#paper)"/>${beams}
+  <rect x="0" y="0" width="1280" height="64" fill="var(--parch-2)"/><path d="M0,64 L1280,64" stroke="var(--ink)" stroke-width="2.5"/>
+  ${shelves}
+  <rect x="150" y="78" width="200" height="64" fill="var(--parch-2)" stroke="var(--ink)" stroke-width="2.5"/><rect x="156" y="84" width="188" height="52" fill="none" stroke="var(--ink-soft)" stroke-width="1"/><text class="ui" x="250" y="118" text-anchor="middle" font-size="20">대리 결투 의뢰소</text>
+  ${client()}
+  <rect x="0" y="540" width="1280" height="180" fill="var(--wood)"/><rect x="0" y="540" width="1280" height="14" fill="var(--parch-3)"/>
+  <path d="M0,540 L1280,540 M0,554 L1280,554" stroke="var(--ink)" stroke-width="2.5"/>
+  <g opacity="0.55">${[590, 630, 670, 705].map(y => `<path d="M0,${y} Q320,${y - 8} 640,${y} T1280,${y}" fill="none" stroke="var(--ink)" stroke-width="1.4"/>`).join("")}</g>
+  <text class="ui" x="32" y="40" font-size="22">1일차 · 손님 1/3 (문밖에 2명) · 오늘 남은 결투 3 · 소지금 0</text>
+  <text class="ui" x="1248" y="40" text-anchor="end" font-size="20" style="fill: var(--red)">평판 20 · 별 3/5 (다음 24)</text>
+  <rect x="410" y="70" width="830" height="440" rx="6" fill="var(--parch-1)" stroke="var(--ink)" stroke-width="3"/><rect x="418" y="78" width="814" height="424" rx="3" fill="none" stroke="var(--ink-soft)" stroke-width="1.2"/>
+  ${[[418, 78], [1232, 78], [418, 502], [1232, 502]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="7" fill="var(--parch-2)" stroke="var(--ink)" stroke-width="2"/>`).join("")}
+  <text class="ui" font-size="19">${tspans(dlg, 436, 112, 30)}</text>
+  <text class="ui" font-size="18" style="fill: var(--red)">${tspans(wrap(COND_FIRST, 42), 436, 112 + dlg.length * 30 + 20, 26)}</text>
+  <text class="ui" font-size="17" opacity="0.8">${tspans(["흥정: 가게의 이름을 보고 값을 치를 손님이다 — 거절당하면 팁 최대 8", "상대: 바르톨로", "기본 보수 30 · 팁 최대 15 (받아 주면 기본 보수 39, 대신 100점이어야 팁까지 다 받는다)"], 436, 388, 26)}</text>
+  ${button(410, 600, 210, 56, "값을 올려 부른다", 18)}${button(640, 600, 230, 56, "돌려보낸다", 20)}${button(900, 590, 320, 76, "맡는다", 28)}${button(40, 650, 170, 42, "오늘은 그만", 16)}
+  <text class="ui" x="640" y="676" font-size="15" style="fill: var(--parch-1)">돌려보내면 오늘 결투가 하나 준다</text>
+  <text class="ui" x="40" y="710" font-size="13" style="fill: var(--parch-1)">오늘 한 일은 남지 않는다 — 이어서 하면 오늘 아침부터다</text>`;
+}
+
+// ---------------------------------------------------------------- 대비와 색 (WCAG 상대 휘도)
+const hex2rgb = h => { h = h.trim().replace("#", ""); return [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16)); };
+const lin = c => { c /= 255; return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+const lum = h => { const [r, g, b] = hex2rgb(h); return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b); };
+const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+const mix = (a, b, t) => { const A = hex2rgb(a), B = hex2rgb(b); return "#" + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, "0")).join("").toUpperCase(); };
+const hsv = h => { const [r, g, b] = hex2rgb(h).map(v => v / 255); const mx = Math.max(r, g, b), mn = Math.min(r, g, b); return { s: mx === 0 ? 0 : (mx - mn) / mx, v: mx }; };
+const r1 = x => x.toFixed(2);
+
+function cssVar(el, name) { return getComputedStyle(el).getPropertyValue(name).trim(); }
+
+function scenePalette(probe) {
+  const root = document.documentElement;
+  const v = n => cssVar(root, n);
+  const bridges = ["a", "b", "c"].map(k => probe[k]);
+  const bgNames = ["--parch-1", "--parch-2", "--parch-3", "--stage-dark", "--stage-dark-2", "--ink", "--ink-soft", "--red", "--green", "--blue", "--ochre", "--wood", "--skin-1", "--skin-2", "--skin-3"];
+  const chNames = ["--c-doublet", "--c-doublet-sh", "--c-legs", "--c-legs-sh", "--c-skin", "--c-skin-sh", "--c-hat", "--c-hat-sh", "--c-feather", "--c-steel", "--c-hair", "--c-collar", "--c-boot", "--c-coat", "--c-coat-sh", "--c-cap", "--c-glove", "--c-glove-sh", "--c-psleeve", "--line"];
+  const inZone = [];
+  const row = (x, y, hex, label) => {
+    const q = hsv(hex); if (q.s >= 0.55 && q.v >= 0.85) inZone.push(label + " " + hex);
+    return `<rect x="${x}" y="${y - 12}" width="22" height="14" fill="${hex}" stroke="#3B2A1E" stroke-width="1"/><text class="ui" x="${x + 28}" y="${y}" font-size="11.5">${label} ${hex} S${Math.round(q.s * 100)} V${Math.round(q.v * 100)}</text>`;
+  };
+  let s = `<rect width="1280" height="720" fill="var(--parch-1)"/><text class="ui" x="20" y="30" font-size="20">팔레트와 대비 (견본의 임시 값)</text>`;
+  s += `<text class="ui" x="20" y="56" font-size="14">바탕</text>`;
+  bgNames.forEach((n, i) => { s += row(20, 76 + i * 18, v(n), n.slice(2)); });
+  ["A", "B", "C"].forEach((k, j) => {
+    s += `<text class="ui" x="${250 + j * 210}" y="56" font-size="14">인물 ${k}</text>`;
+    chNames.forEach((n, i) => { s += row(250 + j * 210, 76 + i * 18, cssVar(bridges[j], n), n.replace(/^--(c-)?/, "")); });
+  });
+  // 두 무대의 대비 (결정 182)
+  const stages = { ["짙은 무대 " + v("--stage-dark")]: v("--stage-dark"), "밝은 무대 #E9D8B4": "#E9D8B4" };
+  const sig = [["흰 고리", "#FFFFFF"], ["노란 조준 테두리", v("--sig-aim")], ["초록 띠", v("--sig-band")]];
+  const tints = [["찌르기 칠", v("--sig-thrust")], ["베기 칠", v("--sig-cut")], ["큰 베기 칠", v("--sig-big")]];
+  const torso = bridges.map(b => cssVar(b, "--c-doublet"));
+  const result = {};
+  let y = 56; const x = 890;
+  s += `<text class="ui" x="${x}" y="${y}" font-size="13">두 무대의 대비 (밝은 L+0.05)/(어두운 L+0.05)</text>`;
+  Object.entries(stages).forEach(([name, bg]) => {
+    y += 22; s += `<text class="ui" x="${x}" y="${y}" font-size="13" font-weight="bold">${name} (L ${r1(lum(bg))})</text>`;
+    sig.forEach(([lab, hex]) => { const c = ratio(hex, bg); y += 17; s += `<text class="ui" x="${x + 8}" y="${y}" font-size="11.5">${lab} ${hex}: ${r1(c)}:1</text>`; (result[name] = result[name] || {})[lab] = c; });
+    tints.forEach(([lab, hex]) => {
+      const cs = torso.map(t => ratio(mix(t, hex, 0.8), bg));
+      y += 17; s += `<text class="ui" x="${x + 8}" y="${y}" font-size="11.5">${lab}(몸통 80%) A ${r1(cs[0])} · B ${r1(cs[1])} · C ${r1(cs[2])}</text>`;
+      result[name][lab] = cs;
+    });
+  });
+  y += 24; s += `<text class="ui" x="${x}" y="${y}" font-size="12">무대 둘레의 L: 짙음 ${r1(lum(v("--stage-dark")))}, 짙음2 ${r1(lum(v("--stage-dark-2")))} (≤ 0.20)</text>`;
+  const notes = [
+    `신호 구역(S ≥ 55%, V ≥ 85%) 안의 바탕·인물 색: ${inZone.length ? inZone.join(", ") : "없음"}`,
+    "교전의 꼭대기: 446 − (목 200 + 머리 104 + 모자 45) × 0.85 = 149.4 ≥ 142 (두 줄 상태 글자의 아래 끝)",
+    "깃털 끝(모자 안 x 152, y −30): 화면 (769, 162) — 상자(x 540~740, y 62~142) 밖. 깃털의 가장 높은 곳은 화면 y 153.6",
+    "모자 없는 판의 머리 꼭대기(머리털 −114): 교전에서 화면 y 179. 밀착(1.1, 원점 y 476)에서는 모자가 둘째 줄과 겹친다(머리 크기로는 못 푼다)",
+    "신호색(코드 값): 찌르기 #FFE640 · 베기 #FFBF33 · 큰 베기 #FF801A · 타격 #F23333 · 빈틈 #4D80F2 · 무너짐 #A659D9 · 닿음 #FFFFFF · 조준 #FFFF66 · 띠 #4DFF80",
+    "내 칼: 준비 #D9D9E6 · 막기 #4DD973 · 갓 올린 막기 #66F2FF · 패리 #FFD933 · 스침 #F24040 · 휘두름 #FFE64D · 엉킴 경고 #FF7333",
+  ];
+  s += `<text class="ui" font-size="12.5">${tspans(notes, 20, 600, 20)}</text>`;
+  return { svg: s, result, inZone };
+}
+
+// ---------------------------------------------------------------- 페이지 만들기
+// 섹션은 HTML에 글로 있다. 여기서는 그림만 채운다.
+const SCENES = {
+  "a-duel": sceneDuel, "b-duel": sceneDuel, "c-duel": sceneDuel,
+  "a-states": sceneStates, "b-states": sceneStates, "c-states": sceneStates,
+  "a-far": sceneFar, "b-far": sceneFar, "c-far": sceneFar,
+  "a-counter": sceneCounter, "b-counter": sceneCounter, "c-counter": sceneCounter,
+  "a-states-gray": sceneStates, "b-states-gray": sceneStates, "c-states-gray": sceneStates,
+};
+for (const [id, fn] of Object.entries(SCENES)) document.querySelector(`#${id} svg`).innerHTML = fn();
+const probes = { a: document.getElementById("a-duel"), b: document.getElementById("b-duel"), c: document.getElementById("c-duel") };
+const pal = scenePalette(probes);
+document.querySelector("#palette svg").innerHTML = pal.svg;
+
+// 물음 2의 숫자: 세 칠의 범위
+const fmt = arr => { const lo = Math.min(...arr), hi = Math.max(...arr); return lo.toFixed(1) === hi.toFixed(1) ? `약 ${lo.toFixed(1)}:1` : `약 ${lo.toFixed(1)}~${hi.toFixed(1)}:1`; };
+const st = Object.values(pal.result);
+const sigRange = o => fmt([o["흰 고리"], o["노란 조준 테두리"], o["초록 띠"]]);
+const set = (id, t) => { document.getElementById(id).textContent = t; };
+set("q2-dark-sig", sigRange(st[0])); set("q2-light-sig", sigRange(st[1]));
+set("q2-dark-thrust", fmt(st[0]["찌르기 칠"])); set("q2-dark-cut", fmt(st[0]["베기 칠"])); set("q2-dark-big", fmt(st[0]["큰 베기 칠"]));
+set("q2-light-thrust", fmt(st[1]["찌르기 칠"])); set("q2-light-cut", fmt(st[1]["베기 칠"])); set("q2-light-big", fmt(st[1]["큰 베기 칠"]));
+
+// 무대 바꾸기와 단독 보기(#<id>, #<id>--light)
+const btn = document.getElementById("stageBtn");
+btn.addEventListener("click", () => {
+  document.body.classList.toggle("stage-light");
+  btn.textContent = "무대 바꾸기 — 지금: " + (document.body.classList.contains("stage-light") ? "밝은 양피지 무대" : "짙은 무대");
+});
+const hash = decodeURIComponent(location.hash.slice(1));
+if (hash) {
+  const light = hash.endsWith("--light");
+  const target = document.getElementById(light ? hash.slice(0, -7) : hash);
+  if (target) {
+    document.body.classList.add("solo");
+    target.classList.add("solo-target");
+    if (light) document.body.classList.add("stage-light");
+  }
+}
+</script>
+</body>
+</html>

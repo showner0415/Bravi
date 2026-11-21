@@ -152,6 +152,8 @@
 - 예비 동작은 애니메이션 없이도 읽히게 한다: 파츠 이동, 색 변화, 텍스트 표시로 먼저 검증한다.
 - 필요한 애셋은 생길 때마다 `assets/MANIFEST.md`에 기록한다 (파일명, 용도, 크기, 상태: placeholder / generated / final).
 - 화풍과 프롬프트 기준은 3단계에서 `docs/STYLE_BIBLE.md`로 고정한다. 그 전에는 이미지 생성을 하지 않는다.
+- 참고 자료(다른 게임의 스크린샷)는 느낌만 참고한다: 따라 그리거나 잘라 쓰지 않고, 두 게임의 인물·UI·글꼴을 옮기지 않고, 이미지 생성에 이미지로 넣지 않고, 프롬프트에 게임·작가 이름을 쓰지 않는다. 참고 스크린샷은 `docs/style/reference/`에 두고 저장소에 올리지 않는다(결정 178·179).
+- 3단계의 견본과 참고 색인은 `docs/style/`에 둔다(`.gdignore`로 Godot이 가져오지 않는다).
 
 ## 8. 폴더 구조 (제안)
 
@@ -164,7 +166,7 @@ res://
   assets/        art/, audio/, MANIFEST.md
   tests/         헤드리스 테스트 (tests/run_tests.ps1로 실행)
 play.ps1         게임 실행 (클래스 캐시 갱신 뒤 켠다)
-docs/            STYLE_BIBLE.md, DECISIONS.md, BACKLOG.md, plans/
+docs/            STYLE_BIBLE.md, DECISIONS.md, BACKLOG.md, plans/, style/ (samples/, REFERENCES.md, 로컬만인 reference/)
 .claude/agents/  planner.md, design-reviewer.md, tech-reviewer.md
 ```
 
@@ -179,7 +181,7 @@ docs/            STYLE_BIBLE.md, DECISIONS.md, BACKLOG.md, plans/
 | 5. 사운드 | 효과음, 음악 | 칼 부딪힘, 피격, 카운터 환경음, 메인 테마 |
 | 6. 콘텐츠 | 의뢰·상대·스토리 확장 | 1주차 분량 |
 
-현재 위치: 1단계 완료 (2026-11-18 사용자 판정), 2단계 완료 (2026-11-21 사용자 판정. 계획 004~019). 3단계는 아직 시작하지 않았다(사용자 지시를 기다린다). 2단계에서 남긴 것: 보류한 값과 결정은 `docs/HANDOFF.md` 3번, 미룬 고칠 거리는 `docs/BACKLOG.md`.
+현재 위치: 1단계 완료 (2026-11-18 사용자 판정), 2단계 완료 (2026-11-21 사용자 판정. 계획 004~019), 3단계 진행 중 (같은 날 사용자 지시). 계획 020(화풍의 다리 견본)까지 실행했다. 3단계는 020~022로 나눈다(결정 176). 화풍의 방향: 인물(의뢰인, 결투 상대, 내 손·칼)은 「좋은 피자, 위대한 피자」처럼, 배경·UI·질감·장식은 「Potion Craft」처럼(사용자 지시 2026-11-21). 2단계에서 남긴 것: 보류한 값과 결정은 `docs/HANDOFF.md` 3번, 미룬 고칠 거리는 `docs/BACKLOG.md`.
 
 사용자가 "계획 계속 진행해줘"라고 하면 `docs/HANDOFF.md`를 읽고 거기 적힌 지점부터 이어 간다(다른 컴퓨터에서 이어 받을 때 쓴다. 그 파일이 없으면 직전 보고에서 다음 계획을 시작한다).
 
