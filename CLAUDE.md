@@ -166,7 +166,7 @@ res://
   assets/        art/, audio/, MANIFEST.md
   tests/         헤드리스 테스트 (tests/run_tests.ps1로 실행)
 play.ps1         게임 실행 (클래스 캐시 갱신 뒤 켠다)
-docs/            STYLE_BIBLE.md, DECISIONS.md, BACKLOG.md, plans/, style/ (samples/, prompts/, GENERATION.md, REFERENCES.md, 로컬만인 reference/·generated/)
+docs/            STYLE_BIBLE.md, DECISIONS.md, BACKLOG.md, plans/, style/ (samples/, prompts/, STYLE_SPEC.md, GENERATION.md, REFERENCES.md, 로컬만인 reference/·generated/)
 .claude/agents/  planner.md, design-reviewer.md, tech-reviewer.md
 ```
 
@@ -181,7 +181,7 @@ docs/            STYLE_BIBLE.md, DECISIONS.md, BACKLOG.md, plans/, style/ (sampl
 | 5. 사운드 | 효과음, 음악 | 칼 부딪힘, 피격, 카운터 환경음, 메인 테마 |
 | 6. 콘텐츠 | 의뢰·상대·스토리 확장 | 1주차 분량 |
 
-현재 위치: 1단계 완료 (2026-11-18 사용자 판정), 2단계 완료 (2026-11-21 사용자 판정. 계획 004~019), 3단계 진행 중 (같은 날 사용자 지시). 계획 021(세부 견본과 그림 생성 시험)까지 실행했다. 3단계는 020~023으로 나눈다(결정 183). 화풍의 방향: 인물(의뢰인, 결투 상대, 내 손·칼)은 「좋은 피자, 위대한 피자」처럼, 배경·UI·질감·장식은 「Potion Craft」처럼(사용자 지시 2026-11-21). 2단계에서 남긴 것: 보류한 값과 결정은 `docs/HANDOFF.md` 3번, 미룬 고칠 거리는 `docs/BACKLOG.md`.
+현재 위치: 1단계 완료 (2026-11-18 사용자 판정), 2단계 완료 (2026-11-21 사용자 판정. 계획 004~019), 3단계 진행 중 (같은 날 사용자 지시). 계획 022(화풍 명세와 다시 만들기)를 시험 한 장에서 닫았다(2026-11-21). 계획 023(화풍을 옮겨 새로 그리기)까지 실행했다(2026-11-22 사용자가 인물·무대·의뢰인의 기준 그림을 "맞다"고 했다). 3단계의 남은 나눔은 024~026이다(결정 201). 화풍의 방향: 인물(의뢰인, 결투 상대, 내 손·칼)은 「좋은 피자, 위대한 피자」처럼, 배경·UI·질감·장식은 「Potion Craft」처럼(사용자 지시 2026-11-21). 기준 화풍은 계획 021의 SVG 견본이고, 선은 깔끔한 짙은 고동 선(고른 굵기), 칠은 바랜 색이다(020의 A·B 섞기. 사용자 답 2026-11-21, 결정 194). 그림은 섞은 SVG 견본을 화풍의 참고로 넣어 새로 그린다: 꼴과 디테일의 양은 섞은 SVG만큼 단순하게 두고, 만듦새(비례, 이음매, 손)를 다듬고 디테일만 조금 더한다. 묘사를 늘려 둥글둥글하게도, 각지게도 그리지 않는다(계획 023의 사용자 답 2026-11-21~22, 결정 209. 기준 그림은 로컬의 `docs/style/generated/023-R1i`·`R2`·`R3`, 만드는 길은 `docs/style/STYLE_SPEC.md` 머리). 2단계에서 남긴 것: 보류한 값과 결정은 `docs/HANDOFF.md` 3번, 미룬 고칠 거리는 `docs/BACKLOG.md`.
 
 사용자가 "계획 계속 진행해줘"라고 하면 `docs/HANDOFF.md`를 읽고 거기 적힌 지점부터 이어 간다(다른 컴퓨터에서 이어 받을 때 쓴다. 그 파일이 없으면 직전 보고에서 다음 계획을 시작한다).
 

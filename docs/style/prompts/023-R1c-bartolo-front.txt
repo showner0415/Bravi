@@ -1,0 +1,28 @@
+Task: call your image generation tool exactly once to create exactly one image. You may use the code tool only to make that one call. Pass the attached guide image to the image generation tool as a referenced image by its path: {WORKDIR}\in-1.png. Give the image generation tool the text from the line that starts with Image: to the end of this message, word for word, as its prompt. Do not run shell commands. Do not read, create, change or delete any file. Do not use a browser, web search, computer use, apps or any other tool. Do not retry. When the image is done, reply with one line: done.
+
+Image: one full-body character for a 2D duel game. Portrait, 1024x1536 pixels.
+
+Subject: Bartolo, a vain and quarrelsome gentleman duelist from a Renaissance-era Italian town. Doublet with buttons and a small ruff collar, breeches, stockings, buckled shoes, a small low-crowned hat with one long feather. He holds a rapier.
+
+Pose and layout (the figure will be cut into separate parts, so keep the parts apart):
+- The attached image is only a rough placement guide made of plain grey shapes. It shows where the head, hat, torso, sword arm, hand, blade and legs go and how big the head is. Use it for placement and proportions only. Draw every part properly, as a new, finished illustration with a face, a hand, clothes and details.
+- Strictly front view: the head and the torso face the viewer squarely. He stands upright, head straight, feet apart. The feet may turn slightly outward.
+- His sword arm is on the viewer's left. It hangs down beside the body with a clear gap between the arm and the torso. The arm is short: the hand is at waist height, just above the belt and higher than the hips. The hand grips the rapier with the blade pointing up and leaning outward, away from the body, so the blade crosses neither the body nor the head.
+- His other hand is hidden behind his back.
+- The feather lies sideways toward the viewer's right, not upward.
+- Nothing covers the face. The whole figure is inside the image with a margin. Nothing is cropped.
+
+Style (draw a new, original illustration in the style described here):
+- A finished cartoon character illustration for a game, drawn with care. The drawing style is geometric and sturdy: every shape is built from straight edges and flat sides with rounded corners, like shapes cut from paper. The torso, sleeves, breeches and legs have straight sides. No puffy, bulging, balloon-like, wavy or curly shapes. Simple and flat: a clean cartoon, not realistic and not painterly.
+- Big head, about one quarter of the height from the neck to the feet. Simple, charming face: small solid dark eyes without highlights, short thick eyebrows, a small simple mouth, a simple nose. The expression is clear and full of character and comes only from the eyebrows, the eyes and the mouth. His eyes are short downward curves, smug. His character shows in the expression: smug and touchy.
+- Well-drawn details where they matter, drawn in the same simple straight-edged way: a hand with a thumb and fingers that really grips, shoes with a sole, a heel and a buckle, clothes with buttons, cuffs, a belt buckle, a neat collar and only two or three straight fold lines, a hat with a real brim and a band, a feather with a clear shape, hair as one simple solid shape. Every detail is drawn with the same clean line and flat color and stays readable when the figure is shown small.
+- Outlines: very dark warm brown, hex 3B2A1E. One even, bold line weight on every outer contour, about 10 pixels thick in a 1024 pixel wide image, smooth clean edges, round ends. No tapering, no wobble, no rough or broken edges. Inner lines are the same color and about half as thick.
+- Fills: flat solid colors, muted and faded. Hair, beard, belt and shoes are filled with the same very dark brown as the outlines.
+- Shadows: exactly one shadow tone per color, a slightly darker version of the same color and still clearly lighter than the outlines. Each shadow is one simple flat shape with a hard edge on the right side of the form, as if the light comes from the upper left. Shadows have no outline.
+- Do not add: hatching, cross-hatching, engraving or etching lines, brush or ink texture, paper texture on the figure, gradients, soft or blurred shadow edges, highlights or shine, blush or rosy cheeks, sweat drops, tears, freckles, skin texture, fabric patterns.
+
+Colors:
+- Main fills and their shadow tones: dusty grey-blue 5C6F7E with shadow 4A5A67 for the doublet and the sleeve, light wood brown 836850 with shadow 6E5642 for the breeches, parchment E9D8B4 for the collar, cuffs, stockings and feather, skin EBC49F, faded brick red A5533F for the hat, pale warm grey CFC8BA for the blade and guard.
+- Avoid bright saturated yellow, orange, red, blue, purple or green, and pure white. Large areas are greyish and low in saturation.
+
+Background: one plain flat light grey color, about #D8D8D8, everywhere around the figure. No floor, no cast shadow, no scenery, no frame, no text, no letters, no signature, no watermark.
