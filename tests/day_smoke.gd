@@ -1,5 +1,5 @@
 extends Node
-## 하루 통째 스모크. 씬으로 실행한다(오토로드 GameSession이 떠야 하므로 --script 러너로는 볼 수 없다).
+## 하루 통째 스모크. 씬으로 실행한다(tests/run_smoke.ps1). 실제 씬 전환과 오토로드 GameSession을 지난다(--script 러너에도 오토로드는 뜬다 — 2026-11-20 playtester 확인).
 ## 실행: powershell -ExecutionPolicy Bypass -File tests/run_smoke.ps1
 ##
 ## 처음 화면 → 1일차(오는 손님을 전부 맡는다) → 폐점(업그레이드를 전부 산다)

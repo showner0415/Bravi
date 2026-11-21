@@ -10,6 +10,9 @@ const SAVE_INFO_REPUTATION := " · 평판 별 %d/%d"
 const NEW_GAME_TEXT := "새로 시작한다"
 const NEW_GAME_ARMED := "한 번 더 누르면 새로 시작한다"
 const NEW_GAME_WARNING := "지금 가게(%d일차)는 지워진다. 되돌릴 수 없다"
+## 첫 누름 뒤 두 번째 누름을 받지 않는 시간(밀리초). 더블클릭과 Enter 연타가 경고를 읽기 전에 지우지 않게 한다.
+## 윈도의 기본 더블클릭 간격(0.5초)보다 길게 잡았다. 임시 값이다(계획 018).
+const NEW_GAME_LOCK_MSEC := 600
 const SAVE_UNREADABLE := "저장 파일을 읽지 못했다 — 가게를 열면 새로 시작하고, 그 파일은 덮어쓴다"
 const PRACTICE_TEXT := "연습 — 의뢰를 골라 결투"
 const HINT_TEXT := "Space / Enter 또는 클릭"
@@ -22,6 +25,8 @@ var save_unreadable := false
 var _new_game: Button
 ## "새로 시작한다"를 한 번 눌렀다. 한 번 더 누르면 지금 가게를 지우고 새로 시작한다.
 var _armed := false
+## "새로 시작한다"를 처음 누른 때(Time.get_ticks_msec()).
+var _armed_msec := 0
 
 
 func _ready() -> void:
@@ -109,12 +114,20 @@ func _build_continue() -> void:
 	resume.grab_focus()
 
 
+## 두 번째 누름을 받는가: 첫 누름(armed_msec)에서 NEW_GAME_LOCK_MSEC가 지났다.
+static func can_confirm_new_game(armed_msec: int, now_msec: int) -> bool:
+	return now_msec - armed_msec >= NEW_GAME_LOCK_MSEC
+
+
 ## 새로 시작한다: 지금 가게를 지우는 선택이라 두 번 눌러야 한다. 첫 번째는 알리기만 한다(파일은 그대로다).
+## 첫 누름 직후의 누름(더블클릭, Enter 연타)은 받지 않는다. 잠깐 뒤에 다시 누르면 지운다.
 func _on_new_game() -> void:
 	if _armed:
-		_open_shop()
+		if can_confirm_new_game(_armed_msec, Time.get_ticks_msec()):
+			_open_shop()
 		return
 	_armed = true
+	_armed_msec = Time.get_ticks_msec()
 	_new_game.text = NEW_GAME_ARMED
 	var warning := Ui.add_label(self, NEW_GAME_WARNING % saved.day_number, 18, Ui.RED)
 	warning.name = "NewGameWarning"

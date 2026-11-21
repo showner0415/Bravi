@@ -24,9 +24,12 @@ var _reputation_ledger: Label
 ## 처음에 한 번 만들고, 다시 그릴 때는 글과 disabled만 고친다.
 var _buy_buttons: Array[Button] = []
 var _buy_upgrades: Array[UpgradeData] = []
+## 화면이 열린 때(Time.get_ticks_msec()). 열린 직후의 누름을 삼키는 데 쓴다(Ui.swallow_arrival_press).
+var _opened_msec := 0
 
 
 func _ready() -> void:
+	_opened_msec = Time.get_ticks_msec()
 	var session := get_node_or_null(^"/root/GameSession")
 	if day == null and session != null and session.get("day") is DayState:
 		day = session.get("day")
@@ -36,6 +39,11 @@ func _ready() -> void:
 		call_deferred("_return_to_title")
 		return
 	_build(day.closing_summary())
+
+
+## 열린 직후의 마우스 버튼·키 입력은 삼킨다(앞 화면의 두 번째 누름이 여기 버튼을 누르지 않게).
+func _input(event: InputEvent) -> void:
+	Ui.swallow_arrival_press(self, event, _opened_msec)
 
 
 func _build(summary: Dictionary) -> void:
@@ -69,10 +77,10 @@ func _build(summary: Dictionary) -> void:
 	gap.custom_minimum_size = Vector2(0, 10)
 	book.add_child(gap)
 
-	Ui.add_label(book, "수입   +%d" % summary["income"], 22)
-	Ui.add_label(book, "임대료   -%d" % summary["rent"], 22)
+	Ui.add_label(book, "수입   %s" % ledger_amount(int(summary["income"]), "+"), 22)
+	Ui.add_label(book, "임대료   %s" % ledger_amount(int(summary["rent"]), "-"), 22)
 	# 단가는 적지 않는다(결과마다 그때의 단가가 들어 있고, 날마다 달라질 수 있다).
-	Ui.add_label(book, "치료비   -%d  (%d회)" % [summary["medical"], summary["injuries"]], 22)
+	Ui.add_label(book, "치료비   %s  (%d회)" % [ledger_amount(int(summary["medical"]), "-"), summary["injuries"]], 22)
 	shown_profit = int(summary["profit"])
 	shown = true
 	var profit_text := "오늘의 손익   %s%d" % ["+" if shown_profit >= 0 else "", shown_profit]
@@ -171,6 +179,11 @@ func refresh_shop() -> void:
 			get_viewport().gui_release_focus()
 	else:
 		_proceed.grab_focus()
+
+
+## 장부의 금액 한 칸: 0이 아니면 앞에 prefix("+" 또는 "-")를 붙이고, 0이면 부호 없이 "0"이다("-0"을 찍지 않는다).
+static func ledger_amount(value: int, prefix: String) -> String:
+	return ("%s%d" % [prefix, value]) if value != 0 else "0"
 
 
 ## 폐점의 평판 두 줄:

@@ -23,6 +23,8 @@ const HAGGLE_NOTE := "흥정한 값 — %d점이어야 팁까지 전부 받는�
 var day: DayState
 ## 화면에 내보인 합(기본 보수 + 팁). 내보인 것이 없으면 -1.
 var shown_total := -1
+## 화면이 열린 때(Time.get_ticks_msec()). 열린 직후의 누름을 삼키는 데 쓴다(Ui.swallow_arrival_press).
+var _opened_msec := 0
 
 
 ## 충족도에 맞는 반응 문구.
@@ -48,6 +50,7 @@ static func reaction_words(result: Dictionary, tip_floor: int) -> String:
 
 
 func _ready() -> void:
+	_opened_msec = Time.get_ticks_msec()
 	var session := get_node_or_null(^"/root/GameSession")
 	if day == null and session != null and session.get("day") is DayState:
 		day = session.get("day")
@@ -57,6 +60,11 @@ func _ready() -> void:
 		call_deferred("_return_to_title")
 		return
 	_build(day.last_result())
+
+
+## 열린 직후의 마우스 버튼·키 입력은 삼킨다(앞 화면의 두 번째 누름이 여기 버튼을 누르지 않게).
+func _input(event: InputEvent) -> void:
+	Ui.swallow_arrival_press(self, event, _opened_msec)
 
 
 func _build(result: Dictionary) -> void:

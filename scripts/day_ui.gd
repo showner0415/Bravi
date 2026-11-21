@@ -13,6 +13,26 @@ const DIM := Color(1, 1, 1, 0.7)
 const COUNTER_Y := 540.0
 ## 의뢰인 도형의 크기.
 const CLIENT_SIZE := Vector2(220, 390)
+## 화면이 열린 뒤 누름을 받지 않는 시간(밀리초). 앞 화면에서 빠르게 두 번 누른 것(더블클릭, Space 두 번)의
+## 두 번째가 새 화면의 같은 자리 버튼이나 포커스 버튼을 누르지 않게 한다. 임시 값이다(계획 018).
+const ARRIVAL_GUARD_MSEC := 400
+
+
+## 화면이 열린 때(opened_msec)부터 ARRIVAL_GUARD_MSEC가 지나지 않은 때(now_msec)의 마우스 버튼이나 키 입력인가.
+## 시각은 Time.get_ticks_msec()다(테스트가 직접 넣는다). 마우스 움직임 같은 다른 입력은 거짓이다.
+static func is_arrival_press(event: InputEvent, opened_msec: int, now_msec: int) -> bool:
+	if not (event is InputEventMouseButton or event is InputEventKey):
+		return false
+	return now_msec - opened_msec < ARRIVAL_GUARD_MSEC
+
+
+## 화면의 _input이 부른다: 그 화면이 현재 씬이고 열린 직후의 누름이면 삼킨다(버튼에 닿지 않는다).
+## 다른 씬 아래에 붙은 화면(테스트)에서는 아무것도 하지 않는다.
+static func swallow_arrival_press(screen: Control, event: InputEvent, opened_msec: int) -> void:
+	if not screen.is_inside_tree() or screen.get_tree().current_scene != screen:
+		return
+	if is_arrival_press(event, opened_msec, Time.get_ticks_msec()):
+		screen.get_viewport().set_input_as_handled()
 
 
 static func add_background(parent: Control, color := BACKGROUND) -> ColorRect:

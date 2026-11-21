@@ -43,7 +43,8 @@ const QUIT_NOTE := "오늘 한 일은 남지 않는다 — 이어서 하면 오�
 
 ## 하루 플레이의 상태. 비어 있으면 /root/GameSession의 것을 본다.
 var day: DayState
-## 화면에 내보인 문밖의 손님 수와 오늘 남은 결투 수. 내보인 것이 없으면 -1.
+## 화면에 내보인 문밖의 손님 수와 오늘 남은 결투 수(계산 그대로. 머리 줄에는 남은 손님 수로 자른 값을 적는다).
+## 내보인 것이 없으면 -1.
 var shown_waiting := -1
 var shown_duels_left := -1
 ## 화면에 내보인 평판. 평판이 없으면 -1.
@@ -52,6 +53,8 @@ var shown_reputation := -1
 var _haggle_button: Button
 var _haggle_line: Label
 var _pay_line: Label
+## 화면이 열린 때(Time.get_ticks_msec()). 열린 직후의 누름을 삼키는 데 쓴다(Ui.swallow_arrival_press).
+var _opened_msec := 0
 
 
 ## 손님의 haggle_min_stars를 HAGGLE_HINTS의 칸(0~3)으로 옮긴다.
@@ -66,6 +69,7 @@ static func haggle_hint_index(min_stars: int) -> int:
 
 
 func _ready() -> void:
+	_opened_msec = Time.get_ticks_msec()
 	var session := get_node_or_null(^"/root/GameSession")
 	if day == null and session != null and session.get("day") is DayState:
 		day = session.get("day")
@@ -78,11 +82,18 @@ func _ready() -> void:
 	_build(day.current_commission())
 
 
+## 열린 직후의 마우스 버튼·키 입력은 삼킨다(앞 화면의 두 번째 누름이 여기 버튼을 누르지 않게).
+func _input(event: InputEvent) -> void:
+	Ui.swallow_arrival_press(self, event, _opened_msec)
+
+
 func _build(commission: Commission) -> void:
 	shown_waiting = day.waiting_count()
 	shown_duels_left = day.duels_left()
+	# 머리 줄의 남은 결투는 지금 손님과 문밖 손님을 합친 수를 넘지 않게 적는다(손님이 모자라면 그만큼만 치른다).
+	var duels_to_show := mini(shown_duels_left, shown_waiting + 1)
 	var header := Ui.add_label(self, "%d일차 · 손님 %d/%d (문밖에 %d명) · 오늘 남은 결투 %d · 소지금 %d" % [
-		day.day_number, day.index + 1, day.commission_count(), shown_waiting, shown_duels_left, day.money], 22)
+		day.day_number, day.index + 1, day.commission_count(), shown_waiting, duels_to_show, day.money], 22)
 	header.name = "Header"
 	header.position = Vector2(32, 16)
 	# 방금 돌려보낸 손님의 한마디. 손님을 맡으면 사라진다.
@@ -171,7 +182,7 @@ func _build(commission: Commission) -> void:
 	quit_note.name = "QuitNote"
 	quit_note.position = Vector2(40, 694)
 
-	# 버튼은 의뢰인이 들어오는 것을 기다리지 않고 처음부터 눌린다.
+	# 버튼은 의뢰인이 다 들어오기를 기다리지 않는다. 다만 열린 뒤 Ui.ARRIVAL_GUARD_MSEC 동안은 누름을 삼킨다(_input).
 	# 어떤 버튼에도 포커스를 두지 않는다(정산에서 넘어온 Space가 사연을 읽기도 전에 대신 고르지 않게).
 
 
