@@ -3,8 +3,6 @@ extends Control
 
 const Ui := preload("res://scripts/day_ui.gd")
 
-const CLIENT_POS := Vector2(120, 164)
-
 # 의뢰인의 반응. 충족도 구간 넷의 공통 문구다. 의뢰에 그 구간의 한마디가 없을 때 나온다(reaction_words).
 # 승패가 아니라 "부탁한 대로 됐는가"를 말한다. 져 달라는 의뢰인에게도 말이 되어야 한다.
 const REACTION_NONE := "…부탁드린 건 이게 아니었는데요. 이래서는 보수를 드릴 수가 없어요."
@@ -76,7 +74,7 @@ func _build(result: Dictionary) -> void:
 
 	var client := Ui.make_client(result["client_name"])
 	client.name = "Client"
-	client.position = CLIENT_POS
+	client.position = Ui.CLIENT_POS
 	add_child(client)
 	Ui.add_counter_band(self)
 
@@ -164,12 +162,12 @@ static func reputation_line(result: Dictionary, rules: ReputationRules) -> Strin
 func _proceed() -> void:
 	if day == null or not day.proceed():
 		return
-	var session := get_node_or_null(^"/root/GameSession")
-	if session != null and get_tree().current_scene == self:
+	var session := Ui.current_session(self)
+	if session != null:
 		session.call("go_to_phase_scene")
 
 
 func _return_to_title() -> void:
-	var session := get_node_or_null(^"/root/GameSession")
-	if session != null and is_inside_tree() and get_tree().current_scene == self:
+	var session := Ui.current_session(self)
+	if session != null:
 		session.call("go_to_title")

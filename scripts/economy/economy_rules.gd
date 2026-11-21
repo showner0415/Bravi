@@ -12,7 +12,7 @@ extends Resource
 ## 팁에 덧붙는 비율(%). 30이면 팁과 팁의 최대가 1.3배다. 업그레이드가 올린다.
 @export var tip_bonus_percent := 0
 ## 기본 보수에 덧붙는 비율(%). 0이면 덧붙임이 없을 때와 같은 값이다.
-## 지금은 평판(별)이 그날의 사본에만 더한다(DayState.settle_rules).
+## 그날의 평판(별)과 받아 준 흥정은 사본에만 더한다(DayState._rules_with_haggle).
 @export var base_bonus_percent := 0
 ## 흥정("값을 올려 부른다")을 받아 준 판의 기본 보수 덧붙임(%). 0이면 흥정이 없다(버튼도 없다).
 @export var haggle_bonus_percent := 0

@@ -138,8 +138,8 @@ func _on_new_game() -> void:
 
 ## 저장된 아침에서 잇는다. 그 사이에 파일이 사라졌으면 처음 화면을 다시 연다.
 func _continue() -> void:
-	var session := get_node_or_null(^"/root/GameSession")
-	if session == null or get_tree().current_scene != self:
+	var session := Ui.current_session(self)
+	if session == null:
 		return
 	if bool(session.call("continue_day_play")):
 		session.call("go_to_phase_scene")
@@ -149,16 +149,15 @@ func _continue() -> void:
 
 ## 새 1일차를 시작한다(그 아침이 적힌다. 옛 저장은 덮어쓴다).
 func _open_shop() -> void:
-	# 다른 씬 아래에 붙어 있을 때(테스트)는 아무 데도 가지 않는다.
-	var session := get_node_or_null(^"/root/GameSession")
-	if session == null or get_tree().current_scene != self:
+	var session := Ui.current_session(self)
+	if session == null:
 		return
 	session.call("start_day_play")
 	session.call("go_to_phase_scene")
 
 
 func _practice() -> void:
-	var session := get_node_or_null(^"/root/GameSession")
-	if session == null or get_tree().current_scene != self:
+	var session := Ui.current_session(self)
+	if session == null:
 		return
 	session.call("go_to_practice")

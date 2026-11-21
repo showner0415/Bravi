@@ -61,15 +61,14 @@ var day_start_reputation := 0
 ## 흥정의 결과와, 그 흥정을 한 손님의 순번. 순번이 지금 손님과 다르면 흥정은 없는 것이다(haggle_state).
 var _haggle: int = Haggle.NONE
 var _haggle_index := -1
-## 흥정 주사위의 씨앗을 뽑는다(새로 시작할 때 한 번).
-var _rng := RandomNumberGenerator.new()
 
 
 ## 일정(p_schedule)이 있으면 p_data는 대체값이다: 일정이 그날의 하루를 주지 못할 때만 쓴다.
 func _init(p_rules: EconomyRules, p_data: DayData, p_catalog: UpgradeCatalog = null,
 		p_schedule: DaySchedule = null, p_reputation: ReputationRules = null) -> void:
-	_rng.randomize()
-	dice_seed = _rng.randi()
+	var seed_rng := RandomNumberGenerator.new()
+	seed_rng.randomize()
+	dice_seed = seed_rng.randi()
 	rules = p_rules
 	data = p_data
 	_fallback_data = p_data

@@ -13,6 +13,8 @@ const DIM := Color(1, 1, 1, 0.7)
 const COUNTER_Y := 540.0
 ## 의뢰인 도형의 크기.
 const CLIENT_SIZE := Vector2(220, 390)
+## 카운터와 정산이 같은 자리를 써야 화면이 바뀔 때 의뢰인이 튀지 않는다.
+const CLIENT_POS := Vector2(120, 164)
 ## 화면이 열린 뒤 누름을 받지 않는 시간(밀리초). 앞 화면에서 빠르게 두 번 누른 것(더블클릭, Space 두 번)의
 ## 두 번째가 새 화면의 같은 자리 버튼이나 포커스 버튼을 누르지 않게 한다. 임시 값이다(계획 018).
 const ARRIVAL_GUARD_MSEC := 400
@@ -26,10 +28,22 @@ static func is_arrival_press(event: InputEvent, opened_msec: int, now_msec: int)
 	return now_msec - opened_msec < ARRIVAL_GUARD_MSEC
 
 
+## 테스트는 화면을 root 아래에 붙여 쓰므로 현재 씬이 아니다: 그때는 씬을 바꾸거나 저장하지 않는다.
+static func is_current_scene(screen: Node) -> bool:
+	return screen.is_inside_tree() and screen.get_tree().current_scene == screen
+
+
+## 트리 밖에서 절대 경로를 찾으면 엔진이 오류 줄을 찍으므로 현재 씬인지 먼저 본다.
+static func current_session(screen: Node) -> Node:
+	if not is_current_scene(screen):
+		return null
+	return screen.get_node_or_null(^"/root/GameSession")
+
+
 ## 화면의 _input이 부른다: 그 화면이 현재 씬이고 열린 직후의 누름이면 삼킨다(버튼에 닿지 않는다).
 ## 다른 씬 아래에 붙은 화면(테스트)에서는 아무것도 하지 않는다.
 static func swallow_arrival_press(screen: Control, event: InputEvent, opened_msec: int) -> void:
-	if not screen.is_inside_tree() or screen.get_tree().current_scene != screen:
+	if not is_current_scene(screen):
 		return
 	if is_arrival_press(event, opened_msec, Time.get_ticks_msec()):
 		screen.get_viewport().set_input_as_handled()

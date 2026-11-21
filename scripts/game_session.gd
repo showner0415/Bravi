@@ -8,7 +8,7 @@ const SCHEDULE_PATH := "res://data/day_schedule.tres"
 const REPUTATION_PATH := "res://data/reputation_rules.tres"
 const TITLE_PATH := "res://scenes/ui/title.tscn"
 const SELECT_PATH := "res://scenes/ui/commission_select.tscn"
-# 씬 경로는 문자열로 둔다(preload하면 아직 없는 씬 때문에 이 스크립트가 로드되지 않는다).
+# 씬 경로는 문자열로 둔다: change_scene_to_file과 테스트의 _spawn_screen이 경로로 부르고, preload하면 오토로드가 씬 넷을 미리 불러온다.
 const COUNTER_PATH := "res://scenes/counter/counter.tscn"
 const DUEL_PATH := "res://scenes/duel/duel.tscn"
 const SETTLEMENT_PATH := "res://scenes/settlement/settlement.tscn"

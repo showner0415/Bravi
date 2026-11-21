@@ -5,8 +5,6 @@ extends Control
 
 const Ui := preload("res://scripts/day_ui.gd")
 
-## 의뢰인이 서는 자리와 미끄러져 들어오는 시간.
-const CLIENT_POS := Vector2(120, 164)
 const SLIDE_TIME := 0.45
 const DECLINE_NOTE := "돌려보내면 오늘 결투가 하나 준다"
 # 맡는 값의 방향만 알린다(숫자는 정산에서 보여 준다).
@@ -123,10 +121,10 @@ func _build(commission: Commission) -> void:
 	# 의뢰인은 카운터 뒤에 선다(카운터를 나중에 붙인다). 옆에서 한 번 미끄러져 들어온다.
 	var client := Ui.make_client(commission.client_name)
 	client.name = "Client"
-	client.position = Vector2(-Ui.CLIENT_SIZE.x, CLIENT_POS.y)
+	client.position = Vector2(-Ui.CLIENT_SIZE.x, Ui.CLIENT_POS.y)
 	add_child(client)
 	var tween := create_tween()
-	tween.tween_property(client, "position", CLIENT_POS, SLIDE_TIME) \
+	tween.tween_property(client, "position", Ui.CLIENT_POS, SLIDE_TIME) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	Ui.add_counter_band(self)
 
@@ -253,8 +251,8 @@ func _decline() -> void:
 
 
 func _quit() -> void:
-	var session := get_node_or_null(^"/root/GameSession")
-	if session == null or get_tree().current_scene != self:
+	var session := Ui.current_session(self)
+	if session == null:
 		return
 	session.call("end_day_play")
 	session.call("go_to_title")
@@ -262,12 +260,12 @@ func _quit() -> void:
 
 ## 지금 단계의 씬으로 간다. 다른 씬 아래에 붙어 있을 때(테스트)는 아무 데도 가지 않는다.
 func _go() -> void:
-	var session := get_node_or_null(^"/root/GameSession")
-	if session != null and get_tree().current_scene == self:
+	var session := Ui.current_session(self)
+	if session != null:
 		session.call("go_to_phase_scene")
 
 
 func _return_to_title() -> void:
-	var session := get_node_or_null(^"/root/GameSession")
-	if session != null and is_inside_tree() and get_tree().current_scene == self:
+	var session := Ui.current_session(self)
+	if session != null:
 		session.call("go_to_title")

@@ -24,6 +24,8 @@ var _reputation_ledger: Label
 ## 처음에 한 번 만들고, 다시 그릴 때는 글과 disabled만 고친다.
 var _buy_buttons: Array[Button] = []
 var _buy_upgrades: Array[UpgradeData] = []
+## 숨기기만 하고 지우지 않는다(같은 프레임에 지운 노드가 이름을 차지해 새 노드가 다른 이름을 받는다).
+var _saved_note: Label
 ## 화면이 열린 때(Time.get_ticks_msec()). 열린 직후의 누름을 삼키는 데 쓴다(Ui.swallow_arrival_press).
 var _opened_msec := 0
 
@@ -115,14 +117,24 @@ func _build(summary: Dictionary) -> void:
 
 	# 이 실행에서 내일의 아침을 적는 데 성공했을 때만 알린다(세션이 없거나 저장이 꺼져 있으면 없다).
 	var session := get_node_or_null(^"/root/GameSession")
-	if session != null and int(session.get("saved_day")) == day.day_number + 1:
-		var saved_note := Ui.add_label(self, SAVED_NOTE % (day.day_number + 1), 16, Ui.DIM)
-		saved_note.name = "SavedNote"
-		saved_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		saved_note.position = Vector2(268, 650)
-		saved_note.size = Vector2(590, 24)
+	if session != null:
+		refresh_saved_note(int(session.get("saved_day")))
 
 	refresh_shop()
+
+
+## saved_day는 GameSession.saved_day다(마지막 쓰기가 실패했으면 0). 테스트가 직접 넣는다.
+func refresh_saved_note(saved_day: int) -> void:
+	var saved_now := day != null and saved_day == day.day_number + 1
+	if _saved_note == null:
+		if not saved_now:
+			return
+		_saved_note = Ui.add_label(self, SAVED_NOTE % (day.day_number + 1), 16, Ui.DIM)
+		_saved_note.name = "SavedNote"
+		_saved_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_saved_note.position = Vector2(268, 650)
+		_saved_note.size = Vector2(590, 24)
+	_saved_note.visible = saved_now
 
 
 ## 가게의 노드를 한 번 만든다. 글과 눌림 여부는 refresh_shop()이 채운다.
@@ -235,28 +247,30 @@ func _buy(upgrade: UpgradeData) -> void:
 
 ## 내일의 아침을 다시 적는다(산 뒤에는 소지금과 가진 것이 바뀌었다). 테스트가 붙인 화면에서는 적지 않는다.
 func _save_now() -> void:
-	var session := get_node_or_null(^"/root/GameSession")
-	if session != null and is_inside_tree() and get_tree().current_scene == self:
-		session.call("save_game")
+	var session := Ui.current_session(self)
+	if session == null:
+		return
+	session.call("save_game")
+	refresh_saved_note(int(session.get("saved_day")))
 
 
 func _next_day() -> void:
 	if day == null or not day.next_day():
 		return
-	var session := get_node_or_null(^"/root/GameSession")
-	if session != null and get_tree().current_scene == self:
+	var session := Ui.current_session(self)
+	if session != null:
 		session.call("go_to_phase_scene")
 
 
 func _quit() -> void:
-	var session := get_node_or_null(^"/root/GameSession")
-	if session == null or get_tree().current_scene != self:
+	var session := Ui.current_session(self)
+	if session == null:
 		return
 	session.call("end_day_play")
 	session.call("go_to_title")
 
 
 func _return_to_title() -> void:
-	var session := get_node_or_null(^"/root/GameSession")
-	if session != null and is_inside_tree() and get_tree().current_scene == self:
+	var session := Ui.current_session(self)
+	if session != null:
 		session.call("go_to_title")
