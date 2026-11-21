@@ -21,6 +21,8 @@ var day: DayState
 
 ## 끄면 마우스 위치로 조준을 덮어쓰지 않는다(테스트가 코어에 직접 조준을 넣을 때).
 var mouse_aim_enabled := true
+var _use_virtual_mouse := OS.get_cmdline_user_args().has("--bravi-virtual-mouse")
+var _virtual_mouse := Vector2.ZERO
 ## 0 이상이면 이 시드로 상대의 난수를 고정한다(테스트용).
 var rng_seed := -1
 ## 비어 있지 않으면 로드한 무기 대신 이 무기로 판을 만든다(테스트용).
@@ -42,6 +44,7 @@ var _day_reported := false
 
 
 func _ready() -> void:
+	_virtual_mouse = get_viewport_rect().size * 0.5
 	var session := get_node_or_null(^"/root/GameSession")
 	if day == null and session != null and session.get("day") is DayState:
 		day = session.get("day")
@@ -117,6 +120,13 @@ func _process(delta: float) -> void:
 	_update_views(delta)
 
 
+func _input(event: InputEvent) -> void:
+	if _use_virtual_mouse and event is InputEventMouse:
+		_virtual_mouse = event.position
+		if mouse_aim_enabled and core != null:
+			_update_aim_from_mouse()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if _day_mode and (event.is_action_pressed(&"retry") or event.is_action_pressed(&"back")):
 		# 하루 중의 결투는 한 번뿐이다. 다시 하기와 나가기를 듣지 않는다.
@@ -148,7 +158,7 @@ func _update_aim_from_mouse() -> void:
 	var size := get_viewport_rect().size
 	if size.x <= 0.0 or size.y <= 0.0:
 		return
-	var mouse := get_viewport().get_mouse_position()
+	var mouse := _virtual_mouse if _use_virtual_mouse else get_viewport().get_mouse_position()
 	var column := clampi(int(mouse.x / size.x * 3.0), 0, 2)
 	var row := clampi(int(mouse.y / size.y * 3.0), 0, 2)
 	core.set_aim(column, row)
