@@ -118,3 +118,20 @@
 - 범위 밖으로 둔 것 하나: 결투 씬(`duel_scene.gd`)과 의뢰 선택 화면(`commission_select.gd`)에도 비슷한 현재 씬 확인이 있습니다. 018 표에 없었고 세션을 얻는 꼴도 달라 이번에는 손대지 않았습니다.
 
 검토: 2회. 1회차(v1) design-reviewer REVISE(D1: 나중 목록의 F19가 상황이 생기는 길을 잘못 적었다) / tech-reviewer APPROVE(비차단 제안 둘) → v2. 2회차(v2) design-reviewer APPROVE / tech-reviewer APPROVE. 최종: 둘 다 APPROVE.
+
+---
+
+## playtester 실행 확인 (2026-11-21, 계획 018·019를 한꺼번에)
+
+사용자 요청으로 playtester(Opus 5.5)가 HEAD `d15e74e`에서 실행했다. 로그와 캡처는 세션의 임시 폴더(저장소 밖)에 있다.
+
+- **실패한 항목은 없다.** 018의 1~12번과 019의 13~17번 가운데 17개가 통과했고, 018의 8번(굼뜬 느낌)만 사람의 체감이 필요해 확인하지 못했다(0.54초 간격의 두 입력은 둘 다 먹혔다).
+- 테스트: `RESULT: OK (ALL PASS 65/65, error lines 0, warning lines 0)`. 연습용 저장이 있는 채로 다시 돌려도 같다.
+- 스모크: `RESULT: OK (DAY SMOKE OK, error lines 0, warning lines 0)`, 씬 25개.
+- `RUNNER 저장: 오토로드 GameSession 있음, save_path 'user://bravi_playtest_save.json'를 비움`.
+- 저장의 바꿔 끼우기: 이 Windows에서 평소에는 성공한다(경고 줄 0). 파일을 읽기 전용으로 만들었을 때만 `저장: 임시 파일을 바꿔 끼우지 못해 바로 적는다`와 `저장하지 못했다`가 찍혔고, 원래 파일은 그대로였으며 `.tmp`는 남지 않았다.
+- 실제 저장 `bravi_save.json`: 처음부터 끝까지 없었다. 게임 로그에 ERROR 0줄.
+- 겹친 누름(실제 간격): "새로 시작한다" 더블클릭 88ms·Enter 두 번 123ms, 정산 "다음 의뢰인" 86ms, "돌려보낸다" 100ms, 결투 끝 Space 두 번 101ms, "가게를 닫는다" 86ms, "다음 날을 연다" 83ms. 모두 두 번째 입력이 삼켜졌다. "맡는다" 더블클릭(107ms)의 두 번째 클릭은 결투의 `헛침 (멀리)`가 됐고 아무것도 깎이지 않았다.
+- 019: "저장했다" 줄이 저장 실패 때 사라지고 다시 적히면 돌아왔다. 의뢰인 자리가 카운터와 정산에서 픽셀 단위로 같았다. 새로 시작한 세 가게의 `dice_seed`가 모두 달랐다. 세션 가드를 지나는 버튼 넷이 모두 화면을 바꿨다.
+- playtester가 한 조작: 업그레이드 셋을 살 돈을 만들려고 연습용 저장의 `money`를 손으로 500으로 바꿨다(실제 저장은 건드리지 않았다).
+- Godot 임포트가 `tests/safety_tests.gd.uid`, `tests/tidy_tests.gd.uid`를 새로 만들었다.

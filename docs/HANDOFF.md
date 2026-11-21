@@ -1,27 +1,25 @@
-# 인수인계 — 2026-11-21 계획 019 실행 뒤
+# 인수인계 — 2026-11-21 2단계 완료 뒤
 
 이 파일은 다른 컴퓨터의 새 세션이 읽고 이어 가기 위한 것이다. 사용자가 "계획 계속 진행해줘"라고 하면 이 파일의 "1. 바로 다음에 할 일"부터 시작한다. 이어 받은 세션은 일을 마칠 때마다 이 파일을 지금 상태로 고치거나, 더 필요 없으면 지운다.
 
 - 브랜치: `stage2-day-loop-v2`
-- 계획 016·017은 커밋했다(`9f07935`). 계획 018도 커밋했다(`2ffc964`). 둘 다 원격에는 올리지 않았다. **계획 019의 변경은 커밋되지 않았다**(작업 트리에만 있다. 사용자의 주석 규칙 한 줄도 함께 있다). 다른 컴퓨터에서 이어 받으려면 커밋하고 올려야 한다. 원격에는 계획 015까지 있다.
+- 계획 016~019와 2단계 완료 기록까지 커밋했다. 원격에는 올리지 않았다(원격에는 계획 015까지 있다). 다른 컴퓨터에서 이어 받으려면 먼저 올려야 한다.
+- 작업 트리에 사용자의 변경 둘이 있다(커밋하지 않았다): `.claude/agents/playtester.md`(정의 수정), `tools/playtest-window.ps1`(게임 창을 찍고 누르는 도구, 새 파일).
 - 멈춘 때의 상태: 돌고 있는 하위 에이전트가 없고, 중간에 끊긴 코드 수정도 없다.
 
 ## 1. 바로 다음에 할 일
 
-**사용자의 지시를 기다린다.** 계획 019(2단계 정리 다섯과 나중에 고칠 목록)까지 실행했다. 사용자 지시는 "f11, f16, f15, f20, f17만 고치고 나머지는 정리해서 나중에 고칠 수 있게 해줘"였다. 보고서는 `docs/reports/019-tidy-and-backlog.md`다.
+**2단계(하루 루프)는 2026-11-21 사용자가 완료로 판정했다.** 3단계(스타일 바이블)는 아직 시작하지 않았다. 사용자의 지시를 기다린다. "계획 계속 진행해줘"만으로 3단계를 시작하지 말고, 3단계로 갈지 먼저 묻는다(다음 단계로 넘어가는 결정은 사용자가 한다. CLAUDE.md 9장).
 
-사용자가 정할 것(보고서 4번):
+- 3단계의 목표와 완료 기준: 화풍 확정. 사용자가 기준 이미지를 고르고 `docs/STYLE_BIBLE.md`를 쓴다(CLAUDE.md 9장, 7장).
+- 그 밖의 후보: `docs/BACKLOG.md`의 항목(사용자가 먼저 정할 018-F7·F8), 아래 3번의 보류 값들, CLAUDE.md 5장의 "아직 없는 것"(칼 수리비, 부상에 따른 의뢰 수 감소).
+- 사람이 직접 볼 것: 계획 018의 0.4초 입력 막기가 평소 속도에서 굼뜨게 느껴지는가(playtester로는 확인할 수 없었다).
 
-1. playtester로 018·019를 함께 확인할지(사용자가 요청할 때만 띄운다). 목록은 `docs/reports/018-stage2-checkup.md`의 1~12번과 `docs/reports/019-tidy-and-backlog.md`의 13~17번, 그리고 두 보고서의 "가리는 순서"다. 테스트의 기대값은 `ALL PASS 65/65`다.
-2. 2단계 완료 판정과 3단계(스타일 바이블)로 넘어갈지(CLAUDE.md 9장. 사용자가 정한다).
-3. `docs/BACKLOG.md`의 항목(특히 사용자가 먼저 정할 018-F7·F8).
-4. 019의 커밋.
-
-playtester가 오류를 보고하면: 두 보고서의 "가리는 순서"로 가리고, 고칠 것이 범위·규칙을 바꾸지 않는 오류면 고쳐서 보고한다. 범위나 규칙이 바뀌면 CLAUDE.md 11장의 수정 절차를 따른다(계획 018은 검토 1회, 019는 2회를 썼다).
+playtester가 오류를 보고하면: 018·019 보고서의 "가리는 순서"로 가리고, 고칠 것이 범위·규칙을 바꾸지 않는 오류면 고쳐서 보고한다. 범위나 규칙이 바뀌면 CLAUDE.md 11장의 수정 절차를 따른다.
 
 ## 2. 실행 확인
 
-- **계획 018·019는 아직 아무도 실행하지 않았다.** 기대 `ALL PASS 65/65`.
+- **계획 018·019는 2026-11-21 playtester가 확인했다. 실패한 항목은 없다**(`ALL PASS 65/65`, 스모크 OK, 게임 창 확인 17개 통과).
   - 018이 바꾼 파일: `scripts/title.gd`, `scripts/day_ui.gd`, `scripts/commission/counter.gd`, `scripts/economy/settlement.gd`, `scripts/economy/closing.gd`, `scripts/save_store.gd`, `tests/safety_tests.gd`(새 파일, T60~T62), `tests/run_tests.gd`(한 줄), `tests/day_smoke.gd`(주석 한 줄).
   - 019가 바꾼 파일: `scripts/day_ui.gd`, `scripts/title.gd`, `scripts/commission/counter.gd`, `scripts/economy/settlement.gd`, `scripts/economy/closing.gd`, `scripts/economy/day_state.gd`, `scripts/economy/economy_rules.gd`, `scripts/game_session.gd`, `scripts/economy/reputation_rules.gd`, `tests/tidy_tests.gd`(새 파일, T63·T64), `tests/run_tests.gd`(한 줄).
 - **계획 015·016·017은 2026-11-20 playtester가 확인했다. 실패한 항목은 없다**(`ALL PASS 60/60`, 스모크 OK, 게임 창의 확인 전부 통과). 결과는 `docs/reports/017-client-lines.md` 끝에 있다. 확인하지 못한 것 둘(015-9의 뒷부분, 이네스의 성공 판)도 거기에 있다. 아래 목록은 그 확인이 덮은 파일이다. 메인은 테스트와 게임을 직접 실행하지 않는다(아래 4번).
