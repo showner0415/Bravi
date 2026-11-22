@@ -15,7 +15,10 @@ const COLOR_BLOCK := Color(1.0, 1.0, 1.0)
 const COLOR_GRAZED := Color(0.95, 0.25, 0.25)
 ## 엉킴 경고의 테두리 색. 칼의 색(상태)은 바꾸지 않고 테두리만 두른다.
 const COLOR_BIND := Color(1.0, 0.45, 0.2)
-const BIND_OUTLINE_WIDTH := 7.0
+## 칼 선(폭 2.9) 바깥으로 지금과 같은 폭 3.5가 보이게 넓혔다(결정 306).
+const BIND_OUTLINE_WIDTH := 10.0
+const OUTLINE_COLOR := Color("3B2A1E")
+const OUTLINE_WIDTH := 2.9
 ## 엉킴 경고의 깜박임(1초에 몇 번). 깜박임은 테두리의 투명도로 한다(visible은 경고의 켜짐·꺼짐이다).
 const BIND_BLINK_RATE := 3.0
 
@@ -33,6 +36,9 @@ var _snap := true
 ## 번쩍임용 시계(실제 시간).
 var _clock := 0.0
 
+## 손 그림. 비면 자리 표시(Hand·Label)가 보인다(결정 302).
+@export var hand_art: PartArt
+
 @onready var _sword: Polygon2D = $Sword
 ## 엉킴 경고: 칼의 테두리. 칼 뒤에 그려 칼의 상태 색이 그대로 보인다.
 var _bind_warning: Line2D
@@ -49,6 +55,27 @@ func _ready() -> void:
 	_bind_warning.show_behind_parent = true
 	_bind_warning.visible = false
 	_sword.add_child(_bind_warning)
+	var outline := Line2D.new()
+	outline.name = "Outline"
+	outline.points = _sword.polygon
+	outline.closed = true
+	outline.width = OUTLINE_WIDTH
+	outline.default_color = OUTLINE_COLOR
+	outline.joint_mode = Line2D.LINE_JOINT_ROUND
+	_sword.add_child(outline)
+	_apply_hand_art()
+
+
+func _apply_hand_art() -> void:
+	var art: Sprite2D = $HandArt
+	var has_art := hand_art != null and hand_art.texture != null
+	art.visible = has_art
+	$Hand.visible = not has_art
+	$Label.visible = not has_art
+	if has_art:
+		art.texture = hand_art.texture
+		art.offset = -hand_art.joint
+		art.scale = hand_art.units_per_px
 
 
 func setup() -> void:

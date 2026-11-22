@@ -17,6 +17,8 @@ const HELP_BIND := " · 밀착은 엉킴이 차면 밀려난다 — 차기 전�
 ## 엉킴 게이지가 이 값 이상이고 간격이 밀착이면 경고를 낸다(게이지의 색, 가운데 글자, 내 칼의 경고 표시).
 const BIND_WARN_RATIO := 0.8
 const BIND_WARN_TEXT := "칼이 엉킨다!"
+## 라벨 테두리와 띠의 색(바이블 6절 경고 규칙 2의 짙은 띠).
+const BAND_COLOR := Color("#2E2620")
 const HELP_TEXT := "좌클릭 공격 · 우클릭 막기 (떼고 있다가 고리가 띠에 들어올 때 누르면 패리) · 마우스 위치로 방향·높이 · W/S 간격" + HELP_RETRY + " · F1 디버그\n빈틈이 아닐 때 공격하면 상대가 자세를 되찾는다"
 
 
@@ -227,6 +229,10 @@ func _ready() -> void:
 	_root.anchor_right = 1.0
 	_root.anchor_bottom = 1.0
 	add_child(_root)
+	# 무대의 밝은 가장자리 위에서도 읽히게 칸·막대 묶음 뒤에 짙은 띠. 033이 필사본 패널로 바꿀 때까지(결정 298).
+	_add_band("BandTopLeft", Vector2(0.0, 0.0), Rect2(12, 6, 334, 148))
+	_add_band("BandTop", Vector2(0.5, 0.0), Rect2(-306, 6, 672, 55))
+	_add_band("BandBottomLeft", Vector2(0.0, 1.0), Rect2(12, -156, 334, 52))
 
 	# 상대 자세: 화면 위 가운데(상대 머리 위)
 	_opponent_label = _add_label(Vector2(0.5, 0.0), Rect2(-300, 10, 600, 26), 18, HORIZONTAL_ALIGNMENT_CENTER)
@@ -459,9 +465,21 @@ func _add_label(anchor: Vector2, rect: Rect2, font_size: int, align: HorizontalA
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	label.add_theme_font_size_override("font_size", font_size)
 	label.horizontal_alignment = align
+	# 무대 위에서 흰·노란 글자가 묻히지 않게(결정 298)
+	label.add_theme_constant_override("outline_size", 4)
+	label.add_theme_color_override("font_outline_color", BAND_COLOR)
 	_place(label, anchor, rect)
 	_root.add_child(label)
 	return label
+
+
+func _add_band(band_name: String, anchor: Vector2, rect: Rect2) -> void:
+	var band := ColorRect.new()
+	band.name = band_name
+	band.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	band.color = Color(BAND_COLOR, 0.85)
+	_place(band, anchor, rect)
+	_root.add_child(band)
 
 
 func _add_cells(anchor: Vector2, rect: Rect2, centered: bool) -> PostureCells:

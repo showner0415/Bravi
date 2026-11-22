@@ -1,9 +1,10 @@
-[gd_resource type="Resource" script_class="Commission" load_steps=6 format=3]
+[gd_resource type="Resource" script_class="Commission" load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/commission/commission.gd" id="1_commission"]
 [ext_resource type="Script" path="res://scripts/commission/commission_condition.gd" id="2_condition"]
 [ext_resource type="Script" path="res://scripts/commission/first_blood_condition.gd" id="3_first_blood"]
 [ext_resource type="Resource" path="res://data/opponents/opponent_01.tres" id="4_opponent"]
+[ext_resource type="Resource" path="res://data/stages/piazza.tres" id="5_stage"]
 
 [sub_resource type="Resource" id="condition_first_blood"]
 script = ExtResource("3_first_blood")
@@ -14,6 +15,7 @@ client_name = "포목상 에밀리오"
 dialogue = "바르톨로 그 작자가 장터 한복판에서 내 이름을 더럽혔소. 피 한 방울이면 족하오. 죽일 것까진 없고, 얼굴은 건드리지 마시오. 다음 장날에도 마주쳐야 하니.
 듣자 하니 그자는 찌르기는 금방 거둬들이지만 베고 나면 한참 허우적댄다 하오. 공격이 자꾸 막히면 성질을 못 이기고 크게 휘두른다는 말도 있소."
 opponent = ExtResource("4_opponent")
+stage = ExtResource("5_stage")
 conditions = Array[ExtResource("2_condition")]([SubResource("condition_first_blood")])
 base_reward = 30
 tip_max = 15

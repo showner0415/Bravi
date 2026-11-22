@@ -39,6 +39,8 @@ const PAIR_THRUST_PTS := [
 	["thrust-sleeve-line", "line", ^"Torso/Arm/armThrust", Vector2(-14.2, -1.9), Vector2i(1, 0)],
 ]
 const SIL_SHADER := preload("res://tests/silhouette.gdshader")
+const STAGE_DIR := "res://data/stages/"
+const STAGE_NAMES: Array[String] = ["alley", "court", "piazza"]
 
 var _shots_dir := ""
 var _core: DuelCore
@@ -50,6 +52,10 @@ var _index := -1
 var _wait := 0
 ## --sil: 실루엣 28장(결정 270). 아니면 색 57장.
 var _sil := false
+## --stages: 결투 무대 셋 위의 상대 21장(계획 031 결정 300). 장마다 "ext,"로 보이는 그림의 화면 상자를 낸다.
+var _stages := false
+var _stage_tex: Array[Texture2D] = []
+var _stage_rect: TextureRect
 
 @onready var _view: OpponentView = $OpponentView
 
@@ -60,6 +66,8 @@ func _ready() -> void:
 			_shots_dir = arg.trim_prefix("--shots=")
 		elif arg == "--sil":
 			_sil = true
+		elif arg == "--stages":
+			_stages = true
 	if _shots_dir != "" and DisplayServer.get_name() != "headless":
 		DirAccess.make_dir_recursive_absolute(_shots_dir)
 		_wait = 30
@@ -77,6 +85,9 @@ func _ready() -> void:
 	if _sil:
 		($Back as ColorRect).color = Color.WHITE
 		_shots = _sil_plan()
+	elif _stages:
+		_add_stage_rect()
+		_shots = _stage_plan()
 	else:
 		_shots = _plan()
 		_shots.append_array(_plan_arms())
@@ -94,8 +105,9 @@ func _key_of(atk: AttackData) -> String:
 
 
 func _shot(shot_name: String, state: int, atk := "", p := 0.0, dist: int = DT.Distance.ENGAGE, hat := false,
-		fx := "", aim := -1) -> Dictionary:
-	return {"name": shot_name, "state": state, "atk": atk, "p": p, "dist": dist, "hat": hat, "fx": fx, "aim": aim}
+		fx := "", aim := -1, stage := -1) -> Dictionary:
+	return {"name": shot_name, "state": state, "atk": atk, "p": p, "dist": dist, "hat": hat, "fx": fx, "aim": aim,
+			"stage": stage}
 
 
 ## 029의 41장(작업 8의 표): 4 + 16 + 2 + 4 + 5 + 6 + 2 + 2. 이름 그대로 두어 029와 견준다.
@@ -180,6 +192,61 @@ func _sil_plan() -> Array[Dictionary]:
 	return out
 
 
+## 계획 031 작업 7a의 21장: 무대 셋 × 일곱. 모자는 뒷골목만(클라라의 깃털 자르기가 뒷골목이다).
+func _stage_plan() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var big: AttackData = _atks["big"]
+	var thrust: AttackData = _atks["thrust"]
+	var big_hold := OpponentMotion.hold_end(big.tell_time, _weapon.parry_window, _opp)
+	# 밀착은 예비 동작이 짧아(close_tell_multiplier) 멈춘 자리의 진행이 다르다.
+	var big_hold_close := OpponentMotion.hold_end(big.tell_time * _opp.close_tell_multiplier, _weapon.parry_window, _opp)
+	var thrust_hold := OpponentMotion.hold_end(thrust.tell_time, _weapon.parry_window, _opp)
+	for i in STAGE_NAMES.size():
+		var s: String = STAGE_NAMES[i]
+		var hat := i == 0
+		out.append(_shot(s + "-idle-far", S.IDLE, "", 0.0, D.FAR, hat, "", -1, i))
+		out.append(_shot(s + "-big-hold", S.TELL, "big", big_hold, D.ENGAGE, hat, "", -1, i))
+		out.append(_shot(s + "-big-hold-close", S.TELL, "big", big_hold_close, D.CLOSE, hat, "", -1, i))
+		out.append(_shot(s + "-thrust-hold", S.TELL, "thrust", thrust_hold, D.ENGAGE, hat, "", -1, i))
+		out.append(_shot(s + "-cutl-recover", S.RECOVERY, "cutl", 0.5, D.ENGAGE, hat, "", -1, i))
+		out.append(_shot(s + "-stagger", S.STAGGER, "", 0.0, D.ENGAGE, hat, "", -1, i))
+		out.append(_shot(s + "-aim-hand-up", S.TELL, "big", big_hold, D.ENGAGE, hat, "", DT.Part.SWORD_HAND, i))
+	return out
+
+
+# 결투 씬의 Background/Stage와 같은 꼴로 Back 바로 위(OpponentView보다 앞)에 깐다(결정 297).
+func _add_stage_rect() -> void:
+	for s in STAGE_NAMES:
+		_stage_tex.append((load(STAGE_DIR + s + ".tres") as StageData).texture)
+	_stage_rect = TextureRect.new()
+	_stage_rect.name = "Stage"
+	_stage_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_stage_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	_stage_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var back := $Back
+	add_child(_stage_rect)
+	move_child(_stage_rect, back.get_index() + 1)
+	_stage_rect.size = Vector2(1280, 720)
+
+
+## 보이는 Sprite2D마다 그림 사각형의 네 꼭짓점을 그림의 화소로 옮겨 합친 상자. 투명한 가장자리까지 넣어 실제보다 크다.
+func _print_ext(shot_name: String) -> void:
+	var to_image := get_viewport().get_final_transform()
+	var box := Rect2()
+	var first := true
+	for node in _view.find_children("*", "Sprite2D", true, false):
+		var sprite := node as Sprite2D
+		if sprite.texture == null or not sprite.is_visible_in_tree():
+			continue
+		var r := sprite.get_rect()
+		var xf := to_image * sprite.get_global_transform_with_canvas()
+		for corner: Vector2 in [r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y)]:
+			var p := xf * corner
+			box = Rect2(p, Vector2.ZERO) if first else box.expand(p)
+			first = false
+	print("ext,%s,%d,%d,%d,%d" % [shot_name, floori(box.position.x), ceili(box.end.x), floori(box.position.y), ceili(box.end.y)])
+
+
 func _process(_delta: float) -> void:
 	if _wait > 0:
 		_wait -= 1
@@ -204,6 +271,8 @@ func _put(shot: Dictionary) -> void:
 	var fx: String = shot["fx"]
 	_view.setup(_opp, _weapon, shot["hat"])
 	_view.set_target(shot["aim"])
+	if _stages:
+		_stage_rect.texture = _stage_tex[int(shot["stage"])]
 	var t := States.put(_core, shot["state"], atk, shot["p"], shot["dist"])
 	_view.update_view(_core, t, 0.0)
 	if shot.has("after"):
@@ -231,6 +300,8 @@ func _put(shot: Dictionary) -> void:
 		_zero_tints()
 	if _sil:
 		_silhouette(fx == "noarm")
+	if _stages:
+		_print_ext(str(shot["name"]))
 
 
 # 물드는 부위의 상태 색만 끈다(따로 그린 팔의 층 포함): on 장과 같은 포즈에서 칠만 다르다.

@@ -14,7 +14,8 @@
 param(
 	[string]$Godot,
 	[string]$Shots,
-	[switch]$Sil
+	[switch]$Sil,
+	[switch]$Stages
 )
 
 . "$PSScriptRoot\godot_path.ps1"
@@ -39,8 +40,13 @@ if ($importExit -ne 0 -or $importErrors.Count -gt 0) {
 	exit 1
 }
 
-$silArg = if ($Sil) { '--sil' } else { '' }
-$expected = if ($Sil) { 28 } else { 57 }
+if ($Sil -and $Stages) {
+	Write-Output "RESULT: FAIL (-Sil and -Stages cannot go together)"
+	exit 1
+}
+# -Stages: the opponent on the three duel stages, 21 shots (plan 031 decision 300).
+$silArg = if ($Sil) { '--sil' } elseif ($Stages) { '--stages' } else { '' }
+$expected = if ($Sil) { 28 } elseif ($Stages) { 21 } else { 57 }
 if ($Shots) {
 	New-Item -ItemType Directory -Force -Path $Shots | Out-Null
 	$out = cmd /c "`"$Godot`" --path `"$project`" res://tests/opponent_shots.tscn --quit-after 6000 -- `"--shots=$Shots`" $silArg 2>&1"
@@ -49,8 +55,11 @@ if ($Shots) {
 }
 $runExit = $LASTEXITCODE
 $out | ForEach-Object { Write-Output $_ }
-if ($Shots -and -not $Sil) {
+if ($Shots -and -not $Sil -and -not $Stages) {
 	$out | Where-Object { $_ -match '^pt,' } | Set-Content -Encoding ASCII -Path (Join-Path $Shots 'pts.txt')
+}
+if ($Shots -and $Stages) {
+	$out | Where-Object { $_ -match '^ext,' } | Set-Content -Encoding ASCII -Path (Join-Path $Shots 'ext.txt')
 }
 
 $errors = @($out | Where-Object { $_ -match $errorPattern })

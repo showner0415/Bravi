@@ -756,6 +756,96 @@ Change: in both parts, turn only the fist the other way, as if mirrored from lef
 
 - A1e의 줄은 1번 주먹만 뒤집고 2번은 그대로 두었다. 좌우를 뒤집는 고치기는 그림 도구가 잘 따르지 않는다: 주먹 하나를 뒤집을 일이면 화소로 뒤집는다(결정 241).
 
+# 계획 032의 블록 (내 손. 결정 301·307)
+
+**H1a(빈 주먹)에만 썼다.** 확정 그림 H1h의 줄은 아래 "계획 032 H1h의 줄"이다(계획 032 v4 결정 307).
+
+내 손(결투 화면 아래의 장갑 주먹과 소매)을 그린다. 넣는 그림은 둘: 1 = `basis/bartolo-arms2.png`(그리는 결), 2 = `generated/in/032-in-hand.png`(배치·꼴, 견본 `samples/032-player-hand.html`). 지시 블록은 "지시 블록 (두 장)". 블록의 차례는 `Task:` → `Image:` → `Subject:` → `Pose and layout:` → `Style (` → `Colors:` → `Background:`이고, `Style (`의 다섯째~일곱째 항목(칠, 그림자, Do not add)은 S-FIG2 그대로다(둘째 항목은 두지 않는다). 칼·날·무기·결투·싸움의 말은 쓰지 않는다(결정 289·307).
+
+## 계획 032의 `Image:`·`Subject:`
+
+```
+Image: Portrait, 1024x1536 pixels. One illustration of a single gloved hand for a 2D game, seen from the player's own point of view.
+
+Subject: the viewer's own gloved hand, seen from behind and slightly from above, as if the viewer looks down at their own closed fist held in front of the body. A brown leather fencing glove making a closed fist, a parchment colored cuff at the wrist, and a long plain olive green sleeve that widens toward its lower end.
+```
+
+## P-HAND
+
+```
+Pose and layout:
+- The first referenced image is our own drawing of a different character. Use it only for the drawing style: how a closed fist, a cuff and a sleeve are drawn, the shapes, the line weight and the colors. Do not draw that character, his clothes or anything he holds.
+- The second referenced image is our own layout sketch of this hand. Follow its shape, its place on the image and its size: the fist near the top, the cuff below it, and the sleeve going down and widening to its straight lower edge near the bottom of the image. Do not copy its flat look: the hand is drawn like the first image.
+- One single piece, upright and centered: the closed fist seen from behind with the knuckles at the top and two short knuckle lines across the back of the fist, the cuff, and the long sleeve below it, as in the second image.
+- The hand holds nothing. The fist is empty and closed.
+- The piece is drawn complete. Empty space around it. No other parts, no labels, no numbers, no guide lines, no dots. Nothing is cropped.
+```
+
+## S-HAND (S-FIG2에서 바꾸는 넷. 머리 줄, 첫째·셋째·넷째 항목)
+
+```
+Style (draw a new, original illustration in the style of the first referenced image, as described here):
+- A finished cartoon illustration of one gloved hand for a game, drawn with care, in the drawing style of the first referenced image: soft, simple, rounded-geometric shapes with straight sides and rounded corners. Simple and flat: a clean cartoon, not realistic and not painterly.
+```
+
+```
+- Keep it as simple as the second referenced image: the same small number of shapes, two short knuckle lines on the back of the fist, a plain cuff and a plain sleeve. Draw the fist the way the first referenced image draws a fist, but do not copy the person, the clothes or anything held in the first image. No extra seams, folds, stitches or wrinkles.
+```
+
+```
+- Outlines: very dark warm brown, hex 3B2A1E. One even, bold line weight on every outer contour, about 12 pixels thick in a 1024 pixel wide image, smooth clean edges, round ends. No tapering, no wobble, no rough or broken edges. Inner lines are the same color and about half as thick.
+```
+
+- 넷째 항목은 S-FIG2 넷째 항목의 글에서 숫자만 바꿨다(8 → 12: 2.4화소/단위에서 5.0단위. 결정 304, 바이블 4절).
+
+## C-HAND
+
+```
+Colors:
+- Main fills and their shadow tones: warm leather brown 7A5232 with shadow 634228 for the glove, parchment E9D8B4 for the cuff, dull olive green 5E6648 with a slightly darker shadow of the same hue for the sleeve.
+- Avoid bright saturated yellow, orange, red, blue, purple or green, and pure white. Large areas are greyish and low in saturation.
+```
+
+## B-HAND
+
+```
+Background: one plain flat light grey color, about #D8D8D8, everywhere around the hand. No floor, no cast shadow, no scenery, no frame, no text, no letters, no signature, no watermark.
+```
+
+# 계획 032 H1h의 줄 (확정 그림. 결정 307)
+
+## 계획 032 H1h의 줄 (확정 그림)
+
+프롬프트 파일 `docs/style/prompts/032-H1h-player-hand.txt`가 정본이고 여기는 그 `Image:`부터 끝까지를 글자 그대로 옮긴 것이다(결정 195의 차례와 반대, 결정 307). 지시 블록은 세 장의 꼴(넣는 그림: 1 = `generated/032-H1c-player-hand.png` 바탕, 2 = `basis/bartolo-front.png`, 3 = `basis/bartolo-arms2.png` 화풍). 거기까지의 길: H1a → 사진 `reference/레이피어 파지.png`(결정 186의 예외, 사용자 지시) → H1b → H1c → H1h. 자루와 둥근 끝의 색(4A3A2C, 8A8680)은 `Colors:` 줄에 있고 신호가 아니다(결정 311).
+
+```nImage: to the end of this message, word for word, as its prompt. Do not run shell commands. Do not read, create, change or delete any file. Do not use a browser, web search, computer use, apps or any other tool. Do not retry. When the image is done, reply with one line: done.
+
+Image: Portrait, 1024x1536 pixels. One illustration of a single gloved hand holding a short handle, for a 2D game, seen from the player's own point of view.
+
+Subject: the viewer's own right hand in a leather fencing glove, closed around a short upright handle, seen from behind. A parchment colored cuff at the wrist and a long plain olive green sleeve going down and to the right.
+
+Pose and layout:
+- The first referenced image is our own drawing of this hand and it is the base. Keep it: the same grip, the same angle of the hand and the wrist, the same size and place on the image, the short handle with the small round knob below the fist, and the sleeve going down and to the right to a straight lower edge near the bottom of the image. The sleeve keeps exactly the same width and outline as in the first image.
+- The fist shows exactly four fingers, stacked one above another on the left side of the handle.
+- The second and third referenced images are our own drawings of a different character, the main look of this game. Redraw the hand so it looks like it belongs to the same game as that character: the same kind of shapes, outlines, fills and shadows. Do not draw that character, his clothes or anything he holds.
+- Change only the drawing style, as described in the Style lines below. The colors stay as in the first image.
+- No guard, no rings, no blade, nothing above the flat end of the handle.
+- The piece is drawn complete. Empty space around it. No other parts, no labels, no numbers, no guide lines, no dots. Nothing is cropped.
+
+Style (draw a new, original illustration in the style of the second and third referenced images, as described here):
+- A finished cartoon illustration of one gloved hand for a game, drawn with care, in the drawing style of the second and third referenced images: soft, simple, rounded-geometric shapes with straight sides and rounded corners. Simple and flat: a clean cartoon, not realistic and not painterly.
+- Keep it as simple as the hands in the second and third images: the same small number of shapes. No extra seams, folds, stitches or wrinkles.
+- Outlines: very dark warm brown, hex 3B2A1E. One even, bold line weight on every outer contour, the same line weight as the second image, smooth clean edges, round ends. No tapering, no wobble, no rough or broken edges. Inner lines are the same color and about half as thick.
+- Fills: flat solid colors, muted and faded.
+- Shadows: exactly one shadow tone per color, a slightly darker version of the same color and still clearly lighter than the outlines. Each shadow is one simple flat shape with a hard edge on the right side of the form, as if the light comes from the upper left. Shadows have no outline.
+- Do not add: hatching, cross-hatching, engraving or etching lines, brush or ink texture, paper texture on the figure, gradients, soft or blurred shadow edges, highlights or shine, sweat drops, skin texture, fabric patterns, lace, embroidery.
+
+Colors:
+- Main fills and their shadow tones: warm leather brown 7A5232 with shadow 634228 for the glove, dark wood 4A3A2C for the wrapped handle, muted iron grey 8A8680 for the knob, parchment E9D8B4 for the cuff, dull olive green 5E6648 with a slightly darker shadow of the same hue for the sleeve.
+- Avoid bright saturated yellow, orange, red, blue, purple or green, and pure white. Large areas are greyish and low in saturation.
+
+Background: one plain flat light grey color, about #D8D8D8, everywhere around the hand. No floor, no cast shadow, no scenery, no frame, no text, no letters, no signature, no watermark.
+```n
 # 022의 블록 (쓰지 않는다)
 
 기록으로 남긴다. 화풍 블록의 첫 줄이 스케치를 따라 그리게 만들었다(022 N1). 구도 블록과 바탕 블록은 021 프롬프트 그대로였고, 구도의 "Follow the attached sketch for …" 줄에 "and its drawing style"을 더했다.

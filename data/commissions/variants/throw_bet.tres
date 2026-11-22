@@ -1,9 +1,10 @@
-[gd_resource type="Resource" script_class="Commission" load_steps=6 format=3]
+[gd_resource type="Resource" script_class="Commission" load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/commission/commission.gd" id="1_commission"]
 [ext_resource type="Script" path="res://scripts/commission/commission_condition.gd" id="2_condition"]
 [ext_resource type="Script" path="res://scripts/commission/throw_undetected_condition.gd" id="3_throw"]
 [ext_resource type="Resource" path="res://data/opponents/opponent_01.tres" id="4_opponent"]
+[ext_resource type="Resource" path="res://data/stages/alley.tres" id="5_stage"]
 
 [sub_resource type="Resource" id="condition_throw"]
 script = ExtResource("3_throw")
@@ -14,6 +15,7 @@ client_name = "노름꾼 가스파로"
 dialogue = "긴말 안 하겠소. 이 결투에 바르톨로 쪽으로 크게 걸었소. 당신이 져 주면 되는 일이오. 짜고 친 티가 나면 판돈이 통째로 날아가니, 금방 쓰러지거나 가만히 서서 맞지는 마시오.
 그자는 베고 나면 허우적대니 받아칠 틈은 있을 거요. 몇 번은 막고 받아쳐 주시오. 다만 이겨 버리면 우리 둘 다 끝이오."
 opponent = ExtResource("4_opponent")
+stage = ExtResource("5_stage")
 conditions = Array[ExtResource("2_condition")]([SubResource("condition_throw")])
 base_reward = 65
 tip_max = 35

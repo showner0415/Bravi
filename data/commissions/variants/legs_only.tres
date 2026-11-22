@@ -1,9 +1,10 @@
-[gd_resource type="Resource" script_class="Commission" load_steps=6 format=3]
+[gd_resource type="Resource" script_class="Commission" load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/commission/commission.gd" id="1_commission"]
 [ext_resource type="Script" path="res://scripts/commission/commission_condition.gd" id="2_condition"]
 [ext_resource type="Script" path="res://scripts/commission/target_part_condition.gd" id="3_target_part"]
 [ext_resource type="Resource" path="res://data/opponents/opponent_01.tres" id="4_opponent"]
+[ext_resource type="Resource" path="res://data/stages/court.tres" id="5_stage"]
 
 [sub_resource type="Resource" id="condition_legs"]
 script = ExtResource("3_target_part")
@@ -15,6 +16,7 @@ client_name = "무용 교사 오르솔라"
 dialogue = "바르톨로가 제 무도회에서 제자의 발을 일부러 밟고는 춤도 못 추는 것들이라며 웃었어요. 그 잘난 다리에 한 줄만 그어 주세요. 다른 곳은 건드리지 마시고요.
 칼끝을 낮게 두셔야 할 거예요."
 opponent = ExtResource("4_opponent")
+stage = ExtResource("5_stage")
 conditions = Array[ExtResource("2_condition")]([SubResource("condition_legs")])
 base_reward = 35
 tip_max = 20

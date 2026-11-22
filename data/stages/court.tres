@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="StageData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/duel/stage_data.gd" id="1_stage"]
+[ext_resource type="Texture2D" path="res://assets/art/stages/court.png" id="2_texture"]
+
+[resource]
+script = ExtResource("1_stage")
+stage_name = "안뜰"
+texture = ExtResource("2_texture")

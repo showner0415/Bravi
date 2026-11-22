@@ -1,0 +1,26 @@
+Task: call your image generation tool exactly once to create exactly one image. You may use the code tool only to make that one call. Pass both attached images to the image generation tool as referenced images by their paths: {WORKDIR}\in-1.png and {WORKDIR}\in-2.png. Give the image generation tool the text from the line that starts with Image: to the end of this message, word for word, as its prompt. Do not run shell commands. Do not read, create, change or delete any file. Do not use a browser, web search, computer use, apps or any other tool. Do not retry. When the image is done, reply with one line: done.
+
+Image: Portrait, 1024x1536 pixels. One illustration of a single gloved hand holding a short handle, for a 2D game, seen from the player's own point of view.
+
+Subject: the viewer's own right hand in a brown leather fencing glove, closed around a short upright handle, seen from behind. A parchment colored cuff at the wrist and a long plain olive green sleeve going down and to the right.
+
+Pose and layout:
+- The first referenced image is our own drawing of this hand and it is the base. Keep it: the same grip, the same angle of the hand and the wrist, the same place on the image, the four stacked fingers, the short handle with the small round knob below the fist, the cuff, and the sleeve going down and to the right to a straight lower edge near the bottom of the image.
+- The second referenced image is our own drawing of a different character. Redraw the hand the way the second image draws its fists and arms. Do not draw that character, his clothes or anything he holds.
+- Change only these things: the sleeve is a slim straight tube with parallel sides, about as wide as the fist, like the sleeves in the second image, not a wide flaring shape; the cuff is a plain narrow band of the same width. Also the glove is a lighter, softer tan leather, so it reads lighter on screen. Also the fist is rounder and chunkier like a toy hand, the four fingers are fatter rounded bars like the fists in the second image.
+- No guard, no rings, no blade, nothing above the flat end of the handle.
+- The piece is drawn complete. Empty space around it. No other parts, no labels, no numbers, no guide lines, no dots. Nothing is cropped.
+
+Style (draw a new, original illustration in the style of the second referenced image, as described here):
+- A finished cartoon illustration of one gloved hand for a game, drawn with care, in the drawing style of the second referenced image: soft, simple, rounded-geometric shapes with straight sides and rounded corners. Simple and flat: a clean cartoon, not realistic and not painterly.
+- Keep it as simple as the fists in the second image: the same small number of shapes, a plain cuff and a plain sleeve. No extra seams, folds, stitches or wrinkles.
+- Outlines: very dark warm brown, hex 3B2A1E. One even, bold line weight on every outer contour, the same line weight as the second image, smooth clean edges, round ends. No tapering, no wobble, no rough or broken edges. Inner lines are the same color and about half as thick.
+- Fills: flat solid colors, muted and faded.
+- Shadows: exactly one shadow tone per color, a slightly darker version of the same color and still clearly lighter than the outlines. Each shadow is one simple flat shape with a hard edge on the right side of the form, as if the light comes from the upper left. Shadows have no outline.
+- Do not add: hatching, cross-hatching, engraving or etching lines, brush or ink texture, paper texture on the figure, gradients, soft or blurred shadow edges, highlights or shine, sweat drops, skin texture, fabric patterns, lace, embroidery.
+
+Colors:
+- Main fills and their shadow tones: muted tan leather 9C7048 with shadow 82593A for the glove, dark wood 4A3A2C for the wrapped handle, muted iron grey 8A8680 for the knob, parchment E9D8B4 for the cuff, dull olive green 5E6648 with a slightly darker shadow of the same hue for the sleeve.
+- Avoid bright saturated yellow, orange, red, blue, purple or green, and pure white. Large areas are greyish and low in saturation.
+
+Background: one plain flat light grey color, about #D8D8D8, everywhere around the hand. No floor, no cast shadow, no scenery, no frame, no text, no letters, no signature, no watermark.

@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="PartArt" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/duel/part_art.gd" id="1_part"]
+[ext_resource type="Texture2D" path="res://assets/art/player/hand.png" id="2_hand"]
+
+[resource]
+script = ExtResource("1_part")
+texture = ExtResource("2_hand")
+joint = Vector2(169.5, 15)
+units_per_px = Vector2(0.17561, 0.17561)

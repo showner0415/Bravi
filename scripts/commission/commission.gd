@@ -9,6 +9,8 @@ extends Resource
 ## 이 의뢰의 결투에서 상대가 모자를 쓰는가. 모자는 상대의 고정 부위가 아니다.
 ## 참이면 조준 상단의 베기 두 칸이 모자에 걸린다. 모자를 노리는 조건을 가진 의뢰는 참이어야 한다.
 @export var opponent_wears_hat := false
+## 결투의 무대(결정 295). 비면 결투 씬의 기본 무대다. 표시만 하고 판정에 넘기지 않는다.
+@export var stage: StageData
 @export var conditions: Array[CommissionCondition] = []
 @export var base_reward := 0
 @export var tip_max := 0

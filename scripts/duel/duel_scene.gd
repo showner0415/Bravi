@@ -7,6 +7,8 @@ const DT := preload("res://scripts/duel/duel_types.gd")
 const RULES_PATH := "res://data/duel_rules.tres"
 const WEAPON_PATH := "res://data/weapons/rapier.tres"
 const DEFAULT_OPPONENT_PATH := "res://data/opponents/opponent_01.tres"
+## 의뢰가 무대를 고르지 않았거나 의뢰가 없을 때의 무대(결정 294).
+const DEFAULT_STAGE_PATH := "res://data/stages/alley.tres"
 const SELECT_PATH := "res://scenes/ui/commission_select.tscn"
 ## 하루 모드에서 결과를 넘기는 액션(Space / Enter).
 const ACCEPT_ACTION := &"ui_accept"
@@ -41,6 +43,7 @@ var _day_reported := false
 @onready var _hud: DuelHud = $HUD
 @onready var _result_panel: ResultPanel = $ResultPanel
 @onready var _beeper: Beeper = $Beeper
+@onready var _stage: TextureRect = $Background/Stage
 
 
 func _ready() -> void:
@@ -92,7 +95,18 @@ func start_duel() -> void:
 	_hud.reset()
 	_hud.set_commission(commission)
 	_result_panel.hide_result()
+	_apply_stage()
 	_update_views(0.0)
+
+
+## 무대는 표시만 한다: 코어에 넘기지 않는다(결정 294). 그림이 없으면 Background/Color가 바탕이다.
+func _apply_stage() -> void:
+	var stage: StageData = null
+	if commission != null:
+		stage = commission.stage
+	if stage == null and ResourceLoader.exists(DEFAULT_STAGE_PATH):
+		stage = load(DEFAULT_STAGE_PATH) as StageData
+	_stage.texture = stage.texture if stage != null else null
 
 
 func _physics_process(delta: float) -> void:

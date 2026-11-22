@@ -1,13 +1,17 @@
-# 인수인계 — 2026-11-23 계획 030c를 마친 뒤(사용자의 플레이 확인 전)
+# 인수인계 — 2026-11-23 계획 031·032 1부를 실행하고 커밋한 뒤(실행 확인 전)
 
 이 파일은 새 세션이 읽고 이어 가기 위한 것이다. 사용자가 "계획 계속 진행해줘"라고 하면 이 파일의 "1. 바로 다음에 할 일"부터 시작한다. 이어 받은 세션은 일을 마칠 때마다 이 파일을 지금 상태로 고치거나, 더 필요 없으면 지운다.
 
 - 브랜치: `stage2-day-loop-v2`
-- 계획 030·030b·030c를 한 커밋으로 올렸다(2026-11-23, 사용자 "커밋해". 플레이 확인 9판보다 먼저). 원격에는 계획 026(`1643e9b`)까지 올렸다(027~030c는 로컬 커밋만).
-- 로컬에만 있는 것(저장소에 올라가지 않는다): 참고 스크린샷 자리 `docs/style/reference/`(비어 있다), 생성 그림 `docs/style/generated/`(021~027의 그림 전부, 손질본 `cut/`, 넣은 그림 `in/`), 글꼴 `docs/style/generated/fonts/`(약 71MB), 옛 도구 `docs/style/generated/tools-before-028/`(물린 자리. 022~024의 옛 도구 일곱도 여기). 판정 도구는 저장소의 `docs/style/tools/`에 있다. 기준 이미지 여덟 장은 `docs/style/basis/`, 게임 애셋은 `assets/`(목록 `assets/MANIFEST.md`).
+- 계획 030·030b·030c를 한 커밋으로 올렸다(2026-11-23, 사용자 "커밋해". 플레이 확인 9판보다 먼저). 계획 031·032의 1부를 한 커밋으로 올렸다(2026-11-23, 사용자 "작업 끝나면 일단 커밋". 실행 확인 전). 원격에는 계획 026(`1643e9b`)까지 올렸다(027~030c는 로컬 커밋만).
+- 로컬에만 있는 것(저장소에 올라가지 않는다): 참고 자리 `docs/style/reference/`(손 모양 사진 `레이피어 파지.png`와 `레이피어참조.jfif`가 있다. 결정 178·179로 올리지 않는다), 생성 그림 `docs/style/generated/`(021~027의 그림 전부, 손질본 `cut/`, 넣은 그림 `in/`), 글꼴 `docs/style/generated/fonts/`(약 71MB), 옛 도구 `docs/style/generated/tools-before-028/`(물린 자리. 022~024의 옛 도구 일곱도 여기). 판정 도구는 저장소의 `docs/style/tools/`에 있다. 기준 이미지 여덟 장은 `docs/style/basis/`, 게임 애셋은 `assets/`(목록 `assets/MANIFEST.md`).
 - 멈춘 때의 상태: 돌고 있는 하위 에이전트와 명령이 없고, 중간에 끊긴 수정도 없다.
 
 ## 1. 바로 다음에 할 일
+
+**계획 032(내 손, `docs/plans/032-player-hand.md` v4. v3 검토 2회 + 사용자가 허락한 추가 1회, 두 관점 승인) 1부를 실행했다(2026-11-23, 결정 301~311). 보고서 `docs/reports/032-player-hand.md`. 손 그림은 사진의 쥔 손을 따른 H1h(`docs/style/basis/player-hand.png`, 사용자 "H1h로 확정"), 판 M1 답 M1-1 "가"·M1-2 "이대로", 게임 애셋 `assets/art/player/hand.png`(1125×2262). 다음: 사용자가 하라고 하면 031·032 2부를 한 번의 playtester 확인으로(테스트 75/75, 스모크, `run_opponent_shots -Stages`·`run_stage_shots`·`run_hand_shots` 찍기) → 판 L → 판 M2. 031·032 1부는 커밋했다(2026-11-23 사용자 "작업 끝나면 일단 커밋"). 판 M1·후보는 로컬 `%TEMP%\bravi-style\032\`(`board-M1-hand-v4.png`, `cand.txt`, `measure-H1h.txt`).**
+
+**계획 031(결투 무대 셋, `docs/plans/031-duel-stages.md` v3, 검토 2회, 두 관점 승인)의 1부를 실행했다(결정 294~300, 커밋 전). 보고서 `docs/reports/031-duel-stages.md`. 다음: 사용자가 하라고 하면 031 2부(작업 9 playtester 확인 → 작업 10 판 L과 L1~L4 → 작업 8의 2부 줄). 1부의 코드·데이터·테스트·찍기 씬은 실행 없이 정적 확인만 받았다(위험 R6). 되돌릴 곳: `%TEMP%\bravi-style\031\before\`(열네 파일)과 `git diff b775927`, 무대 그림은 기준 그림에서 `cutstage.ps1`로 다시 자른다.**
 
 **4단계(아트 교체) 진행 중. 계획 030c(레이피어 쥐는 법과 겨누기, `docs/plans/030c-rapier-grip-and-poses.md` v3, 검토 2회, 두 관점 승인)를 실행했다(결정 282~293, 판 I·J·K의 답 "나·나1·나", "올린다", "맞다". 2부의 playtester 확인 통과). 보고서 `docs/reports/030c-rapier-grip-and-poses.md`. 030b는 030c로 닫았다. 다음: 사용자의 플레이 확인 9판(030 작업 13: `$env:BRAVI_CURVE_CHECK = "1"`, 기록 `%APPDATA%\Godot\app_userdata\Bravi\curve_check.csv`, 세기 `tests/curve_check_report.ps1`), 031. 030·030b·030c는 커밋했다. 판 F는 "맞다 — 지금대로"(2026-11-23).** 030의 보고서는 `docs/reports/030-separate-arms.md`. 028 보고서는 `docs/reports/028-tools-in-repo-and-bartolo-parts.md`, 4단계 나눔(028~037)의 제안은 그 계획의 "4단계 나눔".
 

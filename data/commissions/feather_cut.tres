@@ -1,9 +1,10 @@
-[gd_resource type="Resource" script_class="Commission" load_steps=6 format=3]
+[gd_resource type="Resource" script_class="Commission" load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/commission/commission.gd" id="1_commission"]
 [ext_resource type="Script" path="res://scripts/commission/commission_condition.gd" id="2_condition"]
 [ext_resource type="Script" path="res://scripts/commission/target_part_condition.gd" id="3_target_part"]
 [ext_resource type="Resource" path="res://data/opponents/opponent_01.tres" id="4_opponent"]
+[ext_resource type="Resource" path="res://data/stages/alley.tres" id="5_stage"]
 
 [sub_resource type="Resource" id="condition_feather"]
 script = ExtResource("3_target_part")
@@ -17,6 +18,7 @@ dialogue = "바르톨로가 쓰고 다니는 그 모자, 값도 안 치르고 �
 칼을 쳐내거나 아주 무너뜨린 뒤에야 모자에 손이 닿을 거예요. 그 사람은 찌르기는 금방 거둬들이지만 베고 나면 한참 허우적대요. 공격이 자꾸 막히면 성질을 못 이기고 크게 휘두른다니, 그때를 노려도 좋고요."
 opponent = ExtResource("4_opponent")
 opponent_wears_hat = true
+stage = ExtResource("5_stage")
 conditions = Array[ExtResource("2_condition")]([SubResource("condition_feather")])
 base_reward = 45
 tip_max = 25

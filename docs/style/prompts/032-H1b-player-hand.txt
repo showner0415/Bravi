@@ -1,0 +1,27 @@
+Task: call your image generation tool exactly once to create exactly one image. You may use the code tool only to make that one call. Pass both attached images to the image generation tool as referenced images by their paths: {WORKDIR}\in-1.png and {WORKDIR}\in-2.png. Give the image generation tool the text from the line that starts with Image: to the end of this message, word for word, as its prompt. Do not run shell commands. Do not read, create, change or delete any file. Do not use a browser, web search, computer use, apps or any other tool. Do not retry. When the image is done, reply with one line: done.
+
+Image: Portrait, 1024x1536 pixels. One illustration of a single gloved hand holding a short handle, for a 2D game, seen from the player's own point of view.
+
+Subject: the viewer's own right hand in a brown leather fencing glove, closed around a short upright handle, seen from behind, as if the viewer looks at their own hand held up in front of the body. A parchment colored cuff at the wrist and a long plain olive green sleeve.
+
+Pose and layout:
+- The first referenced image is our own drawing of a different character. Use it only for the drawing style: the shapes, the line weight, the colors and the flat shadows. Do not draw that character, his clothes or anything he holds.
+- The second referenced image is a photo of a hand holding a handle. Copy the hand from it exactly: the same grip, the same angle of the hand, the same position of every finger and of the thumb, the same bend of the wrist. Draw only that hand, not the photo look, the bare skin, the lace cuff, the sleeve pattern or the metal parts.
+- The hand as in the photo: the back of the hand faces the viewer and turns a little to the right, the knuckles form the upper right edge of the fist, the four fingers wrap around the handle from right to left and their curled tips show stacked on the left side of the handle, the thumb comes around the left side and lies across the fingers, the wrist bends down and the forearm goes down and to the right, as in the photo.
+- The handle is upright and straight, dark and wrapped. It shows a short piece above the fist that ends flat, and below the fist a short piece and a small round knob at its end, as in the photo. No guard, no rings, no blade, nothing above the flat end of the handle.
+- Below the hand: the cuff, then the long sleeve going down and to the right and widening to a straight lower edge near the bottom of the image.
+- The piece is drawn complete. Empty space around it. No other parts, no labels, no numbers, no guide lines, no dots. Nothing is cropped.
+
+Style (draw a new, original illustration in the style of the first referenced image, as described here):
+- A finished cartoon illustration of one gloved hand for a game, drawn with care, in the drawing style of the first referenced image: soft, simple, rounded-geometric shapes with straight sides and rounded corners. Simple and flat: a clean cartoon, not realistic and not painterly.
+- Keep it simple: the fingers and the thumb as clear simple shapes with the same grip as the photo, a plain cuff and a plain sleeve. Do not copy the person, the clothes or anything held in the first image. No extra seams, folds, stitches or wrinkles.
+- Outlines: very dark warm brown, hex 3B2A1E. One even, bold line weight on every outer contour, about 12 pixels thick in a 1024 pixel wide image, smooth clean edges, round ends. No tapering, no wobble, no rough or broken edges. Inner lines are the same color and about half as thick.
+- Fills: flat solid colors, muted and faded.
+- Shadows: exactly one shadow tone per color, a slightly darker version of the same color and still clearly lighter than the outlines. Each shadow is one simple flat shape with a hard edge on the right side of the form, as if the light comes from the upper left. Shadows have no outline.
+- Do not add: hatching, cross-hatching, engraving or etching lines, brush or ink texture, paper texture on the figure, gradients, soft or blurred shadow edges, highlights or shine, sweat drops, skin texture, fabric patterns, lace, embroidery.
+
+Colors:
+- Main fills and their shadow tones: warm leather brown 7A5232 with shadow 634228 for the glove, dark wood 4A3A2C for the wrapped handle, muted iron grey 8A8680 for the knob, parchment E9D8B4 for the cuff, dull olive green 5E6648 with a slightly darker shadow of the same hue for the sleeve.
+- Avoid bright saturated yellow, orange, red, blue, purple or green, and pure white. Large areas are greyish and low in saturation.
+
+Background: one plain flat light grey color, about #D8D8D8, everywhere around the hand. No floor, no cast shadow, no scenery, no frame, no text, no letters, no signature, no watermark.

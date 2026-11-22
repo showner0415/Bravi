@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>내 손 넣는 그림</title>
+<style>
+/* 계획 032 결정 307: 022-mix의 내 손(playerHand)을 2.4배로, 소매만 400까지 늘였다. 칼·날밑은 그리지 않는다(게임이 신호 다각형으로 그린다). */
+:root {
+  --line: #3B2A1E; --lw: 5.2;
+  --c-glove: #7A5232; --c-glove-sh: #634228; --c-psleeve: #5E6648; --c-collar: #E9D8B4;
+  --in-bg: #D8D8D8; --c-steel: #D9D9E6; --c-grip: #4A3426; --c-pommel: #8C8478;
+}
+.fill > * { fill: var(--base); stroke: none; }
+.line > * { fill: none; stroke: var(--line); stroke-width: var(--lw); stroke-linejoin: round; stroke-linecap: round; }
+.line > .thin { stroke-width: calc(var(--lw) * 0.55); }
+html, body { margin: 0; background: #2A2018; color: #E9D8B4; font-family: "Batang", serif; }
+section { max-width: 1280px; margin: 0 auto 40px; }
+section h2 { font-size: 20px; margin: 0 20px 8px; }
+svg.scene { width: 100%; height: auto; display: block; }
+body.solo h2 { display: none; }
+body.solo section:not(.solo-target) { display: none; }
+body.solo section.solo-target { display: block; margin: 0; max-width: none; }
+body.solo svg.scene.sz-portrait { width: 1024px; height: 1536px; }
+body.solo { overflow: hidden; }
+</style>
+</head>
+<body>
+<section id="in-hand"><h2>생성에 넣는 그림 · 내 손(장갑 주먹을 뒤에서, 소매는 400까지)</h2><svg class="scene sz-portrait" viewBox="0 0 1024 1536" width="1024" height="1536"></svg></section>
+<section id="in-grip"><h2>생성에 넣는 그림 · 쥔 손(셋째 자세, 검지가 날밑을 넘는다. 칼은 게임이 그린다)</h2><svg class="scene sz-portrait" viewBox="0 0 1024 1536" width="1024" height="1536"></svg></section>
+<section id="grip-view"><h2>확인용 · 쥔 손과 칼(칼은 게임의 다각형을 그대로)</h2><svg class="scene sz-portrait" viewBox="0 0 1024 1536" width="1024" height="1536"></svg></section>
+<script>
+const sh = (cls, d, base) => `<path class="${cls}" d="${d}" style="--base: var(${base})"/>`;
+const f = (d, base) => `<path d="${d}" style="--base: var(${base})"/>`;
+const l = (d, cls = "") => `<path${cls ? ` class="${cls}"` : ""} d="${d}"/>`;
+
+// 원점 = 장갑 윗변 가운데(날밑 바로 아래). 022-mix playerHand의 칠·선을 그대로, 소매만 견본의 기울기(72단위에 8씩)로 400까지.
+function inHand() {
+  return `<rect width="1024" height="1536" fill="var(--in-bg)"/>
+<g transform="translate(512,260) scale(2.4)">
+  <g class="fill">${f("M-44,78 L44,78 L80,400 L-80,400 Z", "--c-psleeve")}${f("M-36,2 Q-38,40 -34,86 L34,86 Q38,40 36,2 Q0,-6 -36,2 Z", "--c-glove")}${sh("sh", "M16,0 Q36,0 36,2 Q38,40 34,86 L20,86 Q26,40 16,0 Z", "--c-glove-sh")}${f("M-40,74 L40,74 L42,92 L-42,92 Z", "--c-collar")}</g>
+  <g class="line">${l("M-44,78 L-80,400 L80,400 L44,78")}${l("M-36,2 Q-38,40 -34,86 L34,86 Q38,40 36,2 Q0,-6 -36,2 Z")}${l("M-26,20 Q0,14 26,20 M-28,42 Q0,36 28,42", "thin")}${l("M-40,74 L40,74 L42,92 L-42,92 Z")}</g>
+</g>`;
+}
+
+// 쥔 손(사용자 지시 2026-11-23, 사용자가 넣은 참고 사진의 구도와 손가락): 오른손 손등이 나를 보고, 마디가 위 가장자리에 줄짓는다.
+// 네 손가락은 칼자루를 감아 칼자루 왼쪽에 끝이 겹쳐 보이고, 엄지는 칼자루 뒤에 숨는다. 칼자루는 주먹 위로 나와 날밑에 닿고(y 4), 폼멜은 주먹 아래로 나온다.
+// 팔은 오른쪽 아래에서 비스듬히(칼자루와 약 35도) 들어온다. 원점 = 날밑 가운데(게임의 칼 관절). 참고 사진은 보고 그리기만 하고 생성에 넣지 않는다(결정 186).
+const GRIP = {
+  sleeve: "M21,133 L87,87 L328,368 L200,456 Z",
+  cuff: "M17,121 L77,80 L88,94 L28,135 Z",
+  grip: "M-7,4 L7,4 L7,104 L-7,104 Z",
+  gripWrap: "M-7,9 L7,12 M-7,14 L7,17 M-7,92 L7,95 M-7,97 L7,100",
+  pommel: "M-13,114 A13,13 0 1,0 13,114 A13,13 0 1,0 -13,114 Z",
+  button: "M-5,129 A5,5 0 1,0 5,129 A5,5 0 1,0 -5,129 Z",
+  fingers: [
+    "M10,20 L-12,20 Q-24,20 -24,29 Q-24,38 -12,38 L10,38 Z",
+    "M10,38 L-15,38 Q-27,38 -27,47 Q-27,56 -15,56 L10,56 Z",
+    "M10,56 L-13,56 Q-25,56 -25,64.5 Q-25,73 -13,73 L10,73 Z",
+    "M10,73 L-9,73 Q-20,73 -20,80.5 Q-20,88 -9,88 L10,88 Z",
+  ],
+  tips: "M-15,23 Q-12,29 -15,35 M-18,41 Q-15,47 -18,53 M-16,59 Q-13,64.5 -16,70 M-12,76 Q-10,80.5 -12,85",
+  glove: "M4,20 Q8,10 18,12 Q26,7 34,12 Q42,8 50,14 Q60,12 64,22 Q72,36 66,56 L82,84 L19,122 L6,92 Z",
+  gloveSh: "M56,13 Q62,14 64,22 Q72,36 66,56 L82,84 L72,90 L56,60 Q64,40 56,13 Z",
+  knuckles: "M14,20 Q18,24 22,20 M30,19 Q34,23 38,19 M45,21 Q49,25 53,22",
+};
+function gripHand(withSword) {
+  const g = GRIP;
+  const sword = withSword ? `<g class="fill">${f("M-6,-240 L6,-240 L9,-10 L40,-10 L40,4 L-40,4 L-40,-10 L-9,-10 Z", "--c-steel")}</g><g class="line" style="--lw:1.2">${l("M-6,-240 L6,-240 L9,-10 L40,-10 L40,4 L-40,4 L-40,-10 L-9,-10 Z")}</g>` : "";
+  return `${sword}
+  <g class="fill">${f(g.sleeve, "--c-psleeve")}${f(g.grip, "--c-grip")}${f(g.pommel, "--c-pommel")}${f(g.button, "--c-pommel")}</g>
+  <g class="line">${l(g.sleeve)}${l(g.grip)}${l(g.gripWrap, "thin")}${l(g.pommel)}${l(g.button)}</g>
+  <g class="fill">${g.fingers.map(d => f(d, "--c-glove")).join("")}${f(g.glove, "--c-glove")}${sh("sh", g.gloveSh, "--c-glove-sh")}${f(g.cuff, "--c-collar")}</g>
+  <g class="line">${g.fingers.map(d => l(d.replace(" Z", ""))).join("")}${l(g.tips, "thin")}${l(g.glove)}${l(g.knuckles, "thin")}${l(g.cuff)}</g>`;
+}
+function inGrip() {
+  return `<rect width="1024" height="1536" fill="var(--in-bg)"/>
+<g transform="translate(340,330) scale(2)">${gripHand(false)}</g>`;
+}
+function gripView() {
+  return `<rect width="1024" height="1536" fill="#4A3A2E"/>
+<g transform="translate(400,760) scale(2)">${gripHand(true)}</g>`;
+}
+
+document.querySelector("#in-hand svg").innerHTML = inHand();
+document.querySelector("#in-grip svg").innerHTML = inGrip();
+document.querySelector("#grip-view svg").innerHTML = gripView();
+const hash = decodeURIComponent(location.hash.slice(1));
+if (hash) {
+  const target = document.getElementById(hash);
+  if (target) { document.body.classList.add("solo"); target.classList.add("solo-target"); }
+}
+</script>
+</body>
+</html>
