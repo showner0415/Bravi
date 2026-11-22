@@ -1,0 +1,87 @@
+[gd_resource type="Resource" script_class="OpponentArt" load_steps=23 format=3]
+
+[ext_resource type="Script" path="res://scripts/duel/part_art.gd" id="1_part"]
+[ext_resource type="Script" path="res://scripts/duel/opponent_art.gd" id="2_art"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/bartolo/legs.png" id="3_legs"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/bartolo/torso.png" id="4_torso"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/bartolo/head.png" id="5_head"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/bartolo/head_oops.png" id="6_head_oops"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/bartolo/head_dizzy.png" id="7_head_dizzy"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/bartolo/hat.png" id="8_hat"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/bartolo/feather.png" id="9_feather"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/bartolo/arm.png" id="10_arm"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/bartolo/hand.png" id="11_hand"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/bartolo/sword.png" id="12_sword"]
+
+[sub_resource type="Resource" id="part_legs"]
+script = ExtResource("1_part")
+texture = ExtResource("3_legs")
+joint = Vector2(142, 11)
+units_per_px = Vector2(0.5935, 0.5935)
+
+[sub_resource type="Resource" id="part_torso"]
+script = ExtResource("1_part")
+texture = ExtResource("4_torso")
+joint = Vector2(127, 360)
+units_per_px = Vector2(0.5935, 0.5935)
+
+[sub_resource type="Resource" id="part_head"]
+script = ExtResource("1_part")
+texture = ExtResource("5_head")
+joint = Vector2(112, 223)
+units_per_px = Vector2(0.5442, 0.5442)
+
+[sub_resource type="Resource" id="part_head_oops"]
+script = ExtResource("1_part")
+texture = ExtResource("6_head_oops")
+joint = Vector2(113.5, 224)
+units_per_px = Vector2(0.5442, 0.5442)
+
+[sub_resource type="Resource" id="part_head_dizzy"]
+script = ExtResource("1_part")
+texture = ExtResource("7_head_dizzy")
+joint = Vector2(113.5, 225)
+units_per_px = Vector2(0.5442, 0.5442)
+
+[sub_resource type="Resource" id="part_hat"]
+script = ExtResource("1_part")
+texture = ExtResource("8_hat")
+joint = Vector2(140, 102)
+units_per_px = Vector2(0.5579, 0.5579)
+
+[sub_resource type="Resource" id="part_feather"]
+script = ExtResource("1_part")
+texture = ExtResource("9_feather")
+joint = Vector2(-43, 81)
+units_per_px = Vector2(0.5579, 0.5579)
+
+[sub_resource type="Resource" id="part_arm"]
+script = ExtResource("1_part")
+texture = ExtResource("10_arm")
+joint = Vector2(48, 40)
+units_per_px = Vector2(0.4451, 0.4611)
+
+[sub_resource type="Resource" id="part_hand"]
+script = ExtResource("1_part")
+texture = ExtResource("11_hand")
+joint = Vector2(49, 12)
+units_per_px = Vector2(0.4511, 0.4511)
+
+[sub_resource type="Resource" id="part_sword"]
+script = ExtResource("1_part")
+texture = ExtResource("12_sword")
+joint = Vector2(73, 343)
+units_per_px = Vector2(0.5935, 0.5935)
+
+[resource]
+script = ExtResource("2_art")
+legs = SubResource("part_legs")
+torso = SubResource("part_torso")
+head = SubResource("part_head")
+head_oops = SubResource("part_head_oops")
+head_dizzy = SubResource("part_head_dizzy")
+hat = SubResource("part_hat")
+feather = SubResource("part_feather")
+arm = SubResource("part_arm")
+hand = SubResource("part_hand")
+sword = SubResource("part_sword")

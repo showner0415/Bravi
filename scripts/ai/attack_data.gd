@@ -17,10 +17,14 @@ extends Resource
 ## 그 전부터 들고만 있던 막기는 버티기만 한다(막힘이지만 빈틈이 없다).
 @export var needs_raised_guard := false
 
-@export_group("예비 동작 포즈 (임시 — 4단계에서 애니메이션 이름으로 대체)")
-## 예비 동작 시작 때 팔(어깨 관절)의 위치. 가슴 중앙의 어깨 높이 기준(화면 좌표, 좌우 대칭).
-@export var pose_arm_offset := Vector2.ZERO
-## 예비 동작 시작 때 칼의 회전(도). 0은 칼끝이 위.
-@export var pose_sword_rotation := 0.0
+@export_group("포즈 (바이블 15절)")
+## 예비 동작에 들어선 포즈.
+@export var tell_pose: PoseData
+## 멈칫(hold)의 팔 각. 나머지는 tell_pose 그대로다. 규칙(8°)으로 셈하지 않고 표의 값을 적는다(결정 257).
+@export var hold_arm_deg := 0.0
+## 타격 순간의 포즈.
+@export var strike_pose: PoseData
+## 회수 끝의 팔 각. 나머지는 strike_pose 그대로다.
+@export var recover_arm_deg := 0.0
 ## 예비 동작 동안의 색.
 @export var pose_color := Color(1.0, 0.85, 0.2)

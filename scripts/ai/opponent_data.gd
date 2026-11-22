@@ -60,6 +60,29 @@ extends Resource
 ## 버릇 목록.
 @export var habits: Array[HabitData] = []
 
+@export_group("그림과 포즈")
+## 비어 있으면 그림 없이 돈다(테스트가 만든 상대가 씬에 들어가도 깨지지 않게. 결정 256).
+@export var art: OpponentArt
+@export var idle_pose: PoseData
+@export var stagger_pose: PoseData
+## 방심: 팔은 대기 그대로 두고 칼끝만 내린다(무너짐과 헷갈리지 않게).
+@export var complacent_pose: PoseData
+## 머리를 노린 공격을 피할 때 고개를 젖히는 각(도)과 시간(초).
+@export var dodge_head_deg := -20.1
+@export var dodge_time := 0.3
+
+@export_group("움직임")
+## 예비 동작을 hold 곡선(들어서기 → 멈칫 → 휘두름)으로 그린다. 거짓이면 고르게 간다(결정 236).
+## 거짓은 원칙 4로 안전한 되돌림이 아니다(그 곡선의 R1 0.380. 계획 029 위험 R5).
+@export var hold_curve := true
+## 예비 동작의 진행 가운데 들어서기의 몫.
+@export var tell_in := 0.2
+## 휘두름 = min(이 값 x 예비 시간, 패리 창 - swing_margin). 휘두름이 패리 창 안에서 시작하게 한다.
+@export var swing_ratio := 0.2
+@export var swing_margin := 0.03
+## 그 밖의 바뀜(회수 → 대기, 무너짐, 방심)에 걸리는 시간(초).
+@export var return_time := 0.2
+
 
 ## 그 부위를 스쳤을 때 깎이는 자세 칸 수(1 이상).
 func graze_cells(part: int) -> int:

@@ -95,6 +95,18 @@ func _copy_opponent() -> OpponentData:
 	o.whiff_recovery_multiplier = base.whiff_recovery_multiplier
 	o.close_tell_multiplier = base.close_tell_multiplier
 	o.attack_bag_sets = base.attack_bag_sets
+	# 그림과 포즈(계획 029): 이 상대가 씬에 들어가도 그림 없는 상대가 되지 않게 한다.
+	o.art = base.art
+	o.idle_pose = base.idle_pose
+	o.stagger_pose = base.stagger_pose
+	o.complacent_pose = base.complacent_pose
+	o.dodge_head_deg = base.dodge_head_deg
+	o.dodge_time = base.dodge_time
+	o.hold_curve = base.hold_curve
+	o.tell_in = base.tell_in
+	o.swing_ratio = base.swing_ratio
+	o.swing_margin = base.swing_margin
+	o.return_time = base.return_time
 	var attacks: Array[AttackData] = []
 	attacks.append_array(base.attacks)
 	o.attacks = attacks
