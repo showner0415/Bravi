@@ -107,6 +107,7 @@ func _copy_opponent() -> OpponentData:
 	o.swing_ratio = base.swing_ratio
 	o.swing_margin = base.swing_margin
 	o.return_time = base.return_time
+	o.strike_art_on_return = base.strike_art_on_return
 	var attacks: Array[AttackData] = []
 	attacks.append_array(base.attacks)
 	o.attacks = attacks

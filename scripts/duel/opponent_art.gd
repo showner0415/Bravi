@@ -16,6 +16,10 @@ extends Resource
 @export var hand: PartArt
 @export var sword: PartArt
 
+@export_group("따로 그린 팔")
+## 포즈의 arm_art가 이 가운데 하나를 가리키면 보통 팔 대신 그 묶음을 그린다(결정 268).
+@export var arm_arts: Array[ArmArt] = []
+
 @export_group("관절 자리 (파츠 단위)")
 ## 목: Torso 좌표에서 Head의 원점.
 @export var neck := Vector2(0, -200)

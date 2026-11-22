@@ -7,3 +7,5 @@ extends Resource
 @export var joint := Vector2.ZERO
 ## 그림 한 화소가 파츠 단위로 몇인가(가로, 세로).
 @export var units_per_px := Vector2.ONE
+## 손의 바깥 윤곽선(자른 그림의 화소 모서리 좌표, docs/style/tools/outline.ps1). 비면 윤곽선 없음(결정 269).
+@export var outline := PackedVector2Array()

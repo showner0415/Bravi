@@ -3,7 +3,8 @@
 #   powershell -ExecutionPolicy Bypass -File tests/run_opponent_shots.ps1 -Shots "$env:TEMP\bravi-029-shots"
 #   powershell -ExecutionPolicy Bypass -File tests/run_opponent_shots.ps1            (headless, saves nothing)
 #
-# Runs tests/opponent_shots.tscn: the opponent view alone, one PNG per state (41).
+# Runs tests/opponent_shots.tscn: the opponent view alone, one PNG per state (57; plan 029 41 + plan 030 16).
+# -Sil: silhouette mode (28 shots: arm blue, head red, body grey, white ground) for R1/R2/R4 (plan 030 decision 270).
 # With -Shots it opens a window (the shots need a renderer) and also writes the measuring points
 # (lines starting "pt,") to <Shots>\pts.txt.
 # Judges the run: exit code 0, the last "OPPONENT SHOTS OK <n>" line, and no ERROR / SHADER ERROR lines.
@@ -12,7 +13,8 @@
 # tests/godot_path.ps1.
 param(
 	[string]$Godot,
-	[string]$Shots
+	[string]$Shots,
+	[switch]$Sil
 )
 
 . "$PSScriptRoot\godot_path.ps1"
@@ -37,25 +39,27 @@ if ($importExit -ne 0 -or $importErrors.Count -gt 0) {
 	exit 1
 }
 
+$silArg = if ($Sil) { '--sil' } else { '' }
+$expected = if ($Sil) { 28 } else { 57 }
 if ($Shots) {
 	New-Item -ItemType Directory -Force -Path $Shots | Out-Null
-	$out = cmd /c "`"$Godot`" --path `"$project`" res://tests/opponent_shots.tscn --quit-after 6000 -- `"--shots=$Shots`" 2>&1"
+	$out = cmd /c "`"$Godot`" --path `"$project`" res://tests/opponent_shots.tscn --quit-after 6000 -- `"--shots=$Shots`" $silArg 2>&1"
 } else {
-	$out = cmd /c "`"$Godot`" --headless --path `"$project`" res://tests/opponent_shots.tscn --quit-after 6000 2>&1"
+	$out = cmd /c "`"$Godot`" --headless --path `"$project`" res://tests/opponent_shots.tscn --quit-after 6000 -- $silArg 2>&1"
 }
 $runExit = $LASTEXITCODE
 $out | ForEach-Object { Write-Output $_ }
-if ($Shots) {
+if ($Shots -and -not $Sil) {
 	$out | Where-Object { $_ -match '^pt,' } | Set-Content -Encoding ASCII -Path (Join-Path $Shots 'pts.txt')
 }
 
 $errors = @($out | Where-Object { $_ -match $errorPattern })
 $warnings = @($out | Where-Object { $_ -match '^\s*WARNING:' })
-$ok = @($out | Where-Object { $_ -match '^OPPONENT SHOTS OK \d+' })
+$ok = @($out | Where-Object { $_ -match "^OPPONENT SHOTS OK $expected`$" })
 
 $reasons = @()
 if ($runExit -ne 0) { $reasons += "exit code $runExit" }
-if ($ok.Count -ne 1) { $reasons += 'no "OPPONENT SHOTS OK" line' }
+if ($ok.Count -ne 1) { $reasons += "no `"OPPONENT SHOTS OK $expected`" line" }
 if ($errors.Count -gt 0) { $reasons += "error lines $($errors.Count)" }
 
 Write-Output ''

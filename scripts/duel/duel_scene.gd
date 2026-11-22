@@ -66,6 +66,8 @@ func start_duel() -> void:
 	var opponent: OpponentData = load(DEFAULT_OPPONENT_PATH)
 	if commission != null and commission.opponent != null:
 		opponent = commission.opponent
+	# 반응 싸움 확인(계획 030): 켜져 있으면 표시의 곡선만 다른 사본을 코어와 뷰에 준다. 꺼져 있으면 그대로다.
+	opponent = CurveCheck.prepare(opponent)
 	var weapon: WeaponData = test_weapon if test_weapon != null else load(WEAPON_PATH)
 	var rng := RandomNumberGenerator.new()
 	if rng_seed >= 0:
@@ -173,6 +175,7 @@ func _update_views(delta: float) -> void:
 
 
 func _on_core_event(ev: Dictionary) -> void:
+	CurveCheck.on_event(ev, core)
 	_opponent_view.on_event(ev)
 	_sword_view.on_event(ev)
 	_hud.on_event(ev)

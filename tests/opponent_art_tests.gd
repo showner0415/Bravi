@@ -21,7 +21,7 @@ const MANIFEST := {
 	"legs": [Vector2i(287, 338), Vector2(142, 11), Vector2(0.5935, 0.5935)],
 	"arm": [Vector2i(97, 275), Vector2(48, 40), Vector2(0.4451, 0.4611)],
 	"hand": [Vector2i(100, 109), Vector2(49, 12), Vector2(0.4511, 0.4511)],
-	"sword": [Vector2i(147, 399), Vector2(73, 343), Vector2(0.5935, 0.5935)],
+	"sword": [Vector2i(147, 399), Vector2(73, 371), Vector2(0.5935, 0.5935)],
 }
 
 var _tree: SceneTree
@@ -33,6 +33,9 @@ func list(tree: SceneTree) -> Array:
 		{"id": "T65", "name": "상대 그림과 포즈의 데이터: 파츠 열 장, 관절, 공격과 상태의 포즈", "fn": t65_art_data},
 		{"id": "T66", "name": "포즈와 곡선의 값: hold 곡선, 회수, 고르게 가는 곡선", "fn": t66_motion},
 		{"id": "T67", "name": "상대 뷰: 포즈·머리·색·테두리가 상태를 따른다", "fn": t67_view},
+		{"id": "T68", "name": "따로 그린 팔의 데이터: 묶음 둘, 층의 차례·부위, 크기·관절, 포즈의 팔 그림", "fn": t68_arm_data},
+		{"id": "T69", "name": "상대 뷰: 팔 그림을 국면의 경계에서 바꿔 끼운다", "fn": t69_arm_swap},
+		{"id": "T70", "name": "손의 조준은 칼 위의 바깥 윤곽선", "fn": t70_hand_outline},
 	]
 
 
@@ -137,10 +140,12 @@ func t66_motion() -> String:
 	var tell := func(atk: AttackData, p: float, o: OpponentData) -> PoseData:
 		return OpponentMotion.tell_pose(atk, o.idle_pose, p, atk.tell_time, parry, o)
 	var t01: PoseData = tell.call(thrust, 0.1, opp)
-	_near(errs, "찌르기 p0.1 팔", t01.arm_deg, 69.5)
+	# 데이터에 매인 값: 대기 팔 + (85 - 대기 팔) x ease_out(0.5)
+	_near(errs, "찌르기 p0.1 팔", t01.arm_deg, 63.75)
 	_near(errs, "찌르기 p0.1 칼", t01.sword_deg, 66.0)
 	var ps := [0.2, 0.5, 0.8, 0.9, 1.0]
-	var arms := [85.0, 89.0, 93.0, 62.25, -30.0]
+	# p0.9 = 93 + (타격 - 93) x 0.25, p1.0 = 타격(-50)
+	var arms := [85.0, 89.0, 93.0, 57.25, -50.0]
 	var swords := [95.0, 95.0, 95.0, 116.25, 180.0]
 	for i in ps.size():
 		var pose: PoseData = tell.call(thrust, ps[i], opp)
@@ -155,11 +160,11 @@ func t66_motion() -> String:
 	var flat := opp.duplicate() as OpponentData
 	flat.hold_curve = false
 	var f05: PoseData = tell.call(thrust, 0.5, flat)
-	_near(errs, "고른 곡선 p0.5 팔", f05.arm_deg, 27.5)
+	_near(errs, "고른 곡선 p0.5 팔", f05.arm_deg, 17.5) # (85 + 타격) / 2
 	_near(errs, "고른 곡선 p0.5 칼", f05.sword_deg, 137.5)
 
 	var mid := OpponentMotion.blend(opp.idle_pose, opp.stagger_pose, 0.5)
-	_near(errs, "blend 0.5 팔", mid.arm_deg, 11.5)
+	_near(errs, "blend 0.5 팔", mid.arm_deg, 0.0) # 대기 팔 / 2
 	_near(errs, "blend 0.5 어깨", mid.shoulder.y, 12.5)
 	_near(errs, "ease_in_out 0.5", OpponentMotion.ease_in_out(0.5), 0.5)
 
@@ -229,8 +234,8 @@ func _t67_setup(errs: Array[String], view: OpponentView, opp: OpponentData, weap
 	var arm := view.get_node(^"Torso/Arm") as Node2D
 	if not arm.position.is_equal_approx(opp.art.shoulder):
 		errs.append("어깨 %s (기대 %s)" % [arm.position, opp.art.shoulder])
-	_near(errs, "setup 팔", arm.rotation_degrees, 23.0)
-	_near(errs, "setup 칼", _deg(view, ^"Torso/Arm/Hand/Sword"), -44.0)
+	_near(errs, "setup 팔", arm.rotation_degrees, 0.0)
+	_near(errs, "setup 칼", _deg(view, ^"Torso/Arm/Hand/Sword"), -21.0) # 대기 칼 -21 - 대기 팔
 	_head_is(errs, "setup", view, opp.art.head)
 
 
@@ -250,7 +255,7 @@ func _t67_tell(errs: Array[String], view: OpponentView, core: DuelCore, opp: Opp
 	view.setup(opp, weapon, true)
 	t = States.put(core, DT.OpponentState.TELL, thrust, 0.9999, DT.Distance.ENGAGE)
 	view.update_view(core, t, 0.0)
-	_near(errs, "p0.9999 팔", _deg(view, ^"Torso/Arm"), -30.0, 0.5)
+	_near(errs, "p0.9999 팔", _deg(view, ^"Torso/Arm"), -50.0, 0.5)
 
 
 # 확인 4·5·6: 회수의 머리, 무너짐, 방심.
@@ -325,3 +330,328 @@ func _t67_target_flash(errs: Array[String], view: OpponentView, core: DuelCore, 
 	view.on_event({"type": DuelRecord.STRIKE, "braced": false})
 	view.update_view(core, t, 0.01)
 	_tint_is(errs, "타격의 몸통", _mat(view, ^"Torso/Art"), OpponentView.COLOR_STRIKE, 0.8)
+
+
+## assets/MANIFEST.md의 따로 그린 팔 열한 줄(계획 030·030c). 이름: [크기, 관절, 부위]. 단위/화소는 모두 0.3165.
+const ARM_MANIFEST := {
+	"arm_up_sword": [Vector2i(161, 562), Vector2(78, 912), -1],
+	"arm_up": [Vector2i(108, 288), Vector2(52, 233), 3],
+	"arm_up_fist": [Vector2i(128, 120), Vector2(62, 350), 4],
+	"arm_thrust": [Vector2i(261, 140), Vector2(136, 65), 3],
+	"arm_thrust_fist": [Vector2i(261, 231), Vector2(136, -72), 4],
+	"arm_thrust_sword": [Vector2i(281, 287), Vector2(137, -159), -1],
+	"arm_thrust_blade": [Vector2i(75, 81), Vector2(-125, -252), -1],
+	"arm_aim": [Vector2i(166, 235), Vector2(92, 65), 3],
+	"arm_aim_fist": [Vector2i(166, 177), Vector2(92, -167), 4],
+	"arm_aim_sword": [Vector2i(209, 205), Vector2(100, -241), -1],
+	"arm_aim_blade": [Vector2i(118, 131), Vector2(-38, -208), -1],
+}
+const ARM_ORDER := {&"armUp": ["arm_up_sword", "arm_up", "arm_up_fist"],
+		&"armThrust": ["arm_thrust", "arm_thrust_fist", "arm_thrust_sword", "arm_thrust_blade"],
+		&"armAim": ["arm_aim", "arm_aim_fist", "arm_aim_sword", "arm_aim_blade"]}
+const ARM_ROTATION := {&"armUp": 180.0, &"armThrust": 0.0, &"armAim": 0.0}
+
+
+func t68_arm_data() -> String:
+	var errs: Array[String] = []
+	var opp: OpponentData = load(OPPONENT_PATH)
+	var keys: Array[StringName] = []
+	for arm_art in opp.art.arm_arts:
+		keys.append(arm_art.key)
+		if not ARM_ORDER.has(arm_art.key):
+			errs.append("모르는 묶음 %s" % arm_art.key)
+			continue
+		_near(errs, "%s 회전" % arm_art.key, arm_art.rotation_deg, ARM_ROTATION[arm_art.key])
+		var names: Array = ARM_ORDER[arm_art.key]
+		if arm_art.layers.size() != names.size():
+			errs.append("%s 층 %d (기대 %d)" % [arm_art.key, arm_art.layers.size(), names.size()])
+			continue
+		for i in names.size():
+			var layer: ArmLayer = arm_art.layers[i]
+			var want: Array = ARM_MANIFEST[names[i]]
+			if layer.texture == null or layer.texture.resource_path.get_file() != names[i] + ".png":
+				errs.append("%s 층 %d: 그림이 %s가 아님" % [arm_art.key, i, names[i]])
+				continue
+			if Vector2i(layer.texture.get_size()) != want[0] or not layer.joint.is_equal_approx(want[1]) \
+					or not layer.units_per_px.is_equal_approx(Vector2(0.3165, 0.3165)) or layer.part != want[2]:
+				errs.append("%s: 크기 %s 관절 %s 배율 %s 부위 %d" % [names[i], Vector2i(layer.texture.get_size()),
+						layer.joint, layer.units_per_px, layer.part])
+	if keys.size() != 3 or not keys.has(&"armUp") or not keys.has(&"armThrust") or not keys.has(&"armAim"):
+		errs.append("묶음 %s (기대 armUp, armThrust, armAim)" % str(keys))
+	# 모든 상대의 포즈가 가리키는 팔 그림이 그 상대의 그림에 있다.
+	for file in DirAccess.get_files_at("res://data/opponents/"):
+		if not file.ends_with(".tres"):
+			continue
+		var res := load("res://data/opponents/" + file)
+		if res is OpponentData:
+			_check_arm_keys(errs, file, res as OpponentData)
+	var atks := _attacks(opp)
+	if (atks["big"] as AttackData).tell_pose.arm_art != &"armUp" or (atks["thrust"] as AttackData).strike_pose.arm_art != &"armThrust":
+		errs.append("바르톨로: 큰 베기 예비 동작이 armUp, 찌르기 타격이 armThrust가 아님")
+	if opp.idle_pose.arm_art != &"armAim":
+		errs.append("바르톨로: 대기가 armAim이 아님")
+	return "OK" if errs.is_empty() else ", ".join(errs)
+
+
+func _check_arm_keys(errs: Array[String], file: String, opp: OpponentData) -> void:
+	var have := [&"Arm"]
+	if opp.art != null:
+		for arm_art in opp.art.arm_arts:
+			have.append(arm_art.key)
+	var poses: Array[PoseData] = [opp.idle_pose, opp.stagger_pose, opp.complacent_pose]
+	for atk: AttackData in _attacks_all(opp):
+		poses.append(atk.tell_pose)
+		poses.append(atk.strike_pose)
+	for pose in poses:
+		if pose != null and not have.has(pose.arm_art):
+			errs.append("%s: 포즈의 팔 그림 %s가 그림에 없음" % [file, pose.arm_art])
+
+
+func _attacks_all(opp: OpponentData) -> Array[AttackData]:
+	var all: Array[AttackData] = []
+	all.append_array(opp.attacks)
+	for habit in opp.habits:
+		if habit.response != null:
+			all.append(habit.response)
+	return all
+
+
+## 지금 보이는 팔 그림: Arm(보통 팔) 또는 보이는 묶음의 이름. 보통 팔과 묶음이 함께 보이면 그 둘을 다 적는다.
+func _shown_arm(view: Node) -> String:
+	var shown: Array[String] = []
+	if (view.get_node(^"Torso/Arm/Art") as CanvasItem).visible and (view.get_node(^"Torso/Arm/Hand") as CanvasItem).visible:
+		shown.append("Arm")
+	for key in [&"armUp", &"armThrust", &"armAim"]:
+		var group := view.get_node_or_null(NodePath("Torso/Arm/" + String(key))) as CanvasItem
+		if group != null and group.visible:
+			shown.append(String(key))
+	return "+".join(shown)
+
+
+func _arm_is(errs: Array[String], what: String, view: Node, want: String) -> void:
+	var got := _shown_arm(view)
+	if got != want:
+		errs.append("%s: 팔 그림 %s (기대 %s)" % [what, got, want])
+
+
+func t69_arm_swap() -> String:
+	var errs: Array[String] = []
+	var opp: OpponentData = load(OPPONENT_PATH)
+	var weapon: WeaponData = load(WEAPON_PATH)
+	var atks := _attacks(opp)
+	var view: OpponentView = (load(VIEW_PATH) as PackedScene).instantiate()
+	_tree.root.add_child(view)
+	view.anchor = Vector2(640, 446.4)
+	var core := States.make_core(false)
+	_t69_tell_recover(errs, view, core, opp, weapon, atks)
+	_t69_return(errs, view, core, opp, weapon, atks)
+	var flat := opp.duplicate() as OpponentData
+	flat.strike_art_on_return = false
+	_t69_return_off(errs, view, core, flat, weapon, atks)
+	_t69_colors(errs, view, core, opp, weapon, atks)
+	_t69_rest(errs, view, core, opp, weapon, atks)
+	var before := view.get_node(^"Torso/Arm").get_child_count()
+	view.setup(opp, weapon, false)
+	view.setup(opp, weapon, false)
+	if view.get_node(^"Torso/Arm").get_child_count() != before:
+		errs.append("같은 그림으로 setup을 두 번 부르니 Arm의 자식 수가 %d → %d" % [before, view.get_node(^"Torso/Arm").get_child_count()])
+	view.free()
+	return "OK" if errs.is_empty() else ", ".join(errs)
+
+
+# 확인 1~3: 대기, 큰 베기 예비 동작, 찌르기의 예비 동작·회수, 큰 베기 회수.
+func _t69_tell_recover(errs: Array[String], view: OpponentView, core: DuelCore, opp: OpponentData,
+		weapon: WeaponData, atks: Dictionary) -> void:
+	var big: AttackData = atks["big"]
+	view.setup(opp, weapon, false)
+	view.update_view(core, States.put(core, DT.OpponentState.IDLE, null, 0.0, DT.Distance.ENGAGE), 0.0)
+	_arm_is(errs, "대기", view, "armAim")
+	for p in [0.1, 0.5, 0.9999]:
+		view.setup(opp, weapon, false)
+		view.update_view(core, States.put(core, DT.OpponentState.TELL, big, p, DT.Distance.ENGAGE), 0.0)
+		_arm_is(errs, "큰 베기 p%.4f" % p, view, "armUp")
+		var want := OpponentMotion.tell_pose(big, opp.idle_pose, p, big.tell_time, weapon.parry_window, opp)
+		_near(errs, "큰 베기 p%.4f 팔" % p, _deg(view, ^"Torso/Arm"), want.arm_deg)
+	_near(errs, "armUp 회전", _deg(view, ^"Torso/Arm/armUp"), 180.0)
+	view.setup(opp, weapon, false)
+	view.update_view(core, States.put(core, DT.OpponentState.TELL, atks["thrust"], 0.9999, DT.Distance.ENGAGE), 0.0)
+	_arm_is(errs, "찌르기 p0.9999", view, "Arm")
+	view.setup(opp, weapon, false)
+	view.update_view(core, States.put(core, DT.OpponentState.RECOVERY, atks["thrust"], 0.5, DT.Distance.ENGAGE), 0.0)
+	_arm_is(errs, "찌르기 회수", view, "armThrust")
+	view.setup(opp, weapon, false)
+	view.update_view(core, States.put(core, DT.OpponentState.RECOVERY, big, 0.5, DT.Distance.ENGAGE), 0.0)
+	_arm_is(errs, "큰 베기 회수", view, "Arm")
+
+
+# 앞 상태를 정해 한 번 그린 뒤 대기로 넘겨 dt초 뒤를 그린다. start_early면 대기의 시작이 앞 상태의 끝보다 0.1초 앞이다.
+func _to_idle(view: OpponentView, core: DuelCore, state: int, atk: AttackData, p: float, dt: float,
+		start_early := false) -> void:
+	view.update_view(core, States.put(core, state, atk, p, DT.Distance.ENGAGE), 0.0)
+	var start := core.brain.state_end - (0.1 if start_early else 0.0)
+	view.update_view(core, States.to_idle(core, start, start + dt), 0.0)
+
+
+# 확인 4·5: 돌아감 동안은 나온 국면의 그림, 끝나면 대기의 그림(결정 285).
+func _t69_return(errs: Array[String], view: OpponentView, core: DuelCore, opp: OpponentData,
+		weapon: WeaponData, atks: Dictionary) -> void:
+	var after := opp.return_time + 0.05
+	var cases := [
+		["찌르기 회수 → 대기 0.1", DT.OpponentState.RECOVERY, atks["thrust"], 0.99, 0.1, false, "armThrust"],
+		["찌르기 회수 → 대기 끝", DT.OpponentState.RECOVERY, atks["thrust"], 0.99, after, false, "armAim"],
+		["막힌 찌르기 → 대기 0.1", DT.OpponentState.TELL, atks["thrust"], 0.9999, 0.1, false, "armThrust"],
+		["사라진 찌르기 → 대기 0.1", DT.OpponentState.TELL, atks["thrust"], 0.5, 0.1, true, "Arm"],
+		["사라진 큰 베기 → 대기 0.1", DT.OpponentState.TELL, atks["big"], 0.5, 0.1, true, "armUp"],
+		["사라진 큰 베기 → 대기 끝", DT.OpponentState.TELL, atks["big"], 0.5, after, true, "armAim"],
+	]
+	for c in cases:
+		view.setup(opp, weapon, false)
+		_to_idle(view, core, c[1], c[2], c[3], c[4], c[5])
+		_arm_is(errs, c[0], view, c[6])
+
+
+# 확인 5의 끝: strike_art_on_return 거짓이면 섞는 중도 대기의 그림이고, 회수는 그대로 뻗은 팔.
+func _t69_return_off(errs: Array[String], view: OpponentView, core: DuelCore, flat: OpponentData,
+		weapon: WeaponData, atks: Dictionary) -> void:
+	var cases := [
+		[DT.OpponentState.RECOVERY, atks["thrust"], 0.99, false],
+		[DT.OpponentState.TELL, atks["thrust"], 0.9999, false],
+		[DT.OpponentState.TELL, atks["big"], 0.5, true],
+	]
+	for c in cases:
+		view.setup(flat, weapon, false)
+		core.opponent_data = flat
+		_to_idle(view, core, c[0], c[1], c[2], 0.1, c[3])
+		_arm_is(errs, "갈래 끔: 대기 0.1", view, "armAim")
+	view.setup(flat, weapon, false)
+	view.update_view(core, States.put(core, DT.OpponentState.RECOVERY, atks["thrust"], 0.5, DT.Distance.ENGAGE), 0.0)
+	_arm_is(errs, "갈래 끔: 찌르기 회수", view, "armThrust")
+	core.opponent_data = load(OPPONENT_PATH)
+
+
+# 확인 6·7: 뻗은 팔의 층 재질이 부위를 따른다. 칼 층에는 재질이 없다.
+func _t69_colors(errs: Array[String], view: OpponentView, core: DuelCore, opp: OpponentData,
+		weapon: WeaponData, atks: Dictionary) -> void:
+	view.setup(opp, weapon, false)
+	var t := States.put(core, DT.OpponentState.RECOVERY, atks["thrust"], 0.5, DT.Distance.ENGAGE)
+	view.update_view(core, t, 0.0)
+	var group := view.get_node(^"Torso/Arm/armThrust")
+	var sleeve := (group.get_child(0) as CanvasItem).material as ShaderMaterial
+	var fist := (group.get_child(1) as CanvasItem).material as ShaderMaterial
+	if sleeve == null or fist == null:
+		errs.append("뻗은 팔의 소매·주먹 층에 재질이 없음")
+		return
+	_tint_is(errs, "뻗은 팔 소매", sleeve, OpponentView.COLOR_RECOVERY, 0.8)
+	_tint_is(errs, "뻗은 팔 주먹", fist, OpponentView.COLOR_RECOVERY, 0.8)
+	for i in [2, 3]:
+		if (group.get_child(i) as CanvasItem).material != null:
+			errs.append("뻗은 팔의 칼 층 %d에 재질이 있음" % i)
+	view.set_target(DT.Part.SWORD_ARM)
+	if not sleeve.get_shader_parameter(&"outline_on") or fist.get_shader_parameter(&"outline_on"):
+		errs.append("팔을 노렸는데 소매 층만 테두리가 아님")
+	view.set_target(-1)
+	view.on_event(_attack_event(DT.AttackResult.GRAZE, DT.Part.SWORD_HAND))
+	view.update_view(core, t, 0.01)
+	_tint_is(errs, "닿은 주먹 층", fist, OpponentView.COLOR_TOUCHED, 1.0)
+	_tint_is(errs, "닿지 않은 소매 층", sleeve, OpponentView.COLOR_RECOVERY, 0.8)
+
+
+# 확인 8(계획 030c 결정 285): 쉬는 상태는 그 포즈의 그림, 쉬는 상태끼리 넘어갈 때는 섞는 동안 보이던 그림.
+func _t69_rest(errs: Array[String], view: OpponentView, core: DuelCore, opp: OpponentData,
+		weapon: WeaponData, atks: Dictionary) -> void:
+	var half := opp.return_time * 0.5
+	var done := opp.return_time + 0.05
+	view.setup(opp, weapon, false)
+	_arm_is(errs, "setup 직후", view, "armAim")
+	view.update_view(core, States.put(core, DT.OpponentState.IDLE, null, 0.0, DT.Distance.ENGAGE, false), 0.0)
+	_arm_is(errs, "setup 뒤 첫 대기 0.1", view, "armAim")
+	view.update_view(core, States.put(core, DT.OpponentState.RECOVERY, atks["thrust"], 0.5, DT.Distance.ENGAGE), 0.0)
+	view.setup(opp, weapon, false)
+	view.update_view(core, States.put(core, DT.OpponentState.IDLE, null, 0.0, DT.Distance.ENGAGE, false), 0.0)
+	_arm_is(errs, "찌르기 회수 뒤 다시 setup, 대기 0.1", view, "armAim")
+	view.setup(opp, weapon, false)
+	view.update_view(core, States.put(core, States.COMPLACENT, null, 0.0, DT.Distance.ENGAGE), 0.0)
+	_arm_is(errs, "방심", view, "Arm")
+	view.update_view(core, States.idle_at(core, States.COMPLACENT_NOW, States.COMPLACENT_NOW + half), 0.0)
+	_arm_is(errs, "방심 → 대기 섞는 중", view, "Arm")
+	view.update_view(core, States.idle_at(core, States.COMPLACENT_NOW, States.COMPLACENT_NOW + done), 0.0)
+	_arm_is(errs, "방심 → 대기 끝", view, "armAim")
+	view.setup(opp, weapon, false)
+	view.update_view(core, States.put(core, DT.OpponentState.STAGGER, null, 0.0, DT.Distance.ENGAGE), 0.0)
+	_arm_is(errs, "무너짐", view, "Arm")
+	# 방심의 시작은 alert_since + complacent_time이다(결정 258). put의 대기는 alert_since 0, 지금 10.
+	view.setup(opp, weapon, false)
+	view.update_view(core, States.put(core, DT.OpponentState.IDLE, null, 0.0, DT.Distance.ENGAGE), 0.0)
+	view.update_view(core, States.idle_at(core, 0.0, opp.complacent_time + half), 0.0)
+	_arm_is(errs, "대기 → 방심 섞는 중", view, "armAim")
+	view.update_view(core, States.idle_at(core, 0.0, opp.complacent_time + done), 0.0)
+	_arm_is(errs, "대기 → 방심 끝", view, "Arm")
+	view.setup(opp, weapon, false)
+	view.update_view(core, States.put(core, DT.OpponentState.IDLE, null, 0.0, DT.Distance.ENGAGE), 0.0)
+	view.update_view(core, States.idle_at(core, States.NOW + 0.5, States.NOW + 0.5 + half), 0.0)
+	_arm_is(errs, "대기 중 경계를 다시 세움", view, "armAim")
+
+
+func _attack_event(result: int, part: int) -> Dictionary:
+	return {"type": DuelRecord.ATTACK, "result": result, "part": part, "dodged": false, "rash": false, "posture_gain": 0}
+
+
+func t70_hand_outline() -> String:
+	var errs: Array[String] = []
+	var opp: OpponentData = load(OPPONENT_PATH)
+	var weapon: WeaponData = load(WEAPON_PATH)
+	var view: OpponentView = (load(VIEW_PATH) as PackedScene).instantiate()
+	_tree.root.add_child(view)
+	var core := States.make_core(false)
+	view.setup(opp, weapon, false)
+	var hand := view.get_node(^"Torso/Arm/Hand")
+	var names: Array[String] = []
+	for child in hand.get_children():
+		names.append(String(child.name))
+	# 칼자루는 손가락 밑, 손의 윤곽선은 맨 위(결정 286).
+	if ", ".join(names) != "Sword, Art, Outline":
+		errs.append("Hand의 자식 차례 %s" % str(names))
+	var line := hand.get_node_or_null(^"Outline") as Line2D
+	if line == null:
+		view.free()
+		errs.append("Outline이 Line2D가 아님")
+		return ", ".join(errs)
+	if not line.closed or line.points.size() < 8 or not is_equal_approx(line.width, OpponentView.OUTLINE_UNITS):
+		errs.append("윤곽선: closed %s 점 %d 굵기 %.2f" % [line.closed, line.points.size(), line.width])
+	var pa := opp.art.hand
+	var poly := PackedVector2Array()
+	for p in pa.outline:
+		poly.append((p - pa.joint) * pa.units_per_px)
+	for p in line.points:
+		if Geometry2D.is_point_in_polygon(p, poly):
+			errs.append("윤곽선의 점 %s가 손 그림 안에 있음(바깥 윤곽선이어야 한다)" % p)
+			break
+	view.set_target(DT.Part.SWORD_HAND)
+	var hand_mat := (hand.get_node(^"Art") as CanvasItem).material as ShaderMaterial
+	if not line.visible or hand_mat.get_shader_parameter(&"outline_on"):
+		errs.append("손을 노렸는데 윤곽선 %s, 손 재질의 안쪽 테두리 %s" % [line.visible, hand_mat.get_shader_parameter(&"outline_on")])
+	view.update_view(core, States.put(core, DT.OpponentState.IDLE, null, 0.0, DT.Distance.ENGAGE), 0.0)
+	var aim := view.get_node(^"Torso/Arm/armAim")
+	var aim_line := aim.get_child(aim.get_child_count() - 1) as Line2D
+	if aim_line == null or not aim_line.is_visible_in_tree():
+		errs.append("대기에서 손을 노렸는데 겨눈 팔 주먹의 윤곽선이 보이지 않음")
+	view.update_view(core, States.put(core, DT.OpponentState.TELL, _attacks(opp)["big"], 0.5, DT.Distance.ENGAGE), 0.0)
+	var group := view.get_node(^"Torso/Arm/armUp")
+	var fist_line := group.get_child(group.get_child_count() - 1) as Line2D
+	if fist_line == null or not fist_line.is_visible_in_tree():
+		errs.append("큰 베기의 예비 동작에서 손을 노렸는데 든 팔 주먹의 윤곽선이 보이지 않음")
+	view.set_target(-1)
+	if line.visible or (fist_line != null and fist_line.visible) or (aim_line != null and aim_line.visible):
+		errs.append("조준을 뗐는데 윤곽선이 보임")
+	# 윤곽선이 없는 그림(테스트가 만든 상대)도 오류 없이 점 0.
+	var bare := opp.duplicate() as OpponentData
+	var art := opp.art.duplicate() as OpponentArt
+	var plain_hand := PartArt.new()
+	plain_hand.texture = pa.texture
+	art.hand = plain_hand
+	bare.art = art
+	view.setup(bare, weapon, false)
+	if line.points.size() != 0:
+		errs.append("윤곽선 없는 손인데 점 %d" % line.points.size())
+	view.free()
+	return "OK" if errs.is_empty() else ", ".join(errs)

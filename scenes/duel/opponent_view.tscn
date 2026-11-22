@@ -40,14 +40,19 @@ centered = false
 [node name="Hand" type="Node2D" parent="Torso/Arm"]
 position = Vector2(0, 105)
 
-[node name="Art" type="Sprite2D" parent="Torso/Arm/Hand"]
-centered = false
-
 [node name="Sword" type="Node2D" parent="Torso/Arm/Hand"]
 position = Vector2(0, 15)
 
 [node name="Art" type="Sprite2D" parent="Torso/Arm/Hand/Sword"]
 centered = false
+
+[node name="Art" type="Sprite2D" parent="Torso/Arm/Hand"]
+centered = false
+
+[node name="Outline" type="Line2D" parent="Torso/Arm/Hand"]
+visible = false
+closed = true
+joint_mode = 2
 
 [node name="StateLabel" type="Label" parent="."]
 offset_left = -220.0

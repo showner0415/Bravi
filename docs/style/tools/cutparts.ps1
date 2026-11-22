@@ -1,4 +1,4 @@
-﻿param([string]$Grow = '')
+﻿param([string]$Grow = '', [string]$Sheet = '', [string]$Out = '')
 # 계획 028 작업 5: 기준 시트 basis/bartolo-parts.png에서 파츠 열 장을 잘라 assets/art/opponents/bartolo/에 둔다.
 # 바탕은 measure.ps1로 지우고(허용 차 28), 화소를 늘리거나 줄이지 않는다(결정 251). 상자·관절·배율은 basis/README.md "손질 값".
 # -Grow "head=0,0,0,2;feather=0,1,0,3": 파츠마다 왼·위·오른·아래로 넓힐 화소(가장자리에 불투명 화소가 걸릴 때. 작업 6의 4).
@@ -59,12 +59,13 @@ $parts = @(
 $k = 0.5935
 $growMap = @{}
 foreach ($e in ($Grow.Split(';') | Where-Object { $_ })) { $kv = $e.Split('='); $growMap[$kv[0]] = @($kv[1].Split(',') | ForEach-Object { [int]$_ }) }
-$sheet = Join-Path $BraviRepo 'docs\style\basis\bartolo-parts.png'
+# -Sheet·-Out: 판 H처럼 고르기 전의 시트는 저장소 밖에 자른다(계획 030b 결정 281)
+$sheet = if ($Sheet) { $Sheet } else { Join-Path $BraviRepo 'docs\style\basis\bartolo-parts.png' }
 $work = Join-Path $BraviWork '028-cut'; New-Item -ItemType Directory -Force -Path $work | Out-Null
 $sheetCut = Join-Path $work 'sheet-cut.png'
 if (Test-Path $sheetCut) { Remove-Item $sheetCut }
 & (Join-Path $PSScriptRoot 'measure.ps1') -Src $sheet -Cut $sheetCut | ForEach-Object { "sheet $_" }
-$outDir = Join-Path $BraviRepo 'assets\art\opponents\bartolo'; New-Item -ItemType Directory -Force -Path $outDir | Out-Null
+$outDir = if ($Out) { $Out } else { Join-Path $BraviRepo 'assets\art\opponents\bartolo' }; New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 $files = @()
 foreach ($p in $parts) {
   $g = if ($growMap.ContainsKey($p[1])) { $growMap[$p[1]] } else { @(0, 0, 0, 0) }

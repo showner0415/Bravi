@@ -1,0 +1,25 @@
+Task: call your image generation tool exactly once to create exactly one image. You may use the code tool only to make that one call. Pass the attached reference image to the image generation tool as a referenced image by its path: {WORKDIR}\in-1.png. Give the image generation tool the text from the line that starts with Image: to the end of this message, word for word, as its prompt. Do not run shell commands. Do not read, create, change or delete any file. Do not use a browser, web search, computer use, apps or any other tool. Do not retry. When the image is done, reply with one line: done.
+
+Image: Landscape, 1536x1024 pixels. One sheet of separate sword arm parts of one character for cutout animation in a 2D duel game.
+
+Subject: Bartolo, the same character as in the attached image. Only his sword arm, his sword hand and his rapier, in a few different poses.
+
+Pose and layout:
+- The attached image is our own parts sheet and it is the base. Keep it: the same parts in the same places, the same outer silhouettes, the same shapes, the same faces, the same colors and the same line weight. Redraw it the same.
+- Change only one thing, as written in the line that starts with Change. Everything else stays exactly as it is.
+- Clear empty space between all parts. No part touches or overlaps another. No labels, no numbers. Nothing is cropped.
+Change: on the left part only (the raised arm with the long upright blade), move the shadow tone of the fist from the left side of the fist to the right side of the fist, the same as on the fist of the right part; the four fingers and the way they point, the outline of the fist, the cuff, the sleeve, the rapier and the whole right part stay exactly as they are.
+
+Style (draw a new, original illustration in the style of the attached image, as described here):
+- A finished cartoon character illustration for a game, drawn with care, in the drawing style of the attached image: soft, simple, rounded-geometric shapes with straight sides and rounded corners. Simple and flat: a clean cartoon, not realistic and not painterly.
+- Nothing is added except what the Change line says.
+- Outlines: very dark warm brown, hex 3B2A1E. One even, bold line weight on every outer contour, about 8 pixels thick in a 1024 pixel wide image, smooth clean edges, round ends. No tapering, no wobble, no rough or broken edges. Inner lines are the same color and about half as thick.
+- Fills: flat solid colors, muted and faded. Hair, beard, belt and shoes are filled with the same very dark brown as the outlines.
+- Shadows: exactly one shadow tone per color, a slightly darker version of the same color and still clearly lighter than the outlines. Each shadow is one simple flat shape with a hard edge on the right side of the form, as if the light comes from the upper left. Shadows have no outline.
+- Do not add: hatching, cross-hatching, engraving or etching lines, brush or ink texture, paper texture on the figure, gradients, soft or blurred shadow edges, highlights or shine, blush or rosy cheeks, sweat drops, tears, freckles, skin texture, fabric patterns.
+
+Colors:
+- Main fills and their shadow tones: dusty grey-blue 5C6F7E with shadow 4A5A67 for the doublet and the sleeve, light wood brown 836850 with shadow 6E5642 for the breeches, parchment E9D8B4 for the collar, cuffs, stockings and feather, skin EBC49F, faded brick red A5533F for the hat, pale warm grey CFC8BA for the blade and guard.
+- Avoid bright saturated yellow, orange, red, blue, purple or green, and pure white. Large areas are greyish and low in saturation.
+
+Background: one plain flat light grey color, about #D8D8D8, everywhere around the parts. No floor, no cast shadow, no scenery, no frame, no text, no letters, no signature, no watermark.

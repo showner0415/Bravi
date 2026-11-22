@@ -82,6 +82,8 @@ extends Resource
 @export var swing_margin := 0.03
 ## 그 밖의 바뀜(회수 → 대기, 무너짐, 방심)에 걸리는 시간(초).
 @export var return_time := 0.2
+## 타격 뒤 대기로 돌아가는 동안에도 타격의 팔 그림을 둔다. 거짓이면 따로 그린 팔은 회수에서만 보인다(결정 268, 판 F).
+@export var strike_art_on_return := true
 
 
 ## 그 부위를 스쳤을 때 깎이는 자세 칸 수(1 이상).

@@ -67,3 +67,23 @@ static func put(core: DuelCore, state: int, atk: AttackData, progress: float, di
 	brain.state = state
 	core.time = now
 	return now
+
+
+## 대기는 그대로 두고 경계를 다시 세운 시각과 지금만 옮긴다(계획 030c T69): 방심 들고 나기, 대기 중 경계 다시 세우기.
+static func idle_at(core: DuelCore, alert_since: float, now: float) -> float:
+	core.brain.alert_since = alert_since
+	core.time = now
+	return now
+
+
+## 앞 상태(예비 동작·회수)를 put으로 정하고 update_view를 부른 뒤 부른다: 대기로 넘긴다(계획 030 T69).
+## start를 앞 상태의 state_end와 같게 두면 타격이 있었던 것, 앞서게 두면 공격이 사라진 것이다(결정 268).
+static func to_idle(core: DuelCore, start: float, now: float) -> float:
+	var brain := core.brain
+	brain.state = DT.OpponentState.IDLE
+	brain.current_attack = null
+	brain.wide_open = false
+	brain.state_start = start
+	brain.state_end = start + 10.0
+	core.time = now
+	return now

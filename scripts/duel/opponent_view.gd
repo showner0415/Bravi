@@ -64,6 +64,19 @@ var _blend_from := PoseData.new()
 ## (상태, 방심, 시작 시각). 바뀌면 그때 화면의 포즈에서 새로 섞는다.
 var _phase_key := Vector3(-1, 0, 0)
 var _phase_start := 0.0
+## 따로 그린 팔(결정 266·268): key -> 묶음, 부위 -> 층의 재질들, 손의 윤곽선들(보통 손 + 주먹 층).
+var _arm_groups := {}
+var _part_extra := {}
+var _outlines: Array[Line2D] = []
+var _groups_for: OpponentArt
+var _groups_built := false
+var _art_key := OpponentArmArt.ARM
+## 바뀜이 시작될 때 나온 국면의 팔 그림. 돌아감이 끝날 때까지 남는다(견본 mixPose).
+var _leave_art := OpponentArmArt.ARM
+var _last_state := -1
+var _last_attack: AttackData
+var _last_state_end := 0.0
+var _warned_arts := {}
 var _dodge_k := 0.0
 var _dodge_time := 0.3
 var _dodge_head_deg := -20.1
@@ -86,7 +99,9 @@ var _snap := true
 @onready var _head: Node2D = $Torso/Head
 @onready var _hat: Node2D = $Torso/Head/Hat
 @onready var _arm: Node2D = $Torso/Arm
+@onready var _arm_sprite: Sprite2D = $Torso/Arm/Art
 @onready var _hand: Node2D = $Torso/Arm/Hand
+@onready var _hand_outline: Line2D = $Torso/Arm/Hand/Outline
 @onready var _sword: Node2D = $Torso/Arm/Hand/Sword
 @onready var _feather: Sprite2D = $Torso/Head/Hat/Feather
 @onready var _state_label: Label = $StateLabel
@@ -135,7 +150,13 @@ func setup(opponent: OpponentData, weapon: WeaponData, has_hat := false) -> void
 	_blend_from = _pose
 	_phase_key = Vector3(-1, 0, 0)
 	_phase_start = 0.0
+	# 쉬는 상태의 그림은 그 포즈의 arm_art다. 앞 판의 그림을 남기지 않는다(결정 285).
+	_art_key = OpponentArmArt.art_of(_pose)
+	_leave_art = _art_key
+	_last_state = -1
+	_last_attack = null
 	_apply_pose(_pose, 0.0)
+	_show_arm_art(_art_key)
 	if _ring != null:
 		_ring.queue_redraw()
 
@@ -145,9 +166,21 @@ func set_target(part: int) -> void:
 	if part == _target_part:
 		return
 	_target_part = part
+	_refresh_target()
+
+
+# setup이 묶음을 새로 만든 뒤에도 부른다(새 윤곽선이 지금의 조준을 따르게).
+func _refresh_target() -> void:
+	var part := _target_part
 	for p in _materials:
-		(_materials[p] as ShaderMaterial).set_shader_parameter(&"outline_on", p == part)
+		# 손은 칼 위의 바깥 윤곽선으로만 보인다(결정 269): 손 몫 재질의 안쪽 테두리는 늘 끈다.
+		var on: bool = p == part and p != DT.Part.SWORD_HAND
+		(_materials[p] as ShaderMaterial).set_shader_parameter(&"outline_on", on)
+		for mat in _part_extra.get(p, []):
+			(mat as ShaderMaterial).set_shader_parameter(&"outline_on", on)
 	_feather_material.set_shader_parameter(&"outline_on", part == DT.Part.HAT)
+	for line in _outlines:
+		line.visible = part == DT.Part.SWORD_HAND
 
 
 func on_event(ev: Dictionary) -> void:
@@ -236,6 +269,7 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 	# 피하기의 고개는 지금처럼 부드럽게 젖혔다 돌아온다(포즈의 고개 위에 얹는다).
 	_dodge_k = lerpf(_dodge_k, 1.0 if _clock < _dodge_until else 0.0, smooth)
 	_apply_pose(_pose, _dodge_k)
+	_show_arm_art(_art_key)
 	if _art != null:
 		_set_head(head_art)
 
@@ -252,7 +286,11 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 	if text == "" and complacent:
 		text = COMPLACENT_TEXT
 
-	# --- 상태 글자와 고리는 간격에 따라 커지거나 움직이지 않게 한다.
+	_place_labels(text, inverse)
+
+
+# 상태 글자와 고리는 간격에 따라 커지거나 움직이지 않게 한다.
+func _place_labels(text: String, inverse: float) -> void:
 	_state_label.text = text
 	_state_label.scale = Vector2.ONE * inverse
 	_state_label.position = (Vector2(anchor.x - _state_label.size.x * 0.5, STATE_LABEL_Y) - position) * inverse
@@ -273,14 +311,20 @@ func _pose_for(core: DuelCore, display_time: float, complacent: bool) -> PoseDat
 			start = maxf(brain.state_start, brain.alert_since)
 	var key := Vector3(brain.state, 1.0 if complacent else 0.0, start)
 	if key != _phase_key:
+		_leave_art = OpponentArmArt.leaving(_last_state, _last_attack, _last_state_end, start, _art_key)
 		_phase_key = key
 		_phase_start = start
 		_blend_from = _pose
+	_last_state = brain.state
+	_last_attack = brain.current_attack
+	_last_state_end = brain.state_end
 	var atk := brain.current_attack
 	if brain.state == DT.OpponentState.TELL and atk != null:
+		_art_key = OpponentArmArt.art_of(atk.tell_pose)
 		var p := (display_time - start) / maxf(brain.tell_duration, 0.001)
 		return OpponentMotion.tell_pose(atk, _blend_from, p, brain.tell_duration, _parry_window, opp)
 	if brain.state == DT.OpponentState.RECOVERY and atk != null:
+		_art_key = OpponentArmArt.art_of(atk.strike_pose)
 		var q := (display_time - start) / maxf(brain.state_end - start, 0.001)
 		return OpponentMotion.recover_pose(atk, q)
 	var target := _rest(opp.idle_pose)
@@ -290,7 +334,23 @@ func _pose_for(core: DuelCore, display_time: float, complacent: bool) -> PoseDat
 		target = _rest(opp.complacent_pose)
 	# 돌아감은 빠르게(결정 236): 그때 화면의 포즈에서 return_time초.
 	var k := clampf((display_time - start) / maxf(opp.return_time, 0.001), 0.0, 1.0)
+	# 섞는 동안은 나온 국면의 그림(결정 268), 끝나면 그 상태 포즈의 그림(결정 285). 거짓이면 섞는 동안도 그 상태의 그림(판 F의 갈래).
+	_art_key = _leave_art if k < 1.0 and opp.strike_art_on_return else OpponentArmArt.art_of(target)
 	return OpponentMotion.blend(_blend_from, target, OpponentMotion.ease_in_out(k))
+
+
+## 따로 그린 팔이 보이는 동안 Arm의 그림과 Hand(칼·윤곽선까지)를 감춘다(결정 237).
+func _show_arm_art(key: StringName) -> void:
+	if key != OpponentArmArt.ARM and not _arm_groups.has(key):
+		if not _warned_arts.has(key):
+			_warned_arts[key] = true
+			push_warning("OpponentView: 그림에 없는 팔 그림 '%s' — 보통 팔로 그린다" % key)
+		key = OpponentArmArt.ARM
+	var plain := key == OpponentArmArt.ARM
+	_arm_sprite.visible = plain
+	_hand.visible = plain
+	for k in _arm_groups:
+		(_arm_groups[k] as Node2D).visible = k == key
 
 
 func _apply_pose(pose: PoseData, dodge_k: float) -> void:
@@ -320,6 +380,8 @@ func _apply_colors(tint: Variant, head_closed: bool) -> void:
 			color = tint as Color
 			amount = TINT_AMOUNT
 		_set_tint(_materials[part], color, amount)
+		for mat in _part_extra.get(part, []):
+			_set_tint(mat, color, amount)
 		if part == DT.Part.HAT:
 			_set_tint(_feather_material, color, amount)
 
@@ -347,6 +409,35 @@ func _apply_art(art: OpponentArt) -> void:
 	_set_art(_feather, joints.feather, _feather_material)
 	_head_art = joints.head
 	_set_art(_art_of(DT.Part.HEAD), joints.head, _materials[DT.Part.HEAD])
+	_hand_outline.width = OUTLINE_UNITS
+	_hand_outline.default_color = OUTLINE_COLOR
+	_hand_outline.points = OpponentArmArt.outline_points(joints.hand, OUTLINE_UNITS)
+	_build_arm_groups(art)
+	_refresh_target()
+
+
+## 같은 그림이면 다시 만들지 않는다(찍기 씬이 장마다 setup을 부른다). 다른 그림이면 옛 묶음을 떼어 지운다.
+func _build_arm_groups(art: OpponentArt) -> void:
+	if _groups_built and art == _groups_for:
+		return
+	_groups_built = true
+	for old: Node2D in _arm_groups.values():
+		_arm.remove_child(old)
+		old.queue_free()
+	_arm_groups.clear()
+	_part_extra.clear()
+	_outlines.assign([_hand_outline])
+	_groups_for = art
+	if art == null:
+		return
+	var at := _arm_sprite.get_index() + 1
+	for arm_art in art.arm_arts:
+		var group := OpponentArmArt.build_group(arm_art, _new_material, OUTLINE_UNITS, OUTLINE_COLOR,
+				_part_extra, _outlines)
+		_arm.add_child(group)
+		_arm.move_child(group, at)
+		at += 1
+		_arm_groups[arm_art.key] = group
 
 
 ## 머리 셋은 관절이 반 화소씩 달라 텍스처와 함께 offset도 바꾼다(결정 260, MANIFEST 7~9행).

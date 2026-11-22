@@ -13,8 +13,9 @@ sword_deg = 95.0
 
 [sub_resource type="Resource" id="pose_thrust_strike"]
 script = ExtResource("4_pose")
-arm_deg = -30.0
+arm_deg = -50.0
 sword_deg = 180.0
+arm_art = &"armThrust"
 
 [sub_resource type="Resource" id="pose_cut_left_tell"]
 script = ExtResource("4_pose")
@@ -41,6 +42,7 @@ script = ExtResource("4_pose")
 arm_deg = 152.0
 sword_deg = -45.0
 lean_deg = -4.0
+arm_art = &"armUp"
 
 [sub_resource type="Resource" id="pose_big_cut_strike"]
 script = ExtResource("4_pose")
@@ -49,8 +51,8 @@ sword_deg = 180.0
 
 [sub_resource type="Resource" id="pose_idle"]
 script = ExtResource("4_pose")
-arm_deg = 23.0
 sword_deg = -21.0
+arm_art = &"armAim"
 
 [sub_resource type="Resource" id="pose_stagger"]
 script = ExtResource("4_pose")
@@ -74,7 +76,7 @@ is_big = false
 tell_pose = SubResource("pose_thrust_tell")
 hold_arm_deg = 93.0
 strike_pose = SubResource("pose_thrust_strike")
-recover_arm_deg = -20.0
+recover_arm_deg = -40.0
 pose_color = Color(1, 0.9, 0.25, 1)
 
 [sub_resource type="Resource" id="attack_cut_left"]

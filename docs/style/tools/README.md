@@ -16,7 +16,11 @@
 | `sil026.ps1` · `r026.ps1` | 한 색 실루엣을 세고 R1·R2·R4를 낸다 | R1·R2·R4 | `-Col -Curve -Bake -Tag` |
 | `blobs026.ps1` | 이어진 덩이를 센다 | A-1b, HP1 | `-Img -Min` |
 | `check027.ps1` | 바이블에 옮긴 값이 원문과 같은지 대조한다 | 바이블 1절 | `-Target -Sources -Only` |
-| `cutparts.ps1` | 기준 시트에서 파츠를 잘라 `assets/art/opponents/<상대>/`에 둔다 | — | `-Grow 'name=l,t,r,b;…'` |
+| `cutparts.ps1` | 기준 시트에서 파츠를 잘라 `assets/art/opponents/<상대>/`에 둔다. `-Sheet`·`-Out`은 고르기 전의 시트를 저장소 밖에 자를 때(계획 030b 결정 281) | — | `-Grow 'name=l,t,r,b;…'`, `-Sheet -Out` |
+| `cutarms.ps1` | 팔 시트에서 따로 그린 팔을 자르고(주먹을 소매에서 가른다) 다시 맞춘다(계획 030). `-Layout`은 팔마다의 값(`Kind` up·forward, 행, 날밑 타원과 기울기, 칼날 상자, 고를 때만 `Cuts`·`BladeLine`)을 담은 `.psd1`이고, 없으면 `bartolo-arms.png`의 두 팔 일곱 장이다(계획 030c 결정 292). 지금 게임의 열한 장은 `cutarms-030c.psd1`(`bartolo-arms2.png`, 값의 까닭은 `basis/README.md`) | — | `-Sheet -Rows 'upgrip=<y>;upcuff=<y>;thrustcuff=<y>'`, `-Layout <.psd1>`, `-Out` |
+| `outline.ps1` | 손 그림의 바깥 윤곽선 다각형(화소 모서리를 따라 돌고 줄인다)을 낸다 | S7 | `-Png -Eps 1.5` |
+| `pixrule.ps1` | 상태 색 짝의 모든 화소를 셰이더 규칙과 대조한다(PASS: 맞음 ≥ 97%, 어두운 화소의 바뀜 ≤ 1%) | S3 | `-Off -On -Sig '#RRGGBB'` |
+| `rgame.ps1` | 게임 렌더의 실루엣(찍기 `-Sil` 28장)으로 R1·R2·R4, 견본과의 칼 팔 IoU | R1·R2·R4, S10 | `-Dir -Sample -SampleTag` |
 
 ## 쓰는 법
 
