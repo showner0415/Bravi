@@ -4,6 +4,8 @@
 
 ## 절차
 
+도구는 계획 028부터 `docs/style/tools/`에 있다(결정 249). 아래 기록의 scratchpad·`generated/tools/`는 그때의 자리다.
+
 ### 준비 (계획 021 작업 4, 2026-11-21. 사용량 없음)
 
 - Codex CLI 0.169.0(`%APPDATA%\npm\codex.cmd`, 같은 자리에 `codex.ps1`). `codex login status` → `Logged in using ChatGPT`.

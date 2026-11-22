@@ -1,6 +1,6 @@
 # 기준 이미지
 
-화풍의 기준이다. 게임에 쓰는 애셋이 아니다(`assets/`와 `MANIFEST.md`는 4단계).
+화풍의 기준이다. 게임에 쓰는 애셋이 아니다(게임의 애셋은 `assets/`, 목록은 `assets/MANIFEST.md`).
 
 사용자가 "맞다"고 한 그림만 올렸다(결정 189·217). 원본은 로컬의 `docs/style/generated/`에 있고 여기 것은 그 복사본이다(해시가 같다). 만드는 길은 `docs/style/STYLE_SPEC.md` 머리의 "사용자가 고른 길"(결정 209), 호출의 기록은 `docs/style/GENERATION.md`에 있다. 모든 그림은 Codex CLI(`gpt-6.2-sol`, 추론 `high`)로 만들었다.
 
