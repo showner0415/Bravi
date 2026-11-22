@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>스타일 바이블 한 장 보기</title>
+<style>
+/* 계획 027 결정 246: 바이블의 그림 쪽만 보인다. 색은 바이블 8절의 hex만, 그림은 저장소의 ../basis/만 쓴다(다른 컴퓨터에서도 열린다). */
+:root { --ink: #3B2A1E; --soft: #6B5440; --p1: #E9D8B4; --p2: #D2B98C; --p3: #A8895E; --red: #84422F; --shade: #3A3027; }
+html, body { margin: 0; background: var(--shade); color: var(--p1); font-family: "f027-body", "Malgun Gothic", sans-serif; font-weight: 800; }
+header { max-width: 1240px; margin: 0 auto; padding: 20px; line-height: 1.6; }
+header h1 { margin: 0 0 8px; font: 400 30px "f027-title", "Batang", serif; }
+section { max-width: 1280px; margin: 0 auto 40px; }
+section > h2 { font-size: 20px; margin: 0 20px 8px; }
+.frame { position: relative; width: 1280px; height: 720px; background: var(--p1); color: var(--ink); overflow: hidden; box-sizing: border-box; padding: 20px 24px; }
+.frame h3 { margin: 0 0 12px; font: 400 26px "f027-title", "Batang", serif; color: var(--red); }
+.row { display: flex; gap: 18px; align-items: flex-start; }
+figure { margin: 0; }
+figure img { display: block; background: var(--p2); border: 3px solid var(--ink); box-sizing: border-box; }
+figcaption, .note { font-size: 15px; line-height: 1.45; margin-top: 8px; }
+.note { color: var(--red); }
+.file { font-size: 13px; color: var(--soft); margin-top: 4px; }
+.side { font-size: 15px; line-height: 1.6; border: 3px solid var(--ink); padding: 12px 16px; background: var(--p1); }
+code { font-family: inherit; }
+.side code, li code, figcaption code { color: var(--red); }
+.cards { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.card { border: 1.5px solid var(--ink); padding: 6px; font-size: 11px; line-height: 1.3; height: 82px; box-sizing: border-box; }
+.sw { display: flex; gap: 3px; margin-top: 4px; }
+.sw span { flex: 1; height: 30px; border: 1px solid var(--ink); font-size: 9px; display: flex; align-items: flex-end; justify-content: center; }
+.sw span.m { border-style: dashed; }
+ol { margin: 0; padding-left: 28px; font-size: 17px; line-height: 1.5; }
+ol li { margin-bottom: 7px; }
+.more { font-size: 14px; color: var(--soft); margin-top: 10px; }
+body.solo header, body.solo section, body.solo section > h2 { display: none; }
+body.solo section.solo-target { display: block; margin: 0; max-width: none; }
+body.solo { overflow: hidden; }
+</style>
+</head>
+<body>
+<header>
+  <h1>스타일 바이블 — 한 장 보기 (계획 027)</h1>
+  <p>바이블(<code>docs/STYLE_BIBLE.md</code>)의 그림 쪽입니다: 기준 그림 여덟과 그 그림이 정하는 것, 팔레트, 한눈의 규칙. 캡션은 바이블의 글 그대로입니다. 글꼴·UI는 <code>025-type-ui-size.html</code>, 포즈와 움직임은 <code>026-pose-motion.html</code>에서 봅니다.</p>
+</header>
+<main>
+<section id="basis-fig"><h2>기준 그림 — 바르톨로</h2>
+  <div class="frame"><h3>기준 그림 — 바르톨로 (2절)</h3>
+    <div class="row">
+      <figure style="width:373px"><img src="../basis/bartolo-front.png" width="373" height="560" alt="bartolo-front">
+        <figcaption data-from-bible>인물의 화풍 전체: 둥근 모서리의 곧은 꼴, 고른 굵은 선, 평평한 칠과 그림자 한 단계, 큰 머리, 여유롭게 결투에 임하는 자세와 자신 있는 미소</figcaption></figure>
+      <figure style="width:420px"><img src="../basis/bartolo-parts.png" width="420" height="280" alt="bartolo-parts">
+        <figcaption data-from-bible>게임 파츠의 꼴과 크기: 머리 셋(미소·당황·어지러움), 모자, 깃털, 몸통, 팔, 주먹, 칼, 다리</figcaption>
+        <div class="file">bartolo-parts.png</div></figure>
+      <figure style="width:420px"><img src="../basis/bartolo-arms.png" width="420" height="280" alt="bartolo-arms">
+        <figcaption data-from-bible>큰 베기의 든 팔(칼이 팔과 한 줄)과 찌르기의 나를 향해 뻗은 팔(타원 날밑, 아래로 가늘어지는 칼날), 손가락 넷의 주먹</figcaption>
+        <p class="note" data-from-bible>1번 주먹의 그림자는 따르지 않는다(규칙은 오른쪽)</p>
+        <div class="file">bartolo-arms.png</div></figure>
+    </div>
+  </div>
+</section>
+<section id="basis-stage"><h2>기준 그림 — 무대</h2>
+  <div class="frame"><h3>기준 그림 — 무대 셋 (2·6절)</h3>
+    <div class="row">
+      <figure style="width:398px"><img src="../basis/stage-alley.png" width="398" height="265" alt="stage-alley">
+        <figcaption data-from-bible>무대의 화풍: 짙고 조용한 가운데, 가장자리의 집과 물건, 바랜 색</figcaption><div class="file">stage-alley.png</div></figure>
+      <figure style="width:398px"><img src="../basis/stage-court.png" width="398" height="265" alt="stage-court">
+        <figcaption data-from-bible>같은 화풍의 둘째 장소(돌우물과 나무 대문의 안뜰)</figcaption><div class="file">stage-court.png</div></figure>
+      <figure style="width:398px"><img src="../basis/stage-piazza.png" width="398" height="265" alt="stage-piazza">
+        <figcaption data-from-bible>같은 화풍의 셋째 장소(해 진 뒤의 광장, 멀리 지붕과 종탑의 실루엣)</figcaption><div class="file">stage-piazza.png</div></figure>
+    </div>
+  </div>
+</section>
+<section id="basis-client"><h2>기준 그림 — 의뢰인과 SVG 기준</h2>
+  <div class="frame"><h3>기준 그림 — 의뢰인 둘과 SVG 기준 넷 (2·4절)</h3>
+    <div class="row">
+      <figure style="width:347px"><img src="../basis/client-clara.png" width="347" height="520" alt="client-clara">
+        <figcaption data-from-bible>의뢰인의 화풍과 상반신 구도</figcaption></figure>
+      <figure style="width:347px"><img src="../basis/client-vittorio.png" width="347" height="520" alt="client-vittorio">
+        <figcaption data-from-bible>다른 몸집·다른 성격의 의뢰인도 같은 화풍으로</figcaption></figure>
+      <div class="side" style="width:440px"><p>그린 그림이 없는 기준은 SVG 견본이다.</p>
+        <p><code>022-mix.html</code> — 섞은 SVG: 꼴과 디테일의 양, 결투 화면의 내 손·칼</p>
+        <p><code>020-bridge.html</code>의 <code>b-counter</code> — 카운터 배경</p>
+        <p><code>025-type-ui-size.html</code> — UI "나 · 필사본"과 글꼴 셋</p>
+        <p><code>026-pose-motion.html</code> — 어깨 회전의 포즈와 hold 곡선</p></div>
+    </div>
+  </div>
+</section>
+<section id="palette"><h2>팔레트</h2>
+  <div class="frame"><h3>팔레트 — 주는 값 (8절). 점선 칸은 기준 그림 <code>bartolo-front</code>에서 잰 값</h3>
+    <div class="cards" id="cards"></div>
+  </div>
+</section>
+<section id="rules"><h2>한눈에</h2>
+  <div class="frame"><h3>한눈에 — 먼저 지킬 열 줄</h3>
+    <ol>
+      <li data-from-bible>인물은 섞은 SVG만큼 단순하게, 둥근 모서리의 곧은 꼴로. 만듦새만 다듬고 디테일은 조금(4·13.1).</li>
+      <li data-from-bible>선은 <code>#3B2A1E</code> 하나, 고른 굵기, 둥근 끝이고 그림자에는 선이 없다. 칠은 바랜 색으로 평평하고 그림자는 한 단계, 보는 쪽 오른쪽(빛은 왼쪽 위)(4).</li>
+      <li data-from-bible>예비 동작은 관찰로 읽혀야 한다: 같은 공격은 늘 같은 궤적, 곡선이 예비 동작의 포즈를 덜 가게 하지 않고, 대기의 흔들림이 예비 동작처럼 보이지 않으며, 칼 팔이 머리를 가리지 않는다(11·15).</li>
+      <li data-from-bible>상대의 큰 면은 칠·그림자 Y ≥ 0.30, 선 Y &lt; 0.22, S ≤ 50%. 주는 칠은 Y ≥ 0.42이고 그림자 hex도 준다(8·11).</li>
+      <li data-from-bible>신호색은 코드의 값이고 그림의 색은 신호 구역 밖이다(8).</li>
+      <li data-from-bible>게임 파츠는 머리·몸통이 엄격한 정면, 결정 12의 이름과 관절, 겹침 여유를 둔다(5·11).</li>
+      <li data-from-bible>무대 가운데의 조용한 구역에는 선과 물건이 없고, 극장으로 읽히지 않는다(6·11).</li>
+      <li data-from-bible>UI는 "필사본"이고, UI의 어떤 선도 교전의 인물 바깥 선보다 굵지 않다(6·10).</li>
+      <li data-from-bible>새 그림은 우리 그림을 넣어 그리고, 고칠 때는 바탕 그림에 한 가지만 바꾼다. 좌우 뒤집기는 화소로(13.1·13.2).</li>
+      <li data-from-bible>생성은 <code>gpt-6.2-sol</code>·<code>high</code>·read-only, 돌리기 전에 장 수를 알리고, 이름과 참고 스크린샷을 넣지 않는다(3·13.5).</li>
+    </ol>
+    <p class="more">더 볼 곳: 바이블 13.3(그림마다의 블록), 13.6(판정 목록), 16절(4단계로 넘기는 것). 견본 <code>025-type-ui-size.html</code>의 <code>ui-duel</code>·<code>ui-counter</code>, <code>026-pose-motion.html</code>의 <code>pose-pair</code>·<code>motion-pair</code>.</p>
+  </div>
+</section>
+</main>
+<pre id="font-status" style="display:none"></pre>
+<script>
+"use strict";
+window.addEventListener("error", e => document.body.setAttribute("data-error", `${e.message} @${e.lineno}`));
+// 바이블 8절 팔레트 표의 줄 그대로(이름과 주는 값). 잰 값은 8절 "기준 그림에서 잰 값"의 bartolo-front 줄
+const PALETTE = [
+  ["--line / --ink", ["#3B2A1E"]],
+  ["--ink-soft", ["#6B5440"]],
+  ["--parch-1", ["#E9D8B4"]],
+  ["--parch-2", ["#D2B98C"]],
+  ["--parch-3", ["#A8895E"]],
+  ["--c-doublet / -sh", ["#5C6F7E", "#4A5A67"]],
+  ["--c-legs / -sh (020~022 견본의 값. 기록)", ["#6B5440", "#57442F"]],
+  ["바지, 주는 값(확정. 결정 204·216)", ["#836850", "#6E5642"]],
+  ["--c-skin / -sh", ["#EBC49F", "#C98E66"]],
+  ["--c-hat / -sh", ["#A5533F", "#84422F"]],
+  ["--c-steel", ["#CFC8BA"]],
+  ["--c-glove / -sh", ["#7A5232", "#634228"]],
+  ["--c-psleeve", ["#5E6648"]],
+  ["--cl-dress / -sh", ["#6F7F4F", "#59663F"]],
+  ["--cl-hair", ["#7A5232"]],
+  ["--cl-hat · --cl-ribbon", ["#A5533F", "#E2D3B4"]],
+  ["--vi-robe / -sh", ["#7E4A4A", "#663B3B"]],
+  ["--vi-fur / -sh", ["#A8895E", "#8C7050"]],
+  ["--vi-gold", ["#C08A3E"]],
+  ["--vi-purse", ["#7A5232"]],
+  ["--st-shade", ["#3A3027"]],
+  ["--st-sky", ["#3E4A55"]],
+  ["--st-ground", ["#4E4336"]],
+  ["--st-wall · -2 · -3", ["#5E4C39", "#54473A", "#4A3F34"]],
+  ["--st-timber · --st-wood", ["#5A4632", "#4A3A2C"]],
+  ["--st-iron", ["#2E2620"]],
+  ["--st-leaf", ["#46503A"]],
+  ["--st-sil", ["#2E2A28"]],
+  ["--st-emblem", ["#7A6449"]],
+  ["--wood", ["#7A5232"]],
+  ["--red · --green · --blue · --ochre", ["#A5533F", "#6F7F4F", "#5C6F7E", "#C08A3E"]],
+];
+const MEASURED = { 0: ["#442B1A"], 5: ["#6D7982", "#546068"], 7: ["#8F6D4C"], 8: ["#F2C197"], 9: ["#B75D43"] };
+const light = h => { const n = parseInt(h.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255; return 0.2126 * r + 0.7152 * g + 0.0722 * b > 140; };
+const cell = (h, m) => `<span class="${m ? "m" : ""}" style="background:${h};color:${light(h) ? "#3B2A1E" : "#E9D8B4"}">${h}</span>`;
+document.getElementById("cards").innerHTML = PALETTE.map(([name, hs], i) =>
+  `<div class="card">${name}<div class="sw">${hs.map(h => cell(h, false)).join("")}${(MEASURED[i] || []).map(h => cell(h, true)).join("")}</div></div>`).join("");
+
+// 글꼴은 026과 같은 로컬 파일(없으면 바탕 글꼴로 그려진다)
+const FACES = [["nanumsquareround", "800", new FontFace("f027-body", "url(../generated/fonts/nanumsquareround/NanumSquareRoundEB.ttf)", { weight: "800" })],
+  ["songmyung", "400", new FontFace("f027-title", "url(../generated/fonts/songmyung/SongMyung-Regular.ttf)", { weight: "400" })]];
+const imgs = Array.from(document.images);
+const imgDone = imgs.map(im => im.complete ? Promise.resolve() : new Promise(r => { im.onload = r; im.onerror = r; }));
+Promise.allSettled(FACES.map(([, , f]) => f.load().then(x => document.fonts.add(x)))).then(() => Promise.all(imgDone)).then(() => {
+  document.getElementById("font-status").textContent = FACES.map(([k, w, f]) => `${k},${w},${f.status}`).join("\n");
+  document.body.setAttribute("data-img-total", String(imgs.length));
+  document.body.setAttribute("data-img-ok", String(imgs.filter(im => im.naturalWidth > 0).length));
+  document.body.setAttribute("data-ready", "1");
+});
+const hash = decodeURIComponent(location.hash.slice(1));
+if (hash) { const t = document.getElementById(hash); if (t) { document.body.classList.add("solo"); t.classList.add("solo-target"); } }
+</script>
+</body>
+</html>

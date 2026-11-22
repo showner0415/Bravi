@@ -733,17 +733,17 @@ function frameAt(col, curve, k, out, dist, t) {
 const PHASE_NAME = { idle: "대기", tell: "예비 동작", recover: "회수", return: "돌아감", stagger: "무너짐", complacent: "방심" };
 
 // ---------------------------------------------------------------- 따로 그린 팔 (A3의 답: 큰 베기의 예비 동작, 찌르기의 타격. 시트 026-A1f = 생성한 A1e에서 2번 주먹 띠만 좌우로 뒤집은 손질본. B의 답)
-// 2번(아래를 향한 주먹)의 손가락은 사용자가 비교 그림에서 "나 · 손가락을 반대로"를 골랐다. 그림 도구는 두 번 시켜도 뒤집지 못해 화소로 뒤집었다.
+// 그림은 027-A1g(A1f에서 두 주먹의 손가락만 4개로. 계획 027의 사용자 지시). 2번(아래를 향한 주먹)의 손가락은 사용자가 비교 그림에서 "나 · 손가락을 반대로"를 골랐다. 그림 도구는 두 번 시켜도 뒤집지 못해 화소로 뒤집었다.
 // 배율 0.5333 = 024 주먹의 배율 0.76 ÷ 새 주먹 폭의 비(든 팔의 주먹 114 / 024의 80 = 1.425). 앞으로 뻗은 팔은 같은 배율이라 주먹이 1.23배 크다(가까이 온 꼴). 든 팔의 칼은 팔과 한 줄이다(사용자: 자루에서 꺾이면 부자연스럽다).
 // 관절은 어깨 끝의 둥근 머리 가운데(024의 팔처럼 몸통에 묻힌다). 두 파츠 모두 주먹과 칼이 그림에 들어 있다.
 // 시트 위 파츠는 세로로 서 있고 기울기는 arm_deg가 준다. 든 팔은 주먹이 위라 rot 180으로 팔의 지역 좌표(+y가 손)에 맞춘다.
 Object.assign(SHEET.a.parts, {
   // 칼은 상태 색을 받지 않는다(게임과 같다): 소매·주먹과 칼을 다른 다각형으로 자른다
-  ArmUp: { src: "../generated/cut/026-A1f-bartolo-arms.png", joint: [455, 923], sx: 0.5333, sy: 0.5333, rot: 180, poly: RB(390, 566, 532, 982) },
-  ArmUpSword: { src: "../generated/cut/026-A1f-bartolo-arms.png", joint: [455, 923], sx: 0.5333, sy: 0.5333, rot: 180, poly: RB(372, 14, 534, 565) },
-  ArmThrust: { src: "../generated/cut/026-A1f-bartolo-arms.png", joint: [1098, 250], sx: 0.5333, sy: 0.5333, poly: RB(985, 188, 1215, 816) },
-  ArmThrustSword: { src: "../generated/cut/026-A1f-bartolo-arms.png", joint: [1098, 250], sx: 0.5333, sy: 0.5333, poly: Array.from({ length: 16 }, (_, i) => [1098 + 112 * Math.cos(i * Math.PI / 8), 500 + 58 * Math.sin(i * Math.PI / 8)]) },
-  ArmThrustBlade: { src: "../generated/cut/026-A1f-bartolo-arms.png", joint: [1098, 250], sx: 0.5333, sy: 0.5333, poly: RB(1068, 540, 1132, 814) },
+  ArmUp: { src: "../generated/cut/027-A1g-bartolo-arms.png", joint: [455, 923], sx: 0.5333, sy: 0.5333, rot: 180, poly: RB(390, 566, 532, 982) },
+  ArmUpSword: { src: "../generated/cut/027-A1g-bartolo-arms.png", joint: [455, 923], sx: 0.5333, sy: 0.5333, rot: 180, poly: RB(372, 14, 534, 565) },
+  ArmThrust: { src: "../generated/cut/027-A1g-bartolo-arms.png", joint: [1098, 250], sx: 0.5333, sy: 0.5333, poly: RB(985, 188, 1215, 816) },
+  ArmThrustSword: { src: "../generated/cut/027-A1g-bartolo-arms.png", joint: [1098, 250], sx: 0.5333, sy: 0.5333, poly: Array.from({ length: 16 }, (_, i) => [1098 + 112 * Math.cos(i * Math.PI / 8), 500 + 58 * Math.sin(i * Math.PI / 8)]) },
+  ArmThrustBlade: { src: "../generated/cut/027-A1g-bartolo-arms.png", joint: [1098, 250], sx: 0.5333, sy: 0.5333, poly: RB(1068, 540, 1132, 814) },
 });
 // layers: 그리는 차례. 둘째 값이 1이면 상태 색을 받는다(소매·주먹), 0이면 받지 않는다(칼). 든 팔은 자루가 주먹 뒤로, 앞으로 뻗은 팔은 날밑이 주먹 앞으로 온다
 const ARM_META = {
@@ -980,7 +980,7 @@ function sceneArmGuide() {
 function sceneArmArt() {
   const W = 320, H = 360, cells = [["big", "tell_start", "큰 베기 · 예비 동작 시작"], ["big", "hold", "큰 베기 · 멈칫"], ["thrust", "strike", "찌르기 · 타격"], ["thrust", "recover_end", "찌르기 · 회수 끝(패리당함)"]];
   let s = parchBg(1280, 720);
-  [[false, "024의 팔을 돌린 것"], [true, "따로 그린 팔(026-A1f)"]].forEach(([useArt, rowName], row) => {
+  [[false, "024의 팔을 돌린 것"], [true, "따로 그린 팔(027-A1g)"]].forEach(([useArt, rowName], row) => {
     cells.forEach(([k, ph, name], i) => {
       const q = Object.assign({}, posesOf(k)[ph]); if (!useArt) q.arm_art = "Arm";
       const p = rotParams(q); p.armArt = useArt ? q.arm_art : "Arm";
