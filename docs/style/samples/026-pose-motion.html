@@ -1,0 +1,1047 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>자세와 모션 시안</title>
+<style>
+/* 색은 모두 여기에 둔다(계획 021 작업 3). 다리 B와 짙은 무대만 남겼다(020의 답). */
+:root {
+  --ink: #3B2A1E; --ink-soft: #6B5440;
+  --parch-1: #E9D8B4; --parch-2: #D2B98C; --parch-3: #A8895E;
+  --stage-dark: #5E4C39; --stage-dark-2: #7A6449;
+  --red: #A5533F; --green: #6F7F4F; --blue: #5C6F7E; --ochre: #C08A3E; --wood: #7A5232;
+  --skin-1: #EBC49F; --skin-2: #C98E66; --skin-3: #8E5E40;
+  /* 야외 무대의 짙은 톤. x 290~990에 쓰는 색은 모두 L ≤ 0.20(결정 182·190) */
+  --st-shade: #3A3027; --st-sky: #3E4A55; --st-ground: #4E4336; --st-wall: #5E4C39;
+  --st-wall-2: #54473A; --st-wall-3: #4A3F34; --st-timber: #5A4632; --st-wood: #4A3A2C;
+  --st-iron: #2E2620; --st-leaf: #46503A; --st-sil: #2E2A28; --st-emblem: #7A6449;
+  /* 신호색: 지금 코드의 값 그대로(결정 181) */
+  --sig-thrust: #FFE640; --sig-cut: #FFBF33; --sig-big: #FF801A; --sig-strike: #F23333;
+  --sig-recovery: #4D80F2; --sig-stagger: #A659D9; --sig-touched: #FFFFFF;
+  --sig-aim: #FFFF66; --sig-band: #4DFF80;
+  --sw-ready: #D9D9E6; --sw-guard: #4DD973; --sw-fresh: #66F2FF; --sw-parry: #FFD933;
+  --sw-grazed: #F24040; --sw-windup: #FFE64D; --sw-bind: #FF7333;
+  /* 다리 B: 굵기가 변하는 고동색 잉크 선, 배경과 같은 바랜 칠, 평평한 그림자 한 단계 */
+  --line: #3B2A1E; --lw: 5.2;
+  --c-doublet: #5C6F7E; --c-doublet-sh: #4A5A67;
+  --c-legs: #6B5440; --c-legs-sh: #57442F;
+  --c-skin: #EBC49F; --c-skin-sh: #C98E66;
+  --c-hat: #A5533F; --c-hat-sh: #84422F;
+  --c-feather: #E9D8B4; --c-steel: #CFC8BA; --c-hair: #3B2A1E;
+  --c-collar: #E9D8B4; --c-boot: #3B2A1E;
+  --c-glove: #7A5232; --c-glove-sh: #634228; --c-psleeve: #5E6648;
+  /* 의뢰인 둘 */
+  --cl-dress: #6F7F4F; --cl-dress-sh: #59663F; --cl-apron: #E9D8B4; --cl-apron-sh: #D2B98C; --cl-hair: #7A5232; --cl-hat: #A5533F; --cl-ribbon: #E2D3B4;
+  --vi-robe: #7E4A4A; --vi-robe-sh: #663B3B; --vi-fur: #A8895E; --vi-fur-sh: #8C7050; --vi-cap: #3B2A1E; --vi-gold: #C08A3E; --vi-purse: #7A5232;
+  --in-bg: #D8D8D8;
+  /* 자세 안내도(결정 205): 몸과 칼 팔만 가른다 */
+  --pose-body: #9A9A9A; --pose-arm: #6E6E6E;
+}
+
+/* 파츠는 칠 층과 선 층 둘이다. 상태 색은 칠 층에만 80% 섞는다(Godot의 base.lerp(tint, 0.8)과 같은 셈) */
+.fill > * { fill: var(--base); stroke: none; }
+.opp.tint-on .tinted > .fill > * { fill: color-mix(in srgb, var(--base) 20%, var(--tint) 80%); }
+.line > * { fill: none; stroke: var(--line); stroke-width: var(--lw); stroke-linejoin: round; stroke-linecap: round; }
+.line > .ink { fill: var(--line); stroke: none; }
+.line > .eye-w { fill: var(--c-collar); }
+.line > .thin { stroke-width: calc(var(--lw) * 0.55); }
+.line > .thick { stroke-width: calc(var(--lw) * 1.35); }
+.lines-b .line { filter: url(#inkline); }
+.sig-blade { fill: var(--sw-state); }
+
+.ui { font-family: "Batang", "BatangChe", "Gungsuh", serif; fill: var(--ink); }
+.state { font: bold 28px "Malgun Gothic", sans-serif; fill: #FFFFFF; stroke: #000000; stroke-width: 8; paint-order: stroke; stroke-linejoin: round; }
+.none-note { font: 22px "Batang", serif; fill: var(--parch-1); }
+
+html, body { margin: 0; background: #2A2018; color: #E9D8B4; font-family: "Batang", serif; }
+header { max-width: 1240px; margin: 0 auto; padding: 20px; line-height: 1.6; }
+header h1 { margin: 0 0 8px; font-size: 26px; }
+header ol li { margin-bottom: 8px; }
+section { max-width: 1280px; margin: 0 auto 40px; }
+section h2 { font-size: 20px; margin: 0 20px 8px; }
+section p.cap { margin: 8px 20px 0; font-size: 15px; line-height: 1.5; }
+svg.scene { width: 100%; height: auto; display: block; background: #D2B98C; }
+.gray svg.scene { filter: grayscale(1); }
+body.solo header, body.solo section, body.solo h2, body.solo p.cap { display: none; }
+body.solo section.solo-target { display: block; margin: 0; max-width: none; }
+body.solo svg.scene { width: 1280px; height: 720px; }
+body.solo svg.scene.sz-portrait { width: 1024px; height: 1536px; }
+body.solo svg.scene.sz-land { width: 1536px; height: 1024px; }
+body.solo { overflow: hidden; }
+.ctl { margin: 10px 20px 0; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 15px; }
+.ctl span { margin-right: 4px; }
+.ctl button { font: inherit; padding: 4px 10px; border: 2px solid #E9D8B4; background: #3A3027; color: #E9D8B4; border-radius: 3px; cursor: pointer; }
+.ctl button.on { background: #E9D8B4; color: #3B2A1E; }
+</style>
+</head>
+<body>
+<header>
+  <h1>자세와 모션 시안 — 계획 026</h1>
+  <p><b>보는 법</b>: 지금 게임의 포즈(팔을 옮기기만 한다)와 어깨 회전의 포즈(팔 한 덩이를 어깨에서 돌린다. 결정 220)를 나란히 놓았습니다. 움직임은 <code>motion-pair</code>에서 봅니다. 이 파일을 <b>Edge나 Chrome</b>으로 여세요(이 컴퓨터의 로컬 그림·글꼴을 읽습니다. Firefox는 막을 수 있습니다). 단추로 공격·결과·곡선·빠르기를 바꿉니다.</p>
+  <ol>
+    <li><b>A1 · 공격 넷의 어깨 회전 포즈</b>: <code>pose-pair</code>의 아랫줄.</li>
+    <li><b>A2 · 예비 동작의 움직임</b>: 가. 지금처럼 고르게(<code>game</code>) / 나. 멈칫하고 짧게 휘두르고 느리게 회수(<code>hold</code>). 나의 휘두름(0.10~0.15초)은 패리 창 안입니다. 반응 싸움이 되는지는 이 견본으로 판단하지 않고 4단계 플레이로 봅니다.</li>
+    <li><b>A3 · 따로 그릴 팔</b>: 어깨 회전으로는 그 동작으로 읽히지 않는 것만.</li>
+  </ol>
+</header>
+<main id="main">
+<section id="pose-pair"><h2>포즈 — 위 지금 게임, 아래 어깨 회전(hold)</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg><p class="cap"><code>?atk=thrust|cutl|cutr|big</code></p></section>
+<section id="pose-states"><h2>상태 — 위 지금 게임, 아래 어깨 회전</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="strip"><h2>연속 장면 여덟 칸</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg><p class="cap"><code>?col=game|rot&amp;curve=game|hold&amp;atk=…&amp;out=blocked|parried|whiff</code></p></section>
+<section id="motion"><h2>결투 화면 한 장 — <code>?t=</code>의 시각</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="motion-pair"><h2>움직임 — 왼쪽 지금 게임, 오른쪽 어깨 회전</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg><div class="ctl" id="mp-ctl"></div><p class="cap">같은 시계로 돕니다. 타격의 순간(고리가 0이 되는 때)은 두 곡선이 같습니다.</p></section>
+<section id="far-read"><h2>멀리(×0.55)에서의 예비 동작 60% — 위 지금 게임, 아래 어깨 회전(hold)</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="sil"><h2>재기 전용 실루엣 (칼 팔 파랑, 머리 빨강, 몸 회색)</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="sil-check"><h2>재는 도구의 맞음 (<code>?case=a|b|c|d</code>)</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="arm-guide"><h2>따로 그릴 팔의 자세 안내도 (1536×1024)</h2><svg class="scene sz-land" viewBox="0 0 1536 1024" width="1536" height="1024"></svg></section>
+<section id="arm-art"><h2>따로 그린 팔을 끼운 포즈</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+</main>
+<pre id="pose-table" style="display:none"></pre>
+<pre id="game-table" style="display:none"></pre>
+<pre id="timeline" style="display:none"></pre>
+<pre id="pose-check" style="display:none"></pre>
+<pre id="font-status" style="display:none"></pre>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <pattern id="hatchBg" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(-35)">
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#6B5440" stroke-width="1.1"/>
+    </pattern>
+    <pattern id="crossBg" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#6B5440" stroke-width="1.1"/>
+      <line x1="0" y1="0" x2="6" y2="0" stroke="#6B5440" stroke-width="0.8"/>
+    </pattern>
+    <!-- 다리 B의 선: 오른쪽 아래가 두꺼워지는 겹침과 거친 가장자리 -->
+    <filter id="inkline" x="-10%" y="-10%" width="120%" height="120%">
+      <feOffset in="SourceGraphic" dx="1.4" dy="1.7" result="o"/>
+      <feMerge result="m"><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge>
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="4" result="n"/>
+      <feDisplacementMap in="m" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <!-- 배경의 양피지 -->
+    <filter id="paper" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.02" numOctaves="3" seed="2" result="big"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="5" result="fine"/>
+      <feColorMatrix in="big" type="matrix" values="0 0 0 0 0.36  0 0 0 0 0.25  0 0 0 0 0.15  0 0 0 0.45 -0.14" result="blot"/>
+      <feColorMatrix in="fine" type="matrix" values="0 0 0 0 0.3  0 0 0 0 0.2  0 0 0 0 0.12  0 0 0 0.3 -0.08" result="grit"/>
+      <feMerge result="all"><feMergeNode in="SourceGraphic"/><feMergeNode in="blot"/><feMergeNode in="grit"/></feMerge>
+      <feComposite in="all" in2="SourceAlpha" operator="in"/>
+    </filter>
+  </defs>
+</svg>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs id="genDefs"></defs></svg>
+
+<script>
+"use strict";
+// 굽기에서 빈 장면이 나올 때 까닭을 --dump-dom으로 읽는다
+window.addEventListener("error", e => document.body.setAttribute("data-error", `${e.message} @${e.lineno}`));
+window.addEventListener("unhandledrejection", e => document.body.setAttribute("data-error", String(e.reason && e.reason.stack || e.reason)));
+
+// ---------------------------------------------------------------- 상대 (결정 12의 이름·계층·관절)
+// 관절 자리는 scenes/duel/opponent_view.tscn과 같다: 목 (0,-200), 모자는 머리 꼭대기, 손목은 어깨 아래 105, 칼자루는 손목 아래 15.
+// 머리 높이 104, 모자 45(020의 답): 교전에서 446 - (200+104+45)*0.85 = 149.4 ≥ 142(두 줄 상태 글자의 아래 끝).
+const TORSO = "M-62,-198 Q-72,-198 -71,-186 L-60,-10 Q-59,0 -48,0 L48,0 Q59,0 60,-10 L71,-186 Q72,-198 62,-198 Z";
+// 겹침 여유(STYLE_BIBLE 5번): 목 밑동은 목 위로 12, 팔 윗끝은 어깨 위로 14
+const OVERLAP = { neck: 12, armHead: 14 };
+const P = {
+  breech: "M-57,0 L57,0 L60,56 Q59,74 36,74 L13,74 Q12,40 0,38 Q-12,40 -13,74 L-36,74 Q-59,74 -60,56 Z",
+  breechSh: "M34,0 L57,0 L60,56 Q59,74 36,74 L28,74 Q32,30 34,0 Z",
+  stockL: "M-45,72 L-19,72 L-21,152 L-43,152 Z", stockR: "M19,72 L45,72 L43,152 L21,152 Z",
+  stockSh: "M36,72 L45,72 L43,152 L36,152 Z M-28,72 L-19,72 L-21,152 L-28,152 Z",
+  shoeL: "M-44,148 L-20,148 Q-16,160 -18,170 L-58,170 Q-60,158 -44,148 Z",
+  shoeR: "M20,148 L44,148 Q60,158 58,170 L18,170 Q16,160 20,148 Z",
+  neck: "M-17,-212 L17,-212 L17,-194 L-17,-194 Z",
+  torsoSh: "M42,-198 L62,-198 Q72,-198 71,-186 L60,-10 Q59,0 48,0 L34,0 Z",
+  belt: "M-59,-30 L59,-30 L58,-14 L-58,-14 Z",
+  face: "M-46,-8 Q-56,-52 -50,-78 Q-44,-104 0,-104 Q44,-104 50,-78 Q56,-52 46,-8 Q28,6 0,6 Q-28,6 -46,-8 Z",
+  faceSh: "M30,-100 Q44,-100 50,-78 Q56,-52 46,-8 Q36,1 24,4 Q40,-40 30,-100 Z",
+  earL: "M-49,-64 Q-63,-62 -61,-47 Q-59,-35 -47,-38 Z", earR: "M49,-64 Q63,-62 61,-47 Q59,-35 47,-38 Z",
+  hair: "M-52,-66 Q-56,-100 -30,-110 Q0,-117 30,-110 Q56,-100 52,-66 Q44,-84 26,-86 Q8,-98 -8,-90 Q-30,-94 -44,-80 Q-48,-74 -52,-66 Z",
+  nose: "M-5,-62 Q-16,-40 -11,-31 Q0,-24 12,-31 Q15,-42 5,-62 Z",
+  mustache: "M-34,-20 Q-20,-34 0,-26 Q20,-34 34,-20 Q40,-10 30,-12 Q16,-22 0,-18 Q-16,-22 -30,-12 Q-40,-10 -34,-20 Z",
+  goatee: "M-7,-6 Q0,7 7,-6 Q0,-2 -7,-6 Z",
+  brim: "M-74,0 Q-78,-12 -52,-14 L52,-14 Q78,-12 74,0 Q40,8 0,8 Q-40,8 -74,0 Z",
+  crown: "M-38,-12 L-33,-42 Q0,-48 33,-42 L38,-12 Z",
+  crownSh: "M18,-44 Q28,-43 33,-42 L38,-12 L26,-12 Z",
+  band: "M-38,-12 L-37,-22 L37,-22 L38,-12 Z",
+  feather: "M30,-28 Q78,-50 152,-30 Q106,-14 34,-18 Z",
+  sleeve: "M-17,2 Q-17,-14 0,-14 Q17,-14 17,2 L15,96 L-15,96 Z",
+  sleeveSh: "M6,-12 Q17,-10 17,2 L15,96 L7,96 Z",
+  cuff: "M-18,90 L18,90 L17,104 L-17,104 Z",
+  fist: "M-17,0 L17,0 Q20,14 17,28 Q0,34 -17,28 Q-20,14 -17,0 Z",
+  blade: "M-4.5,-24 L-4.5,-174 L0,-192 L4.5,-174 L4.5,-24 Z",
+  guard: "M-27,-25 Q-31,-20 -27,-15 L27,-15 Q31,-20 27,-25 Z",
+  grip: "M-4,-15 L4,-15 L4,4 L-4,4 Z",
+};
+const sh = (cls, d, base) => `<path class="${cls}" d="${d}" style="--base: var(${base})"/>`;
+const f = (d, base) => `<path d="${d}" style="--base: var(${base})"/>`;
+const l = (d, cls = "") => `<path${cls ? ` class="${cls}"` : ""} d="${d}"/>`;
+
+const FACES = {
+  idle: `${l("M-30,-70 Q-18,-76 -8,-71", "thick")}${l("M8,-71 Q18,-76 30,-70", "thick")}<circle class="ink" cx="-18" cy="-58" r="4.6"/><circle class="ink" cx="18" cy="-58" r="4.6"/>${l("M-8,-9 Q0,-6 8,-9")}`,
+  angry: `${l("M-31,-77 L-7,-66", "thick")}${l("M7,-66 L31,-77", "thick")}<circle class="ink" cx="-18" cy="-57" r="4.6"/><circle class="ink" cx="18" cy="-57" r="4.6"/><rect class="eye-w" x="-12" y="-15" width="24" height="10" rx="2"/>${l("M-4,-15 L-4,-5 M4,-15 L4,-5", "thin")}`,
+  focus: `${l("M-30,-73 L-8,-68", "thick")}${l("M8,-68 L30,-73", "thick")}${l("M-25,-58 L-11,-58")}<circle class="ink" cx="18" cy="-58" r="4.6"/>${l("M-9,-9 L9,-9")}`,
+  oops: `${l("M-30,-80 Q-18,-88 -8,-82", "thick")}${l("M8,-82 Q18,-88 30,-80", "thick")}<circle class="eye-w" cx="-18" cy="-58" r="8.5"/><circle class="eye-w" cx="18" cy="-58" r="8.5"/>${l("M-18,-58 m-8.5,0 a8.5,8.5 0 1,0 17,0 a8.5,8.5 0 1,0 -17,0", "thin")}${l("M18,-58 m-8.5,0 a8.5,8.5 0 1,0 17,0 a8.5,8.5 0 1,0 -17,0", "thin")}<circle class="ink" cx="-18" cy="-57" r="3.4"/><circle class="ink" cx="18" cy="-57" r="3.4"/><ellipse class="ink" cx="0" cy="-8" rx="7" ry="8"/>`,
+  dizzy: `${l("M-30,-74 Q-18,-84 -8,-74", "thick")}${l("M8,-80 Q18,-72 30,-78", "thick")}${l("M-24,-64 L-12,-52 M-12,-64 L-24,-52")}${l("M12,-64 L24,-52 M24,-64 L12,-52")}${l("M-12,-8 q4,-4 8,0 q4,4 8,0 q4,-4 8,0")}`,
+  smug: `${l("M-30,-74 Q-18,-80 -8,-74", "thick")}${l("M8,-74 Q18,-80 30,-74", "thick")}${l("M-27,-60 Q-18,-55 -9,-60")}${l("M9,-60 Q18,-55 27,-60")}${l("M-10,-9 Q2,-4 12,-12")}`,
+};
+
+// 파츠 하나씩 그린다. opp()와 파츠 시트가 같은 그림을 쓴다.
+const PART = {
+  Legs: () => `<g class="fill">${f(P.breech, "--c-legs")}${sh("sh", P.breechSh, "--c-legs-sh")}${f(P.stockL, "--c-collar")}${f(P.stockR, "--c-collar")}${sh("sh", P.stockSh, "--c-legs-sh")}${f(P.shoeL, "--c-boot")}${f(P.shoeR, "--c-boot")}</g>
+    <g class="line">${l(P.breech)}${l(P.stockL)}${l(P.stockR)}${l(P.shoeL)}${l(P.shoeR)}${l("M-36,10 Q-30,40 -38,66 M36,10 Q30,40 38,66", "thin")}${l("M-46,78 L-18,78 M18,78 L46,78", "thin")}</g>`,
+  Torso: () => `<g class="fill">${f(P.neck, "--c-skin")}${f(TORSO, "--c-doublet")}${sh("sh", P.torsoSh, "--c-doublet-sh")}${f(P.belt, "--c-boot")}<ellipse cx="0" cy="-198" rx="44" ry="12" style="--base: var(--c-collar)"/></g>
+    <g class="line">${l(TORSO)}${l("M-36,-190 Q-40,-100 -32,-34 M36,-190 Q40,-100 32,-34", "thin")}${l(P.belt)}<rect x="-9" y="-33" width="18" height="22" rx="2"/><circle class="ink" cx="0" cy="-168" r="3.4"/><circle class="ink" cx="0" cy="-143" r="3.4"/><circle class="ink" cx="0" cy="-118" r="3.4"/><circle class="ink" cx="0" cy="-93" r="3.4"/><circle class="ink" cx="0" cy="-68" r="3.4"/><ellipse cx="0" cy="-198" rx="44" ry="12"/>${l("M-30,-205 q5,8 10,0 q5,8 10,0 q5,8 10,0 q5,8 10,0 q5,8 10,0 q5,8 10,0", "thin")}</g>`,
+  Head: face => `<g class="fill">${f(P.earL, "--c-skin")}${f(P.earR, "--c-skin")}${f(P.face, "--c-skin")}${sh("sh", P.faceSh, "--c-skin-sh")}${f(P.hair, "--c-hair")}${f(P.nose, "--c-skin-sh")}${f(P.mustache, "--c-hair")}${f(P.goatee, "--c-hair")}</g>
+    <g class="line">${l(P.earL)}${l(P.earR)}${l(P.face)}${l(P.hair)}${l(P.nose)}${l(P.mustache)}${FACES[face || "idle"]}</g>`,
+  Hat: () => `<g class="fill">${f(P.crown, "--c-hat")}${sh("sh", P.crownSh, "--c-hat-sh")}${f(P.band, "--c-hat-sh")}${f(P.brim, "--c-hat")}</g>
+    <g class="line">${l(P.crown)}${l(P.band, "thin")}${l(P.brim)}</g>`,
+  Feather: () => `<g class="fill">${f(P.feather, "--c-feather")}</g>
+    <g class="line">${l(P.feather)}${l("M32,-23 Q90,-36 150,-30", "thin")}${l("M60,-30 l8,-9 M80,-34 l8,-8 M100,-35 l8,-7 M120,-34 l8,-5 M66,-27 l9,6 M88,-29 l9,6 M110,-30 l8,5", "thin")}</g>`,
+  Arm: () => `<g class="fill">${f(P.sleeve, "--c-doublet")}${sh("sh", P.sleeveSh, "--c-doublet-sh")}${f(P.cuff, "--c-collar")}</g>
+    <g class="line">${l(P.sleeve)}${l(P.cuff)}</g>`,
+  Hand: () => `<g class="fill">${f(P.fist, "--c-skin")}</g>
+    <g class="line">${l(P.fist)}${l("M-9,8 L-9,14 M0,8 L0,15 M9,8 L9,14", "thin")}</g>`,
+  Sword: () => `<g class="fill">${f(P.blade, "--c-steel")}${f(P.grip, "--c-boot")}${f(P.guard, "--c-steel")}<circle cx="0" cy="8" r="5" style="--base: var(--c-steel)"/></g>
+    <g class="line">${l(P.blade)}${l("M0,-30 L0,-168", "thin")}${l(P.guard)}${l("M-24,-18 Q-28,8 0,10", "thin")}<circle cx="0" cy="8" r="5"/></g>`,
+};
+
+// o: x, y, s(크기), hat, arm[어깨 자리], armRot(도), sword(칼의 지역 각), head(도), lean(몸 기울기, 골반에서), tint(변수 이름), headClosed, face, art, armArt, noarm
+// 계획 026에서 더한 것: lean(Torso를 골반에서 돌린다), armArt(팔 그림 바꿔 끼우기), noarm(재기용. 팔을 숨긴다)
+function opp(o) {
+  const tint = o.tint ? ` tint-on" style="--tint: var(${o.tint})` : "";
+  const headTint = o.headClosed ? "" : "tinted";
+  const A = o.art || PART;
+  const t = o.tint || "";
+  // 따로 그린 팔(결정 237): 주먹이 그림에 들어 있으면 Hand의 그림을 감추고, 칼을 그 그림의 쥔 점에 둔다
+  const meta = o.armArt && o.armArt !== "Arm" && A.arms && A.arms[o.armArt] ? ARM_META[o.armArt] : null;
+  const armFn = meta ? A.arms[o.armArt] : A.Arm;
+  const handAt = meta && meta.grip ? `${meta.grip[0]},${meta.grip[1] - 15}` : "0,105";
+  return `<g class="opp${tint}" transform="translate(${o.x},${o.y}) scale(${o.s})">
+  <g data-part="Legs" class="tinted">${A.Legs(t)}</g>
+  <g data-part="Torso" class="tinted" transform="rotate(${o.lean || 0})">${A.Torso(t)}
+    <g data-part="Head" class="${headTint}" transform="translate(0,-200) rotate(${o.head || 0})">${A.Head(o.face, o.headClosed ? "" : t)}
+      <g data-part="Hat" transform="translate(0,-104)"${o.hat ? "" : ` style="display:none"`}>${A.Hat()}
+        <g data-part="Feather">${A.Feather()}</g>
+      </g>
+    </g>
+    <g data-part="Arm" class="tinted" transform="translate(${o.arm[0]},${o.arm[1]}) rotate(${o.armRot || 0})"${o.noarm ? ` style="display:none"` : ""}>${armFn(t)}
+      <g data-part="Hand" class="tinted" transform="translate(${handAt})">${meta && meta.hideHand ? "" : A.Hand(t)}
+        <g data-part="Sword" transform="translate(0,15) rotate(${o.sword})">${meta && meta.hideSword ? "" : A.Sword()}</g>
+      </g>
+    </g>
+  </g>
+</g>`;
+}
+
+// ---------------------------------------------------------------- 내 손과 칼 (player_sword_view: 칼 전체가 상태 색이다)
+function playerHand(x, y, stateVar, bladeWidth) {
+  return `<g class="phand" transform="translate(${x},${y})" style="--sw-state: var(${stateVar})">
+  <g transform="scale(${bladeWidth},1)">
+    <path class="sig-blade" d="M-6,-240 L6,-240 L9,-10 L-9,-10 Z"/><path class="sig-blade" d="M-40,-10 L40,-10 L40,4 L-40,4 Z"/>
+    <g class="line"><path d="M-6,-240 L6,-240 L9,-10 L-9,-10 Z"/><path d="M-40,-10 L40,-10 L40,4 L-40,4 Z"/><path class="thin" d="M0,-225 L0,-20"/></g>
+  </g>
+  <g class="fill">${f("M-44,78 L44,78 L52,150 L-52,150 Z", "--c-psleeve")}${f("M-36,2 Q-38,40 -34,86 L34,86 Q38,40 36,2 Q0,-6 -36,2 Z", "--c-glove")}${sh("sh", "M16,0 Q36,0 36,2 Q38,40 34,86 L20,86 Q26,40 16,0 Z", "--c-glove-sh")}${f("M-40,74 L40,74 L42,92 L-42,92 Z", "--c-collar")}</g>
+  <g class="line">${l("M-44,78 L-52,150 M44,78 L52,150")}${l("M-36,2 Q-38,40 -34,86 L34,86 Q38,40 36,2 Q0,-6 -36,2 Z")}${l("M-26,20 Q0,14 26,20 M-28,42 Q0,36 28,42", "thin")}${l("M-40,74 L40,74 L42,92 L-42,92 Z")}</g>
+</g>`;
+}
+
+function wrap(text, n) {
+  const out = []; let line = "";
+  for (const word of text.split(" ")) {
+    if ((line + " " + word).trim().length > n && line) { out.push(line); line = word; } else line = (line + " " + word).trim();
+  }
+  if (line) out.push(line);
+  return out;
+}
+function tspans(lines, x, y, dy) { return lines.map((t, i) => `<tspan x="${x}" y="${y + i * dy}">${t}</tspan>`).join(""); }
+function ring() {
+  // 큰 베기의 고리: 화면 (640, 306), 남은 0.825초 x 240 = 198, 띠 240 x 0.18 = 43.2
+  return `<g transform="translate(640,306)">
+    <circle r="43.2" fill="var(--sig-band)" fill-opacity="0.22" stroke="var(--sig-band)" stroke-opacity="0.95" stroke-width="3"/>
+    <circle r="198" fill="none" stroke="#FFFFFF" stroke-opacity="0.95" stroke-width="5"/>
+    <circle r="4" fill="#FFFFFF" fill-opacity="0.9"/>
+  </g>`;
+}
+
+const COND_FEATHER = "모자로 끝내기 — 유효타만 본다. 모자에 유효타 한 번. 스침은 어디든 괜찮고, 다른 곳의 유효타는 감점.";
+const COND_FIRST = "첫 피 — 유효타만 본다. 상대의 몸통·팔·손·다리에 유효타 한 번. 머리를 치면 감점.";
+
+const R1I = { raw: "../generated/023-R1i-bartolo-front.png", cut: "../generated/cut/023-R1i-bartolo-front.png", w: 1024, h: 1536, neck: [515, 545], pel: [515, 983] };
+const R2 = { raw: "../generated/023-R2-stage-alley.png", bright: 1 };
+const R3 = { raw: "../generated/023-R3-client-clara.png", cut: "../generated/cut/023-R3-client-clara.png" };
+const SHEET = {};
+const RB = (x0, y0, x1, y1) => [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+// P1a. k = 200 / (몸통의 골반 853 − 목 516) = 0.5935.
+// 머리: 목(턱 밑) 345, 머리털 꼭대기 130 → 127.6이라 0.917배로 117(모자 원점 104)에 맞춘다. 모자: 원점(챙 밑에서 16 위) 290, 꼭대기 196 → 55.8이라 0.94배로 52.4.
+// 팔: 위 529~아래 785(256화소)를 틀의 118(−14~104)에 맞춰 세로 0.777, 가로는 R1i의 소매 폭(35)에 맞춰 0.75. 주먹 0.76. 깃털은 밑동 (1248, 262)가 모자 좌표 (30, −23)에 오게 둔다.
+SHEET.a = {
+  raw: "../generated/024-P1a-bartolo-parts.png", src: "../generated/cut/024-P1a-bartolo-parts.png", w: 1536, h: 1024, k: 200 / 337,
+  heads: { smug: "Head", oops: "HeadOops", dizzy: "HeadDizzy" },
+  aim: [[125, 560], [150, 520], [330, 520], [350, 560], [345, 850], [130, 850]],
+  parts: {
+    Head: { joint: [172, 345], sx: 0.917, sy: 0.917, poly: RB(60, 122, 284, 374) },
+    HeadOops: { joint: [453.5, 346], sx: 0.917, sy: 0.917, poly: RB(340, 122, 567, 375) },
+    HeadDizzy: { joint: [736.5, 347], sx: 0.917, sy: 0.917, poly: RB(623, 122, 850, 376) },
+    Hat: { joint: [1049, 290], sx: 0.94, sy: 0.94, poly: RB(909, 188, 1190, 314) },
+    Feather: { joint: [1194, 303], sx: 0.94, sy: 0.94, poly: RB(1237, 222, 1483, 292) },
+    Torso: { joint: [236, 853], poly: RB(109, 493, 365, 861) },
+    Legs: { joint: [594, 524], poly: RB(452, 513, 738, 850) },
+    Arm: { joint: [888, 559], sx: 0.75, sy: 0.777, poly: RB(840, 519, 936, 793) },
+    Hand: { joint: [1110, 597], sx: 0.76, sy: 0.76, poly: RB(1061, 585, 1160, 693) },
+    Sword: { joint: [1336, 812], poly: RB(1263, 469, 1409, 867) },
+  },
+  // 상태 색을 재는 점(파츠 단위). 그림의 화소 → (화소 − 관절) × k × 배율
+  tintPts: [
+    ["torso-fill", "fill", "Torso", -39.2, -90.8], ["torso-shadow", "fill", "Torso", 49.9, -90.8],
+    ["arm-fill", "fill", "Arm", -7.1, 37.4], ["arm-shadow", "fill", "Arm", 8.9, 37.4],
+    ["legs-fill", "fill", "Legs", -2.4, 18.4], ["legs-shadow", "fill", "Legs", 48.1, 21.4],
+    ["torso-line", "line", "Torso", -80.7, -90.8, 1, 0], ["legs-line", "line", "Legs", -73.6, 21.4, 1, 0], ["arm-line", "line", "Arm", -23.6, 37.4, 1, 0],
+    ["head-skin", "same", "Head", 0, -78.9], ["hat", "same", "Hat", 0, -39], ["blade", "same", "Sword", 0, -125.8],
+  ],
+};
+const SHEET_PICK = "a";
+const V1 = { raw: "../generated/024-V1a-client-vittorio.png", cut: "../generated/cut/024-V1a-client-vittorio.png" };
+function noneScene(why) {
+  return `<rect width="1280" height="720" fill="var(--st-shade)"/><text class="none-note" x="640" y="350" text-anchor="middle">만들지 않았다</text><text class="none-note" x="640" y="392" text-anchor="middle" font-size="17">${why}</text>`;
+}
+// 상태 색은 칠에만(결정 181을 래스터로): sRGB의 Y가 0.22 아래면 선, 0.30 위면 칠, 그 사이는 비례. 칠에 신호색 80%를 덮고 선을 다시 얹는다.
+const TINT_SIGS = ["--sig-thrust", "--sig-cut", "--sig-big", "--sig-strike", "--sig-recovery", "--sig-stagger"];
+function tintFilters() {
+  return TINT_SIGS.map(v => `<filter id="tf${v}" color-interpolation-filters="sRGB" x="0" y="0" width="100%" height="100%">
+    <feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -2.6575 -8.94 -0.9025 0 3.75" result="lineA"/>
+    <feComposite in="lineA" in2="SourceAlpha" operator="in" result="lineMask"/>
+    <feComposite in="SourceGraphic" in2="lineMask" operator="in" result="lines"/>
+    <feFlood flood-color="${cssVar(v)}" flood-opacity="0.8" result="sig"/>
+    <feComposite in="sig" in2="SourceAlpha" operator="in" result="sigIn"/>
+    <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="sigIn"/><feMergeNode in="lines"/></feMerge>
+  </filter>`).join("");
+}
+// 생성 그림의 파츠: 그림 좌표의 다각형으로 자르고, 관절 점을 원점에 두고 k(파츠 단위/화소)로 줄인다.
+// spec.parts[이름] = { poly: [[x,y]...], joint: [x,y], sx, sy, rot }. 상태 색은 t(신호 변수 이름)가 있을 때 필터로 입힌다.
+let clipSeq = 0;
+function genPartSvg(spec, name, t) {
+  const p = spec.parts[name];
+  if (!p) return "";
+  const id = `gc${++clipSeq}`;
+  const pts = p.poly.map(([x, y]) => `${x},${y}`).join(" ");
+  const k = spec.k, sx = (p.sx || 1) * k, sy = (p.sy || 1) * k;
+  const filt = t ? ` filter="url(#tf${t})"` : "";
+  return `<g transform="rotate(${p.rot || 0}) scale(${sx},${sy}) translate(${-p.joint[0]},${-p.joint[1]})">
+    <clipPath id="${id}"><polygon points="${pts}"/></clipPath>
+    <g clip-path="url(#${id})"><image href="${p.src || spec.src}" x="0" y="0" width="${spec.w}" height="${spec.h}"${filt}/></g>
+  </g>`;
+}
+function genArt(spec, headKey) {
+  const head = headKey && spec.heads ? spec.heads[headKey] || spec.heads.smug : "Head";
+  return {
+    Legs: t => genPartSvg(spec, "Legs", t),
+    Torso: t => genPartSvg(spec, "Torso", t),
+    Head: (face, t) => genPartSvg(spec, head, t),
+    Hat: () => genPartSvg(spec, "Hat"),
+    Feather: () => genPartSvg(spec, "Feather"),
+    Arm: t => genPartSvg(spec, "Arm", t),
+    Hand: t => genPartSvg(spec, "Hand", t),
+    Sword: () => genPartSvg(spec, "Sword"),
+  };
+}
+// 조준 테두리: 몸통 윤곽을 따라 그림 좌표로 짚은 다각형(spec.aim)
+function genAimPath(spec) {
+  const p = spec.parts.Torso;
+  return "M" + (spec.aim || p.poly).map(([x, y]) => `${((x - p.joint[0]) * spec.k).toFixed(1)},${((y - p.joint[1]) * spec.k).toFixed(1)}`).join(" L") + " Z";
+}
+
+// ---------------------------------------------------------------- 대비와 색 (WCAG 상대 휘도)
+const hex2rgb = h => { h = h.trim().replace("#", ""); return [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16)); };
+const lin = c => { c /= 255; return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+const lum = h => { const [r, g, b] = hex2rgb(h); return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b); };
+const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+const mix = (a, b, t) => { const A = hex2rgb(a), B = hex2rgb(b); return "#" + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, "0")).join("").toUpperCase(); };
+const hsv = h => { const [r, g, b] = hex2rgb(h).map(v => v / 255); const mx = Math.max(r, g, b), mn = Math.min(r, g, b); return { s: mx === 0 ? 0 : (mx - mn) / mx, v: mx }; };
+const r2 = x => x.toFixed(2);
+function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+const yv = h => { const [r, g, b] = hex2rgb(h); return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255; };
+
+// ---------------------------------------------------------------- 글꼴 (계획 025. 결정 222~224)
+// 로컬 docs/style/generated/fonts/에서만 읽는다(저장소에 올라가지 않는다). family 이름은 f025-<키>다.
+const FONTS = [
+  { key: "gowunbatang", name: "고운바탕", role: "body", files: [["GowunBatang-Regular.ttf", "400"], ["GowunBatang-Bold.ttf", "700"]] },
+  { key: "nanummyeongjo", name: "나눔명조", role: "body", files: [["NanumMyeongjo-Regular.ttf", "400"], ["NanumMyeongjo-Bold.ttf", "700"], ["NanumMyeongjo-ExtraBold.ttf", "800"]] },
+  { key: "notoserifkr", name: "Noto Serif KR", role: "body", files: [["NotoSerifKR-wght.ttf", "200 900"]] },
+  // 사용자가 승인 B에서 고른 본문 글꼴(후보 밖). 공식 배포처 hangeul.naver.com의 압축 파일에서 TTF 넷만 풀었다.
+  { key: "nanumsquareround", name: "나눔스퀘어라운드", role: "body", files: [["NanumSquareRoundL.ttf", "300"], ["NanumSquareRoundR.ttf", "400"], ["NanumSquareRoundB.ttf", "700"], ["NanumSquareRoundEB.ttf", "800"]] },
+  { key: "songmyung", name: "송명", role: "title", files: [["SongMyung-Regular.ttf", "400"]] },
+  { key: "hahmlet", name: "함렛", role: "title", files: [["Hahmlet-wght.ttf", "100 900"]] },
+  { key: "notosanskr", name: "Noto Sans KR", role: "state", files: [["NotoSansKR-wght.ttf", "100 900"]] },
+  { key: "blackhansans", name: "검은고딕", role: "state", files: [["BlackHanSans-Regular.ttf", "400"]] },
+  { key: "dohyeon", name: "도현", role: "state", files: [["DoHyeon-Regular.ttf", "400"]] },
+  { key: "jua", name: "주아", role: "state", files: [["Jua-Regular.ttf", "400"]] },
+];
+const FONT_NAME = Object.fromEntries(FONTS.map(f => [f.key, f.name]));
+FONT_NAME.batang = "바탕(견줌용. 배포할 수 없다)"; FONT_NAME.malgun = "맑은 고딕(견줌용. 배포할 수 없다)";
+const BODY_KEYS = ["nanumsquareround", "gowunbatang", "nanummyeongjo", "notoserifkr"];
+// 본문의 보통 굵기. 나눔스퀘어라운드는 사용자가 ExtraBold로 골랐다(굵은 것도 같은 굵기다).
+const BODY_W = { nanumsquareround: 800 };
+const TITLE_KEYS = ["songmyung", "hahmlet", "bodybold"];
+const STATE_KEYS = ["notosanskr", "blackhansans", "dohyeon", "jua"];
+// 굵기: 본문의 굵은 것, 제목, 상태 글자
+const BOLD_W = { gowunbatang: 700, nanummyeongjo: 800, notoserifkr: 700, batang: 700, nanumsquareround: 800 };
+const TITLE_W = { songmyung: 400, hahmlet: 700 };
+const STATE_W = { notosanskr: 900, blackhansans: 400, dohyeon: 400, jua: 400, malgun: 700 };
+const famOf = key => key === "batang" ? `"Batang", "BatangChe", serif` : key === "malgun" ? `"Malgun Gothic", sans-serif` : key === "nanumsquareround" ? `"f025-${key}", "Malgun Gothic", sans-serif` : `"f025-${key}", "Batang", serif`;
+
+const PARAMS = new URLSearchParams(location.search);
+// 고른 것(승인 B 전에는 후보의 첫째). 주소의 ?body= ?title= ?state= ?hud=serif|sans ?ui= ?hudui= 가 덮는다.
+const PICK = { body: "nanumsquareround", title: "songmyung", state: "notosanskr", hud: "serif", ui: "b", hudui: "" };
+for (const k of Object.keys(PICK)) if (PARAMS.get(k)) PICK[k] = PARAMS.get(k);
+const WARN = PARAMS.get("warn") === "1";
+
+const bodyF = (bold, key) => { const k = key || PICK.body; return { fam: famOf(k), w: bold ? BOLD_W[k] : BODY_W[k] || 400 }; };
+const titleF = key => { const k = key || PICK.title; return k === "bodybold" ? bodyF(true) : { fam: famOf(k), w: TITLE_W[k] || BOLD_W[k] || 700 }; };
+const stateF = key => { const k = key || PICK.state; return { fam: famOf(k), w: STATE_W[k] || 700 }; };
+const hudF = bold => PICK.hud === "sans" ? { fam: `"f025-notosanskr", "Malgun Gothic", sans-serif`, w: bold ? 700 : 500 } : bodyF(bold);
+
+// 글자 한 줄 / 여러 줄. o: fill, anchor, extra
+function tx(x, y, s, size, F, o = {}) {
+  return `<text x="${x}" y="${y}" font-size="${size}" font-family='${F.fam}' font-weight="${F.w}" fill="${o.fill || "var(--ink)"}"${o.anchor ? ` text-anchor="${o.anchor}"` : ""}${o.extra || ""}>${s}</text>`;
+}
+function txs(lines, x, y, dy, size, F, o = {}) {
+  return `<text font-size="${size}" font-family='${F.fam}' font-weight="${F.w}" fill="${o.fill || "var(--ink)"}"${o.anchor ? ` text-anchor="${o.anchor}"` : ""}>${lines.map((t, i) => `<tspan x="${x}" y="${y + i * dy}">${t}</tspan>`).join("")}</text>`;
+}
+
+// ---------------------------------------------------------------- 재기 (견본이 캔버스로 재어 <pre>에 적는다. 결정 229)
+const STATE_LINES = {
+  first: [
+    ["찌르기", "data/opponents/opponent_01.tres:9"], ["왼쪽 베기", "data/opponents/opponent_01.tres:21"], ["오른쪽 베기", "data/opponents/opponent_01.tres:33"],
+    ["큰 베기!!", "data/opponents/opponent_01.tres:45 (is_big 50)"],
+    ["빈틈", "scripts/duel/opponent_view.gd:225"], ["크게 열림!", "scripts/duel/opponent_view.gd:228"], ["무너짐!", "scripts/duel/opponent_view.gd:236"],
+    ["방심", "scripts/duel/opponent_view.gd:46"], ["밀어붙임", "scripts/duel/opponent_view.gd:152"], ["받아넘김", "scripts/duel/opponent_view.gd:165"], ["받아넘김 +2", "scripts/duel/opponent_view.gd:167"],
+  ],
+  second: [["막기를 뗐다 다시 올려라", "scripts/duel/opponent_view.gd:215"], ["받아낼 준비", "scripts/duel/opponent_view.gd:215"]],
+  block: ["큰 베기!!", "막기를 뗐다 다시 올려라"],
+};
+function mkCanvas(w, h) { const c = document.createElement("canvas"); c.width = w; c.height = h; return c.getContext("2d", { willReadFrequently: true }); }
+function inkBox(ctx, w, h, thr) {
+  const d = ctx.getImageData(0, 0, w, h).data; let x0 = w, y0 = h, x1 = -1, y1 = -1;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3] > thr) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  return { x0, y0, x1, y1, d, empty: x1 < 0 };
+}
+// H: '한'의 alpha >= 0.5인 줄 수. V: 'ㅣ'의 잉크 상자 세로 가운데 줄의 alpha 최댓값. Hz: 'ㅡ'의 가로 가운데 열의 alpha 최댓값
+function typeMetric(fam, weight, size) {
+  const W = 240, Hh = 120, ctx = mkCanvas(W, Hh);
+  const draw = ch => { ctx.clearRect(0, 0, W, Hh); ctx.font = `${weight} ${size}px ${fam}`; ctx.textBaseline = "alphabetic"; ctx.fillStyle = "#000"; ctx.fillText(ch, 20, 90); };
+  draw("한"); let b = inkBox(ctx, W, Hh, 127); const H = b.empty ? 0 : b.y1 - b.y0 + 1;
+  draw("ㅣ"); b = inkBox(ctx, W, Hh, 12); let V = 0;
+  if (!b.empty) { const y = Math.round((b.y0 + b.y1) / 2); for (let x = 0; x < W; x++) V = Math.max(V, b.d[(y * W + x) * 4 + 3]); }
+  draw("ㅡ"); b = inkBox(ctx, W, Hh, 12); let Hz = 0;
+  if (!b.empty) { const x = Math.round((b.x0 + b.x1) / 2); for (let y = 0; y < Hh; y++) Hz = Math.max(Hz, b.d[(y * W + x) * 4 + 3]); }
+  return [H, (V / 255).toFixed(2), (Hz / 255).toFixed(2)];
+}
+// 상태 글자의 상자: 28px, 흰 글자에 검은 테두리 8. 첫 줄의 윗선 y 40, 줄은 그 글꼴의 자연 줄 높이로 쌓는다.
+const LINE_H = {};
+function stateBox(key) {
+  const W = 640, Hh = 240, ctx = mkCanvas(W, Hh), F = stateF(key);
+  const setup = () => { ctx.clearRect(0, 0, W, Hh); ctx.font = `${F.w} 28px ${F.fam}`; ctx.textBaseline = "alphabetic"; ctx.textAlign = "center"; ctx.lineWidth = 8; ctx.lineJoin = "round"; ctx.strokeStyle = "#000"; ctx.fillStyle = "#fff"; };
+  setup(); const m = ctx.measureText("한"); const asc = m.fontBoundingBoxAscent, lh = asc + m.fontBoundingBoxDescent; LINE_H[key] = lh;
+  const put = (s, line) => { const y = 40 + asc + line * lh; ctx.strokeText(s, 320, y); ctx.fillText(s, 320, y); };
+  let widest = "", Wmax = 0, clipped = 0;
+  for (const [s] of STATE_LINES.first.concat(STATE_LINES.second)) {
+    setup(); put(s, 0); const b = inkBox(ctx, W, Hh, 12); const w = b.empty ? 0 : b.x1 - b.x0 + 1;
+    if (b.x0 <= 0 || b.x1 >= W - 1 || b.y0 <= 0 || b.y1 >= Hh - 1) clipped = 1;
+    if (w > Wmax) { Wmax = w; widest = s; }
+  }
+  setup(); put(STATE_LINES.block[0], 0); put(STATE_LINES.block[1], 1); const b = inkBox(ctx, W, Hh, 12);
+  if (b.x0 <= 0 || b.x1 >= W - 1 || b.y0 <= 0 || b.y1 >= Hh - 1) clipped = 1;
+  return [key, Wmax, widest, b.y1 - 40 + 1, lh.toFixed(1), clipped];
+}
+function textWidth(F, size, s) { const ctx = mkCanvas(8, 8); ctx.font = `${F.w} ${size}px ${F.fam}`; return ctx.measureText(s).width; }
+const hue = h => { const [r, g, b] = hex2rgb(h).map(v => v / 255); const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn; if (!d) return 0; let x = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; x *= 60; return x < 0 ? x + 360 : x; };
+const hueDiff = (a, b) => { const d = Math.abs(hue(a) - hue(b)); return Math.min(d, 360 - d); };
+
+// ---------------------------------------------------------------- UI의 세 안 (결정 225. 자리·글·크기는 같고 꾸밈만 다르다)
+// 대비에 걸려 고친 색: 누른 버튼의 칠 #A8895E(4.17) -> #B8996C, 다의 올린·누른 버튼 #8C6240(3.80)·#634228 -> #6E4A2D·#5A3B22,
+// 다의 HUD 흐린 글자 #A8895E(3.92) -> #D2B98C. 벽은 양피지 #E9D8B4로 두어 붉은 글자가 5.3이다(#D2B98C 위에서는 3.95).
+// 색(결정 227): 글자 #3B2A1E, 흐린 글자 #6B5440, 붉은 글자 #84422F(#A5533F는 양피지 위에서 3.8:1이다).
+// 신호로 치는 경고 둘은 코드 값 그대로다(duel_hud.gd BindBar.COLOR_WARN, ComplacencyBar.COLOR_FULL).
+const C = {
+  ink: "#3B2A1E", soft: "#6B5440", red: "#84422F", p1: "#E9D8B4", p2: "#D2B98C", p3: "#A8895E",
+  shade: "#3A3027", iron: "#2E2620", wood: "#7A5232", stWood: "#4A3A2C", btnRed: "#A5533F",
+  bindWarn: "#FF7333", compFull: "#F2CC4D", bindNormal: "#8FA3B3", compNormal: "#CFC8BA", band: "#2E2620",
+};
+// 안마다의 색. hud는 결투 HUD 판의 것이다("다"만 짙다).
+const THEME = {
+  a: { name: "가 · 민 양피지", panel: C.p1, ink: C.ink, soft: C.soft, red: C.red, btn: C.p1, btnInk: C.ink, btnHover: C.p2, btnPress: "#B8996C", btnOff: C.p2, btnOffInk: C.soft, btnPrimary: C.btnRed, btnPrimaryInk: C.p1, btnHaggled: C.wood,
+       cellOn: C.wood, cellMine: "#59663F", cellOff: C.p1, barOn: "#59663F", barOff: C.p1,
+       hud: { panel: C.p1, border: C.ink, ink: C.ink, soft: C.soft, red: C.red, cellOn: C.wood, cellMine: "#59663F", cellOff: C.p1, barOn: "#59663F", barOff: C.p1 } },
+  b: { name: "나 · 필사본", panel: C.p1, ink: C.ink, soft: C.soft, red: C.red, btn: C.p1, btnInk: C.ink, btnHover: C.p2, btnPress: "#B8996C", btnOff: C.p2, btnOffInk: C.soft, btnPrimary: C.p1, btnPrimaryInk: C.red, btnHaggled: C.wood,
+       cellOn: C.wood, cellMine: "#59663F", cellOff: C.p1, barOn: "#59663F", barOff: C.p1,
+       hud: { panel: C.p1, border: C.ink, ink: C.ink, soft: C.soft, red: C.red, cellOn: C.wood, cellMine: "#59663F", cellOff: C.p1, barOn: "#59663F", barOff: C.p1 } },
+  c: { name: "다 · 나무와 쇠", panel: C.p1, ink: C.ink, soft: C.soft, red: C.red, btn: C.wood, btnInk: C.p1, btnHover: "#6E4A2D", btnPress: "#5A3B22", btnOff: C.stWood, btnOffInk: C.p3, btnPrimary: C.btnRed, btnPrimaryInk: C.p1, btnHaggled: "#C08A3E",
+       cellOn: C.wood, cellMine: "#59663F", cellOff: C.p1, barOn: "#59663F", barOff: C.p1,
+       hud: { panel: C.shade, border: C.p3, ink: C.p1, soft: C.p2, red: "#D98C78", cellOn: "#C08A3E", cellMine: "#8FA06A", cellOff: C.iron, barOn: "#8FA06A", barOff: C.iron } },
+};
+const diamond = (x, y, r, fill) => `<path d="M${x},${y - r} L${x + r},${y} L${x},${y + r} L${x - r},${y} Z" fill="${fill}" stroke="${C.ink}" stroke-width="1"/>`;
+const stud = (x, y) => `<circle cx="${x}" cy="${y}" r="3.5" fill="${C.iron}" stroke="${C.p3}" stroke-width="1"/>`;
+const UI = {
+  a: {
+    panel(x, y, w, h, hud) { const t = hud ? THEME.a.hud : THEME.a; return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="${t.panel}" stroke="${C.ink}" stroke-width="3"/>`; },
+    button(x, y, w, h, fill, edge) { return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" fill="${fill}" stroke="${edge}" stroke-width="2.5"/>`; },
+    cell(x, y, fill, hud) { return `<rect x="${x}" y="${y}" width="24" height="14" rx="3" fill="${fill}" stroke="${hud ? THEME.a.hud.border : C.ink}" stroke-width="1.5"/>`; },
+    bar(x, y, w, h, frac, on, off, edge) { return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${h / 2}" fill="${off}" stroke="${edge}" stroke-width="1.5"/>${frac > 0 ? `<rect x="${x + 1.5}" y="${y + 1.5}" width="${Math.max(h - 3, (w - 3) * frac)}" height="${h - 3}" rx="${(h - 3) / 2}" fill="${on}"/>` : ""}`; },
+    rule(x, y, w, total) { return total ? `<path d="M${x},${y} L${x + w},${y}" stroke="${C.ink}" stroke-width="2.5"/>` : ""; },
+  },
+  b: {
+    panel(x, y, w, h, hud) {
+      const t = hud ? THEME.b.hud : THEME.b;
+      let s = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="${t.panel}" filter="url(#paper)"/><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="none" stroke="${C.ink}" stroke-width="3"/><rect x="${x + 5}" y="${y + 5}" width="${w - 10}" height="${h - 10}" fill="none" stroke="${C.soft}" stroke-width="1"/>`;
+      for (const [cx, cy] of [[x + 5, y + 5], [x + w - 5, y + 5], [x + 5, y + h - 5], [x + w - 5, y + h - 5]]) s += diamond(cx, cy, 4, C.p2);
+      return s;
+    },
+    button(x, y, w, h, fill, edge) {
+      const n = Math.min(12, h * 0.28);
+      const d = `M${x},${y} L${x + w},${y} L${x + w - n},${y + h / 2} L${x + w},${y + h} L${x},${y + h} L${x + n},${y + h / 2} Z`;
+      return `<path d="${d}" fill="${fill}" stroke="${edge}" stroke-width="2.5" stroke-linejoin="round"/><path d="M${x + n + 6},${y + 5} L${x + w - n - 6},${y + 5} M${x + n + 6},${y + h - 5} L${x + w - n - 6},${y + h - 5}" stroke="${edge}" stroke-width="1" opacity="0.7"/>`;
+    },
+    cell(x, y, fill, hud, on) { return `<rect x="${x}" y="${y}" width="24" height="14" fill="${fill}" stroke="${C.ink}" stroke-width="1.5"/>${on ? "" : `<rect x="${x}" y="${y}" width="24" height="14" fill="url(#hatchBg)" opacity="0.6"/>`}`; },
+    bar(x, y, w, h, frac, on, off, edge) {
+      let s = `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${off}" stroke="${edge}" stroke-width="1.5"/>${frac > 0 ? `<rect x="${x + 1}" y="${y + 1}" width="${(w - 2) * frac}" height="${h - 2}" fill="${on}"/>` : ""}`;
+      for (let k = 1; k < 10; k++) s += `<path d="M${x + (w * k) / 10},${y + h} l0,${-(k === 5 ? h * 0.6 : h * 0.35)}" stroke="${edge}" stroke-width="1"/>`;
+      return s;
+    },
+    rule(x, y, w, total) { return total ? `<path d="M${x},${y - 2} L${x + w},${y - 2} M${x},${y + 2} L${x + w},${y + 2}" stroke="${C.ink}" stroke-width="1"/>` : `<path d="M${x},${y} L${x + w},${y}" stroke="${C.soft}" stroke-width="1" opacity="0.6"/>`; },
+  },
+  c: {
+    panel(x, y, w, h, hud) {
+      if (hud) return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" fill="${C.shade}" stroke="${C.p3}" stroke-width="3"/>${[[x + 9, y + 9], [x + w - 9, y + 9], [x + 9, y + h - 9], [x + w - 9, y + h - 9]].map(([a, b]) => stud(a, b)).join("")}`;
+      return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" fill="${C.stWood}" stroke="${C.ink}" stroke-width="3"/><rect x="${x + 10}" y="${y + 10}" width="${w - 20}" height="${h - 20}" fill="${C.p1}" stroke="${C.ink}" stroke-width="1.5"/>${[[x + 5, y + 5], [x + w - 5, y + 5], [x + 5, y + h - 5], [x + w - 5, y + h - 5]].map(([a, b]) => stud(a, b)).join("")}`;
+    },
+    button(x, y, w, h, fill, edge) { return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="${fill}" stroke="${C.ink}" stroke-width="2.5"/>${stud(x + 10, y + h / 2)}${stud(x + w - 10, y + h / 2)}`; },
+    cell(x, y, fill, hud) { return `<rect x="${x}" y="${y}" width="24" height="14" fill="${fill}" stroke="${hud ? C.p3 : C.iron}" stroke-width="1.5"/>`; },
+    bar(x, y, w, h, frac, on, off, edge) { return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${off}" stroke="${edge}" stroke-width="1.5"/>${frac > 0 ? `<rect x="${x + 1}" y="${y + 1}" width="${(w - 2) * frac}" height="${h - 2}" fill="${on}"/>` : ""}${stud(x, y + h / 2)}${stud(x + w, y + h / 2)}`; },
+    rule(x, y, w, total) { return total ? `<path d="M${x},${y} L${x + w},${y}" stroke="${C.ink}" stroke-width="2.5"/>` : ""; },
+  },
+};
+// 버튼: state = normal | hover | press | off | primary | haggled
+function btn(ui, x, y, w, h, text, size, state = "normal") {
+  const t = THEME[ui];
+  const fill = { normal: t.btn, hover: t.btnHover, press: t.btnPress, off: t.btnOff, primary: t.btnPrimary, haggled: t.btnOff }[state];
+  const ink = { normal: t.btnInk, hover: t.btnInk, press: t.btnInk, off: t.btnOffInk, primary: t.btnPrimaryInk, haggled: t.btnHaggled }[state];
+  const edge = state === "off" || state === "haggled" ? C.soft : C.ink;
+  const F = state === "primary" ? titleF() : bodyF(false);
+  return UI[ui].button(x, y + (state === "press" ? 2 : 0), w, h, fill, edge) + tx(x + w / 2, y + h / 2 + size * 0.36 + (state === "press" ? 2 : 0), text, size, F, { fill: ink, anchor: "middle" });
+}
+function cellRow(ui, cx, y, n, filled, on, off, centered, hud) {
+  const w = 24, g = 4, total = n * w + (n - 1) * g, x0 = centered ? cx - total / 2 : cx; let s = "";
+  for (let i = 0; i < n; i++) s += UI[ui].cell(x0 + i * (w + g), y, i < filled ? on : off, hud, i < filled);
+  return s;
+}
+// 엉킴·방심 막대: 라벨과 막대가 짙은 띠 하나 위에 놓인다(세 안이 같다. 경고가 읽히게 하는 규칙)
+function bandGauge(ui, x, y, w, h, label, labelW, frac, fill, labelFill) {
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="${C.band}"/>`
+    + tx(x + 6, y + h / 2 + 5, label, 15, hudF(false), { fill: labelFill })
+    + UI[ui].bar(x + labelW, y + 4, w - labelW - 6, h - 8, frac, fill, C.band, C.p3);
+}
+const sheetSpec = () => { const k = PARAMS.get("pick") || SHEET_PICK; return (k && SHEET[k]) || null; };
+function sheetArt() {
+  const spec = sheetSpec();
+  if (!spec) return null;
+  const a = genArt(spec, null);
+  a.pick = headKey => genArt(spec, headKey);
+  a.aimPath = genAimPath(spec);
+  return a;
+}
+// 자르지 않은 그림을 골반 (x, y)에 목~골반 = 200 × s로 세운다
+// zoom이 있으면 1536×1024 그림을 그 배율(1280 폭 기준)로 가운데에 놓는다. 없으면 가운데 1536×864를 맞춘다
+const stageImg = (g, w, h) => { const z = g.zoom ? g.zoom * w / 1280 : 0; const geo = z ? `x="${(w - 1536 * z) / 2}" y="${(h - 1024 * z) / 2}" width="${1536 * z}" height="${1024 * z}"` : `x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="xMidYMid slice"`; return `<image href="${g.raw}" ${geo} style="filter: brightness(${g.bright || 1})"/>`; };
+const bgOf = g => () => `<rect width="1280" height="720" fill="var(--st-shade)"/>${stageImg(g, 1280, 720)}`;
+// ---------------------------------------------------------------- 화면 (자리와 글은 지금 게임 그대로. 꾸밈은 UI[안]이 맡는다)
+const ASC = {};
+// 상태 글자: 28, 흰 글자에 검은 테두리 8(scenes/duel/opponent_view.tscn StateLabel). 줄은 그 글꼴의 자연 줄 높이로 쌓는다.
+function stateText(lines, cx, y0, key) {
+  const k = key || PICK.state, F = stateF(k), asc = ASC[k] || 26, lh = LINE_H[k] || 40;
+  return `<text font-size="28" font-family='${F.fam}' font-weight="${F.w}" fill="#FFFFFF" stroke="#000000" stroke-width="8" paint-order="stroke" stroke-linejoin="round" text-anchor="middle">${lines.map((t, i) => `<tspan x="${cx}" y="${y0 + asc + i * lh}">${t}</tspan>`).join("")}</text>`;
+}
+// 결투 HUD. 패널 다섯의 자리는 024 견본의 duelHud와 같다.
+function duelHud(h) {
+  const ui = PICK.hudui || PICK.ui, K = UI[ui], T = THEME[ui].hud, F = hudF(false);
+  let s = K.panel(334, 4, 612, 58, true) + tx(640, 28, "바르톨로 — 자세 9/9", 18, F, { fill: T.ink, anchor: "middle" }) + cellRow(ui, 640, 40, 9, 9, T.cellOn, T.cellOff, true, true);
+  s += K.panel(10, 6, 330, 150, true) + tx(20, 38, "간격: " + h.dist, 24, F, { fill: T.ink });
+  s += bandGauge(ui, 152, 17, 182, 24, "엉킴", 44, h.bindFrac, h.bindWarn ? C.bindWarn : C.bindNormal, h.bindWarn ? C.bindWarn : C.p1);
+  s += txs(wrap(h.cond, 21), 20, 66, 19, 15, F, { fill: T.red });
+  s += K.bar(20, 128, 310, 18, h.meter, T.barOn, T.barOff, T.border) + tx(26, 142, "충족도", 13, F, { fill: T.ink });
+  s += K.panel(900, 6, 372, 58, true) + tx(1260, 28, "남은 시간 72.4초 · 경과 17.6초", 20, F, { fill: T.ink, anchor: "end" });
+  s += bandGauge(ui, 906, 35, 210, 24, h.compCaption, 52, h.compFrac, h.compFull ? C.compFull : C.compNormal, h.compFull ? C.compFull : C.p1);
+  s += K.panel(10, 556, 340, 58, true) + tx(20, 580, "내 자세 3/3", 18, F, { fill: T.ink }) + cellRow(ui, 20, 590, 3, 3, T.cellMine, T.cellOff, false, true);
+  s += K.panel(780, 550, 492, 64, true) + txs([h.aim, "내 상태: " + h.me], 1260, 576, 24, 18, F, { fill: T.ink, anchor: "end" });
+  s += `<rect x="0" y="616" width="1280" height="104" fill="${T.panel}" opacity="0.94"/><path d="M0,616 L1280,616" stroke="${T.border}" stroke-width="2.5"/>`;
+  s += txs(["좌클릭 공격 · 우클릭 막기 (떼고 있다가 고리가 띠에 들어올 때 누르면 패리) · 마우스 위치로 방향·높이 · W/S 간격 · F1 디버그", "빈틈이 아닐 때 공격하면 상대가 자세를 되찾는다"], 640, 690, 18, 14, F, { fill: T.soft, anchor: "middle" });
+  return s;
+}
+
+// ---------------------------------------------------------------- 계획 026: 지금 게임의 값 (읽기만 했다. 줄마다 출처)
+const GAME = {
+  chest: [0, -180],                                   // scripts/duel/opponent_view.gd:35 CHEST
+  shoulderX: 65,                                      // :36 SHOULDER_X (칼 팔이 보는 쪽 왼쪽이라 어깨는 (-65, -180). opponent_01.tres:67 sword_side = 0)
+  restSword: -25,                                     // :37 REST_SWORD_ROTATION
+  strikeOffset: [[-120, 40], [0, 60], [120, 40]],     // :39 STRIKE_OFFSET (왼쪽·가운데·오른쪽, CHEST 기준)
+  strikeRot: [-120, 180, 120],                        // :40 STRIKE_ROTATION
+  staggerDrop: [0, 50], staggerSword: 165,            // :41·42
+  staggerHead: 22.9,                                  // :43 STAGGER_HEAD_ROTATION 0.4 rad
+  complacentSword: -140,                              // :45 COMPLACENT_SWORD_ROTATION
+  dodgeTime: 0.3, dodgeHead: -20.1,                   // :31·32 (-0.35 rad)
+  flash: 0.1, touch: 0.18, deflectText: 0.6,          // :27~29
+  scale: { far: 0.55, mid: 0.85, close: 1.1 },        // :49 DISTANCE_SCALE
+  shift: { far: -40, mid: 0, close: 30 },             // :50 DISTANCE_SHIFT (anchor y = 720 x 0.62 = 446)
+  ringSpeed: 240,                                     // :55 RING_SPEED
+  ringPos: [[-270, -150], [0, -140], [270, -150]],    // :56 RING_POSITION
+  smooth: 14,                                         // :175 1 - exp(-14 delta)
+  armLen: 105,                                        // scenes/duel/opponent_view.tscn:79 Hand (0, 105)
+  parryWindow: 0.18,                                  // data/weapons/rapier.tres:12
+  staggerTime: 1.5,                                   // data/opponents/opponent_01.tres:73
+  idleMin: 0.9,                                       // :77 idle_time_min
+  parriedBonus: 0.85,                                 // :80 parried_recovery_bonus
+  whiffMul: 0.55,                                     // :83 whiff_recovery_multiplier
+  closeTell: 0.8,                                     // :84 close_tell_multiplier
+};
+const SHOULDER = [-GAME.shoulderX, GAME.chest[1]];
+const ATTACKS = {
+  thrust: { name: "찌르기", dir: 1, tell: 0.65, rec: 0.0, off: [0, -70], sword: 180, sig: "--sig-thrust", big: false },  // opponent_01.tres:7~17
+  cutl: { name: "왼쪽 베기", dir: 0, tell: 0.75, rec: 0.55, off: [-150, -70], sword: -50, sig: "--sig-cut", big: false }, // :19~29
+  cutr: { name: "오른쪽 베기", dir: 2, tell: 0.75, rec: 0.55, off: [150, -70], sword: 50, sig: "--sig-cut", big: false },  // :31~41
+  big: { name: "큰 베기", dir: 1, tell: 1.1, rec: 1.6, off: [0, -150], sword: 0, sig: "--sig-big", big: true },           // :43~54 (is_big, needs_raised_guard)
+};
+const ATK_KEYS = ["thrust", "cutl", "cutr", "big"];
+const OUT_NAME = { blocked: "막힘", parried: "패리당함", whiff: "헛침" };
+const DIST_NAME = { far: "멀리", mid: "교전", close: "밀착" };
+
+// 곡선의 값 넷(결정 236. planner의 시안이고 사용자의 말이 아니다). recover_drop은 회수 끝에서 팔이 늘어지는 각(결정 234)
+const MOTION = { tell_in: 0.2, swing_ratio: 0.2, swing_margin: 0.03, creep_deg: 8, return_s: 0.2, recover_drop: 10 };
+
+const lerp = (a, b, k) => a + (b - a) * k;
+const r1 = x => Math.round(x * 10) / 10;
+const clamp01 = k => Math.max(0, Math.min(1, k));
+const easeOut = k => 1 - (1 - k) * (1 - k);
+const easeIn = k => k * k;
+const easeInOut = k => k < 0.5 ? 2 * k * k : 1 - 2 * (1 - k) * (1 - k);
+const angDiff = (a, b) => { const d = Math.abs(((a - b) % 360 + 360) % 360); return Math.min(d, 360 - d); };
+
+// ---------------------------------------------------------------- 지금 게임의 포즈 공간: 팔 자리(Torso 좌표) · 칼 각 · 고개 각. 팔은 돌지 않는다
+const GP = {
+  idle: () => ({ arm: SHOULDER.slice(), sword: GAME.restSword, head: 0 }),
+  tell: (a, p) => ({ arm: [GAME.chest[0] + lerp(a.off[0], GAME.strikeOffset[a.dir][0], p), GAME.chest[1] + lerp(a.off[1], GAME.strikeOffset[a.dir][1], p)], sword: lerp(a.sword, GAME.strikeRot[a.dir], p), head: 0 }),
+  strike: a => ({ arm: [GAME.chest[0] + GAME.strikeOffset[a.dir][0], GAME.chest[1] + GAME.strikeOffset[a.dir][1]], sword: GAME.strikeRot[a.dir], head: 0 }),
+  stagger: () => ({ arm: [SHOULDER[0] + GAME.staggerDrop[0], SHOULDER[1] + GAME.staggerDrop[1]], sword: GAME.staggerSword, head: GAME.staggerHead }),
+  complacent: () => ({ arm: SHOULDER.slice(), sword: GAME.complacentSword, head: 0 }),
+};
+const gMix = (x, y, k) => ({ arm: [lerp(x.arm[0], y.arm[0], k), lerp(x.arm[1], y.arm[1], k)], sword: lerp(x.sword, y.sword, k), head: lerp(x.head, y.head, k) });
+const gParams = g => ({ arm: g.arm, armRot: 0, sword: g.sword, head: g.head, lean: 0 });
+
+// ---------------------------------------------------------------- 어깨 회전의 포즈 (결정 233: 열은 명세 5부와 같다. 각은 도, 시계 방향 +, 칼은 화면 기준)
+const FIELDS = ["arm_deg", "sword_deg", "head_deg", "lean_deg", "shoulder_dx", "shoulder_dy"];
+const basePose = o => Object.assign({ arm_deg: 0, sword_deg: 0, head_deg: 0, lean_deg: 0, shoulder_dx: 0, shoulder_dy: 0, arm_art: "Arm" }, o);
+function mixPose(a, b, k) { const r = { arm_art: k < 1 ? a.arm_art : b.arm_art }; for (const f of FIELDS) r[f] = lerp(a[f], b[f], k); return r; }
+// 칼은 Arm > Hand의 자식이라 지역 각 = 화면 각 - 팔 각 - 몸 기울기
+const rotParams = q => ({ arm: [SHOULDER[0] + q.shoulder_dx, SHOULDER[1] + q.shoulder_dy], armRot: q.arm_deg, sword: q.sword_deg - q.arm_deg - q.lean_deg, head: q.head_deg, lean: q.lean_deg, armArt: USE_ART ? q.arm_art : "Arm" });
+// 출발 값: 지금 게임의 손이 가는 방향(결정 234). 손 = 팔 자리 + (0, 105)
+function fromGame(arm, sword) {
+  const hx = arm[0] - SHOULDER[0], hy = arm[1] + GAME.armLen - SHOULDER[1];
+  return basePose({ arm_deg: r1(Math.atan2(-hx, hy) * 180 / Math.PI), sword_deg: sword });
+}
+// 대기는 024 idle-compare의 "다"(결정 220): 팔 23°, 칼 -21°(화면)
+const COMMON_START = {
+  idle: basePose({ arm_deg: 23, sword_deg: -21 }),
+  stagger: basePose({ arm_deg: 0, sword_deg: GAME.staggerSword, head_deg: GAME.staggerHead, shoulder_dy: 25 }),
+  complacent: basePose({ arm_deg: 23, sword_deg: GAME.complacentSword }),
+};
+// 메인이 견본에서 고친 값(작업 4). 줄마다 까닭을 적는다. 비어 있으면 출발 값 그대로다.
+const TUNE = {
+  thrust: { tell_start: { arm_deg: 85, sword_deg: 95 }, strike: { arm_deg: -30, arm_art: "armThrust" } }, // 1회: 가로 선. 팔을 어깨 높이 바깥으로, 칼을 가슴 앞에 눕힌다(머리 아래). 타격은 앞으로 뻗은 팔 그림(A3. 칼이 그림에 있다)을 가운데 쪽으로 돌린다
+  cutl: { tell_start: { arm_deg: 110, sword_deg: -75 } },                   // 1회: 바깥 위의 사선. 큰 베기의 세로와 갈리게 팔을 덜 든다
+  cutr: { tell_start: { arm_deg: -88, sword_deg: 45 } },                    // 2회: 몸 앞의 사선. 1회(-100)는 멈칫(-108)의 주먹이 턱을 가려 R2 0.19라 범위(-100~-130) 밖으로 내렸다
+  big: { tell_start: { arm_deg: 152, sword_deg: -45, lean_deg: -4, arm_art: "armUp" } }, // 1회: 가장 큰 세로. 든 팔 그림(A3. 칼이 팔과 한 줄로 그림에 있어 sword_deg는 쓰이지 않는다. 팔을 152°로 눕혀 칼날이 어깨 바깥 위로 기운다). 출발 값 -124.7은 팔이 얼굴 앞을 지나 R2 0.45. 칼을 머리 뒤로 눕혀 상태 글자를 비킨다(위험 3)
+  common: {},
+};
+const COMMON = () => Object.fromEntries(Object.entries(COMMON_START).map(([k, v]) => [k, Object.assign({}, v, TUNE.common[k])]));
+function startPoses(k) {
+  const a = ATTACKS[k], g = GP.tell(a, 0), s = GP.strike(a);
+  return { tell_start: fromGame(g.arm, g.sword), strike: fromGame(s.arm, s.sword) };
+}
+// hold = tell_start에서 팔을 타격의 반대쪽으로 creep_deg 더 당긴 것, recover_end = strike에서 팔만 0° 쪽으로 recover_drop 늘어뜨린 것
+function posesOf(k, tuned = true) {
+  const s = startPoses(k), T = tuned ? TUNE[k] : {};
+  const ts = Object.assign({}, s.tell_start, T.tell_start), st = Object.assign({}, s.strike, T.strike);
+  const away = Math.sign(ts.arm_deg - st.arm_deg) || 1;
+  const hold = Object.assign({}, ts, { arm_deg: r1(ts.arm_deg + away * MOTION.creep_deg) }, T.hold);
+  const rec = Object.assign({}, st, { arm_deg: r1(st.arm_deg - Math.sign(st.arm_deg) * Math.min(MOTION.recover_drop, Math.abs(st.arm_deg))) }, T.recover_end);
+  return { tell_start: ts, hold, strike: st, recover_end: rec };
+}
+
+// ---------------------------------------------------------------- 시간표 (결정 236. 상대 데이터의 값만 쓴다)
+function timeline(k, out, dist) {
+  const a = ATTACKS[k], tellDur = a.tell * (dist === "close" ? GAME.closeTell : 1);
+  const tellStart = GAME.idleMin, strike = tellStart + tellDur;
+  const recDur = out === "parried" ? a.rec + GAME.parriedBonus : out === "whiff" ? a.rec * GAME.whiffMul : a.rec;
+  const swing = Math.min(MOTION.swing_ratio * tellDur, GAME.parryWindow - MOTION.swing_margin);
+  return { tellStart, tellDur, strike, recDur, recEnd: strike + recDur, swing, holdEnd: 1 - swing / tellDur, wide: out === "parried" || a.big };
+}
+// 예비 동작의 진행 p(0~1)에서의 포즈. game 곡선은 시작에 바로 놓고 고르게 옮긴다(opponent_view.gd:205~210)
+function tellPose(col, curve, k, p, tl) {
+  const a = ATTACKS[k];
+  if (col === "game") return GP.tell(a, p);
+  const F = posesOf(k);
+  if (curve !== "hold") return mixPose(F.tell_start, F.strike, p);
+  const tin = MOTION.tell_in, he = tl.holdEnd;
+  if (p < tin) return mixPose(COMMON().idle, F.tell_start, easeOut(p / tin));
+  if (p < he) return mixPose(F.tell_start, F.hold, easeInOut((p - tin) / (he - tin)));
+  return mixPose(F.hold, F.strike, easeIn((p - he) / (1 - he)));
+}
+// 회수의 진행 q(0~1). game은 타격 자리 그대로다(opponent_view.gd:219~223)
+function recoverPose(col, curve, k, q) {
+  if (col === "game") return GP.strike(ATTACKS[k]);
+  const F = posesOf(k);
+  return curve === "hold" ? mixPose(F.strike, F.recover_end, easeOut(q)) : F.strike;
+}
+// 한 시각의 화면: 포즈, 색, 상태 글자, 고리
+function frameAt(col, curve, k, out, dist, t) {
+  const a = ATTACKS[k], tl = timeline(k, out, dist), game = col === "game";
+  const mix = game ? gMix : mixPose, toP = game ? gParams : rotParams, idle = game ? GP.idle() : COMMON().idle;
+  const fr = { tint: "", text: [], ring: null, headKey: "smug", face: "idle", headClosed: false, phase: "idle", p: 0 };
+  let pose;
+  if (t < tl.tellStart) pose = idle;
+  else if (t < tl.strike) {
+    const p = (t - tl.tellStart) / tl.tellDur;
+    pose = tellPose(col, curve, k, p, tl);
+    Object.assign(fr, { phase: "tell", p, tint: a.sig, face: "focus", text: [a.name + (a.big ? "!!" : "")].concat(a.big ? ["받아낼 준비"] : []), ring: { pos: GAME.ringPos[a.dir], r: (tl.strike - t) * GAME.ringSpeed } });
+  } else if (t < tl.recEnd) {
+    const q = (t - tl.strike) / tl.recDur;
+    pose = recoverPose(col, curve, k, q);
+    Object.assign(fr, { phase: "recover", p: q, tint: "--sig-recovery", text: [tl.wide ? "크게 열림!" : "빈틈"], headClosed: !tl.wide, headKey: "oops", face: "oops" });
+  } else {
+    const from = tl.recDur > 0 ? recoverPose(col, curve, k, 1) : game ? GP.strike(a) : posesOf(k).strike;
+    const dt = t - tl.recEnd;
+    // 돌아감은 빠르게(결정 236): 회수가 끝나면 더는 빈틈이 아니다
+    const kk = game || curve !== "hold" ? 1 - Math.exp(-GAME.smooth * dt) : easeInOut(clamp01(dt / MOTION.return_s));
+    pose = mix(from, idle, kk); fr.phase = "return"; fr.p = dt;
+  }
+  if (t >= tl.strike && t < tl.strike + GAME.flash) { fr.tint = "--sig-strike"; fr.headClosed = false; }
+  // 팔 그림은 국면의 경계에서만 바꾼다(결정 237): 예비 동작 내내 tell_start의 그림, 타격부터 회수 끝까지 strike의 그림
+  if (!game && (fr.phase === "tell" || fr.phase === "recover")) { const F = posesOf(k); pose = Object.assign({}, pose, { arm_art: (fr.phase === "tell" ? F.tell_start : F.strike).arm_art }); }
+  fr.params = toP(pose);
+  return fr;
+}
+const PHASE_NAME = { idle: "대기", tell: "예비 동작", recover: "회수", return: "돌아감", stagger: "무너짐", complacent: "방심" };
+
+// ---------------------------------------------------------------- 따로 그린 팔 (A3의 답: 큰 베기의 예비 동작, 찌르기의 타격. 시트 026-A1f = 생성한 A1e에서 2번 주먹 띠만 좌우로 뒤집은 손질본. B의 답)
+// 2번(아래를 향한 주먹)의 손가락은 사용자가 비교 그림에서 "나 · 손가락을 반대로"를 골랐다. 그림 도구는 두 번 시켜도 뒤집지 못해 화소로 뒤집었다.
+// 배율 0.5333 = 024 주먹의 배율 0.76 ÷ 새 주먹 폭의 비(든 팔의 주먹 114 / 024의 80 = 1.425). 앞으로 뻗은 팔은 같은 배율이라 주먹이 1.23배 크다(가까이 온 꼴). 든 팔의 칼은 팔과 한 줄이다(사용자: 자루에서 꺾이면 부자연스럽다).
+// 관절은 어깨 끝의 둥근 머리 가운데(024의 팔처럼 몸통에 묻힌다). 두 파츠 모두 주먹과 칼이 그림에 들어 있다.
+// 시트 위 파츠는 세로로 서 있고 기울기는 arm_deg가 준다. 든 팔은 주먹이 위라 rot 180으로 팔의 지역 좌표(+y가 손)에 맞춘다.
+Object.assign(SHEET.a.parts, {
+  // 칼은 상태 색을 받지 않는다(게임과 같다): 소매·주먹과 칼을 다른 다각형으로 자른다
+  ArmUp: { src: "../generated/cut/026-A1f-bartolo-arms.png", joint: [455, 923], sx: 0.5333, sy: 0.5333, rot: 180, poly: RB(390, 566, 532, 982) },
+  ArmUpSword: { src: "../generated/cut/026-A1f-bartolo-arms.png", joint: [455, 923], sx: 0.5333, sy: 0.5333, rot: 180, poly: RB(372, 14, 534, 565) },
+  ArmThrust: { src: "../generated/cut/026-A1f-bartolo-arms.png", joint: [1098, 250], sx: 0.5333, sy: 0.5333, poly: RB(985, 188, 1215, 816) },
+  ArmThrustSword: { src: "../generated/cut/026-A1f-bartolo-arms.png", joint: [1098, 250], sx: 0.5333, sy: 0.5333, poly: Array.from({ length: 16 }, (_, i) => [1098 + 112 * Math.cos(i * Math.PI / 8), 500 + 58 * Math.sin(i * Math.PI / 8)]) },
+  ArmThrustBlade: { src: "../generated/cut/026-A1f-bartolo-arms.png", joint: [1098, 250], sx: 0.5333, sy: 0.5333, poly: RB(1068, 540, 1132, 814) },
+});
+// layers: 그리는 차례. 둘째 값이 1이면 상태 색을 받는다(소매·주먹), 0이면 받지 않는다(칼). 든 팔은 자루가 주먹 뒤로, 앞으로 뻗은 팔은 날밑이 주먹 앞으로 온다
+const ARM_META = {
+  armUp: { layers: [["ArmUpSword", 0], ["ArmUp", 1]], hideHand: true, hideSword: true },
+  armThrust: { layers: [["ArmThrust", 1], ["ArmThrustSword", 0], ["ArmThrustBlade", 0]], hideHand: true, hideSword: true },
+};
+const USE_ART = PARAMS.get("art") !== "0";
+const armsOf = (spec, filt) => spec ? Object.fromEntries(Object.entries(ARM_META).map(([k, m]) => [k, t => m.layers.map(([n, tinted]) => genPartSvg(spec, n, filt || (tinted ? t : ""))).join("")])) : null;
+
+// ---------------------------------------------------------------- 그리기
+const PLACE = d => [640, 446 + GAME.shift[d], GAME.scale[d]];
+const ART = sheetArt();
+const figArt = key => { if (!ART) return null; const a = ART.pick(key); a.arms = armsOf(sheetSpec()); return a; };
+function figure(fr, x, y, s, extra) {
+  return opp(Object.assign({ x, y, s, hat: false, art: figArt(fr.headKey), tint: fr.tint, headClosed: fr.headClosed, face: fr.face }, fr.params, extra || {}));
+}
+function ringAt(cx, cy, r) {
+  return `<g transform="translate(${cx},${cy})">
+    <circle r="${GAME.ringSpeed * GAME.parryWindow}" fill="var(--sig-band)" fill-opacity="0.22" stroke="var(--sig-band)" stroke-opacity="0.95" stroke-width="3"/>
+    <circle r="${Math.max(r, 0).toFixed(1)}" fill="none" stroke="#FFFFFF" stroke-opacity="0.95" stroke-width="5"/>
+    <circle r="4" fill="#FFFFFF" fill-opacity="0.9"/>
+  </g>`;
+}
+// 결투 화면을 층 넷으로: 무대 / 상대 / HUD와 내 손 / 고리와 상태 글자(게임의 그리는 차례)
+function duelLayers(fr, dist, k) {
+  const [x, y, s] = PLACE(dist), raise = ATTACKS[k].big && fr.phase === "tell";
+  return {
+    bg: bgOf(R2)(),
+    fig: figure(fr, x, y, s),
+    hud: duelHud({ dist: DIST_NAME[dist], cond: COND_FIRST, meter: 0.4, aim: "조준: 찌르기 · 중단 → 몸통", me: raise ? "막기 — 가운데" : "준비", bindFrac: 0, bindWarn: false, compFrac: 0.2, compCaption: "방심", compFull: false })
+      + playerHand(640, 625, raise ? "--sw-fresh" : "--sw-ready", raise ? 1.8 : 1),
+    top: (fr.ring ? ringAt(x + fr.ring.pos[0], y + fr.ring.pos[1], fr.ring.r) : "") + (fr.text.length ? stateText(fr.text, 640, 62) : ""),
+  };
+}
+const duelFrame = (fr, dist, k) => { const L = duelLayers(fr, dist, k); return L.bg + L.fig + L.hud + L.top; };
+const parchBg = (w, h) => `<rect width="${w}" height="${h}" fill="var(--parch-2)" filter="url(#paper)"/>`;
+function cellLabel(x, y, lines, size = 15) { return txs(lines, x, y, size + 4, size, bodyF(false), { fill: C.ink }); }
+function smallState(lines, cx, y) {
+  const F = stateF();
+  return `<text font-size="19" font-family='${F.fam}' font-weight="${F.w}" fill="#FFFFFF" stroke="#000000" stroke-width="6" paint-order="stroke" stroke-linejoin="round" text-anchor="middle">${lines.map((s, i) => `<tspan x="${cx}" y="${y + i * 24}">${s}</tspan>`).join("")}</text>`;
+}
+
+// 단독 보기의 인자
+const Q = {
+  col: PARAMS.get("col") || "rot", atk: PARAMS.get("atk") || "big", ph: PARAMS.get("ph") || "tell", p: parseFloat(PARAMS.get("p") ?? "0.6"),
+  dist: PARAMS.get("dist") || "mid", out: PARAMS.get("out") || "blocked", curve: PARAMS.get("curve") || "hold",
+  t: PARAMS.has("t") ? parseFloat(PARAMS.get("t")) : null, noarm: PARAMS.get("noarm") === "1", case: PARAMS.get("case") || "a", art: PARAMS.get("art") === "1",
+};
+const colCurve = col => col === "game" ? "game" : Q.curve;
+
+// 1. pose-pair: 국면 다섯. 어깨 회전 줄의 "예비 동작 시작"은 hold 곡선이 tell_start에 닿는 진행 tell_in이다
+function scenePosePair() {
+  const k = ATK_KEYS.includes(Q.atk) ? Q.atk : "big", a = ATTACKS[k], tl = timeline(k, "blocked", "mid"), W = 256, H = 360;
+  let s = parchBg(1280, 720);
+  [["game", "game", "지금 게임"], ["rot", "hold", "어깨 회전(hold)"]].forEach(([col, curve, rowName], row) => {
+    const cells = [
+      ["대기", 0], [col === "game" ? "예비 동작 시작(0%)" : `예비 동작 시작(${MOTION.tell_in * 100}%)`, tl.tellStart + (col === "game" ? 0 : MOTION.tell_in) * tl.tellDur],
+      ["예비 동작 60%", tl.tellStart + 0.6 * tl.tellDur], ["타격", tl.strike], [col === "game" ? "회수(타격 자리 그대로)" : "회수 끝", tl.recDur > 0 ? tl.recEnd - 1e-6 : tl.strike + GAME.flash + 1e-6],
+    ];
+    cells.forEach(([name, t], i) => {
+      let fr = frameAt(col, curve, k, "blocked", "mid", t);
+      if (i === 4 && tl.recDur === 0) fr = Object.assign({}, fr, { params: (col === "game" ? gParams(GP.strike(a)) : rotParams(posesOf(k).recover_end)), tint: "", text: [] });
+      s += `<g transform="translate(${i * W},${row * H})"><rect x="1" y="1" width="${W - 2}" height="${H - 2}" fill="none" stroke="${C.soft}" stroke-width="1"/>`;
+      s += figure(fr, 128, 262, 0.42);
+      s += cellLabel(10, 24, [(i === 0 ? rowName + " · " : "") + name, i === 4 && tl.recDur === 0 ? "회수 없음(막혀도 빈틈이 없다)" : ""], 15);
+      if (fr.text.length) s += smallState(fr.text.slice(0, 1), 128, 344);
+      s += `</g>`;
+    });
+  });
+  return s + tx(1268, 712, a.name, 16, titleF(), { fill: C.red, anchor: "end" });
+}
+// 2. pose-states: 상태 여섯
+function statePose(col, which) {
+  const game = col === "game", F = game ? null : COMMON();
+  const P = game ? gParams : rotParams;
+  switch (which) {
+    case "open": return { params: P(recoverPose(col, "hold", "cutl", 0.5)), tint: "--sig-recovery", headClosed: true, headKey: "oops", text: ["빈틈"], name: "빈틈 — 왼쪽 베기가 막힌 뒤" };
+    case "wide": return { params: P(recoverPose(col, "hold", "big", 0.5)), tint: "--sig-recovery", headClosed: false, headKey: "oops", text: ["크게 열림!"], name: "크게 열림 — 큰 베기 뒤" };
+    case "stagger": return { params: P(game ? GP.stagger() : F.stagger), tint: "--sig-stagger", headKey: "dizzy", text: ["무너짐!"], name: "무너짐" };
+    case "complacent": return { params: P(game ? GP.complacent() : F.complacent), tint: "", headKey: "smug", text: ["방심"], name: "방심 — 칼끝을 내린다" };
+    case "dodge": { const q = P(game ? GP.idle() : F.idle); q.head = GAME.dodgeHead; return { params: q, tint: "", headKey: "smug", text: [], name: `피하기 — 고개 ${GAME.dodgeHead}°, ${GAME.dodgeTime}초` }; }
+    case "deflect": return { params: P(game ? GP.idle() : F.idle), tint: "", headKey: "smug", text: ["받아넘김"], name: "받아넘김 — 글자만(포즈 없음)" };
+  }
+}
+const STATE_KEYS6 = ["open", "wide", "stagger", "complacent", "dodge", "deflect"];
+function scenePoseStates() {
+  const W = 213, H = 360; let s = parchBg(1280, 720);
+  [["game", "지금 게임"], ["rot", "어깨 회전"]].forEach(([col, rowName], row) => {
+    STATE_KEYS6.forEach((w, i) => {
+      const st = statePose(col, w);
+      s += `<g transform="translate(${i * W},${row * H})"><rect x="1" y="1" width="${W - 2}" height="${H - 2}" fill="none" stroke="${C.soft}" stroke-width="1"/>`;
+      s += opp(Object.assign({ x: 112, y: 262, s: 0.36, hat: false, art: figArt(st.headKey), tint: st.tint, headClosed: st.headClosed }, st.params));
+      s += cellLabel(8, 22, [i === 0 ? rowName : "", st.name], 13);
+      if (st.text.length) s += smallState(st.text, 106, 344);
+      s += `</g>`;
+    });
+  });
+  return s;
+}
+// 3. strip: 연속 장면 여덟 칸(칸마다 화면의 x 340~940 · y 30~690)
+function stripTimes(tl) {
+  return [["대기", tl.tellStart / 2], ["예비 동작 10%", tl.tellStart + 0.1 * tl.tellDur], ["예비 동작 30%", tl.tellStart + 0.3 * tl.tellDur], ["예비 동작 60%", tl.tellStart + 0.6 * tl.tellDur],
+    ["예비 동작 90%", tl.tellStart + 0.9 * tl.tellDur], ["타격", tl.strike], ["회수의 가운데", tl.strike + tl.recDur / 2], ["회수 끝 0.1초 뒤", tl.recEnd + 0.1]];
+}
+function sceneStrip() {
+  const col = Q.col === "game" ? "game" : "rot", curve = colCurve(col), k = ATK_KEYS.includes(Q.atk) ? Q.atk : "big", out = Q.out, tl = timeline(k, out, "mid");
+  const label = `${col === "game" ? "지금 게임" : `어깨 회전(${curve})`} · ${ATTACKS[k].name} · ${OUT_NAME[out]}`;
+  let s = `<rect width="1280" height="720" fill="#2A2018"/>`;
+  stripTimes(tl).forEach(([name, t], i) => {
+    const x = (i % 4) * 320, y = Math.floor(i / 4) * 360, none = i === 6 && tl.recDur === 0;
+    s += `<g transform="translate(${x},${y})">`;
+    if (none) s += `<rect x="0" y="36" width="320" height="324" fill="var(--st-shade)"/><text class="none-note" x="160" y="200" text-anchor="middle" font-size="16">회수 없음(막혀도 빈틈이 없다)</text>`;
+    else s += `<svg x="12.7" y="36" width="294.5" height="324" viewBox="340 30 600 660" overflow="hidden">${duelFrame(frameAt(col, curve, k, out, "mid", t), "mid", k)}</svg>`;
+    s += `<rect x="0" y="0" width="320" height="36" fill="#2A2018"/>`
+      + tx(8, 14, label, 12, bodyF(false), { fill: C.p2 })
+      + tx(8, 32, `${i + 1}. ${name} · ${none ? "—" : t.toFixed(2) + "초"}`, 15, bodyF(false), { fill: C.p1 });
+    s += `</g>`;
+  });
+  return s;
+}
+// 4. motion: 결투 화면 한 장
+function sceneMotion() {
+  const col = Q.col === "game" ? "game" : "rot", k = ATK_KEYS.includes(Q.atk) ? Q.atk : "big", t = Q.t ?? 1.2;
+  return duelFrame(frameAt(col, colCurve(col), k, Q.out, Q.dist === "far" || Q.dist === "close" ? Q.dist : "mid", t), Q.dist === "far" || Q.dist === "close" ? Q.dist : "mid", k);
+}
+// 5. motion-pair: 왼쪽 지금 게임, 오른쪽 어깨 회전. 같은 시계
+const MP = { atk: ATK_KEYS.includes(Q.atk) ? Q.atk : "big", out: Q.out, curve: Q.curve, speed: 1, t0: null, frames: 0 };
+function mpPeriod() { return timeline(MP.atk, MP.out, "mid").recEnd + 0.8; }
+function mpStatic(side) { return `<svg x="${side * 640}" y="0" width="640" height="360" viewBox="0 0 1280 720" overflow="hidden"><g class="mp-bg"></g><g class="mp-fig"></g><g class="mp-hud"></g><g class="mp-top"></g></svg>`; }
+function sceneMotionPair() {
+  return `<rect width="1280" height="720" fill="#2A2018"/>${mpStatic(0)}${mpStatic(1)}<path d="M640,0 L640,360" stroke="#2A2018" stroke-width="4"/><g id="mp-info"></g>`;
+}
+function mpDraw(t) {
+  const svg = document.querySelector("#motion-pair svg.scene"), views = svg.querySelectorAll(":scope > svg");
+  [["game", "game"], ["rot", MP.curve]].forEach(([col, curve], i) => {
+    const fr = frameAt(col, curve, MP.atk, MP.out, "mid", t), L = duelLayers(fr, "mid", MP.atk), v = views[i];
+    if (!v.dataset.bg) { v.querySelector(".mp-bg").innerHTML = L.bg; v.dataset.bg = "1"; }
+    v.querySelector(".mp-fig").innerHTML = L.fig; v.querySelector(".mp-hud").innerHTML = L.hud; v.querySelector(".mp-top").innerHTML = L.top;
+    if (i === 1) {
+      const tl = timeline(MP.atk, MP.out, "mid");
+      svg.querySelector("#mp-info").innerHTML = txs([`왼쪽 지금 게임 · 오른쪽 어깨 회전(${MP.curve}) · ${ATTACKS[MP.atk].name} · ${OUT_NAME[MP.out]} · 빠르기 ×${MP.speed}`,
+        `t = ${t.toFixed(2)}초 · ${PHASE_NAME[fr.phase]}${fr.phase === "tell" || fr.phase === "recover" ? ` ${Math.round(fr.p * 100)}%` : ""}`,
+        `예비 동작 ${tl.tellStart.toFixed(2)} → 타격 ${tl.strike.toFixed(2)} → 회수 끝 ${tl.recEnd.toFixed(2)}초 · 휘두름(hold) ${tl.swing.toFixed(2)}초`], 40, 420, 34, 22, bodyF(false), { fill: C.p1 })
+        + mpBar(t, tl);
+    }
+  });
+}
+function mpBar(t, tl) {
+  const x0 = 40, w = 1200, P = mpPeriod(), X = v => x0 + w * v / P, y = 560;
+  let s = `<rect x="${x0}" y="${y}" width="${w}" height="24" fill="${C.iron}" stroke="${C.p3}" stroke-width="1.5"/>`;
+  s += `<rect x="${X(tl.tellStart)}" y="${y}" width="${X(tl.strike) - X(tl.tellStart)}" height="24" fill="var(--sig-big)" opacity="0.7"/>`;
+  if (tl.recDur > 0) s += `<rect x="${X(tl.strike)}" y="${y}" width="${X(tl.recEnd) - X(tl.strike)}" height="24" fill="var(--sig-recovery)" opacity="0.7"/>`;
+  s += `<rect x="${X(tl.strike - GAME.parryWindow)}" y="${y - 8}" width="${X(tl.strike) - X(tl.strike - GAME.parryWindow)}" height="6" fill="var(--sig-band)"/>`;
+  s += `<rect x="${X(tl.strike - tl.swing)}" y="${y + 26}" width="${X(tl.strike) - X(tl.strike - tl.swing)}" height="6" fill="#FFFFFF"/>`;
+  s += `<path d="M${X(t)},${y - 12} L${X(t)},${y + 36}" stroke="#FFFFFF" stroke-width="3"/>`;
+  s += txs(["주황 예비 동작 · 파랑 회수 · 위의 초록 패리 창(0.18초) · 아래의 흰 줄 hold의 휘두름"], x0, y + 62, 24, 16, bodyF(false), { fill: C.p2 });
+  return s;
+}
+function mpControls() {
+  const box = document.getElementById("mp-ctl"); if (!box) return;
+  const groups = [["공격", "atk", ATK_KEYS.map(k => [k, ATTACKS[k].name])], ["결과", "out", Object.entries(OUT_NAME)], ["곡선(오른쪽)", "curve", [["game", "가 · 고르게(game)"], ["hold", "나 · 멈칫(hold)"]]], ["빠르기", "speed", [[1, "×1"], [0.5, "×0.5"], [0.25, "×0.25"]]]];
+  box.innerHTML = groups.map(([name, key, opts]) => `<div><span>${name}</span>${opts.map(([v, l]) => `<button data-k="${key}" data-v="${v}">${l}</button>`).join("")}</div>`).join("");
+  const mark = () => box.querySelectorAll("button").forEach(b => b.classList.toggle("on", String(MP[b.dataset.k]) === b.dataset.v));
+  box.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; MP[b.dataset.k] = b.dataset.k === "speed" ? parseFloat(b.dataset.v) : b.dataset.v; MP.t0 = null; mark(); });
+  mark();
+}
+// requestAnimationFrame은 headless의 가상 시간에서 두 번만 돌아 setTimeout으로 돌린다(계획 026 작업 2의 대비)
+function mpLoop() {
+  const now = performance.now();
+  if (MP.t0 === null) MP.t0 = now;
+  const t = ((now - MP.t0) / 1000 * MP.speed) % mpPeriod();
+  mpDraw(t); MP.frames++; document.body.setAttribute("data-frames", String(MP.frames));
+  setTimeout(mpLoop, 16);
+}
+// 6. far-read: 멀리의 예비 동작 60%(화면의 x 480~800 · y 130~490을 그대로)
+function sceneFarRead() {
+  let s = `<rect width="1280" height="720" fill="#2A2018"/>`;
+  [["game", "game", "지금 게임"], ["rot", "hold", "어깨 회전(hold)"]].forEach(([col, curve, rowName], row) => {
+    ATK_KEYS.forEach((k, i) => {
+      const tl = timeline(k, "blocked", "far"), fr = frameAt(col, curve, k, "blocked", "far", tl.tellStart + 0.6 * tl.tellDur), [x, y, sc] = PLACE("far");
+      s += `<svg x="${i * 320}" y="${row * 360}" width="320" height="360" viewBox="480 130 320 360" overflow="hidden">${bgOf(R2)()}${figure(fr, x, y, sc)}</svg>`;
+      s += `<rect x="${i * 320}" y="${row * 360 + 334}" width="320" height="26" fill="#2A2018" opacity="0.85"/>` + tx(i * 320 + 8, row * 360 + 353, `${rowName} · ${ATTACKS[k].name}`, 15, bodyF(false), { fill: C.p1 });
+    });
+  });
+  return s;
+}
+// 7. sil: 재기 전용의 한 색 그림(결정 235). 필터는 파츠의 그림마다 건다(묶음에 걸면 자식까지 덮인다)
+const SIL_COLORS = { "sil-blue": "#0000FF", "sil-red": "#FF0000", "sil-gray": "#808080" };
+const silFilters = () => Object.entries(SIL_COLORS).map(([k, c]) => `<filter id="tf${k}" color-interpolation-filters="sRGB" x="0" y="0" width="100%" height="100%"><feFlood flood-color="${c}" result="f"/><feComposite in="f" in2="SourceAlpha" operator="in"/></filter>`).join("");
+function silArt() {
+  const spec = sheetSpec(); if (!spec) return null;
+  return { Legs: () => genPartSvg(spec, "Legs", "sil-gray"), Torso: () => genPartSvg(spec, "Torso", "sil-gray"), Head: () => genPartSvg(spec, "Head", "sil-red"), Hat: () => "", Feather: () => "",
+    Arm: () => genPartSvg(spec, "Arm", "sil-blue"), Hand: () => genPartSvg(spec, "Hand", "sil-blue"), Sword: () => genPartSvg(spec, "Sword", "sil-blue"), arms: armsOf(spec, "sil-blue") };
+}
+function silPose(col, curve, k, ph, p, dist) {
+  const game = col === "game", P = game ? gParams : rotParams, F = game ? null : COMMON();
+  if (ph === "idle") return P(game ? GP.idle() : F.idle);
+  if (ph === "complacent") return P(game ? GP.complacent() : F.complacent);
+  if (ph === "stagger") return P(game ? GP.stagger() : F.stagger);
+  if (ph === "strike") return P(game ? GP.strike(ATTACKS[k]) : posesOf(k).strike);
+  if (ph === "recover") return P(recoverPose(col, curve, k, 0.5));
+  return P(tellPose(col, curve, k, p, timeline(k, "blocked", dist)));
+}
+function sceneSil() {
+  const d = ["far", "mid", "close"].includes(Q.dist) ? Q.dist : "mid", [x, y, s] = PLACE(d), col = Q.col === "game" ? "game" : "rot";
+  return `<rect width="1280" height="720" fill="#FFFFFF"/>` + opp(Object.assign({ x, y, s, hat: false, art: silArt(), noarm: Q.noarm }, silPose(col, colCurve(col), ATK_KEYS.includes(Q.atk) ? Q.atk : "big", Q.ph, Q.p, d)));
+}
+// 8. sil-check: 겹침 a·b = 5000 / 15000 = 0.333, 가림 1 - d/c = 0.300
+function sceneSilCheck() {
+  const c = Q.case; let s = `<rect width="1280" height="720" fill="#FFFFFF"/><g shape-rendering="crispEdges">`;
+  if (c === "a") s += `<rect x="100" y="100" width="100" height="100" fill="#0000FF"/>`;
+  if (c === "b") s += `<rect x="150" y="100" width="100" height="100" fill="#0000FF"/>`;
+  if (c === "c" || c === "d") s += `<rect x="100" y="100" width="100" height="100" fill="#FF0000"/>`;
+  if (c === "d") s += `<rect x="100" y="100" width="30" height="100" fill="#0000FF"/>`;
+  return s + `</g>`;
+}
+// 9. arm-guide: 따로 그릴 팔의 자세 안내도(023 길 "가"의 색). 승인 A3의 답: 큰 베기의 예비 동작(든 팔), 찌르기의 타격(앞으로 뻗은 팔).
+// 파츠는 팔의 축이 세로로 선다(기울기는 견본이 준다). 크기는 024 시트의 팔(96x274)·주먹(99x108)에 맞춘다.
+function sceneArmGuide() {
+  const P = "var(--pose-body)", S = "var(--pose-arm)";
+  // A1b(B의 답 "고친다"): 든 팔은 칼을 쥔 채로(칼날이 바깥 위로 30° 눕는다), 앞으로 뻗은 팔은 소매를 줄이고 주먹·날밑을 키운다
+  // 파츠 1: 위로 곧게 든 팔. 어깨 끝이 아래, 소매 끝과 주먹이 위, 주먹이 칼을 쥔다
+  const up = `<rect x="452" y="690" width="96" height="280" rx="44" fill="${P}"/><rect x="448" y="676" width="104" height="30" rx="6" fill="${P}"/>`
+    + `<g transform="rotate(-30,500,600)"><rect x="491" y="40" width="18" height="520" rx="4" fill="${S}"/><rect x="445" y="552" width="110" height="18" rx="6" fill="${S}"/></g>`
+    + `<rect x="450" y="570" width="100" height="112" rx="30" fill="${P}"/>`;
+  // A1c(B의 둘째 답): 든 팔은 자루가 주먹을 꿰뚫고 폼멜이 주먹 아래에 보인다. 앞으로 뻗은 팔은 넓은 타원 컵 날밑과 나를 향해 아래로 가늘어지는 칼날
+  const pommel = `<circle cx="500" cy="694" r="16" fill="${S}"/>`;
+  // 파츠 2: 나를 향해 아래로 찌르는 팔(앞으로 줄어 보인다). 어깨 끝이 위, 짧은 소매, 큰 주먹, 앞에 타원 날밑, 아래로 가늘어지는 칼날
+  const fwd = `<rect x="1046" y="200" width="108" height="130" rx="46" fill="${P}"/><rect x="1040" y="318" width="120" height="32" rx="6" fill="${P}"/><rect x="1030" y="345" width="140" height="130" rx="40" fill="${P}"/>`
+    + `<path d="M1078,520 L1122,520 L1100,800 Z" fill="${S}"/><ellipse cx="1100" cy="500" rx="104" ry="56" fill="${S}"/>`;
+  return `<rect width="1536" height="1024" fill="var(--in-bg)"/>${up}${pommel}${fwd}`;
+}
+// 10. arm-art: 따로 그린 팔을 끼운 국면(위 024의 팔을 돌린 것, 아래 따로 그린 팔). 큰 베기의 예비 동작 시작·멈칫, 찌르기의 타격·회수 끝
+function sceneArmArt() {
+  const W = 320, H = 360, cells = [["big", "tell_start", "큰 베기 · 예비 동작 시작"], ["big", "hold", "큰 베기 · 멈칫"], ["thrust", "strike", "찌르기 · 타격"], ["thrust", "recover_end", "찌르기 · 회수 끝(패리당함)"]];
+  let s = parchBg(1280, 720);
+  [[false, "024의 팔을 돌린 것"], [true, "따로 그린 팔(026-A1f)"]].forEach(([useArt, rowName], row) => {
+    cells.forEach(([k, ph, name], i) => {
+      const q = Object.assign({}, posesOf(k)[ph]); if (!useArt) q.arm_art = "Arm";
+      const p = rotParams(q); p.armArt = useArt ? q.arm_art : "Arm";
+      const tint = ph === "strike" ? "--sig-strike" : ph === "recover_end" ? "--sig-recovery" : ATTACKS[k].sig;
+      s += `<g transform="translate(${i * W},${row * H})"><rect x="1" y="1" width="${W - 2}" height="${H - 2}" fill="none" stroke="${C.soft}" stroke-width="1"/>`;
+      s += opp(Object.assign({ x: 160, y: 262, s: 0.42, hat: false, art: figArt(ph === "recover_end" ? "oops" : "smug"), tint, headClosed: false }, p));
+      s += cellLabel(10, 24, [(i === 0 ? rowName + " · " : "") + name], 15) + `</g>`;
+    });
+  });
+  return s;
+}
+
+// ---------------------------------------------------------------- <pre>에 적는 값
+function writePres() {
+  const row = (atk, ph, q) => [atk, ph, r1(q.arm_deg), r1(q.sword_deg), r1(q.head_deg), r1(q.lean_deg), r1(q.shoulder_dx), r1(q.shoulder_dy), q.arm_art].join(",");
+  const lines = ["kind,atk,phase,arm_deg,sword_deg,head_deg,lean_deg,shoulder_dx,shoulder_dy,arm_art"];
+  for (const [kind, tuned] of [["final", true], ["start", false]]) {
+    for (const k of ATK_KEYS) { const F = posesOf(k, tuned); for (const ph of ["tell_start", "hold", "strike", "recover_end"]) lines.push(kind + "," + row(k, ph, F[ph])); }
+    const Cm = tuned ? COMMON() : COMMON_START; for (const ph of ["idle", "stagger", "complacent"]) lines.push(kind + "," + row("-", ph, Cm[ph]));
+  }
+  lines.push(`final,-,dodge_head,${GAME.dodgeHead}`);
+  document.getElementById("pose-table").textContent = lines.join("\n");
+  const g = (name, q) => `${name},${r1(q.arm[0])},${r1(q.arm[1])},${r1(q.sword)},${r1(q.head)}`;
+  document.getElementById("game-table").textContent = ["point,arm_x,arm_y,sword,head",
+    g("thrust_tell_0.3", GP.tell(ATTACKS.thrust, 0.3)), g("big_tell_0.25", GP.tell(ATTACKS.big, 0.25)), g("cutl_recover", GP.strike(ATTACKS.cutl)), g("stagger", GP.stagger())].join("\n");
+  const T = [["thrust", "blocked", "mid"], ["thrust", "parried", "mid"], ["cutl", "blocked", "mid"], ["cutr", "blocked", "mid"], ["big", "blocked", "mid"], ["big", "parried", "mid"], ["big", "whiff", "mid"], ["big", "blocked", "close"], ["thrust", "blocked", "close"]];
+  document.getElementById("timeline").textContent = ["atk,out,dist,tellStart,strike,recoverEnd,swing,hold_end"].concat(T.map(([k, o, d]) => { const t = timeline(k, o, d); return [k, o, d, t.tellStart.toFixed(2), t.strike.toFixed(2), t.recEnd.toFixed(2), t.swing.toFixed(3), t.holdEnd.toFixed(3)].join(","); })).join("\n");
+  const st = COMMON().stagger;
+  document.getElementById("pose-check").textContent = ["atk,dArm,dSword,dShoulder,dHead,count,ok"].concat(ATK_KEYS.map(k => {
+    const r = posesOf(k).recover_end, d = [Math.abs(r.arm_deg - st.arm_deg), angDiff(r.sword_deg, st.sword_deg), Math.abs(r.shoulder_dy - st.shoulder_dy), Math.abs(r.head_deg - st.head_deg)];
+    const n = (d[0] >= 15) + (d[1] >= 30) + (d[2] >= 15) + (d[3] >= 10);
+    return [k].concat(d.map(r1)).concat([n, n >= 2 ? "ok" : "FAIL"]).join(",");
+  })).join("\n");
+}
+
+// ---------------------------------------------------------------- 페이지 만들기 (글꼴이 다 읽힌 뒤에 그린다)
+const USE_FONTS = ["nanumsquareround", "notosanskr", "songmyung"];
+const FONT_FACES = [];
+for (const f of FONTS.filter(f => USE_FONTS.includes(f.key))) for (const [file, weight] of f.files) FONT_FACES.push([f.key, weight, new FontFace(`f025-${f.key}`, `url(../generated/fonts/${f.key}/${file})`, { weight })]);
+const SCENES = {
+  "pose-pair": scenePosePair, "pose-states": scenePoseStates, "strip": sceneStrip, "motion": sceneMotion, "motion-pair": sceneMotionPair,
+  "far-read": sceneFarRead, "sil": sceneSil, "sil-check": sceneSilCheck, "arm-guide": sceneArmGuide, "arm-art": sceneArmArt,
+};
+const hash = decodeURIComponent(location.hash.slice(1));
+Promise.allSettled(FONT_FACES.map(([, , face]) => face.load().then(f => document.fonts.add(f)))).then(() => {
+  document.getElementById("genDefs").innerHTML = tintFilters() + silFilters();
+  stateBox(PICK.state); { const ctx = mkCanvas(8, 8), F = stateF(); ctx.font = `${F.w} 28px ${F.fam}`; ASC[PICK.state] = ctx.measureText("한").fontBoundingBoxAscent; }
+  // 단독 보기에서는 그 섹션만 그린다(굽기가 가볍다)
+  for (const [id, fn] of Object.entries(SCENES)) if (!hash || hash === id) document.querySelector(`#${id} svg`).innerHTML = fn();
+  writePres();
+  document.getElementById("font-status").textContent = FONT_FACES.map(([k, w, face]) => `${k},${w},${face.status}`).join("\n");
+  if (!hash || hash === "motion-pair") {
+    mpControls();
+    if (Q.t !== null) { mpDraw(Q.t); document.body.setAttribute("data-frames", "0"); } else mpLoop();
+  }
+  document.body.setAttribute("data-ready", "1");
+});
+if (hash) {
+  const target = document.getElementById(hash);
+  if (target) { document.body.classList.add("solo"); target.classList.add("solo-target"); }
+}
+</script>
+</body>
+</html>

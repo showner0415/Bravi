@@ -1,0 +1,27 @@
+Task: call your image generation tool exactly once to create exactly one image. You may use the code tool only to make that one call. Pass both attached images to the image generation tool as referenced images by their paths: {WORKDIR}\in-1.png and {WORKDIR}\in-2.png. Give the image generation tool the text from the line that starts with Image: to the end of this message, word for word, as its prompt. Do not run shell commands. Do not read, create, change or delete any file. Do not use a browser, web search, computer use, apps or any other tool. Do not retry. When the image is done, reply with one line: done.
+
+Image: Landscape, 1536x1024 pixels. One sheet of separate sword arm parts of one character for cutout animation in a 2D duel game.
+
+Subject: Bartolo, the same character as in the first referenced image. Only his sword arm, his sword hand and his rapier, in a few different poses.
+
+Pose and layout:
+- The first referenced image is our own parts sheet of this character and it is the character reference: draw exactly the same sleeve, the same fist and the same rapier, with the same drawing style, the same shapes, the same colors and the same line weight.
+- The second referenced image is our own pose sketch. It shows how many parts there are, where each part goes on the sheet and the pose of each part. Follow its poses and its places. Do not copy its flat grey shapes: every part looks like the first image.
+- Each arm is one straight shape from the shoulder to the wrist, with no bend at the elbow, as in the first image. Every part stands straight up and down on the sheet, not tilted, exactly as in the second image.
+- Part 1: the sword arm with the fist, pointing straight up: the shoulder end at the bottom, the cuff and the fist at the top, the fist seen from the front as if gripping a sword held overhead.
+- Part 2: the sword arm, the fist and the rapier pointing straight at the viewer, strongly foreshortened: a short upright sleeve with the shoulder end at the top, the fist in front below it, the guard as a round shape and only a short piece of the blade.
+- Each part is drawn complete. Clear empty space between all parts. No part touches or overlaps another. No body, no head, no labels, no numbers, no guide lines, no dots. Nothing is cropped.
+
+Style (draw a new, original illustration in the style of the first referenced image, as described here):
+- A finished cartoon parts sheet for a game, drawn with care, in the drawing style of the first referenced image: soft, simple, rounded-geometric shapes with straight sides and rounded corners. Simple and flat: a clean cartoon, not realistic and not painterly.
+- Keep exactly the amount of detail of the first referenced image: the same cuff line, the same fingers on the fist and the same guard and grip on the rapier. Nothing else is added. No puffy sleeves, no extra wrinkles.
+- Outlines: very dark warm brown, hex 3B2A1E. One even, bold line weight on every outer contour, about 8 pixels thick in a 1024 pixel wide image, smooth clean edges, round ends. No tapering, no wobble, no rough or broken edges. Inner lines are the same color and about half as thick.
+- Fills: flat solid colors, muted and faded. Hair, beard, belt and shoes are filled with the same very dark brown as the outlines.
+- Shadows: exactly one shadow tone per color, a slightly darker version of the same color and still clearly lighter than the outlines. Each shadow is one simple flat shape with a hard edge on the right side of the form, as if the light comes from the upper left. Shadows have no outline.
+- Do not add: hatching, cross-hatching, engraving or etching lines, brush or ink texture, paper texture on the figure, gradients, soft or blurred shadow edges, highlights or shine, blush or rosy cheeks, sweat drops, tears, freckles, skin texture, fabric patterns.
+
+Colors:
+- Main fills and their shadow tones: dusty grey-blue 5C6F7E with shadow 4A5A67 for the doublet and the sleeve, light wood brown 836850 with shadow 6E5642 for the breeches, parchment E9D8B4 for the collar, cuffs, stockings and feather, skin EBC49F, faded brick red A5533F for the hat, pale warm grey CFC8BA for the blade and guard.
+- Avoid bright saturated yellow, orange, red, blue, purple or green, and pure white. Large areas are greyish and low in saturation.
+
+Background: one plain flat light grey color, about #D8D8D8, everywhere around the parts. No floor, no cast shadow, no scenery, no frame, no text, no letters, no signature, no watermark.

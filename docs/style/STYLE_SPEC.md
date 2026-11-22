@@ -1,6 +1,6 @@
 # 화풍 명세
 
-3단계의 기준 화풍을 말과 값으로 적은 것이다. 026의 `docs/STYLE_BIBLE.md`(4 인물, 6 배경, 8 색, 13 만드는 길)가 이 파일을 입력으로 쓴다.
+3단계의 기준 화풍을 말과 값으로 적은 것이다. 027의 `docs/STYLE_BIBLE.md`(4 인물, 6 배경, 8 색, 13 만드는 길)가 이 파일을 입력으로 쓴다.
 
 - 근거: 계획 021 견본에 대한 사용자 답(2026-11-21, `docs/DECISIONS.md`). "svg로 만든 이미지 스타일에 훨씬 가까워"이므로 기준 화풍은 SVG 견본이다. 다리는 A·B를 섞어 "선은 깔끔하게 칠은 바랜색으로" 한다(결정 194·195).
 - 계획 023에서 화풍·품질·게임 제약으로 나눠 다시 썼다. 근거: 2026-11-21 사용자 답("그림체 즉 화풍을 베껴서 새로운 그림을 그려달라는거지 원래 있던 그림을 조금만 바꿔달라는게 아니었어. 조금 더 게임에 쓸 수 있을 정도로 퀄리티를 높여서 다시 그려달란거였어." 품질의 정도는 "완성된 만화 일러스트"). 결정 202·203.
@@ -9,7 +9,7 @@
   1. 섞은 SVG 견본(`generated/in/022-in-*`)을 **화풍의 참고 그림**으로 넣는다. 말만으로는 SVG의 꼴이 옮겨지지 않았다(R1a·R1b는 둥글둥글, R1c는 각짐).
   2. 꼴과 디테일의 양은 **섞은 SVG만큼 단순하게** 둔다. 올리는 것은 만듦새(비례, 이음매, 물건을 쥔 손)다. 2부(품질)의 표는 이 한도 안에서 읽는다.
   3. 디테일은 **조금만** 더한다: 고른 그림을 바탕 그림으로 넣고 "실루엣은 그대로, 안쪽에 이것만"이라고 적는다(P-KEEP·S-KEEP). 실루엣이 화소 단위로 지켜진다.
-  4. 전신 그림의 자세는 여유롭게 결투에 임하는 자세이고 **팔다리는 굽히지 않는다**. 표정은 자신 있는 미소(R1e·R1i). 게임에 쓸 파츠(정면, 떨어진 팔)는 파츠 시트에서 따로 그린다(3부).
+  4. 전신 그림의 자세는 여유롭게 결투에 임하는 자세이고 **팔다리는 굽히지 않는다**. 표정은 자신 있는 미소(R1e·R1i). 게임에 쓸 파츠(정면, 떨어진 팔)는 파츠 시트에서 따로 그린다(3부). 파츠 시트의 첫째 머리가 이 얼굴이다(계획 024).
   5. 선은 고르고 굵게(가운데 × k 5.0~5.6. 섞은 SVG의 5.2와 같다). 바지는 밝힌 값(`#836850`).
   - 기준 그림(로컬): 인물 `generated/023-R1i-bartolo-front.png`, 무대 `023-R2-stage-alley.png`, 의뢰인 `023-R3-client-clara.png`. 프롬프트는 `prompts/023-R1h`·`R1i`·`R2`·`R3`.
 - **프롬프트는 이 파일 끝의 블록을 글자 그대로 옮긴다.** 고칠 때는 이 파일을 먼저 고치고 프롬프트에 다시 옮긴다.
@@ -30,7 +30,7 @@
 | 칠·그림자 | 맑은 색 | 바랜 색 | **B 그대로** |
 
 - 끝과 꺾임은 둥글다. 굵기는 한 선 안에서 변하지 않는다.
-- 화면에서 교전 바깥 4.4px·안 2.5px, 멀리 2.9px·1.6px이다. 5.2는 임시 값이다(필터를 뺀 B는 가늘어 보이고 A의 6은 무거웠다).
+- 화면에서 교전 바깥 4.4px·안 2.5px, 멀리 2.9px·1.6px이다. 5.2로 확정했다(결정 216. 생성 그림은 가운데 × k 5.0~5.6을 겨냥하고 3.6~7.8을 받는다. 필터를 뺀 B는 가늘어 보이고 A의 6은 무거웠다).
 - 생성 그림에서는 "고르고 굵은 선, 1024 폭에서 약 10화소"라는 말로 옮기고 K2의 범위(가운데 × k 3.6~7.8)로 본다. 사용자 답(2026-11-21 B1): 첫 답은 R1b만큼 굵게(11화소, 4.7), R1c(8화소, 3.6)를 보고는 "좋다". 프롬프트의 말은 R1d부터 "약 8화소"다.
 
 ## 꼴 (2026-11-21 승인 B1의 답으로 더했다)
@@ -65,6 +65,7 @@
   |---|---|---|---|
   | 대기 | 얕은 호 | 점 | 짧은 선 |
   | 거만함 | 평평 | 아래로 휜 반달 선 | 비스듬한 선 |
+  | 자신 있는 미소 | 평평, 한쪽을 살짝 듦 | 점 | 한쪽이 올라간 짧은 선 |
   | 당황 | 높이 들림 | 흰자 원 안의 작은 점 | 작은 타원 |
   | 어지러움 | 비뚤어짐 | X | 물결 |
   | 화남 | 안으로 내려옴 | 점 | 이를 드러낸 네모 |
@@ -84,7 +85,7 @@
 ## 의뢰인과 카운터
 
 - 의뢰인은 인물 규칙 그대로이고, 성격은 표정과 옷 하나·소품 하나로 읽힌다(클라라: 리본 모자·앞치마·핀 둘, 비토리오: 털깃·금 사슬·돈주머니).
-- 카운터는 020 B의 배경 그대로다(양피지 벽과 빗금 들보, 나무 카운터의 물결 결 네 줄, 양피지 패널).
+- 카운터는 020 B의 배경 그대로다(양피지 벽과 빗금 들보, 나무 카운터의 물결 결 네 줄, 양피지 패널). UI의 꼴과 글꼴은 4부.
 
 ## 팔레트
 
@@ -98,8 +99,8 @@
 | `--parch-2` | `#D2B98C` | S33 V82 | 0.73 | 앞치마 그림자, 바탕 |
 | `--parch-3` | `#A8895E` | S44 V66 | 0.55 | 문·덧창(밝은 쪽), 털깃 |
 | `--c-doublet` / `-sh` | `#5C6F7E` / `#4A5A67` | S27 V49 / S28 V40 | 0.42 / 0.34 | 바르톨로 저고리·소매 |
-| `--c-legs` / `-sh` (견본의 값) | `#6B5440` / `#57442F` | S40 V42 / S46 V34 | 0.34 / 0.28 | 바르톨로 바지(020~022 견본) |
-| 바지, **생성에 주는 값**(임시, 결정 204) | `#836850` / `#6E5642` | S39 V51 / S40 V43 | 0.42 / 0.35 | 바르톨로 바지(023부터의 프롬프트) |
+| `--c-legs` / `-sh` (020~022 견본의 값. 기록) | `#6B5440` / `#57442F` | S40 V42 / S46 V34 | 0.34 / 0.28 | 바르톨로 바지(020~022 견본) |
+| 바지, **주는 값(확정. 결정 204·216)** | `#836850` / `#6E5642` | S39 V51 / S40 V43 | 0.42 / 0.35 | 바르톨로 바지(023부터의 프롬프트) |
 | `--c-skin` / `-sh` | `#EBC49F` / `#C98E66` | S32 V92 / S49 V79 | 0.79 / 0.59 | 살 |
 | `--c-hat` / `-sh` | `#A5533F` / `#84422F` | S62 V65 / S64 V52 | 0.39 / 0.31 | 모자 |
 | `--c-steel` | `#CFC8BA` | S10 V81 | 0.79 | 칼날·코등이 |
@@ -128,7 +129,35 @@
 
 - 상대의 큰 면은 칠 Y ≥ 0.42로 두고, 프롬프트에 큰 면의 **그림자 hex도 준다**(hex는 그대로 따랐다. 022).
 - 바르톨로 바지: 견본의 `#6B5440`(Y 0.34) / `#57442F`(0.28) → 생성에 주는 값 **`#836850`(Y 0.42) / `#6E5642`(Y 0.35)**. 저고리는 그대로다.
-- 임시 값이고 확정은 024다. 비토리오의 옷(`#7E4A4A`, Y 0.33)도 같은 문제라 024에서 같이 정한다. 견본 020~022의 값은 고치지 않는다.
+- **확정했다(결정 216, 2026-11-22)**: 바지는 `#836850` / `#6E5642`. 사용자가 그림을 보고 "좋다"고 했다. 견본 020~022의 값은 기록으로 남기고 고치지 않는다.
+- **프롬프트에 주는 값이 정본이다.** 그림이 낸 값은 아래 "기준 그림에서 잰 값"에 따로 적고, 잰 값을 쫓아 주는 값을 고치지 않는다(지금의 hex로 나온 그림이 "맞다"를 받았다). 4단계에서 SVG·UI의 색을 그림 옆에 놓을 때는 잰 값에 맞춘다.
+- 받는 범위: 상대의 큰 면은 칠·그림자 Y ≥ 0.30, 선 Y < 0.22, S ≤ 50%. 주는 칠은 Y ≥ 0.42로 두고 그림자 hex도 준다(그림자가 준 값보다 0.07까지 어둡게 나왔다).
+- 비토리오의 옷은 `#7E4A4A` / `#663B3B` 그대로다. 의뢰인에게는 상태 색이 얹히지 않는다(G6은 상대의 제약이다). 기준 그림의 옷 그림자는 Y 0.28이라 선(0.18)과 갈린다.
+
+### 기준 그림에서 잰 값 (계획 024. `docs/style/basis/`)
+
+가운데 RGB다(`measure.ps1 -Regions`. 자리는 `GENERATION.md` "계획 024 — 팔레트의 잰 값"). 상대의 큰 면은 모두 받는 범위 안이다.
+
+| 그림 | 색 | 주는 값 | 잰 값 | Y | 받는 범위 |
+|---|---|---|---|---|---|
+| 바르톨로 전신 `bartolo-front` | 선 | `#3B2A1E` | `#442B1A` | 0.19 | 선 < 0.22 ✓ |
+| | 저고리 / 그림자 | `#5C6F7E` / `#4A5A67` | `#6D7982` / `#546068` | 0.47 / 0.37 | ✓ (S 16%) |
+| | 바지 / 그림자 | `#836850` / `#6E5642` | `#8F6D4C` / Y만 잼 | 0.45 / 0.37 | ✓ (S 47%) |
+| | 살 · 모자 | `#EBC49F` · `#A5533F` | `#F2C197` · `#B75D43` | 0.79 · 0.43 | — |
+| 바르톨로 파츠 시트 `bartolo-parts` | 선 | `#3B2A1E` | `#452B19` | 0.19 | ✓ |
+| | 저고리 / 그림자 | `#5C6F7E` / `#4A5A67` | `#697680` / `#515E65` | 0.45 / 0.36 | ✓ (S 18%) |
+| | 바지 / 그림자 | `#836850` / `#6E5642` | `#926D4B` / `#7A5838` | 0.45 / 0.36 | ✓ (S 49%) |
+| | 살 · 모자 | `#EBC49F` · `#A5533F` | `#F4C195` · `#B3583E` | 0.79 · 0.41 | — |
+| 클라라 `client-clara` | 선 | `#3B2A1E` | `#3C2616` | 0.16 | — |
+| | 옷 / 그림자 | `#6F7F4F` / `#59663F` | `#788253` / `#646C45` | 0.49 / 0.41 | — |
+| | 살 | `#EBC49F` | `#EBC09B` | 0.78 | — |
+| 비토리오 `client-vittorio` | 선 | `#3B2A1E` | `#3E2B1F` | 0.18 | — |
+| | 옷 / 그림자 | `#7E4A4A` / `#663B3B` | `#844E4B` / `#6A3D3C` | 0.35 / 0.28 | — |
+| | 털깃 · 살 | `#A8895E` · `#EBC49F` | `#B28B60` · `#EABE99` | 0.57 · 0.77 | — |
+| 무대 셋 `stage-*` | 선 | `#3B2A1E` | 뒷골목 `#3B291B` · 안뜰 `#32271B` · 광장 `#342C28` | — | — |
+| | 조용한 구역의 L | 짙되 검지 않게 | 뒷골목 0.043 · 안뜰 0.057 · 광장 0.050 | — | 평균 ≤ 0.20 ✓ |
+
+- 그림은 준 값보다 저고리를 더 회색으로(S 27% → 16~18%), 칠을 조금 밝게, 살을 조금 더 붉게 낸다. 선은 준 값과 거의 같다.
 - 필터의 문턱(0.22·0.30)은 건드리지 않는다(4단계 셰이더의 값이다).
 
 ## 하지 말 것 (021·022 생성에서 나온 것)
@@ -171,7 +200,7 @@
 |---|---|---|---|
 | G1 | 머리와 몸통은 **엄격한 정면**, 곧게 선 자세 | 2D 펀치아웃의 상대, 예비 동작이 일관되게 읽혀야 한다(원칙 4) | H1 |
 | G2 | **파츠로 나눌 수 있다**: 칼 팔은 보는 쪽 왼쪽, 팔과 몸통 사이에 틈, 손은 허리 높이, 칼날은 위·바깥으로 기울어 몸과 머리를 가로지르지 않는다, 다른 손은 등 뒤, 깃털은 옆으로 눕고 얼굴을 가리지 않는다 | 결정 12(파츠 이름·관절), 4단계의 컷아웃 | H2 |
-| G3 | **머리 104**(목~골반 = 200일 때)로 맞출 수 있다: 그림의 머리가 104의 0.85~1.25배 | 사용자 답(얼굴은 지금 크기) | H9 |
+| G3 | **머리 104**(목~골반 = 200일 때)로 맞출 수 있다: 그림의 머리가 104의 0.85~1.25배. 파츠 시트에서는 목~머리털 꼭대기가 117의 0.85~1.25배(H9s) | 사용자 답(얼굴은 지금 크기) | H9 |
 | G4 | 맞춘 뒤 교전 꼭대기 ≥ 142(모자 ≤ 53)로 **두 줄 글자 상자와 겹치지 않는다** | 결투의 텔 글자가 가려지면 안 된다 | H10 |
 | G5 | 색은 신호 구역 밖, 상대 큰 면 S ≤ 50% | 결정 181 | H5 |
 | G6 | **상태 색이 얹힌다**: 큰 면(저고리·소매·바지)의 칠과 그림자 모두 Y ≥ 0.30, 선은 Y < 0.22 | 결정 181·188의 밝기 문턱 필터 | H8 |
@@ -181,6 +210,219 @@
 - 2부의 "자연스럽게"가 G1·G2와 부딪히면 제약이 이긴다. 제약의 세기는 사용자가 맡겼고(2026-11-21 "알아서 잘 할 수 있게해줘") **굳게**로 정했다: 시험 그림을 그 자리에서 잘라 상태 색과 글자 상자까지 확인할 수 있고, 굳은 자세가 싫으면 한 장만 다시 돌려 되돌릴 수 있다.
 - 좌우가 같은 굳은 자세는 제약이 아니다. 지키는 것은 머리·몸통의 정면과 파츠의 틈뿐이다.
 - **사용자 답(2026-11-21 B1 둘째, R1c를 보고): "굳다, 풀어 달라".** 전신 그림(R1d부터)은 정면이거나 아주 살짝 튼 자연스러운 자세로 그리고 팔은 몸에 가깝게 둔다. G1·G2는 024의 파츠 시트에서 지킨다(전신 그림은 파츠로 자르지 않는다). H1·H2는 부드러운 확인이 되고, H5·H8·H9·H10은 그대로 굳은 확인이다.
+
+# 4부. 글꼴·UI·크기 기준 (계획 025)
+
+값은 Edge에서 구운 견본(`samples/025-type-ui-size.html`)에서 정하고 잰 것이다. Godot의 글자 그리기(힌팅, 줄 높이, 테두리)는 다를 수 있어 4단계에서 게임 화면으로 다시 본다. 사용자가 2026-11-22 승인 B에서 골랐다(결정 221~231).
+
+## 글꼴
+
+| 역할 | 글꼴 | 굵기 | 쓰는 곳 |
+|---|---|---|---|
+| 본문 | **나눔스퀘어라운드** | **ExtraBold(800) 하나**. 긴 글·흐린 글자·버튼·HUD 모두 같다(사용자 답 "이대로 — 전부 ExtraBold") | 사연 대사, 조건, 장부의 줄, 버튼, HUD의 라벨 |
+| 제목 | **송명** | 400(굵기가 하나다) | 가게 이름, 화면 머리 줄, 큰 수(충족도·손익), 주 버튼 |
+| 결투의 상태 글자 | **Noto Sans KR** | 900 | 상대 머리 위의 한두 줄, 가운데의 엉킴 경고 |
+
+- HUD의 글자는 본문 글꼴이다(사용자 답 "상태 글자만 고딕". 본문이 둥근 고딕이라 HUD도 고딕 계열이 되었다).
+- 흐린 글자는 굵기가 아니라 색(`#6B5440`)으로 낸다. 강조는 색(붉은 글자)과 크기, 제목 글꼴로 낸다.
+- **상태 글자**: 28, 흰 글자, 검은 테두리 8(지금 게임의 `StateLabel`). 상자는 폭 414(조용한 구역 x 433~847), 윗선 y 62(`STATE_LABEL_Y`), 아래 끝 y 142(G4). Noto Sans KR 900으로 잰 값: 가장 넓은 줄(`막기를 뗐다 다시 올려라`) 285, 두 줄의 아래 끝 79(윗선에서. 80 안), 자연 줄 높이 40.
+- **가장 작은 글자**: 14. 나눔스퀘어라운드 ExtraBold는 12에서도 세로 획 0.96·가로 획 1.00으로 문턱(0.70·0.50)을 넘는다.
+
+### 후보의 표 (모두 SIL Open Font License 1.1. 로컬 `generated/fonts/<키>/`에만 두었다)
+
+| 글꼴(키) | 배포처 | 저작권 줄 | Reserved Font Name | 굵기 · 파일 | 한글 | 가장 작은 크기 | 판정 |
+|---|---|---|---|---|---|---|---|
+| 나눔스퀘어라운드 `nanumsquareround` | `hangeul.naver.com`의 `nanum-square-round.zip`. 라이선스 전문은 네이버 도움말(`OFL-NAVER.txt`로 옮겨 둠) | Copyright (c) 2010, NAVER Corporation / 파일 안: Copyright 2017 NAVER Corporation, designed by Sandoll | **있다**(Nanum, Naver Nanum, …, NanumSquareRound) | L·R·B·EB TTF, 각 약 1.0MB | 11,172 | EB 12 (R은 15) | **본문으로 고름**(사용자가 후보 밖에서 골랐다) |
+| 고운바탕 `gowunbatang` | `google/fonts` `ofl/gowunbatang` | Copyright 2021 The Gowun Batang Project Authors | 없다 | Regular·Bold, 8.4MB·8.2MB | 11,172 | 20까지 문턱을 못 넘음(가는 획) | 고르지 않음 |
+| 나눔명조 `nanummyeongjo` | `google/fonts` `ofl/nanummyeongjo` | Copyright (c) 2010, NHN Corporation | **있다**(Nanum …, NanumMyeongjo) | Regular·Bold·ExtraBold, 각 3.1MB | 11,172 | 13 | 고르지 않음(메인의 권함이었다) |
+| Noto Serif KR `notoserifkr` | `google/fonts` `ofl/notoserifkr` | Copyright 2012 Google Inc. | 없다 | 가변(200~900), 23.8MB | 11,172 | 15 | 고르지 않음. 마루 부리(그 저장소에 없다) 대신 넣은 예비 |
+| 송명 `songmyung` | `google/fonts` `ofl/songmyung` | Copyright 2018 The SongMyung Project Authors | 없다 | Regular, 2.0MB | **2,350** | 12 | **제목으로 고름** |
+| 함렛 `hahmlet` | `google/fonts` `ofl/hahmlet` | Copyright 2020 The Hahmlet Project Authors | 없다 | 가변(100~900), 3.6MB | 2,788 | 12(700) | 고르지 않음(메인의 권함이었다) |
+| Noto Sans KR `notosanskr` | `google/fonts` `ofl/notosanskr` | Copyright 2014-2021 Adobe | **있다**(Source) | 가변(100~900), 10.4MB | 11,172 | 12(500) | **상태 글자로 고름**(900) |
+| 검은고딕 `blackhansans` | `google/fonts` `ofl/blackhansans` | Copyright 2015 The Black Han Sans Project Authors | 없다 | Regular, 1.0MB | 2,581 | — | 고르지 않음(줄 높이 28이라 두 줄이 붙는다. 폭 267) |
+| 도현 `dohyeon` | `google/fonts` `ofl/dohyeon` | Copyright 2018 The Do Hyeon Project Authors | 없다 | Regular, 0.9MB | 2,437 | — | 고르지 않음(폭 248, 줄 높이 28) |
+| 주아 `jua` | `google/fonts` `ofl/jua` | Copyright 2018 The Jua Project Authors | 없다 | Regular, 2.1MB | 2,367 | — | 예비. 쓰지 않았다(폭 262) |
+
+- 한글 글자 수는 글꼴 파일의 글자 표에서 센 완성형 음절(U+AC00~U+D7A3)의 수다. **지금 게임의 글(`scripts/`·`data/`·`scenes/`)에 쓰인 한글 628자는 열 집안 모두에 다 있다.** 송명은 2,350자뿐이라 6단계에서 글이 늘면 빠지는 글자가 생길 수 있다(그때 다시 센다).
+- 파일의 SHA256 앞 16자리: 나눔스퀘어라운드 EB `9E845FC35C5BC4A5`, 송명 `7F90AB2025091156`, Noto Sans KR `194018E6B2B293A7`.
+- **배포할 때 지킬 것**: 글꼴마다 라이선스 글(OFL 1.1 전문)과 저작권 줄을 게임과 함께 낸다. Reserved Font Name이 있는 글꼴(나눔스퀘어라운드, Noto Sans KR)은 글자를 덜어 내거나 고친 파일을 그 이름으로 낼 수 없다(서브셋을 만들면 이름을 바꾼다). 글꼴만 따로 팔 수 없다.
+
+## UI의 꼴 — "나 · 필사본" (사용자 답)
+
+양피지 위의 잉크다. 자리·글·글자 크기는 지금 게임 그대로이고 꾸밈만 정했다.
+
+| 무엇 | 값 |
+|---|---|
+| 패널 | `#E9D8B4` + 종이 결, 바깥 테두리 3(`#3B2A1E`) + 5 안쪽에 가는 선 1(`#6B5440`), 네 모서리에 작은 마름모(반지름 4, `#D2B98C`) |
+| 패널의 머리 글 | 붉은 글자(`#84422F`)와 그 아래 가는 밑줄 1 |
+| 버튼 | 양 끝이 제비꼬리로 갈라진 띠. 테두리 2.5, 위아래 안쪽에 가는 선 1. 칠 `#E9D8B4` |
+| 버튼의 상태 | 올림 `#D2B98C` · 누름 `#B8996C`(2화소 내려앉는다) · 못 누름 `#D2B98C`에 글자 `#6B5440`·테두리 `#6B5440` · 값이 걸린 채 못 누름은 글자 `#7A5232` · 주 버튼은 제목 글꼴의 붉은 글자(`#84422F`) |
+| 자세 칸 | 24×14 사각, 테두리 1.5. 찬 칸: 상대 `#7A5232`, 나 `#59663F`. 빈 칸: `#E9D8B4`에 빗금 |
+| 막대(충족도) | 잉크 눈금이 있는 자. 찬 곳 `#59663F`, 빈 곳 `#E9D8B4`, 테두리 1.5 |
+| 장부 | 줄 사이에 가는 줄선 1(`#6B5440`), 합계 위에 두 줄 선, 수는 오른쪽 맞춤 |
+| 결투 HUD | 밝은 양피지 패널(위와 같다). 장식은 모서리에만. 조용한 구역(x 433~847, y 62~683)에는 아무것도 더하지 않는다 |
+| 글자색 | 본문 `#3B2A1E` · 흐린 글자 `#6B5440` · 붉은 글자 `#84422F`(`#A5533F`는 양피지 위에서 3.8:1이라 쓰지 않는다). 카운터의 나무 띠 위에서는 `#E9D8B4` |
+| 벽과 머리 줄 | 카운터·정산·폐점의 벽과 윗띠는 `#E9D8B4`(붉은 글자가 5.3:1. `#D2B98C` 위에서는 3.95라 쓰지 않는다) |
+
+**경고가 읽히게 하는 규칙**(엉킴·방심 막대. 세 안 공통이었다)
+
+1. 신호로 치는 경고 둘은 코드 값 그대로다: 엉킴 경고 `#FF7333`(`BindBar.COLOR_WARN`), 방심 가득 `#F2CC4D`(`ComplacencyBar.COLOR_FULL`). 색을 바꾸지 않는다.
+2. 라벨과 막대를 **짙은 띠**(`#2E2620`) 하나 위에 두고 빈 곳은 그 띠의 색이다. 밝은 양피지를 빈 곳으로 쓰면 금색이 1.2:1이라 보이지 않는다.
+3. 평소 칠은 경고와 색조가 뛴다: 엉킴 `#8FA3B3`(팔레트 밖의 새 색. S 20% V 70%, 신호 구역 밖), 방심 `#CFC8BA`. 황토·붉은 계열·나무 갈색은 평소 칠로 쓰지 않는다.
+- 잰 값(`gauge-states`): 엉킴 — 색조 차 172°, 평소 칠 S 0.20, 경고 대 띠 5.48, 평소 대 띠 5.70. 방심 — 평소 칠 S 0.10(색조 차 6°), 경고 대 띠 9.56, 평소 대 띠 8.93. 경고 때의 라벨은 경고 색이다(띠와 5.48·9.56).
+- 가운데의 엉킴 경고 글자(`칼이 엉킨다!`, 26, `#FF7333`)는 지금처럼 무대 위에 그대로 둔다.
+
+고르지 않은 안(기록): "가 · 민 양피지"(평평한 칠, 고른 선, 둥근 모서리의 패널과 버튼, 둥근 막대), "다 · 나무와 쇠"(나무 테 안의 종이, 쇠 징, 나무 명패 버튼, 결투 HUD는 밝은 테두리를 두른 짙은 판).
+
+## 크기 기준 (1280×720의 화소)
+
+### 글자 크기의 단계
+
+| 단계 | 크기 | 쓰는 곳 | 지금 크기 → 단계 |
+|---|---|---|---|
+| 간판 | 54 | 처음 화면의 가게 이름 | 54 |
+| 큰 수 | 46 | 결투 결과의 충족도 | 46 |
+| 수 | 34 | 정산의 충족도, 폐점의 손익 | 34, 32 → 34 |
+| 머리 | 28 | 화면 머리 줄, 주 버튼, 받은 돈, 상태 글자, 엉킴 경고 | 28, 30 → 28, 26 → 28 |
+| 강조 | 24 | 간격, 장부의 주요 줄 | 24, 22 → 24 |
+| 본문 | 20 | 사연 대사, 목록, 보통 버튼 | 20, 19 → 20 |
+| 보조 | 18 | 조건, HUD의 라벨, 작은 버튼 | 18, 17 → 18 |
+| 설명 | 16 | 힌트, 살 것의 설명, 안내 | 16, 15 → 16 |
+| 깨알 | 14 | 도움말 띠, 각주 | 14, 13 → 14 |
+
+- 견본의 화면은 지금 게임의 크기 그대로 그렸다. 단계 밖의 크기(13·15·17·19·22·26·30·32)를 단계로 옮기는 것은 4단계의 일이다.
+- 가장 작은 글자는 14다. 줄 높이는 글자 크기의 1.5배가 기준이다.
+
+### 대비 (견본의 `contrast`. 고른 안 "나")
+
+| 무엇 | 문턱 | 잰 값 |
+|---|---|---|
+| 24 미만의 글자와 바탕 | 4.5 | 본문 9.73 · 흐린 글자 5.04 · 붉은 글자 5.34 · 버튼 9.73 · 올린 버튼 7.20 · 누른 버튼 5.1(칠을 `#A8895E` 4.17에서 `#B8996C`로 고쳤다) |
+| 못 누르는 버튼의 글자 | 3.0까지 받는다 | 3.73 · 값이 걸린 버튼 3.59 |
+| 24 이상의 글자(주 버튼의 붉은 글자) | 3.0 | 5.34 |
+| 게이지의 찬 곳과 빈 곳 | 3.0 | 자세 칸 상대 4.85 · 나 4.40 · 충족도 4.40 (024 견본의 황토 칸은 1.6이었다) |
+| 패널이 바깥 바탕에서 갈린다(칠이나 테두리 가운데 하나) | 3.0 | 짙은 무대 위: 칠 9.16 · 밝은 벽 위: 테두리 9.73 |
+| 카운터 띠 위의 글자(`#E9D8B4` 대 `#7A5232`) | 4.5 | 4.85 |
+
+### 선 굵기
+
+| 선 | 정한 값 | 잰 값(화면 화소) |
+|---|---|---|
+| 인물의 바깥 선(파츠 단위 5.2) | 멀리 2.9 · 교전 4.4 · 밀착 5.7(셈) | 멀리 3 · 교전 4 · 밀착 6 |
+| UI: 패널의 바깥 테두리 | 3 | 3 |
+| UI: 버튼의 테두리 | 2.5 | 꽉 찬 화소 2 + 반 화소 |
+| UI: 게이지의 테두리 · 장식선과 줄선 | 1.5 · 1 | 견본의 값 |
+
+- 규칙: **UI의 어떤 선도 교전의 인물 바깥 선보다 굵지 않다.** 화면에서 가장 굵은 선은 늘 인물의 것이다(패널 3 < 교전의 인물 4).
+
+### 여백과 버튼
+
+| 무엇 | 기준 |
+|---|---|
+| 화면 가장자리의 여백 | 카운터·정산·폐점 32, 결투 HUD 10 이상 |
+| 패널 안의 여백 | 좌우 22, 위아래 16 |
+| 버튼의 최소 크기 | 160×42, 글자는 16 이상 |
+| 버튼의 높이 | 주 버튼 76, 보통 56, 작은 것 42~46 |
+| 버튼 안 글자의 좌우 여백 | 각 16 이상. 나눔스퀘어라운드 ExtraBold로 버튼 열(카운터 넷, 정산 둘, 폐점 둘, 처음 화면 둘)의 글이 모두 들어간다(가장 빠듯한 것: "값을 올려 부른다" 124 / 210) |
+| 버튼 사이 | 12 이상 |
+
+### 그림의 원본 해상도 (결정 228)
+
+화면 화소 ÷ 원본 화소 = (파츠 단위 ÷ 원본 화소) × 파츠 배율 × 간격의 배율 × 창의 배율. 1보다 크면 그림이 늘어난다.
+
+- **기준: 1920×1080 창(창의 배율 1.5)의 밀착(×1.1)에서 1 이하.** 상대의 파츠는 목~골반이 원본 330화소 이상이어야 한다(2560×1440까지는 440).
+- 지금 파츠 시트(`basis/bartolo-parts.png`, 목~골반 337화소): 몸통·다리·칼 0.65(1280) · 0.98(1920) · 1.31(2560), 머리 0.60 · 0.90 · 1.20, 팔 0.51 · 0.76 · 1.01. **1920의 기준에 겨우 걸친다.**
+- 무대(1536 폭): 1280에서 0.83, 1920에서 1.25. **1920에서는 늘어난다.** 안뜰·광장(0.84배로 맞춤)은 1.26.
+- 의뢰인(1024×1536을 300×450에): 0.29(1280) · 0.44(1920). 넉넉하다.
+- 견본에서 본 늘어난 윤곽: 밀착의 바깥 선이 1배 4화소 · 1.5배 7화소 · 2배 9화소이고 가장자리의 번짐은 셋 모두 1화소였다(브라우저가 매끄럽게 늘린 결과다).
+
+## 4단계로 넘기는 것
+
+- 글꼴 파일을 `assets/`에 넣기와 서브셋(Reserved Font Name의 이름 바꾸기, 라이선스 글 싣기). 송명의 글자 수(2,350).
+- Godot에서의 글자 모습: 상태 글자의 상자와 줄 높이, 가장 작은 글자, 테두리의 꼴.
+- 단계 밖의 글자 크기 옮기기(위 표의 "지금 크기 → 단계").
+- 파츠 시트와 무대의 해상도(더 크게 그리거나 나눠 그린다), 멀리에서 줄일 때의 밉맵.
+- HUD의 자리: 견본은 024 견본의 자리를 따랐다. 024는 방심 막대를 시간 패널 안(x 906~1116, y 35~59)에 그렸고 코드의 자리는 화면 (850, 36) 150×22다. 위 가운데 패널(334~946)이 왼쪽·오른쪽 패널과 6·46화소 겹친다. 충족도 라벨이 찬 막대 위에 놓이면 읽기 어렵다.
+- 밀착에서 모자가 가운데의 엉킴 경고 글자와 겹쳐 보인다(지금 게임에도 있는 일이다. BACKLOG 020-1).
+- 그린 질감(양피지, 장식 테두리)을 쓸지: 지금은 견본의 필터로 흉내 낸 종이 결뿐이다. 사용자가 바라면 4단계에서 만들 길과 장 수를 정한다.
+
+# 5부. 자세와 모션 (계획 026)
+
+값은 견본(`samples/026-pose-motion.html`)의 SVG에서 세운 것이다. Godot의 `Node2D` 회전도 시계 방향이 +라 방향은 같지만, 4단계에서 게임 화면으로 다시 본다. 팔의 방법은 사용자가 골랐다(결정 220): **어깨 회전을 기본**으로 하고(팔 한 덩이를 어깨에서 돌린다. 팔꿈치는 나누지 않는다), **큰 동작만 팔 그림을 따로** 그린다. 승인 A의 답(2026-11-22): 포즈 "맞다", 곡선 "나 · 멈칫(hold)", 따로 그릴 팔 "큰 베기의 예비 동작, 찌르기의 타격"(결정 240).
+
+## 포즈의 꼴
+
+포즈 하나는 아래 열의 값 한 줄이다(결정 233).
+
+| 열 | 뜻 |
+|---|---|
+| `arm_deg` | 팔 각(도). 어깨 (−65, −180)를 축으로 돈다. 0은 곧게 아래, +는 화면에서 시계 방향(칼 팔이 보는 쪽 왼쪽인 상대에서 + 는 바깥·위, − 는 몸 앞) |
+| `sword_deg` | 칼 각(도, **화면 기준**). 0은 칼날이 위, 90은 오른쪽. 칼은 Arm > Hand의 자식이라 지역 각 = `sword_deg − arm_deg − lean_deg` |
+| `head_deg` | 머리 각(도) |
+| `lean_deg` | 몸 기울기(도). 골반에서 Torso를 돌린다. 절댓값 6 이하(G1) |
+| `shoulder_dx`, `shoulder_dy` | 어깨 자리 옮김(파츠 단위). 각 25 이하 |
+| `arm_art` | 팔 그림. `Arm`(024의 팔·주먹·칼 파츠) 또는 따로 그린 것(`armUp`, `armThrust`) |
+
+- 국면: 공격마다 `tell_start`(예비 동작 시작) · `hold`(멈칫의 끝) · `strike`(타격) · `recover_end`(회수의 끝), 상대마다 `idle` · `stagger` · `complacent`. 피하기는 고개만(−20.1°, 0.3초), 받아넘김·밀어붙임은 글자만(포즈 없음).
+- 만드는 규칙: 출발 값은 지금 게임의 손이 가는 방향(`atan2(−(손x − 어깨x), 손y − 어깨y)`). `hold` = `tell_start`에서 팔을 타격의 반대쪽으로 8° 더, `recover_end` = `strike`에서 **팔만** 0° 쪽으로 10°. 공격마다 실루엣의 집안을 하나씩 준다: 찌르기 **가로 선**, 왼쪽 베기 **바깥 위의 사선**, 오른쪽 베기 **몸 앞의 사선**, 큰 베기 **가장 큰 세로**.
+- 무너짐과 회수 끝은 넷(팔 ≥ 15°, 칼 ≥ 30°, 어깨 ≥ 15, 고개 ≥ 10°) 가운데 둘 이상에서 다르다. 잰 값: 찌르기 3 · 왼쪽 베기 3 · 오른쪽 베기 4 · 큰 베기 2.
+- 거울 규칙(제안): 칼 팔이 오른쪽인 상대는 x와 각의 부호를 뒤집는다.
+
+## 포즈의 표 (고른 값. 견본의 `pose-table`)
+
+| 공격 · 국면 | arm_deg | sword_deg | lean_deg | arm_art | 출발 값에서 고친 까닭 |
+|---|---|---|---|---|---|
+| 찌르기 · tell_start / hold | 85 / 93 | 95 | 0 | Arm | 출발 값 −61.7·180(팔이 몸 앞에서 칼을 아래로). 가로 선이 되게 팔을 바깥 어깨 높이로, 칼을 가슴 앞에 눕힌다 |
+| 찌르기 · strike / recover_end | −30 / −20 | 180 | 0 | armThrust | 출발 −21.5. 앞으로 뻗은 팔 그림을 가운데 쪽으로 돌린다 |
+| 왼쪽 베기 · tell_start / hold | 110 / 118 | −75 | 0 | Arm | 출발 67.6·−50. 바깥 위의 사선, 큰 베기와 갈리게 덜 든다 |
+| 왼쪽 베기 · strike / recover_end | 20.8 / 10.8 | −120 | 0 | Arm | 출발 그대로 |
+| 오른쪽 베기 · tell_start / hold | −88 / −96 | 45 | 0 | Arm | 출발 −80.8·50. 1회 −100은 멈칫(−108)의 주먹이 턱을 가려(R2 0.19) 시안의 범위(−100~−130) 밖으로 내렸다 |
+| 오른쪽 베기 · strike / recover_end | −51.9 / −41.9 | 120 | 0 | Arm | 출발 그대로 |
+| 큰 베기 · tell_start / hold | 152 / 160 | (−45) | −4 | armUp | 출발 −124.7·0은 팔이 얼굴 앞을 지나 R2 0.45. 머리 옆으로 곧게 들고 몸을 조금 젖힌다. 칼이 팔 그림에 들어 있어 `sword_deg`는 쓰이지 않고 화면의 칼은 팔과 한 줄(약 −28°/−20°) |
+| 큰 베기 · strike / recover_end | −21.5 / −11.5 | 180 | 0 | Arm | 출발 그대로 |
+| 대기 `idle` | 23 | −21 | 0 | Arm | 결정 220의 "다" |
+| 무너짐 `stagger` | 0(어깨 dy 25) | 165 | 0 | Arm | 고개 22.9 |
+| 방심 `complacent` | 23 | −140 | 0 | Arm | — |
+
+지금 게임의 값(견본의 `game-table`, 팔은 자리만 옮긴다): 찌르기 예비 동작 30% 팔 (0, −211)·칼 180 · 큰 베기 25% (0, −277.5)·45 · 왼쪽 베기 회수 (−120, −140)·−120 · 무너짐 (−65, −130)·165·고개 22.9.
+
+## 움직임
+
+- 시간은 상대 데이터의 값만 쓴다: 대기 0.9 → 예비 동작(`tell_time`, 밀착 × 0.8) → 타격(빨강 0.1초) → 회수(막힘 `recovery_time`, 패리당함 +0.85, 헛침 × 0.55, 0이면 없다) → 대기. 손 계산과 견본의 `timeline`이 같다(찌르기·막힘 0.90/1.55/1.55, 큰 베기·막힘 0.90/2.00/3.60, 큰 베기·패리 4.45, 밀착 큰 베기 1.78/3.38 등).
+- **고른 곡선 `hold`**(승인 A2 "나"): 예비 동작의 진행 0~0.2는 대기 → `tell_start`(끝이 느려진다), 0.2~`hold_end`는 `tell_start` → `hold`(멈칫), 마지막 `swing`초는 `hold` → `strike`(끝이 빨라진다). `swing = min(0.2 × 예비 동작, 패리 창 − 0.03)` = 찌르기 0.13 · 베기 0.15 · 큰 베기 0.15 · 밀착 찌르기 0.104초. 회수는 `strike` → `recover_end`(내내 느리게), 대기로 돌아감 0.2초.
+- 두 규칙: **타격 순간은 바뀌지 않는다**(어느 곡선이든 고리가 0이 될 때 `strike`). **돌아감은 빠르게**(회수가 끝나면 더는 빈틈이 아니다).
+- 팔 그림은 **국면의 경계에서만** 바꾼다: 예비 동작 내내 `tell_start`의 그림, 타격부터 회수 끝까지 `strike`의 그림.
+
+## 원칙 4의 확인 (결정 235. 문턱은 임시)
+
+한 색 실루엣(칼 팔 파랑, 머리 빨강, 몸 회색. 필터는 파츠의 그림마다)을 굽고 로컬 도구 `sil026.ps1`로 셌다. 도구는 알려진 도형으로 맞췄다(겹침 0.333, 가림 0.300, 두 번 같음).
+
+| # | 무엇 | 문턱 | 지금 게임 | 어깨 회전 · `hold`(고른 것, 팔 그림 끼움) | 어깨 회전 · `game` 곡선(견줌) |
+|---|---|---|---|---|---|
+| R1 | 공격끼리·공격 대 대기의 칼 팔 겹침(교전·멀리, 진행 25%·60%) | ≤ 0.30 | 최대 0.305(찌르기 대 큰 베기) | **최대 0.160** | 최대 0.380(60%에서 타격 쪽으로 모인다) |
+| R2 | 머리의 가림(교전) | ≤ 0.10 | 큰 베기 25% 0.317, 찌르기 25% 0.134 | **최대 0.057**(오른쪽 베기 60%) | 최대 0.003 |
+| R4 | 상태 글자 상자(x 497~783 · y 62~142)의 칼(교전·밀착, 25%) | 적기만 | 0 | **0** | 큰 베기 교전 781 |
+
+- 출발 값의 어깨 회전은 R2가 큰 베기 0.45였다(팔이 얼굴 앞). 고친 값으로 0.002.
+- 멀리(×0.55)에서 읽히는지는 견본 `far-read`를 눈으로 보았다(값은 교전과 같은 꼴).
+
+## 따로 그린 팔 (결정 237·241)
+
+- 정한 법: 어깨 회전으로 먼저 세워 보고, 사용자가 A3에서 고른 것만 그린다. 고른 것: **큰 베기의 예비 동작(든 팔)**, **찌르기의 타격(나를 향해 뻗은 팔)**.
+- 기준 그림: `basis/bartolo-arms.png`(손질 값은 `basis/README.md`). 파츠는 시트 위에 **세로로** 서 있고 기울기는 견본이 `arm_deg`로 준다. 두 파츠 모두 주먹과 칼이 그림에 들어 있다. 칼은 상태 색을 받지 않게 따로 자른다.
+- 사용자가 고친 것(승인 B, 다섯 장): 주먹을 024의 주먹처럼, 든 팔은 칼을 쥐고 칼이 **팔과 한 줄**(자루에서 꺾이면 부자연스럽다), 앞으로 뻗은 팔은 넓은 타원 날밑과 나를 향해 **아래로 가늘어지는 칼날**, **아래를 향한 주먹은 손가락 마디가 왼쪽**(비교 그림에서 "나"). 그림 도구가 마지막 것을 두 번 못 해 화소로 뒤집었다.
+- 판정(A1e, 손질본 A1f): 바탕 `#D5D5D4`·`borderSpreadR` 2·덩이 2, K1 77,46,23 PASS, K2 4.2단위·K2′ PASS, K3′ PASS, 칠 Y 0.52·그림자 0.41, 소매 폭 024의 0.91배.
+- 넣는 그림: 처음은 우리 파츠 시트 + 견본 `arm-guide`에서 1536×1024로 구운 자세 안내도(파츠 `#9A9A9A`, 칼 `#6E6E6E`, 바탕 `#D8D8D8`), 고칠 때는 직전 시트 하나(P-KEEP-SHEET).
+- 블록: 아래 "계획 026의 블록". 차례는 024의 P1과 같다(지시 → Image·Subject → Pose and layout → Style → Colors → Background).
+
+## 4단계로 넘기는 것 (제안. 이 계획은 코드와 데이터를 고치지 않았다)
+
+- `AttackData`의 포즈 필드: `pose_arm_offset`·`pose_sword_rotation`을 국면마다의 값으로. 이름 보기(ASCII): `tell_arm_deg`, `tell_sword_deg`, `hold_arm_deg`, `strike_arm_deg`, `strike_sword_deg`, `recover_arm_deg`, `tell_lean_deg`, `tell_shoulder`, `tell_arm_art`, `strike_arm_art`. 지금 코드의 `STRIKE_OFFSET`·`STRIKE_ROTATION`은 공격의 데이터로 옮긴다.
+- `OpponentData`: `idle_arm_deg`, `idle_sword_deg`, `stagger_*`, `complacent_sword_deg`, 곡선의 값(`tell_in`, `swing`의 비율과 여유, `creep_deg`, 돌아감 시간). 지금의 상수(`REST_SWORD_ROTATION`, `STAGGER_*`, `COMPLACENT_SWORD_ROTATION`, `DODGE_*`)를 옮긴다.
+- `opponent_view.gd`: `_arm.rotation`을 쓰고 예비 동작의 진행에 곡선을 건다. 따로 그린 팔은 Arm 아래에 그림을 두고 국면의 경계에서 보이기를 바꾼다(노드 이름과 관절은 결정 12 그대로). 칼이 든 팔 그림에서는 Hand와 Sword를 감춘다.
+- **`hold` 곡선의 휘두름과 패리 창의 겹침을 플레이로 확인한다**: 휘두름(0.10~0.15초)은 패리 창(0.18초) 안에서 시작한다. 플레이(사용자 또는 playtester)로 볼 것은 둘이다. 하나는 플레이어가 고리가 아니라 휘두름을 보고 누르는지, 다른 하나는 큰 베기의 패리 성공률이 `game` 곡선보다 떨어지는지다. 그러면 `game` 곡선으로 돌리거나 `MOTION`의 값(`swing`, `tell_in`)을 바꾼다. 곡선은 데이터의 값이라 코드 없이 되돌린다.
+- 지금 게임의 두 문제가 고른 포즈에서 준 정도: 큰 베기의 얼굴 가림 0.317 → 0.002, 상태 글자 상자의 칼은 둘 다 0(예비 동작 25%).
+- 남은 것: 칼 팔이 오른쪽인 상대의 거울, 밀착의 포즈(지금은 크기만), 내 손과 칼의 움직임, 따로 그린 팔에서 대기로 돌아갈 때(0.2초) 그림이 국면 끝에서 바뀌는 것, 든 팔(1번)의 주먹 그림자가 왼쪽인 것(명세는 오른쪽. 손가락 방향을 뒤집으며 따라 옮겨졌다).
 
 # 프롬프트 블록
 
@@ -351,6 +593,167 @@ S-FIG2의 셋째 항목 자리:
 ```
 
 표정 문장·다섯째 항목·색은 "사람마다 바꾸는 줄"의 클라라 그대로다.
+
+# 계획 024의 블록 (파츠 시트, 무대 둘, 비토리오. 결정 212·215)
+
+
+영어, ASCII만, 큰따옴표 없이(결정 187). 있는 블록(S-FIG2, C-FIG2, S-ST3, C-ST2, P-KEEP·S-KEEP, 클라라의 줄)은 고치지 않고 아래만 더한다.
+
+## 지시 블록 (두 장)
+
+```
+Task: call your image generation tool exactly once to create exactly one image. You may use the code tool only to make that one call. Pass both attached images to the image generation tool as referenced images by their paths: {WORKDIR}\in-1.png and {WORKDIR}\in-2.png. Give the image generation tool the text from the line that starts with Image: to the end of this message, word for word, as its prompt. Do not run shell commands. Do not read, create, change or delete any file. Do not use a browser, web search, computer use, apps or any other tool. Do not retry. When the image is done, reply with one line: done.
+```
+
+- 한 장을 넣는 그림(S1·S2·V1과 고치기)은 `023-R1i-bartolo-front.txt`의 지시 블록 그대로다.
+
+## P1의 `Image:`·`Subject:`·`Background:`
+
+```
+Image: Landscape, 1536x1024 pixels. One sheet of separate body parts of one character for cutout animation in a 2D duel game.
+
+Subject: Bartolo, a vain and quarrelsome gentleman duelist from a Renaissance-era Italian town, the same character as in the first referenced image. Doublet with buttons and a small plain collar, breeches, stockings, simple shoes, a small low-crowned hat with one long feather. A rapier.
+```
+
+```
+Background: one plain flat light grey color, about #D8D8D8, everywhere around the parts. No floor, no cast shadow, no scenery, no frame, no text, no letters, no signature, no watermark.
+```
+
+## P-PARTS (파츠 시트의 구도)
+
+```
+Pose and layout:
+- The first referenced image is our own drawing of this character and it is the character reference: draw exactly the same man, with the same drawing style, the same shapes, the same face, the same clothes, the same colors and the same line weight.
+- The second referenced image is our own layout sketch. Use it only to see which parts there are and where each part goes on the sheet. Do not copy its shapes or its faces: every part looks like the first image.
+- Ten separate parts, all seen strictly from the front and upright:
+  1. the head three times, without the hat, each with a short neck stub and with the top of the head and the hair drawn complete. The three heads are the same size;
+  2. the hat alone, without the feather;
+  3. the feather alone, lying sideways;
+  4. the torso alone, without arms, legs or head: the doublet with its buttons, belt and collar, with the shoulders and the base of the neck drawn complete. No arm is attached on either side;
+  5. the sword arm alone, from the shoulder to the wrist, as one straight sleeve with a rounded top and the cuff at the lower end. It hangs straight down and it is short, as in the layout sketch;
+  6. the sword hand alone, a closed fist as if gripping;
+  7. the rapier alone: blade, guard and grip, pointing straight up;
+  8. the legs alone, from the waist down: breeches, stockings and shoes, both legs straight, feet a little apart.
+- Each part is drawn complete, including the areas that would be hidden behind other parts.
+- Clear empty space between all parts. No part touches or overlaps another. No labels, no numbers, no guide lines, no dots. Nothing is cropped.
+```
+
+## S-PARTS (S-FIG2에서 바꾸는 세 줄)
+
+머리 줄(`Style (...)`)과 첫째 항목:
+
+```
+Style (draw a new, original illustration in the style of the first referenced image, as described here):
+- A finished cartoon parts sheet for a game, drawn with care, in the drawing style of the first referenced image: soft, simple, rounded-geometric shapes with straight sides and rounded corners. Simple and flat: a clean cartoon, not realistic and not painterly.
+```
+
+둘째 항목은 S-FIG2 그대로 두고 끝에 붙인다:
+
+```
+The first head is at ease and confident, exactly the face of the first referenced image: open eyes drawn as small solid dark dots under calm, level eyebrows, one eyebrow slightly raised, and a small confident smirk. The second head is flustered and caught off guard: eyebrows raised high, eyes drawn as small dark dots inside plain light parchment colored circles, and a small oval mouth. The third head is dizzy and dazed: crooked eyebrows, eyes drawn as two small X marks, and a wavy line for a mouth. The three heads are clearly the same man.
+```
+
+셋째 항목:
+
+```
+- Keep exactly the amount of detail of the first referenced image: the same belt buckle, shoe buckles and low heels, cuff line, softly scalloped collar edge, short fold lines on the breeches, seam lines on the doublet, fingers on the fist and band on the hat. Nothing else is added. No puffy sleeves, no ballooning breeches, no curls, no extra wrinkles.
+```
+
+- 넷째~일곱째 항목(선, 칠, 그림자, Do not add)과 C-FIG2는 그대로다. F11의 세 구절은 `new, original illustration` · `line weight` · `Do not add`다.
+
+## P-KEEP-SHEET (파츠 시트를 고칠 때. 넣는 그림은 직전 시트 하나)
+
+```
+Pose and layout:
+- The attached image is our own parts sheet and it is the base. Keep it: the same parts in the same places, the same outer silhouettes, the same shapes, the same faces, the same colors and the same line weight. Redraw it the same.
+- Change only one thing, as written in the line that starts with Change. Everything else stays exactly as it is.
+- Clear empty space between all parts. No part touches or overlaps another. No labels, no numbers. Nothing is cropped.
+Change: <one line>
+```
+
+- `<one line>`은 자리 표시다(v3, T2). 고칠 때 사용자가 짚은 한 가지를 영어 한 줄로 바꿔 넣는다.
+
+- 화풍 블록은 S-FIG2의 머리 줄을 "in the style of the attached image"로 두고 첫째 항목은 S-KEEP의 첫째 줄, 셋째 항목은 `- Nothing is added except what the Change line says.`로 쓴다. 인물 한 사람(V1)을 고칠 때는 P-KEEP 그대로에 `Change:` 줄을 같은 꼴로 붙인다.
+- 무대를 고칠 때: `Composition:`의 첫 항목을 `- The attached image is our own drawing and it is the base. Keep it: the same composition, the same shapes, the same colors and the same calm dark middle. Change only one thing, as written in the line that starts with Change.`로 바꾸고 `Change:` 줄을 붙인다.
+
+## S-ST3에서 곳마다 바꾸는 구절 (S1·S2)
+
+S-ST3 첫째 항목의 `Add only a little detail on the houses and objects near the left and right edges, such as window frames, shutter boards, the shop sign, a row of roof tiles and barrel hoops.`를 아래로 바꾼다. 나머지는 그대로다.
+
+- 안뜰: `Add only a little detail on the things near the left and right edges, such as the stones and the wooden frame of the well, the bucket and its rope, the planks, iron bands and studs of the gate and a few simple leaf shapes on the tree.`
+- 광장: `Add only a little detail on the things near the left and right edges, such as the rim and the column of the fountain, the rolled awning and the posts of the stall and the boards of the crates. The distant rooftops and the bell tower stay plain flat dark shapes.`
+
+C-ST2의 `Edge walls parchment E9D8B4, beams wood brown 7A5232, shutters and barrels dark wood 4A3A2C.` 자리:
+
+- 안뜰: `Light walls near the edges parchment E9D8B4, the gate and the well frame dark wood 4A3A2C, iron bands 2E2620, tree leaves muted dark green 46503A.`
+- 광장: `Light stone near the edges parchment E9D8B4, the stall and the crates dark wood 4A3A2C, the distant rooftops and the bell tower very dark warm grey 2E2A28.`
+
+`Composition:`의 첫 항목은 R2와 같이 `- Follow the attached layout sketch for the composition only.`다.
+
+## 비토리오의 줄 (V1. 클라라의 줄을 옮겼다)
+
+- 구도의 첫 항목: 클라라의 것에서 대명사 없이 그대로 쓴다(`The attached image is our own earlier drawing of this same character. …`). 둘째 항목은 `021-G4`의 `Front view or a slight three-quarter view, head straight, both hands visible at waist level (he stands behind a shop counter that is not drawn).`, 셋째는 클라라와 같다.
+- S-FIG2 둘째 항목: `Big head, as big as in the reference image.`로 시작하고(클라라와 같다) 끝에 붙인다: `His eyes are half closed, drawn as short curved lines. A thin, pleased smile. His character shows in the expression: smug and self-satisfied.`
+- 셋째 항목:
+
+```
+- Keep it nearly as simple as the reference image: the same small number of shapes. Improve the craft: clean construction, good proportions, parts that join properly and a hand with fingers that really holds the coin purse. Add only a little detail inside the shapes: the links of the gold chain and a round medallion, two rings, the drawstring of the purse, a softly shaped edge on the fur collar, two or three short fold lines on the robe. Nothing else is added. No fur texture, no curls, no extra wrinkles.
+```
+
+- 다섯째 항목: `- Fills: flat solid colors, muted and faded. His cap is filled with the same very dark brown as the outlines.`
+- 색:
+
+```
+Colors:
+- Main fills and their shadow tones: dusty dark red-brown 7E4A4A with shadow 663B3B for the robe, ochre brown A8895E with shadow 8C7050 for the fur collar, very dark brown 3B2A1E for the cap, ochre C08A3E for the gold chain and the rings, wood brown 7A5232 for the purse, skin EBC49F.
+- Avoid bright saturated yellow, orange, red, blue, purple or green, and pure white. Large areas are greyish and low in saturation.
+```
+
+- 비토리오의 표정은 "거만하지 않게"를 옮기지 않는다: 사용자의 그 답은 바르톨로의 것이고, 비토리오는 의뢰 사연에서 제 잘못을 아는 능글맞은 대금업자다(결정 191). B에서 그림을 보고 고칠 수 있다.
+
+# 계획 026의 블록 (따로 그린 팔. 결정 237·241)
+
+영어, ASCII만, 큰따옴표 없이. 있는 블록은 고치지 않고 아래만 더한다. 처음 그릴 때의 차례: 지시 블록(두 장) → 아래 `Image:`·`Subject:` → P-ARMS → S-PARTS의 머리 줄과 첫째 항목 → S-ARMS → S-FIG2의 넷째~일곱째 항목 → C-FIG2 → P1의 `Background:`. 넣는 그림은 우리 파츠 시트(`basis/bartolo-parts.png`)와 견본 `arm-guide`에서 1536×1024로 구운 자세 안내도다.
+
+## `Image:`·`Subject:` (팔 시트)
+
+```
+Image: Landscape, 1536x1024 pixels. One sheet of separate sword arm parts of one character for cutout animation in a 2D duel game.
+
+Subject: Bartolo, the same character as in the first referenced image. Only his sword arm, his sword hand and his rapier, in a few different poses.
+```
+
+## P-ARMS (팔 시트의 구도. A1c의 것. 파츠 줄은 `- Part N:`으로 고른 동작마다 쓴다)
+
+```
+Pose and layout:
+- The first referenced image is our own parts sheet of this character and it is the character reference: draw exactly the same sleeve, the same fist and the same rapier, with the same drawing style, the same shapes, the same colors and the same line weight.
+- The second referenced image is our own pose sketch. It shows how many parts there are, where each part goes on the sheet and the pose of each part. Follow its poses and its places. Do not copy its flat grey shapes: every part looks like the first image.
+- Each arm is one straight shape from the shoulder to the wrist, with no bend at the elbow, as in the first image. Every part stands straight up and down on the sheet, not tilted, exactly as in the second image.
+- Part 1: the sword arm raised straight up and holding the rapier overhead: the shoulder end at the bottom, the cuff and the fist at the top. The fist wraps around the rapier grip: the grip passes through the fist, the guard sits just above the fist and the small round pommel shows just below the fist. The knuckles face the viewer and the short finger lines run across the grip. The blade goes up out of the guard and leans back over the shoulder, as in the second image. The rapier is part of this part.
+- Part 2: the sword arm thrusting the rapier toward the viewer and slightly down, strongly foreshortened: a short upright sleeve with the shoulder end at the top, the cuff, then a large fist close to the viewer, seen from the knuckle side and gripping the rapier grip. In front of the fist the guard is a wide oval cup, and the blade comes out of the guard toward the viewer and down, drawn short and tapering, with the point at the bottom, as in the second image.
+- Every fist is the same closed fist as in the first image: one rounded block with a few short finger lines on it, not a stack of separate long fingers.
+- Each part is drawn complete. Clear empty space between all parts. No part touches or overlaps another. No body, no head, no labels, no numbers, no guide lines, no dots. Nothing is cropped.
+```
+
+- 처음(A1a)의 파츠 줄은 짧았다(`the fist seen from the front as if gripping a sword held overhead` 등). 사용자가 고친 것을 따라 A1b에서 주먹 줄(`Every fist is ...`)과 칼을 쥔 든 팔, A1c에서 폼멜·타원 날밑·가늘어지는 칼날을 더했다. 든 팔의 칼이 기우는 구절(`leans back over the shoulder`)은 A1d에서 "팔과 한 줄"로 고쳤다(아래 고치기).
+
+## S-ARMS (S-FIG2의 셋째 항목 자리. 둘째 항목은 두지 않는다)
+
+```
+- Keep exactly the amount of detail of the first referenced image: the same cuff line, the same fingers on the fist and the same guard and grip on the rapier. Nothing else is added. No puffy sleeves, no extra wrinkles.
+```
+
+## 팔 시트를 고칠 때 (A1d·A1e. 넣는 그림은 직전 시트 하나)
+
+- P-KEEP-SHEET 그대로, 지시 블록은 한 장의 것, `Subject:`의 `first referenced image`를 `attached image`로, 화풍은 P-KEEP-SHEET 아래의 규칙대로 쓴다. 쓴 `Change:` 줄 둘(사용자가 짚은 것을 한 줄에 둘씩 넣었다. "한 가지"보다 많다):
+
+```
+Change: in part 1 on the left, the rapier is held straight in line with the raised arm, so the grip, the guard and the blade form one straight line that goes straight up out of the fist with no bend or angle at the grip; in part 2 on the right, only the fist is turned the other way, so the fingers start at the right side of the fist and the finger lines run toward the left, while the shadow of the fist stays on its right side.
+Change: in both parts, turn only the fist the other way, as if mirrored from left to right, so the finger lines on each fist point the opposite way from now; the rapier, the sleeves, the cuffs and everything else stay exactly as they are, and the shadow of each fist stays on its right side.
+```
+
+- A1e의 줄은 1번 주먹만 뒤집고 2번은 그대로 두었다. 좌우를 뒤집는 고치기는 그림 도구가 잘 따르지 않는다: 주먹 하나를 뒤집을 일이면 화소로 뒤집는다(결정 241).
 
 # 022의 블록 (쓰지 않는다)
 

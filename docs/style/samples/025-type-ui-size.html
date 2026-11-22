@@ -1,0 +1,817 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>글꼴·UI·크기 기준 견본</title>
+<style>
+/* 색은 모두 여기에 둔다(계획 021 작업 3). 다리 B와 짙은 무대만 남겼다(020의 답). */
+:root {
+  --ink: #3B2A1E; --ink-soft: #6B5440;
+  --parch-1: #E9D8B4; --parch-2: #D2B98C; --parch-3: #A8895E;
+  --stage-dark: #5E4C39; --stage-dark-2: #7A6449;
+  --red: #A5533F; --green: #6F7F4F; --blue: #5C6F7E; --ochre: #C08A3E; --wood: #7A5232;
+  --skin-1: #EBC49F; --skin-2: #C98E66; --skin-3: #8E5E40;
+  /* 야외 무대의 짙은 톤. x 290~990에 쓰는 색은 모두 L ≤ 0.20(결정 182·190) */
+  --st-shade: #3A3027; --st-sky: #3E4A55; --st-ground: #4E4336; --st-wall: #5E4C39;
+  --st-wall-2: #54473A; --st-wall-3: #4A3F34; --st-timber: #5A4632; --st-wood: #4A3A2C;
+  --st-iron: #2E2620; --st-leaf: #46503A; --st-sil: #2E2A28; --st-emblem: #7A6449;
+  /* 신호색: 지금 코드의 값 그대로(결정 181) */
+  --sig-thrust: #FFE640; --sig-cut: #FFBF33; --sig-big: #FF801A; --sig-strike: #F23333;
+  --sig-recovery: #4D80F2; --sig-stagger: #A659D9; --sig-touched: #FFFFFF;
+  --sig-aim: #FFFF66; --sig-band: #4DFF80;
+  --sw-ready: #D9D9E6; --sw-guard: #4DD973; --sw-fresh: #66F2FF; --sw-parry: #FFD933;
+  --sw-grazed: #F24040; --sw-windup: #FFE64D; --sw-bind: #FF7333;
+  /* 다리 B: 굵기가 변하는 고동색 잉크 선, 배경과 같은 바랜 칠, 평평한 그림자 한 단계 */
+  --line: #3B2A1E; --lw: 5.2;
+  --c-doublet: #5C6F7E; --c-doublet-sh: #4A5A67;
+  --c-legs: #6B5440; --c-legs-sh: #57442F;
+  --c-skin: #EBC49F; --c-skin-sh: #C98E66;
+  --c-hat: #A5533F; --c-hat-sh: #84422F;
+  --c-feather: #E9D8B4; --c-steel: #CFC8BA; --c-hair: #3B2A1E;
+  --c-collar: #E9D8B4; --c-boot: #3B2A1E;
+  --c-glove: #7A5232; --c-glove-sh: #634228; --c-psleeve: #5E6648;
+  /* 의뢰인 둘 */
+  --cl-dress: #6F7F4F; --cl-dress-sh: #59663F; --cl-apron: #E9D8B4; --cl-apron-sh: #D2B98C; --cl-hair: #7A5232; --cl-hat: #A5533F; --cl-ribbon: #E2D3B4;
+  --vi-robe: #7E4A4A; --vi-robe-sh: #663B3B; --vi-fur: #A8895E; --vi-fur-sh: #8C7050; --vi-cap: #3B2A1E; --vi-gold: #C08A3E; --vi-purse: #7A5232;
+  --in-bg: #D8D8D8;
+  /* 자세 안내도(결정 205): 몸과 칼 팔만 가른다 */
+  --pose-body: #9A9A9A; --pose-arm: #6E6E6E;
+}
+
+/* 파츠는 칠 층과 선 층 둘이다. 상태 색은 칠 층에만 80% 섞는다(Godot의 base.lerp(tint, 0.8)과 같은 셈) */
+.fill > * { fill: var(--base); stroke: none; }
+.opp.tint-on .tinted > .fill > * { fill: color-mix(in srgb, var(--base) 20%, var(--tint) 80%); }
+.line > * { fill: none; stroke: var(--line); stroke-width: var(--lw); stroke-linejoin: round; stroke-linecap: round; }
+.line > .ink { fill: var(--line); stroke: none; }
+.line > .eye-w { fill: var(--c-collar); }
+.line > .thin { stroke-width: calc(var(--lw) * 0.55); }
+.line > .thick { stroke-width: calc(var(--lw) * 1.35); }
+.lines-b .line { filter: url(#inkline); }
+.sig-blade { fill: var(--sw-state); }
+
+.ui { font-family: "Batang", "BatangChe", "Gungsuh", serif; fill: var(--ink); }
+.state { font: bold 28px "Malgun Gothic", sans-serif; fill: #FFFFFF; stroke: #000000; stroke-width: 8; paint-order: stroke; stroke-linejoin: round; }
+.none-note { font: 22px "Batang", serif; fill: var(--parch-1); }
+
+html, body { margin: 0; background: #2A2018; color: #E9D8B4; font-family: "Batang", serif; }
+header { max-width: 1240px; margin: 0 auto; padding: 20px; line-height: 1.6; }
+header h1 { margin: 0 0 8px; font-size: 26px; }
+header ol li { margin-bottom: 8px; }
+section { max-width: 1280px; margin: 0 auto 40px; }
+section h2 { font-size: 20px; margin: 0 20px 8px; }
+section p.cap { margin: 8px 20px 0; font-size: 15px; line-height: 1.5; }
+svg.scene { width: 100%; height: auto; display: block; background: #D2B98C; }
+.gray svg.scene { filter: grayscale(1); }
+body.solo header, body.solo section, body.solo h2, body.solo p.cap { display: none; }
+body.solo section.solo-target { display: block; margin: 0; max-width: none; }
+body.solo svg.scene { width: 1280px; height: 720px; }
+body.solo svg.scene.sz-portrait { width: 1024px; height: 1536px; }
+body.solo svg.scene.sz-land { width: 1536px; height: 1024px; }
+body.solo { overflow: hidden; }
+</style>
+</head>
+<body>
+<header>
+  <h1>글꼴 · UI · 크기 기준 — 계획 025</h1>
+  <p><b>보는 법</b>: 글꼴 후보와 UI의 꼴 세 안을 지금 게임의 자리와 글 그대로 놓았습니다. 글꼴은 이 컴퓨터의 로컬 파일(<code>docs/style/generated/fonts/</code>)로 읽습니다. 브라우저에 따라 로컬 글꼴을 막을 수 있어(Firefox 등) 판정은 구운 그림으로 합니다. 바탕·맑은 고딕 칸은 견줌용이고 게임에 넣어 배포할 수 없는 글꼴입니다. 주소에 <code>?ui=a|b|c</code>, <code>?hudui=</code>, <code>?body=</code>, <code>?title=</code>, <code>?state=</code>, <code>?hud=serif|sans</code>, <code>?warn=1</code>을 붙여 바꿔 볼 수 있습니다.</p>
+  <ol>
+    <li><b>본문 글꼴</b>: <code>font-body</code>의 세 후보 가운데.</li>
+    <li><b>제목 글꼴</b>: <code>font-title</code>의 세 후보 가운데.</li>
+    <li><b>결투 화면의 글자</b>: <code>font-state</code>의 상태 글자, 그리고 HUD의 글자를 본문 글꼴로 둘지 고딕으로 둘지(<code>ui-duel</code>).</li>
+    <li><b>UI의 꼴</b>: 가(민 양피지) · 나(필사본) · 다(나무와 쇠). 엉킴·방심 막대의 짙은 띠는 세 안 공통이고, 고를 것은 그 둘레의 패널과 버튼의 꼴입니다.</li>
+  </ol>
+</header>
+<main id="main">
+<section id="font-body"><h2>본문 글꼴 — 나눔스퀘어라운드 ExtraBold(고른 것) · 고운바탕 · 나눔명조 · Noto Serif KR</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="font-title"><h2>제목 글꼴 후보 — 송명 · 함렛(굵게) · 본문과 같은 집안의 굵은 것</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="font-state"><h2>결투의 상태 글자 후보 — Noto Sans KR(900) · 검은고딕 · 도현 · (견줌) 맑은 고딕</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="scale"><h2>글자 크기의 아홉 단계</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="ui-kit"><h2>UI의 꼴 세 안 — 패널, 버튼, 게이지, 장부, 선 굵기</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="ui-duel"><h2>결투 화면</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg><p class="cap"><code>?warn=1</code>은 경고가 켜진 모습을 보이려고 만든 조합이다(밀착의 엉킴 경고와 방심 가득이 함께 켜지는 일은 드물다). 밀착에서는 모자가 가운데의 경고 글자와 겹쳐 보인다(지금 게임에도 있는 일이다).</p></section>
+<section id="ui-counter"><h2>카운터</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="ui-settle"><h2>정산</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="ui-closing"><h2>폐점</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="size-lines"><h2>크기 재기 — 인물의 선과 UI의 선</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="size-res"><h2>크기 재기 — 그림의 원본 해상도</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+</main>
+<pre id="font-status" style="display:none"></pre>
+<pre id="type-metrics" style="display:none"></pre>
+<pre id="state-box" style="display:none"></pre>
+<pre id="contrast" style="display:none"></pre>
+<pre id="gauge-states" style="display:none"></pre>
+<pre id="fit" style="display:none"></pre>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <pattern id="hatchBg" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(-35)">
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#6B5440" stroke-width="1.1"/>
+    </pattern>
+    <pattern id="crossBg" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#6B5440" stroke-width="1.1"/>
+      <line x1="0" y1="0" x2="6" y2="0" stroke="#6B5440" stroke-width="0.8"/>
+    </pattern>
+    <!-- 다리 B의 선: 오른쪽 아래가 두꺼워지는 겹침과 거친 가장자리 -->
+    <filter id="inkline" x="-10%" y="-10%" width="120%" height="120%">
+      <feOffset in="SourceGraphic" dx="1.4" dy="1.7" result="o"/>
+      <feMerge result="m"><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge>
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="4" result="n"/>
+      <feDisplacementMap in="m" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <!-- 배경의 양피지 -->
+    <filter id="paper" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.02" numOctaves="3" seed="2" result="big"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="5" result="fine"/>
+      <feColorMatrix in="big" type="matrix" values="0 0 0 0 0.36  0 0 0 0 0.25  0 0 0 0 0.15  0 0 0 0.45 -0.14" result="blot"/>
+      <feColorMatrix in="fine" type="matrix" values="0 0 0 0 0.3  0 0 0 0 0.2  0 0 0 0 0.12  0 0 0 0.3 -0.08" result="grit"/>
+      <feMerge result="all"><feMergeNode in="SourceGraphic"/><feMergeNode in="blot"/><feMergeNode in="grit"/></feMerge>
+      <feComposite in="all" in2="SourceAlpha" operator="in"/>
+    </filter>
+  </defs>
+</svg>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs id="genDefs"></defs></svg>
+
+<script>
+"use strict";
+// 굽기에서 빈 장면이 나올 때 까닭을 --dump-dom으로 읽는다
+window.addEventListener("error", e => document.body.setAttribute("data-error", `${e.message} @${e.lineno}`));
+window.addEventListener("unhandledrejection", e => document.body.setAttribute("data-error", String(e.reason && e.reason.stack || e.reason)));
+
+// ---------------------------------------------------------------- 상대 (결정 12의 이름·계층·관절)
+// 관절 자리는 scenes/duel/opponent_view.tscn과 같다: 목 (0,-200), 모자는 머리 꼭대기, 손목은 어깨 아래 105, 칼자루는 손목 아래 15.
+// 머리 높이 104, 모자 45(020의 답): 교전에서 446 - (200+104+45)*0.85 = 149.4 ≥ 142(두 줄 상태 글자의 아래 끝).
+const TORSO = "M-62,-198 Q-72,-198 -71,-186 L-60,-10 Q-59,0 -48,0 L48,0 Q59,0 60,-10 L71,-186 Q72,-198 62,-198 Z";
+// 겹침 여유(STYLE_BIBLE 5번): 목 밑동은 목 위로 12, 팔 윗끝은 어깨 위로 14
+const OVERLAP = { neck: 12, armHead: 14 };
+const P = {
+  breech: "M-57,0 L57,0 L60,56 Q59,74 36,74 L13,74 Q12,40 0,38 Q-12,40 -13,74 L-36,74 Q-59,74 -60,56 Z",
+  breechSh: "M34,0 L57,0 L60,56 Q59,74 36,74 L28,74 Q32,30 34,0 Z",
+  stockL: "M-45,72 L-19,72 L-21,152 L-43,152 Z", stockR: "M19,72 L45,72 L43,152 L21,152 Z",
+  stockSh: "M36,72 L45,72 L43,152 L36,152 Z M-28,72 L-19,72 L-21,152 L-28,152 Z",
+  shoeL: "M-44,148 L-20,148 Q-16,160 -18,170 L-58,170 Q-60,158 -44,148 Z",
+  shoeR: "M20,148 L44,148 Q60,158 58,170 L18,170 Q16,160 20,148 Z",
+  neck: "M-17,-212 L17,-212 L17,-194 L-17,-194 Z",
+  torsoSh: "M42,-198 L62,-198 Q72,-198 71,-186 L60,-10 Q59,0 48,0 L34,0 Z",
+  belt: "M-59,-30 L59,-30 L58,-14 L-58,-14 Z",
+  face: "M-46,-8 Q-56,-52 -50,-78 Q-44,-104 0,-104 Q44,-104 50,-78 Q56,-52 46,-8 Q28,6 0,6 Q-28,6 -46,-8 Z",
+  faceSh: "M30,-100 Q44,-100 50,-78 Q56,-52 46,-8 Q36,1 24,4 Q40,-40 30,-100 Z",
+  earL: "M-49,-64 Q-63,-62 -61,-47 Q-59,-35 -47,-38 Z", earR: "M49,-64 Q63,-62 61,-47 Q59,-35 47,-38 Z",
+  hair: "M-52,-66 Q-56,-100 -30,-110 Q0,-117 30,-110 Q56,-100 52,-66 Q44,-84 26,-86 Q8,-98 -8,-90 Q-30,-94 -44,-80 Q-48,-74 -52,-66 Z",
+  nose: "M-5,-62 Q-16,-40 -11,-31 Q0,-24 12,-31 Q15,-42 5,-62 Z",
+  mustache: "M-34,-20 Q-20,-34 0,-26 Q20,-34 34,-20 Q40,-10 30,-12 Q16,-22 0,-18 Q-16,-22 -30,-12 Q-40,-10 -34,-20 Z",
+  goatee: "M-7,-6 Q0,7 7,-6 Q0,-2 -7,-6 Z",
+  brim: "M-74,0 Q-78,-12 -52,-14 L52,-14 Q78,-12 74,0 Q40,8 0,8 Q-40,8 -74,0 Z",
+  crown: "M-38,-12 L-33,-42 Q0,-48 33,-42 L38,-12 Z",
+  crownSh: "M18,-44 Q28,-43 33,-42 L38,-12 L26,-12 Z",
+  band: "M-38,-12 L-37,-22 L37,-22 L38,-12 Z",
+  feather: "M30,-28 Q78,-50 152,-30 Q106,-14 34,-18 Z",
+  sleeve: "M-17,2 Q-17,-14 0,-14 Q17,-14 17,2 L15,96 L-15,96 Z",
+  sleeveSh: "M6,-12 Q17,-10 17,2 L15,96 L7,96 Z",
+  cuff: "M-18,90 L18,90 L17,104 L-17,104 Z",
+  fist: "M-17,0 L17,0 Q20,14 17,28 Q0,34 -17,28 Q-20,14 -17,0 Z",
+  blade: "M-4.5,-24 L-4.5,-174 L0,-192 L4.5,-174 L4.5,-24 Z",
+  guard: "M-27,-25 Q-31,-20 -27,-15 L27,-15 Q31,-20 27,-25 Z",
+  grip: "M-4,-15 L4,-15 L4,4 L-4,4 Z",
+};
+const sh = (cls, d, base) => `<path class="${cls}" d="${d}" style="--base: var(${base})"/>`;
+const f = (d, base) => `<path d="${d}" style="--base: var(${base})"/>`;
+const l = (d, cls = "") => `<path${cls ? ` class="${cls}"` : ""} d="${d}"/>`;
+
+const FACES = {
+  idle: `${l("M-30,-70 Q-18,-76 -8,-71", "thick")}${l("M8,-71 Q18,-76 30,-70", "thick")}<circle class="ink" cx="-18" cy="-58" r="4.6"/><circle class="ink" cx="18" cy="-58" r="4.6"/>${l("M-8,-9 Q0,-6 8,-9")}`,
+  angry: `${l("M-31,-77 L-7,-66", "thick")}${l("M7,-66 L31,-77", "thick")}<circle class="ink" cx="-18" cy="-57" r="4.6"/><circle class="ink" cx="18" cy="-57" r="4.6"/><rect class="eye-w" x="-12" y="-15" width="24" height="10" rx="2"/>${l("M-4,-15 L-4,-5 M4,-15 L4,-5", "thin")}`,
+  focus: `${l("M-30,-73 L-8,-68", "thick")}${l("M8,-68 L30,-73", "thick")}${l("M-25,-58 L-11,-58")}<circle class="ink" cx="18" cy="-58" r="4.6"/>${l("M-9,-9 L9,-9")}`,
+  oops: `${l("M-30,-80 Q-18,-88 -8,-82", "thick")}${l("M8,-82 Q18,-88 30,-80", "thick")}<circle class="eye-w" cx="-18" cy="-58" r="8.5"/><circle class="eye-w" cx="18" cy="-58" r="8.5"/>${l("M-18,-58 m-8.5,0 a8.5,8.5 0 1,0 17,0 a8.5,8.5 0 1,0 -17,0", "thin")}${l("M18,-58 m-8.5,0 a8.5,8.5 0 1,0 17,0 a8.5,8.5 0 1,0 -17,0", "thin")}<circle class="ink" cx="-18" cy="-57" r="3.4"/><circle class="ink" cx="18" cy="-57" r="3.4"/><ellipse class="ink" cx="0" cy="-8" rx="7" ry="8"/>`,
+  dizzy: `${l("M-30,-74 Q-18,-84 -8,-74", "thick")}${l("M8,-80 Q18,-72 30,-78", "thick")}${l("M-24,-64 L-12,-52 M-12,-64 L-24,-52")}${l("M12,-64 L24,-52 M24,-64 L12,-52")}${l("M-12,-8 q4,-4 8,0 q4,4 8,0 q4,-4 8,0")}`,
+  smug: `${l("M-30,-74 Q-18,-80 -8,-74", "thick")}${l("M8,-74 Q18,-80 30,-74", "thick")}${l("M-27,-60 Q-18,-55 -9,-60")}${l("M9,-60 Q18,-55 27,-60")}${l("M-10,-9 Q2,-4 12,-12")}`,
+};
+
+// 파츠 하나씩 그린다. opp()와 파츠 시트가 같은 그림을 쓴다.
+const PART = {
+  Legs: () => `<g class="fill">${f(P.breech, "--c-legs")}${sh("sh", P.breechSh, "--c-legs-sh")}${f(P.stockL, "--c-collar")}${f(P.stockR, "--c-collar")}${sh("sh", P.stockSh, "--c-legs-sh")}${f(P.shoeL, "--c-boot")}${f(P.shoeR, "--c-boot")}</g>
+    <g class="line">${l(P.breech)}${l(P.stockL)}${l(P.stockR)}${l(P.shoeL)}${l(P.shoeR)}${l("M-36,10 Q-30,40 -38,66 M36,10 Q30,40 38,66", "thin")}${l("M-46,78 L-18,78 M18,78 L46,78", "thin")}</g>`,
+  Torso: () => `<g class="fill">${f(P.neck, "--c-skin")}${f(TORSO, "--c-doublet")}${sh("sh", P.torsoSh, "--c-doublet-sh")}${f(P.belt, "--c-boot")}<ellipse cx="0" cy="-198" rx="44" ry="12" style="--base: var(--c-collar)"/></g>
+    <g class="line">${l(TORSO)}${l("M-36,-190 Q-40,-100 -32,-34 M36,-190 Q40,-100 32,-34", "thin")}${l(P.belt)}<rect x="-9" y="-33" width="18" height="22" rx="2"/><circle class="ink" cx="0" cy="-168" r="3.4"/><circle class="ink" cx="0" cy="-143" r="3.4"/><circle class="ink" cx="0" cy="-118" r="3.4"/><circle class="ink" cx="0" cy="-93" r="3.4"/><circle class="ink" cx="0" cy="-68" r="3.4"/><ellipse cx="0" cy="-198" rx="44" ry="12"/>${l("M-30,-205 q5,8 10,0 q5,8 10,0 q5,8 10,0 q5,8 10,0 q5,8 10,0 q5,8 10,0", "thin")}</g>`,
+  Head: face => `<g class="fill">${f(P.earL, "--c-skin")}${f(P.earR, "--c-skin")}${f(P.face, "--c-skin")}${sh("sh", P.faceSh, "--c-skin-sh")}${f(P.hair, "--c-hair")}${f(P.nose, "--c-skin-sh")}${f(P.mustache, "--c-hair")}${f(P.goatee, "--c-hair")}</g>
+    <g class="line">${l(P.earL)}${l(P.earR)}${l(P.face)}${l(P.hair)}${l(P.nose)}${l(P.mustache)}${FACES[face || "idle"]}</g>`,
+  Hat: () => `<g class="fill">${f(P.crown, "--c-hat")}${sh("sh", P.crownSh, "--c-hat-sh")}${f(P.band, "--c-hat-sh")}${f(P.brim, "--c-hat")}</g>
+    <g class="line">${l(P.crown)}${l(P.band, "thin")}${l(P.brim)}</g>`,
+  Feather: () => `<g class="fill">${f(P.feather, "--c-feather")}</g>
+    <g class="line">${l(P.feather)}${l("M32,-23 Q90,-36 150,-30", "thin")}${l("M60,-30 l8,-9 M80,-34 l8,-8 M100,-35 l8,-7 M120,-34 l8,-5 M66,-27 l9,6 M88,-29 l9,6 M110,-30 l8,5", "thin")}</g>`,
+  Arm: () => `<g class="fill">${f(P.sleeve, "--c-doublet")}${sh("sh", P.sleeveSh, "--c-doublet-sh")}${f(P.cuff, "--c-collar")}</g>
+    <g class="line">${l(P.sleeve)}${l(P.cuff)}</g>`,
+  Hand: () => `<g class="fill">${f(P.fist, "--c-skin")}</g>
+    <g class="line">${l(P.fist)}${l("M-9,8 L-9,14 M0,8 L0,15 M9,8 L9,14", "thin")}</g>`,
+  Sword: () => `<g class="fill">${f(P.blade, "--c-steel")}${f(P.grip, "--c-boot")}${f(P.guard, "--c-steel")}<circle cx="0" cy="8" r="5" style="--base: var(--c-steel)"/></g>
+    <g class="line">${l(P.blade)}${l("M0,-30 L0,-168", "thin")}${l(P.guard)}${l("M-24,-18 Q-28,8 0,10", "thin")}<circle cx="0" cy="8" r="5"/></g>`,
+};
+
+// o: x, y, s(크기), hat, arm[절대 자리], sword(도), head(도), tint(변수 이름), headClosed, aim, face, art(생성 그림이면 그 파츠 함수 묶음)
+function opp(o) {
+  const tint = o.tint ? ` tint-on" style="--tint: var(${o.tint})` : "";
+  const headTint = o.headClosed ? "" : "tinted";
+  const A = o.art || PART;
+  const aim = o.aim ? `<g class="aim-outline"><path d="${o.aimPath || TORSO}" fill="none" stroke="var(--sig-aim)" stroke-width="5"/></g>` : "";
+  const t = o.tint || "";
+  return `<g class="opp${tint}" transform="translate(${o.x},${o.y}) scale(${o.s})">
+  <g data-part="Legs" class="tinted">${A.Legs(t)}</g>
+  <g data-part="Torso" class="tinted">${A.Torso(t)}
+    <g data-part="Head" class="${headTint}" transform="translate(0,-200) rotate(${o.head || 0})">${A.Head(o.face, o.headClosed ? "" : t)}
+      <g data-part="Hat" transform="translate(0,-104)"${o.hat ? "" : ` style="display:none"`}>${A.Hat()}
+        <g data-part="Feather">${A.Feather()}</g>
+      </g>
+    </g>
+    <g data-part="Arm" class="tinted" transform="translate(${o.arm[0]},${o.arm[1]}) rotate(${o.armRot || 0})">${A.Arm(t)}
+      <g data-part="Hand" class="tinted" transform="translate(0,105)">${A.Hand(t)}
+        <g data-part="Sword" transform="translate(0,15) rotate(${o.sword})">${A.Sword()}</g>
+      </g>
+    </g>
+    ${aim}
+  </g>
+</g>`;
+}
+
+// ---------------------------------------------------------------- 내 손과 칼 (player_sword_view: 칼 전체가 상태 색이다)
+function playerHand(x, y, stateVar, bladeWidth) {
+  return `<g class="phand" transform="translate(${x},${y})" style="--sw-state: var(${stateVar})">
+  <g transform="scale(${bladeWidth},1)">
+    <path class="sig-blade" d="M-6,-240 L6,-240 L9,-10 L-9,-10 Z"/><path class="sig-blade" d="M-40,-10 L40,-10 L40,4 L-40,4 Z"/>
+    <g class="line"><path d="M-6,-240 L6,-240 L9,-10 L-9,-10 Z"/><path d="M-40,-10 L40,-10 L40,4 L-40,4 Z"/><path class="thin" d="M0,-225 L0,-20"/></g>
+  </g>
+  <g class="fill">${f("M-44,78 L44,78 L52,150 L-52,150 Z", "--c-psleeve")}${f("M-36,2 Q-38,40 -34,86 L34,86 Q38,40 36,2 Q0,-6 -36,2 Z", "--c-glove")}${sh("sh", "M16,0 Q36,0 36,2 Q38,40 34,86 L20,86 Q26,40 16,0 Z", "--c-glove-sh")}${f("M-40,74 L40,74 L42,92 L-42,92 Z", "--c-collar")}</g>
+  <g class="line">${l("M-44,78 L-52,150 M44,78 L52,150")}${l("M-36,2 Q-38,40 -34,86 L34,86 Q38,40 36,2 Q0,-6 -36,2 Z")}${l("M-26,20 Q0,14 26,20 M-28,42 Q0,36 28,42", "thin")}${l("M-40,74 L40,74 L42,92 L-42,92 Z")}</g>
+</g>`;
+}
+
+function wrap(text, n) {
+  const out = []; let line = "";
+  for (const word of text.split(" ")) {
+    if ((line + " " + word).trim().length > n && line) { out.push(line); line = word; } else line = (line + " " + word).trim();
+  }
+  if (line) out.push(line);
+  return out;
+}
+function tspans(lines, x, y, dy) { return lines.map((t, i) => `<tspan x="${x}" y="${y + i * dy}">${t}</tspan>`).join(""); }
+function ring() {
+  // 큰 베기의 고리: 화면 (640, 306), 남은 0.825초 x 240 = 198, 띠 240 x 0.18 = 43.2
+  return `<g transform="translate(640,306)">
+    <circle r="43.2" fill="var(--sig-band)" fill-opacity="0.22" stroke="var(--sig-band)" stroke-opacity="0.95" stroke-width="3"/>
+    <circle r="198" fill="none" stroke="#FFFFFF" stroke-opacity="0.95" stroke-width="5"/>
+    <circle r="4" fill="#FFFFFF" fill-opacity="0.9"/>
+  </g>`;
+}
+
+const COND_FEATHER = "모자로 끝내기 — 유효타만 본다. 모자에 유효타 한 번. 스침은 어디든 괜찮고, 다른 곳의 유효타는 감점.";
+const COND_FIRST = "첫 피 — 유효타만 본다. 상대의 몸통·팔·손·다리에 유효타 한 번. 머리를 치면 감점.";
+
+const R1I = { raw: "../generated/023-R1i-bartolo-front.png", cut: "../generated/cut/023-R1i-bartolo-front.png", w: 1024, h: 1536, neck: [515, 545], pel: [515, 983] };
+const R2 = { raw: "../generated/023-R2-stage-alley.png", bright: 1 };
+const R3 = { raw: "../generated/023-R3-client-clara.png", cut: "../generated/cut/023-R3-client-clara.png" };
+const SHEET = {};
+const RB = (x0, y0, x1, y1) => [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+// P1a. k = 200 / (몸통의 골반 853 − 목 516) = 0.5935.
+// 머리: 목(턱 밑) 345, 머리털 꼭대기 130 → 127.6이라 0.917배로 117(모자 원점 104)에 맞춘다. 모자: 원점(챙 밑에서 16 위) 290, 꼭대기 196 → 55.8이라 0.94배로 52.4.
+// 팔: 위 529~아래 785(256화소)를 틀의 118(−14~104)에 맞춰 세로 0.777, 가로는 R1i의 소매 폭(35)에 맞춰 0.75. 주먹 0.76. 깃털은 밑동 (1248, 262)가 모자 좌표 (30, −23)에 오게 둔다.
+SHEET.a = {
+  raw: "../generated/024-P1a-bartolo-parts.png", src: "../generated/cut/024-P1a-bartolo-parts.png", w: 1536, h: 1024, k: 200 / 337,
+  heads: { smug: "Head", oops: "HeadOops", dizzy: "HeadDizzy" },
+  aim: [[125, 560], [150, 520], [330, 520], [350, 560], [345, 850], [130, 850]],
+  parts: {
+    Head: { joint: [172, 345], sx: 0.917, sy: 0.917, poly: RB(60, 122, 284, 374) },
+    HeadOops: { joint: [453.5, 346], sx: 0.917, sy: 0.917, poly: RB(340, 122, 567, 375) },
+    HeadDizzy: { joint: [736.5, 347], sx: 0.917, sy: 0.917, poly: RB(623, 122, 850, 376) },
+    Hat: { joint: [1049, 290], sx: 0.94, sy: 0.94, poly: RB(909, 188, 1190, 314) },
+    Feather: { joint: [1194, 303], sx: 0.94, sy: 0.94, poly: RB(1237, 222, 1483, 292) },
+    Torso: { joint: [236, 853], poly: RB(109, 493, 365, 861) },
+    Legs: { joint: [594, 524], poly: RB(452, 513, 738, 850) },
+    Arm: { joint: [888, 559], sx: 0.75, sy: 0.777, poly: RB(840, 519, 936, 793) },
+    Hand: { joint: [1110, 597], sx: 0.76, sy: 0.76, poly: RB(1061, 585, 1160, 693) },
+    Sword: { joint: [1336, 812], poly: RB(1263, 469, 1409, 867) },
+  },
+  // 상태 색을 재는 점(파츠 단위). 그림의 화소 → (화소 − 관절) × k × 배율
+  tintPts: [
+    ["torso-fill", "fill", "Torso", -39.2, -90.8], ["torso-shadow", "fill", "Torso", 49.9, -90.8],
+    ["arm-fill", "fill", "Arm", -7.1, 37.4], ["arm-shadow", "fill", "Arm", 8.9, 37.4],
+    ["legs-fill", "fill", "Legs", -2.4, 18.4], ["legs-shadow", "fill", "Legs", 48.1, 21.4],
+    ["torso-line", "line", "Torso", -80.7, -90.8, 1, 0], ["legs-line", "line", "Legs", -73.6, 21.4, 1, 0], ["arm-line", "line", "Arm", -23.6, 37.4, 1, 0],
+    ["head-skin", "same", "Head", 0, -78.9], ["hat", "same", "Hat", 0, -39], ["blade", "same", "Sword", 0, -125.8],
+  ],
+};
+const SHEET_PICK = "a";
+const V1 = { raw: "../generated/024-V1a-client-vittorio.png", cut: "../generated/cut/024-V1a-client-vittorio.png" };
+function noneScene(why) {
+  return `<rect width="1280" height="720" fill="var(--st-shade)"/><text class="none-note" x="640" y="350" text-anchor="middle">만들지 않았다</text><text class="none-note" x="640" y="392" text-anchor="middle" font-size="17">${why}</text>`;
+}
+// 상태 색은 칠에만(결정 181을 래스터로): sRGB의 Y가 0.22 아래면 선, 0.30 위면 칠, 그 사이는 비례. 칠에 신호색 80%를 덮고 선을 다시 얹는다.
+const TINT_SIGS = ["--sig-thrust", "--sig-cut", "--sig-big", "--sig-strike", "--sig-recovery", "--sig-stagger"];
+function tintFilters() {
+  return TINT_SIGS.map(v => `<filter id="tf${v}" color-interpolation-filters="sRGB" x="0" y="0" width="100%" height="100%">
+    <feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -2.6575 -8.94 -0.9025 0 3.75" result="lineA"/>
+    <feComposite in="lineA" in2="SourceAlpha" operator="in" result="lineMask"/>
+    <feComposite in="SourceGraphic" in2="lineMask" operator="in" result="lines"/>
+    <feFlood flood-color="${cssVar(v)}" flood-opacity="0.8" result="sig"/>
+    <feComposite in="sig" in2="SourceAlpha" operator="in" result="sigIn"/>
+    <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="sigIn"/><feMergeNode in="lines"/></feMerge>
+  </filter>`).join("");
+}
+// 생성 그림의 파츠: 그림 좌표의 다각형으로 자르고, 관절 점을 원점에 두고 k(파츠 단위/화소)로 줄인다.
+// spec.parts[이름] = { poly: [[x,y]...], joint: [x,y], sx, sy, rot }. 상태 색은 t(신호 변수 이름)가 있을 때 필터로 입힌다.
+let clipSeq = 0;
+function genPartSvg(spec, name, t) {
+  const p = spec.parts[name];
+  if (!p) return "";
+  const id = `gc${++clipSeq}`;
+  const pts = p.poly.map(([x, y]) => `${x},${y}`).join(" ");
+  const k = spec.k, sx = (p.sx || 1) * k, sy = (p.sy || 1) * k;
+  const filt = t ? ` filter="url(#tf${t})"` : "";
+  return `<g transform="rotate(${p.rot || 0}) scale(${sx},${sy}) translate(${-p.joint[0]},${-p.joint[1]})">
+    <clipPath id="${id}"><polygon points="${pts}"/></clipPath>
+    <g clip-path="url(#${id})"><image href="${p.src || spec.src}" x="0" y="0" width="${spec.w}" height="${spec.h}"${filt}/></g>
+  </g>`;
+}
+function genArt(spec, headKey) {
+  const head = headKey && spec.heads ? spec.heads[headKey] || spec.heads.smug : "Head";
+  return {
+    Legs: t => genPartSvg(spec, "Legs", t),
+    Torso: t => genPartSvg(spec, "Torso", t),
+    Head: (face, t) => genPartSvg(spec, head, t),
+    Hat: () => genPartSvg(spec, "Hat"),
+    Feather: () => genPartSvg(spec, "Feather"),
+    Arm: t => genPartSvg(spec, "Arm", t),
+    Hand: t => genPartSvg(spec, "Hand", t),
+    Sword: () => genPartSvg(spec, "Sword"),
+  };
+}
+// 조준 테두리: 몸통 윤곽을 따라 그림 좌표로 짚은 다각형(spec.aim)
+function genAimPath(spec) {
+  const p = spec.parts.Torso;
+  return "M" + (spec.aim || p.poly).map(([x, y]) => `${((x - p.joint[0]) * spec.k).toFixed(1)},${((y - p.joint[1]) * spec.k).toFixed(1)}`).join(" L") + " Z";
+}
+
+// ---------------------------------------------------------------- 대비와 색 (WCAG 상대 휘도)
+const hex2rgb = h => { h = h.trim().replace("#", ""); return [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16)); };
+const lin = c => { c /= 255; return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+const lum = h => { const [r, g, b] = hex2rgb(h); return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b); };
+const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+const mix = (a, b, t) => { const A = hex2rgb(a), B = hex2rgb(b); return "#" + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, "0")).join("").toUpperCase(); };
+const hsv = h => { const [r, g, b] = hex2rgb(h).map(v => v / 255); const mx = Math.max(r, g, b), mn = Math.min(r, g, b); return { s: mx === 0 ? 0 : (mx - mn) / mx, v: mx }; };
+const r2 = x => x.toFixed(2);
+function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+const yv = h => { const [r, g, b] = hex2rgb(h); return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255; };
+
+// ---------------------------------------------------------------- 글꼴 (계획 025. 결정 222~224)
+// 로컬 docs/style/generated/fonts/에서만 읽는다(저장소에 올라가지 않는다). family 이름은 f025-<키>다.
+const FONTS = [
+  { key: "gowunbatang", name: "고운바탕", role: "body", files: [["GowunBatang-Regular.ttf", "400"], ["GowunBatang-Bold.ttf", "700"]] },
+  { key: "nanummyeongjo", name: "나눔명조", role: "body", files: [["NanumMyeongjo-Regular.ttf", "400"], ["NanumMyeongjo-Bold.ttf", "700"], ["NanumMyeongjo-ExtraBold.ttf", "800"]] },
+  { key: "notoserifkr", name: "Noto Serif KR", role: "body", files: [["NotoSerifKR-wght.ttf", "200 900"]] },
+  // 사용자가 승인 B에서 고른 본문 글꼴(후보 밖). 공식 배포처 hangeul.naver.com의 압축 파일에서 TTF 넷만 풀었다.
+  { key: "nanumsquareround", name: "나눔스퀘어라운드", role: "body", files: [["NanumSquareRoundL.ttf", "300"], ["NanumSquareRoundR.ttf", "400"], ["NanumSquareRoundB.ttf", "700"], ["NanumSquareRoundEB.ttf", "800"]] },
+  { key: "songmyung", name: "송명", role: "title", files: [["SongMyung-Regular.ttf", "400"]] },
+  { key: "hahmlet", name: "함렛", role: "title", files: [["Hahmlet-wght.ttf", "100 900"]] },
+  { key: "notosanskr", name: "Noto Sans KR", role: "state", files: [["NotoSansKR-wght.ttf", "100 900"]] },
+  { key: "blackhansans", name: "검은고딕", role: "state", files: [["BlackHanSans-Regular.ttf", "400"]] },
+  { key: "dohyeon", name: "도현", role: "state", files: [["DoHyeon-Regular.ttf", "400"]] },
+  { key: "jua", name: "주아", role: "state", files: [["Jua-Regular.ttf", "400"]] },
+];
+const FONT_NAME = Object.fromEntries(FONTS.map(f => [f.key, f.name]));
+FONT_NAME.batang = "바탕(견줌용. 배포할 수 없다)"; FONT_NAME.malgun = "맑은 고딕(견줌용. 배포할 수 없다)";
+const BODY_KEYS = ["nanumsquareround", "gowunbatang", "nanummyeongjo", "notoserifkr"];
+// 본문의 보통 굵기. 나눔스퀘어라운드는 사용자가 ExtraBold로 골랐다(굵은 것도 같은 굵기다).
+const BODY_W = { nanumsquareround: 800 };
+const TITLE_KEYS = ["songmyung", "hahmlet", "bodybold"];
+const STATE_KEYS = ["notosanskr", "blackhansans", "dohyeon", "jua"];
+// 굵기: 본문의 굵은 것, 제목, 상태 글자
+const BOLD_W = { gowunbatang: 700, nanummyeongjo: 800, notoserifkr: 700, batang: 700, nanumsquareround: 800 };
+const TITLE_W = { songmyung: 400, hahmlet: 700 };
+const STATE_W = { notosanskr: 900, blackhansans: 400, dohyeon: 400, jua: 400, malgun: 700 };
+const famOf = key => key === "batang" ? `"Batang", "BatangChe", serif` : key === "malgun" ? `"Malgun Gothic", sans-serif` : key === "nanumsquareround" ? `"f025-${key}", "Malgun Gothic", sans-serif` : `"f025-${key}", "Batang", serif`;
+
+const PARAMS = new URLSearchParams(location.search);
+// 고른 것(승인 B 전에는 후보의 첫째). 주소의 ?body= ?title= ?state= ?hud=serif|sans ?ui= ?hudui= 가 덮는다.
+const PICK = { body: "nanumsquareround", title: "songmyung", state: "notosanskr", hud: "serif", ui: "b", hudui: "" };
+for (const k of Object.keys(PICK)) if (PARAMS.get(k)) PICK[k] = PARAMS.get(k);
+const WARN = PARAMS.get("warn") === "1";
+
+const bodyF = (bold, key) => { const k = key || PICK.body; return { fam: famOf(k), w: bold ? BOLD_W[k] : BODY_W[k] || 400 }; };
+const titleF = key => { const k = key || PICK.title; return k === "bodybold" ? bodyF(true) : { fam: famOf(k), w: TITLE_W[k] || BOLD_W[k] || 700 }; };
+const stateF = key => { const k = key || PICK.state; return { fam: famOf(k), w: STATE_W[k] || 700 }; };
+const hudF = bold => PICK.hud === "sans" ? { fam: `"f025-notosanskr", "Malgun Gothic", sans-serif`, w: bold ? 700 : 500 } : bodyF(bold);
+
+// 글자 한 줄 / 여러 줄. o: fill, anchor, extra
+function tx(x, y, s, size, F, o = {}) {
+  return `<text x="${x}" y="${y}" font-size="${size}" font-family='${F.fam}' font-weight="${F.w}" fill="${o.fill || "var(--ink)"}"${o.anchor ? ` text-anchor="${o.anchor}"` : ""}${o.extra || ""}>${s}</text>`;
+}
+function txs(lines, x, y, dy, size, F, o = {}) {
+  return `<text font-size="${size}" font-family='${F.fam}' font-weight="${F.w}" fill="${o.fill || "var(--ink)"}"${o.anchor ? ` text-anchor="${o.anchor}"` : ""}>${lines.map((t, i) => `<tspan x="${x}" y="${y + i * dy}">${t}</tspan>`).join("")}</text>`;
+}
+
+// ---------------------------------------------------------------- 재기 (견본이 캔버스로 재어 <pre>에 적는다. 결정 229)
+const STATE_LINES = {
+  first: [
+    ["찌르기", "data/opponents/opponent_01.tres:9"], ["왼쪽 베기", "data/opponents/opponent_01.tres:21"], ["오른쪽 베기", "data/opponents/opponent_01.tres:33"],
+    ["큰 베기!!", "data/opponents/opponent_01.tres:45 (is_big 50)"],
+    ["빈틈", "scripts/duel/opponent_view.gd:225"], ["크게 열림!", "scripts/duel/opponent_view.gd:228"], ["무너짐!", "scripts/duel/opponent_view.gd:236"],
+    ["방심", "scripts/duel/opponent_view.gd:46"], ["밀어붙임", "scripts/duel/opponent_view.gd:152"], ["받아넘김", "scripts/duel/opponent_view.gd:165"], ["받아넘김 +2", "scripts/duel/opponent_view.gd:167"],
+  ],
+  second: [["막기를 뗐다 다시 올려라", "scripts/duel/opponent_view.gd:215"], ["받아낼 준비", "scripts/duel/opponent_view.gd:215"]],
+  block: ["큰 베기!!", "막기를 뗐다 다시 올려라"],
+};
+function mkCanvas(w, h) { const c = document.createElement("canvas"); c.width = w; c.height = h; return c.getContext("2d", { willReadFrequently: true }); }
+function inkBox(ctx, w, h, thr) {
+  const d = ctx.getImageData(0, 0, w, h).data; let x0 = w, y0 = h, x1 = -1, y1 = -1;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3] > thr) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  return { x0, y0, x1, y1, d, empty: x1 < 0 };
+}
+// H: '한'의 alpha >= 0.5인 줄 수. V: 'ㅣ'의 잉크 상자 세로 가운데 줄의 alpha 최댓값. Hz: 'ㅡ'의 가로 가운데 열의 alpha 최댓값
+function typeMetric(fam, weight, size) {
+  const W = 240, Hh = 120, ctx = mkCanvas(W, Hh);
+  const draw = ch => { ctx.clearRect(0, 0, W, Hh); ctx.font = `${weight} ${size}px ${fam}`; ctx.textBaseline = "alphabetic"; ctx.fillStyle = "#000"; ctx.fillText(ch, 20, 90); };
+  draw("한"); let b = inkBox(ctx, W, Hh, 127); const H = b.empty ? 0 : b.y1 - b.y0 + 1;
+  draw("ㅣ"); b = inkBox(ctx, W, Hh, 12); let V = 0;
+  if (!b.empty) { const y = Math.round((b.y0 + b.y1) / 2); for (let x = 0; x < W; x++) V = Math.max(V, b.d[(y * W + x) * 4 + 3]); }
+  draw("ㅡ"); b = inkBox(ctx, W, Hh, 12); let Hz = 0;
+  if (!b.empty) { const x = Math.round((b.x0 + b.x1) / 2); for (let y = 0; y < Hh; y++) Hz = Math.max(Hz, b.d[(y * W + x) * 4 + 3]); }
+  return [H, (V / 255).toFixed(2), (Hz / 255).toFixed(2)];
+}
+// 상태 글자의 상자: 28px, 흰 글자에 검은 테두리 8. 첫 줄의 윗선 y 40, 줄은 그 글꼴의 자연 줄 높이로 쌓는다.
+const LINE_H = {};
+function stateBox(key) {
+  const W = 640, Hh = 240, ctx = mkCanvas(W, Hh), F = stateF(key);
+  const setup = () => { ctx.clearRect(0, 0, W, Hh); ctx.font = `${F.w} 28px ${F.fam}`; ctx.textBaseline = "alphabetic"; ctx.textAlign = "center"; ctx.lineWidth = 8; ctx.lineJoin = "round"; ctx.strokeStyle = "#000"; ctx.fillStyle = "#fff"; };
+  setup(); const m = ctx.measureText("한"); const asc = m.fontBoundingBoxAscent, lh = asc + m.fontBoundingBoxDescent; LINE_H[key] = lh;
+  const put = (s, line) => { const y = 40 + asc + line * lh; ctx.strokeText(s, 320, y); ctx.fillText(s, 320, y); };
+  let widest = "", Wmax = 0, clipped = 0;
+  for (const [s] of STATE_LINES.first.concat(STATE_LINES.second)) {
+    setup(); put(s, 0); const b = inkBox(ctx, W, Hh, 12); const w = b.empty ? 0 : b.x1 - b.x0 + 1;
+    if (b.x0 <= 0 || b.x1 >= W - 1 || b.y0 <= 0 || b.y1 >= Hh - 1) clipped = 1;
+    if (w > Wmax) { Wmax = w; widest = s; }
+  }
+  setup(); put(STATE_LINES.block[0], 0); put(STATE_LINES.block[1], 1); const b = inkBox(ctx, W, Hh, 12);
+  if (b.x0 <= 0 || b.x1 >= W - 1 || b.y0 <= 0 || b.y1 >= Hh - 1) clipped = 1;
+  return [key, Wmax, widest, b.y1 - 40 + 1, lh.toFixed(1), clipped];
+}
+function textWidth(F, size, s) { const ctx = mkCanvas(8, 8); ctx.font = `${F.w} ${size}px ${F.fam}`; return ctx.measureText(s).width; }
+const hue = h => { const [r, g, b] = hex2rgb(h).map(v => v / 255); const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn; if (!d) return 0; let x = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; x *= 60; return x < 0 ? x + 360 : x; };
+const hueDiff = (a, b) => { const d = Math.abs(hue(a) - hue(b)); return Math.min(d, 360 - d); };
+
+// ---------------------------------------------------------------- UI의 세 안 (결정 225. 자리·글·크기는 같고 꾸밈만 다르다)
+// 대비에 걸려 고친 색: 누른 버튼의 칠 #A8895E(4.17) -> #B8996C, 다의 올린·누른 버튼 #8C6240(3.80)·#634228 -> #6E4A2D·#5A3B22,
+// 다의 HUD 흐린 글자 #A8895E(3.92) -> #D2B98C. 벽은 양피지 #E9D8B4로 두어 붉은 글자가 5.3이다(#D2B98C 위에서는 3.95).
+// 색(결정 227): 글자 #3B2A1E, 흐린 글자 #6B5440, 붉은 글자 #84422F(#A5533F는 양피지 위에서 3.8:1이다).
+// 신호로 치는 경고 둘은 코드 값 그대로다(duel_hud.gd BindBar.COLOR_WARN, ComplacencyBar.COLOR_FULL).
+const C = {
+  ink: "#3B2A1E", soft: "#6B5440", red: "#84422F", p1: "#E9D8B4", p2: "#D2B98C", p3: "#A8895E",
+  shade: "#3A3027", iron: "#2E2620", wood: "#7A5232", stWood: "#4A3A2C", btnRed: "#A5533F",
+  bindWarn: "#FF7333", compFull: "#F2CC4D", bindNormal: "#8FA3B3", compNormal: "#CFC8BA", band: "#2E2620",
+};
+// 안마다의 색. hud는 결투 HUD 판의 것이다("다"만 짙다).
+const THEME = {
+  a: { name: "가 · 민 양피지", panel: C.p1, ink: C.ink, soft: C.soft, red: C.red, btn: C.p1, btnInk: C.ink, btnHover: C.p2, btnPress: "#B8996C", btnOff: C.p2, btnOffInk: C.soft, btnPrimary: C.btnRed, btnPrimaryInk: C.p1, btnHaggled: C.wood,
+       cellOn: C.wood, cellMine: "#59663F", cellOff: C.p1, barOn: "#59663F", barOff: C.p1,
+       hud: { panel: C.p1, border: C.ink, ink: C.ink, soft: C.soft, red: C.red, cellOn: C.wood, cellMine: "#59663F", cellOff: C.p1, barOn: "#59663F", barOff: C.p1 } },
+  b: { name: "나 · 필사본", panel: C.p1, ink: C.ink, soft: C.soft, red: C.red, btn: C.p1, btnInk: C.ink, btnHover: C.p2, btnPress: "#B8996C", btnOff: C.p2, btnOffInk: C.soft, btnPrimary: C.p1, btnPrimaryInk: C.red, btnHaggled: C.wood,
+       cellOn: C.wood, cellMine: "#59663F", cellOff: C.p1, barOn: "#59663F", barOff: C.p1,
+       hud: { panel: C.p1, border: C.ink, ink: C.ink, soft: C.soft, red: C.red, cellOn: C.wood, cellMine: "#59663F", cellOff: C.p1, barOn: "#59663F", barOff: C.p1 } },
+  c: { name: "다 · 나무와 쇠", panel: C.p1, ink: C.ink, soft: C.soft, red: C.red, btn: C.wood, btnInk: C.p1, btnHover: "#6E4A2D", btnPress: "#5A3B22", btnOff: C.stWood, btnOffInk: C.p3, btnPrimary: C.btnRed, btnPrimaryInk: C.p1, btnHaggled: "#C08A3E",
+       cellOn: C.wood, cellMine: "#59663F", cellOff: C.p1, barOn: "#59663F", barOff: C.p1,
+       hud: { panel: C.shade, border: C.p3, ink: C.p1, soft: C.p2, red: "#D98C78", cellOn: "#C08A3E", cellMine: "#8FA06A", cellOff: C.iron, barOn: "#8FA06A", barOff: C.iron } },
+};
+const diamond = (x, y, r, fill) => `<path d="M${x},${y - r} L${x + r},${y} L${x},${y + r} L${x - r},${y} Z" fill="${fill}" stroke="${C.ink}" stroke-width="1"/>`;
+const stud = (x, y) => `<circle cx="${x}" cy="${y}" r="3.5" fill="${C.iron}" stroke="${C.p3}" stroke-width="1"/>`;
+const UI = {
+  a: {
+    panel(x, y, w, h, hud) { const t = hud ? THEME.a.hud : THEME.a; return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="${t.panel}" stroke="${C.ink}" stroke-width="3"/>`; },
+    button(x, y, w, h, fill, edge) { return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" fill="${fill}" stroke="${edge}" stroke-width="2.5"/>`; },
+    cell(x, y, fill, hud) { return `<rect x="${x}" y="${y}" width="24" height="14" rx="3" fill="${fill}" stroke="${hud ? THEME.a.hud.border : C.ink}" stroke-width="1.5"/>`; },
+    bar(x, y, w, h, frac, on, off, edge) { return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${h / 2}" fill="${off}" stroke="${edge}" stroke-width="1.5"/>${frac > 0 ? `<rect x="${x + 1.5}" y="${y + 1.5}" width="${Math.max(h - 3, (w - 3) * frac)}" height="${h - 3}" rx="${(h - 3) / 2}" fill="${on}"/>` : ""}`; },
+    rule(x, y, w, total) { return total ? `<path d="M${x},${y} L${x + w},${y}" stroke="${C.ink}" stroke-width="2.5"/>` : ""; },
+  },
+  b: {
+    panel(x, y, w, h, hud) {
+      const t = hud ? THEME.b.hud : THEME.b;
+      let s = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="${t.panel}" filter="url(#paper)"/><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="none" stroke="${C.ink}" stroke-width="3"/><rect x="${x + 5}" y="${y + 5}" width="${w - 10}" height="${h - 10}" fill="none" stroke="${C.soft}" stroke-width="1"/>`;
+      for (const [cx, cy] of [[x + 5, y + 5], [x + w - 5, y + 5], [x + 5, y + h - 5], [x + w - 5, y + h - 5]]) s += diamond(cx, cy, 4, C.p2);
+      return s;
+    },
+    button(x, y, w, h, fill, edge) {
+      const n = Math.min(12, h * 0.28);
+      const d = `M${x},${y} L${x + w},${y} L${x + w - n},${y + h / 2} L${x + w},${y + h} L${x},${y + h} L${x + n},${y + h / 2} Z`;
+      return `<path d="${d}" fill="${fill}" stroke="${edge}" stroke-width="2.5" stroke-linejoin="round"/><path d="M${x + n + 6},${y + 5} L${x + w - n - 6},${y + 5} M${x + n + 6},${y + h - 5} L${x + w - n - 6},${y + h - 5}" stroke="${edge}" stroke-width="1" opacity="0.7"/>`;
+    },
+    cell(x, y, fill, hud, on) { return `<rect x="${x}" y="${y}" width="24" height="14" fill="${fill}" stroke="${C.ink}" stroke-width="1.5"/>${on ? "" : `<rect x="${x}" y="${y}" width="24" height="14" fill="url(#hatchBg)" opacity="0.6"/>`}`; },
+    bar(x, y, w, h, frac, on, off, edge) {
+      let s = `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${off}" stroke="${edge}" stroke-width="1.5"/>${frac > 0 ? `<rect x="${x + 1}" y="${y + 1}" width="${(w - 2) * frac}" height="${h - 2}" fill="${on}"/>` : ""}`;
+      for (let k = 1; k < 10; k++) s += `<path d="M${x + (w * k) / 10},${y + h} l0,${-(k === 5 ? h * 0.6 : h * 0.35)}" stroke="${edge}" stroke-width="1"/>`;
+      return s;
+    },
+    rule(x, y, w, total) { return total ? `<path d="M${x},${y - 2} L${x + w},${y - 2} M${x},${y + 2} L${x + w},${y + 2}" stroke="${C.ink}" stroke-width="1"/>` : `<path d="M${x},${y} L${x + w},${y}" stroke="${C.soft}" stroke-width="1" opacity="0.6"/>`; },
+  },
+  c: {
+    panel(x, y, w, h, hud) {
+      if (hud) return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" fill="${C.shade}" stroke="${C.p3}" stroke-width="3"/>${[[x + 9, y + 9], [x + w - 9, y + 9], [x + 9, y + h - 9], [x + w - 9, y + h - 9]].map(([a, b]) => stud(a, b)).join("")}`;
+      return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" fill="${C.stWood}" stroke="${C.ink}" stroke-width="3"/><rect x="${x + 10}" y="${y + 10}" width="${w - 20}" height="${h - 20}" fill="${C.p1}" stroke="${C.ink}" stroke-width="1.5"/>${[[x + 5, y + 5], [x + w - 5, y + 5], [x + 5, y + h - 5], [x + w - 5, y + h - 5]].map(([a, b]) => stud(a, b)).join("")}`;
+    },
+    button(x, y, w, h, fill, edge) { return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="${fill}" stroke="${C.ink}" stroke-width="2.5"/>${stud(x + 10, y + h / 2)}${stud(x + w - 10, y + h / 2)}`; },
+    cell(x, y, fill, hud) { return `<rect x="${x}" y="${y}" width="24" height="14" fill="${fill}" stroke="${hud ? C.p3 : C.iron}" stroke-width="1.5"/>`; },
+    bar(x, y, w, h, frac, on, off, edge) { return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${off}" stroke="${edge}" stroke-width="1.5"/>${frac > 0 ? `<rect x="${x + 1}" y="${y + 1}" width="${(w - 2) * frac}" height="${h - 2}" fill="${on}"/>` : ""}${stud(x, y + h / 2)}${stud(x + w, y + h / 2)}`; },
+    rule(x, y, w, total) { return total ? `<path d="M${x},${y} L${x + w},${y}" stroke="${C.ink}" stroke-width="2.5"/>` : ""; },
+  },
+};
+// 버튼: state = normal | hover | press | off | primary | haggled
+function btn(ui, x, y, w, h, text, size, state = "normal") {
+  const t = THEME[ui];
+  const fill = { normal: t.btn, hover: t.btnHover, press: t.btnPress, off: t.btnOff, primary: t.btnPrimary, haggled: t.btnOff }[state];
+  const ink = { normal: t.btnInk, hover: t.btnInk, press: t.btnInk, off: t.btnOffInk, primary: t.btnPrimaryInk, haggled: t.btnHaggled }[state];
+  const edge = state === "off" || state === "haggled" ? C.soft : C.ink;
+  const F = state === "primary" ? titleF() : bodyF(false);
+  return UI[ui].button(x, y + (state === "press" ? 2 : 0), w, h, fill, edge) + tx(x + w / 2, y + h / 2 + size * 0.36 + (state === "press" ? 2 : 0), text, size, F, { fill: ink, anchor: "middle" });
+}
+function cellRow(ui, cx, y, n, filled, on, off, centered, hud) {
+  const w = 24, g = 4, total = n * w + (n - 1) * g, x0 = centered ? cx - total / 2 : cx; let s = "";
+  for (let i = 0; i < n; i++) s += UI[ui].cell(x0 + i * (w + g), y, i < filled ? on : off, hud, i < filled);
+  return s;
+}
+// 엉킴·방심 막대: 라벨과 막대가 짙은 띠 하나 위에 놓인다(세 안이 같다. 경고가 읽히게 하는 규칙)
+function bandGauge(ui, x, y, w, h, label, labelW, frac, fill, labelFill) {
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="${C.band}"/>`
+    + tx(x + 6, y + h / 2 + 5, label, 15, hudF(false), { fill: labelFill })
+    + UI[ui].bar(x + labelW, y + 4, w - labelW - 6, h - 8, frac, fill, C.band, C.p3);
+}
+const sheetSpec = () => { const k = PARAMS.get("pick") || SHEET_PICK; return (k && SHEET[k]) || null; };
+function sheetArt() {
+  const spec = sheetSpec();
+  if (!spec) return null;
+  const a = genArt(spec, null);
+  a.pick = headKey => genArt(spec, headKey);
+  a.aimPath = genAimPath(spec);
+  return a;
+}
+// 자르지 않은 그림을 골반 (x, y)에 목~골반 = 200 × s로 세운다
+// zoom이 있으면 1536×1024 그림을 그 배율(1280 폭 기준)로 가운데에 놓는다. 없으면 가운데 1536×864를 맞춘다
+const stageImg = (g, w, h) => { const z = g.zoom ? g.zoom * w / 1280 : 0; const geo = z ? `x="${(w - 1536 * z) / 2}" y="${(h - 1024 * z) / 2}" width="${1536 * z}" height="${1024 * z}"` : `x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="xMidYMid slice"`; return `<image href="${g.raw}" ${geo} style="filter: brightness(${g.bright || 1})"/>`; };
+const bgOf = g => () => `<rect width="1280" height="720" fill="var(--st-shade)"/>${stageImg(g, 1280, 720)}`;
+
+// ---------------------------------------------------------------- 화면 (자리와 글은 지금 게임 그대로. 꾸밈은 UI[안]이 맡는다)
+const ASC = {};
+// 상태 글자: 28, 흰 글자에 검은 테두리 8(scenes/duel/opponent_view.tscn StateLabel). 줄은 그 글꼴의 자연 줄 높이로 쌓는다.
+function stateText(lines, cx, y0, key) {
+  const k = key || PICK.state, F = stateF(k), asc = ASC[k] || 26, lh = LINE_H[k] || 40;
+  return `<text font-size="28" font-family='${F.fam}' font-weight="${F.w}" fill="#FFFFFF" stroke="#000000" stroke-width="8" paint-order="stroke" stroke-linejoin="round" text-anchor="middle">${lines.map((t, i) => `<tspan x="${cx}" y="${y0 + asc + i * lh}">${t}</tspan>`).join("")}</text>`;
+}
+// 결투 HUD. 패널 다섯의 자리는 024 견본의 duelHud와 같다.
+function duelHud(h) {
+  const ui = PICK.hudui || PICK.ui, K = UI[ui], T = THEME[ui].hud, F = hudF(false);
+  let s = K.panel(334, 4, 612, 58, true) + tx(640, 28, "바르톨로 — 자세 9/9", 18, F, { fill: T.ink, anchor: "middle" }) + cellRow(ui, 640, 40, 9, 9, T.cellOn, T.cellOff, true, true);
+  s += K.panel(10, 6, 330, 150, true) + tx(20, 38, "간격: " + h.dist, 24, F, { fill: T.ink });
+  s += bandGauge(ui, 152, 17, 182, 24, "엉킴", 44, h.bindFrac, h.bindWarn ? C.bindWarn : C.bindNormal, h.bindWarn ? C.bindWarn : C.p1);
+  s += txs(wrap(h.cond, 21), 20, 66, 19, 15, F, { fill: T.red });
+  s += K.bar(20, 128, 310, 18, h.meter, T.barOn, T.barOff, T.border) + tx(26, 142, "충족도", 13, F, { fill: T.ink });
+  s += K.panel(900, 6, 372, 58, true) + tx(1260, 28, "남은 시간 72.4초 · 경과 17.6초", 20, F, { fill: T.ink, anchor: "end" });
+  s += bandGauge(ui, 906, 35, 210, 24, h.compCaption, 52, h.compFrac, h.compFull ? C.compFull : C.compNormal, h.compFull ? C.compFull : C.p1);
+  s += K.panel(10, 556, 340, 58, true) + tx(20, 580, "내 자세 3/3", 18, F, { fill: T.ink }) + cellRow(ui, 20, 590, 3, 3, T.cellMine, T.cellOff, false, true);
+  s += K.panel(780, 550, 492, 64, true) + txs([h.aim, "내 상태: " + h.me], 1260, 576, 24, 18, F, { fill: T.ink, anchor: "end" });
+  s += `<rect x="0" y="616" width="1280" height="104" fill="${T.panel}" opacity="0.94"/><path d="M0,616 L1280,616" stroke="${T.border}" stroke-width="2.5"/>`;
+  s += txs(["좌클릭 공격 · 우클릭 막기 (떼고 있다가 고리가 띠에 들어올 때 누르면 패리) · 마우스 위치로 방향·높이 · W/S 간격 · F1 디버그", "빈틈이 아닐 때 공격하면 상대가 자세를 되찾는다"], 640, 690, 18, 14, F, { fill: T.soft, anchor: "middle" });
+  return s;
+}
+// 교전: 원점 y 446, 0.85. 경고의 장면(warn=1): 밀착 원점 y 476 = 720 × 0.62 + DISTANCE_SHIFT 30, 1.1.
+function sceneUiDuel() {
+  const art = sheetArt(), bg = bgOf(R2)();
+  if (WARN) {
+    return bg + opp({ x: 640, y: 476, s: 1.1, hat: true, arm: [-65, -180], sword: -25, face: "smug", art })
+      + duelHud({ dist: "밀착", cond: COND_FEATHER, meter: 0, aim: "조준: 찌르기 · 중단 → 몸통", me: "준비", bindFrac: 0.9, bindWarn: true, compFrac: 1, compCaption: "방심!", compFull: true })
+      + playerHand(640, 625, "--sw-ready", 1)
+      + tx(640, 130, "칼이 엉킨다!", 26, stateF(), { fill: C.bindWarn, anchor: "middle" });
+  }
+  return bg + opp({ x: 640, y: 446, s: 0.85, hat: true, arm: [0, -277.5], sword: 45, tint: "--sig-big", aim: true, face: "angry", art, aimPath: art && art.aimPath })
+    + duelHud({ dist: "교전", cond: COND_FEATHER, meter: 0.6, aim: "조준: 찌르기 · 중단 → 몸통", me: "막기 — 가운데", bindFrac: 0.3, bindWarn: false, compFrac: 0.45, compCaption: "방심", compFull: false })
+    + playerHand(640, 625, "--sw-fresh", 1.8) + ring() + stateText(STATE_LINES.block, 640, 62);
+}
+function counterBg() {
+  let beams = "";
+  for (let x = 0; x < 1280; x += 160) beams += `<rect x="${x}" y="0" width="22" height="540" fill="url(#hatchBg)" opacity="0.5"/>`;
+  return `<rect width="1280" height="720" fill="${C.p1}" filter="url(#paper)"/>${beams}
+  <rect x="0" y="0" width="1280" height="64" fill="${C.p1}"/><path d="M0,64 L1280,64" stroke="${C.ink}" stroke-width="2.5"/>`;
+}
+const counterBand = () => `<rect x="0" y="540" width="1280" height="180" fill="var(--wood)"/><rect x="0" y="540" width="1280" height="14" fill="var(--parch-3)"/><path d="M0,540 L1280,540 M0,554 L1280,554" stroke="${C.ink}" stroke-width="2.5"/>`;
+const figureImg = g => g ? `<image href="${g.cut}" x="80" y="120" width="300" height="450" preserveAspectRatio="xMidYMin meet"/>` : "";
+// 패널의 머리 글: 가는 본문 굵게, 나는 붉은 글자와 가는 밑줄, 다는 본문 굵게
+function panelHead(ui, x, y, text, size, w) {
+  if (ui === "b") return tx(x, y, text, size, bodyF(true), { fill: C.red }) + `<path d="M${x},${y + 8} L${x + w},${y + 8}" stroke="${C.soft}" stroke-width="1"/>`;
+  return tx(x, y, text, size, bodyF(true));
+}
+const VITTORIO = { name: "대금업자 비토리오", text: "바르톨로가 사람들 앞에서 나를 사기꾼이라 했소. 뭐, 이자를 좀 세게 받긴 했지. 그래도 값은 치르게 해야겠소. 피 한 방울이면 되오. 얼굴은 두시오. 돈은 넉넉히 드리리다.", cond: COND_FIRST, hint: "흥정: 아주 이름난 가게라야 값을 올려 줄 손님이다", pay: "기본 보수 55 · 팁 최대 20" };
+const CLARA_TEXT = "바르톨로가 쓰고 다니는 그 모자, 값도 안 치르고 가져간 제 물건이에요. 깃털만 잘라 주세요. 칼을 섞는 거야 어쩔 수 없지만, 그 사람 몸에 상처는 내지 말고요. 다치면 제가 곤란해져요.";
+function sceneUiCounter() {
+  const ui = PICK.ui, F = bodyF(false), c = VITTORIO, dlg = wrap(c.text, 40);
+  let s = counterBg() + tx(32, 40, "1일차 · 손님 2/3 (문밖에 1명) · 오늘 남은 결투 2 · 소지금 70", 22, F) + tx(1248, 40, "평판 22 · 별 3/5 (다음 24)", 20, F, { fill: C.red, anchor: "end" });
+  s += figureImg(V1) + counterBand();
+  s += UI[ui].panel(410, 70, 830, 440) + panelHead(ui, 436, 108, c.name, 21, 778);
+  s += txs(dlg, 436, 146, 30, 19, F) + txs(wrap(c.cond, 42), 436, 146 + dlg.length * 30 + 20, 26, 18, F, { fill: C.red });
+  s += txs([c.hint, "상대: 바르톨로", c.pay], 436, 418, 26, 17, F, { fill: C.soft });
+  s += btn(ui, 410, 600, 210, 56, "값을 올려 부른다", 18) + btn(ui, 640, 600, 230, 56, "돌려보낸다", 20) + btn(ui, 900, 590, 320, 76, "맡는다", 28, "primary") + btn(ui, 40, 650, 170, 42, "오늘은 그만", 16);
+  return s;
+}
+// 장부의 한 줄: 왼쪽에 이름, 오른쪽 맞춤의 수
+function ledgerRow(ui, x, y, w, label, value, size, o = {}) {
+  const F = o.title ? titleF() : bodyF(!!o.bold);
+  return UI[ui].rule(x, y - size - 4, w, !!o.total) + tx(x, y, label, size, F, { fill: o.fill }) + tx(x + w, y, value, size, F, { fill: o.fill, anchor: "end" });
+}
+function sceneUiSettle() {
+  const ui = PICK.ui, F = bodyF(false);
+  let s = counterBg() + tx(32, 44, "1일차 · 오늘의 결투 1/3 정산", 30, titleF()) + figureImg(R3) + counterBand();
+  s += UI[ui].panel(410, 70, 830, 96) + txs(wrap("부탁드린 그대로예요! 더 바랄 게 없네요. 넉넉히 넣었으니 받아 주세요.", 40), 436, 112, 28, 20, F);
+  s += UI[ui].panel(410, 186, 830, 324) + tx(436, 236, "충족도 100", 34, titleF());
+  s += tx(436, 268, "기준치 80 이상 — 보수를 전부 받는다", 18, F, { fill: C.soft });
+  s += ledgerRow(ui, 436, 316, 778, "기본 보수", "45 / 45", 22) + ledgerRow(ui, 436, 358, 778, "팁", "25 / 25", 22);
+  s += ledgerRow(ui, 436, 412, 778, "받은 돈", "70", 28, { total: true, bold: true }) + ledgerRow(ui, 436, 452, 778, "소지금", "70", 20, { fill: C.soft });
+  s += tx(432, 532, "평판 20 → 22 · 해냈다 +1 · 흠 없이 +1", 18, F, { fill: C.red });
+  return s + btn(ui, 900, 590, 320, 76, "다음 의뢰인", 28, "primary");
+}
+function sceneUiClosing() {
+  const ui = PICK.ui, F = bodyF(false);
+  let s = counterBg() + tx(32, 50, "1일차 — 가게를 닫는다", 30, titleF()) + counterBand();
+  s += UI[ui].panel(32, 84, 600, 500) + tx(54, 126, "오늘의 의뢰", 20, F, { fill: C.soft });
+  s += txs(["클라라 — 충족도 100 · 기본 보수 45 · 팁 25", "비토리오 — 충족도 85 · 기본 보수 55 · 팁 14", "토마소 — 충족도 60 · 기본 보수 30 · 팁 0 · 다침"], 54, 160, 30, 20, F);
+  s += tx(54, 252, "돌려보낸 손님: 이네스", 17, F, { fill: C.soft });
+  s += ledgerRow(ui, 54, 306, 556, "수입", "+169", 22) + ledgerRow(ui, 54, 346, 556, "임대료", "-60", 22) + ledgerRow(ui, 54, 386, 556, "치료비  (1회)", "-18", 22);
+  s += ledgerRow(ui, 54, 446, 556, "오늘의 손익", "+91", 32, { total: true, title: true }) + ledgerRow(ui, 54, 492, 556, "소지금", "0 → 91", 22);
+  s += UI[ui].panel(656, 84, 592, 500) + tx(678, 126, "살 것 — 효과는 내일부터", 20, F, { fill: C.soft });
+  [["상비약 상자 — 30", "치료비가 10 줄어든다", "normal"], ["응접실 의자 — 60", "팁이 30% 늘어난다", "normal"], ["누빈 조끼 — 90", "내 자세가 1칸 늘어난다. 져 줘야 하는 의뢰에서는 한 번 더 맞아야 한다", "off"]].forEach(([t, d, st], i) => {
+    s += btn(ui, 678, 146 + i * 104, 548, 48, t, 22, st) + tx(678, 218 + i * 104, d, 16, F, { fill: C.soft });
+  });
+  s += tx(678, 500, "소지금 91", 22, F);
+  s += tx(40, 606, "평판 22 · 별 3/5 — 다음 별(24)이면 손님이 1명 늘고 기본 보수가 10% 오른다", 16, F, { fill: C.p1 });
+  s += tx(656, 610, "살 것이 있다 — 고르거나, 그냥 '다음 날을 연다'를 누른다", 16, F, { fill: C.p1 });
+  return s + btn(ui, 868, 622, 380, 76, "다음 날을 연다", 28, "primary") + btn(ui, 32, 638, 220, 46, "처음 화면으로", 18);
+}
+
+// ---------------------------------------------------------------- 글꼴 섹션
+function sceneFontBody() {
+  let s = `<rect width="1280" height="720" fill="var(--parch-2)" filter="url(#paper)"/>`;
+  BODY_KEYS.forEach((k, i) => {
+    const x = i * 320 + 8, F = bodyF(false, k), dlg = wrap(CLARA_TEXT, 13);
+    s += UI.a.panel(x, 8, 304, 704) + tx(x + 16, 36, FONT_NAME[k], 15, { fam: `"Malgun Gothic", sans-serif`, w: 700 }, { fill: C.soft });
+    s += tx(x + 16, 72, "모자 장인 클라라", 21, bodyF(true, k)) + txs(dlg, x + 16, 106, 30, 19, F);
+    let y = 106 + dlg.length * 30 + 14;
+    const cond = wrap(COND_FEATHER, 14); s += txs(cond, x + 16, y, 26, 18, F, { fill: C.red }); y += cond.length * 26 + 10;
+    s += txs(["흥정: 가게의 이름을 보고", "값을 치를 손님이다", "기본 보수 45 · 팁 최대 25"], x + 16, y, 24, 17, F, { fill: C.soft }); y += 84;
+    s += tx(x + 16, y, "15 · 살 것의 설명과 안내", 15, F) + tx(x + 16, y + 22, "14 · 도움말 띠: 좌클릭 공격 · 우클릭 막기", 14, F) + tx(x + 16, y + 42, "13 · 충족도 라벨, 각주", 13, F);
+  });
+  return s;
+}
+function sceneFontTitle() {
+  let s = `<rect width="1280" height="720" fill="${C.p1}" filter="url(#paper)"/>`;
+  TITLE_KEYS.forEach((k, i) => {
+    const y = i * 240, F = titleF(k);
+    const label = k === "bodybold" ? `본문과 같은 집안의 굵은 것 (${FONT_NAME[PICK.body]})` : FONT_NAME[k];
+    s += (i ? `<path d="M0,${y} L1280,${y}" stroke="${C.ink}" stroke-width="2"/>` : "") + tx(24, y + 26, label, 15, { fam: `"Malgun Gothic", sans-serif`, w: 700 }, { fill: C.soft });
+    s += tx(24, y + 96, "명예 결투 대리 의뢰소", 54, F) + tx(24, y + 146, "1일차 — 가게를 닫는다", 30, F);
+    s += tx(640, y + 96, "충족도 100", 46, F) + tx(640, y + 146, "충족도 85", 34, F);
+    s += UI.a.button(940, y + 60, 300, 76, C.btnRed, C.ink) + tx(1090, y + 108, "맡는다", 28, F, { fill: C.p1, anchor: "middle" });
+    s += tx(24, y + 196, "간판 · 대리 결투 의뢰소", 20, F) + tx(640, y + 196, "받은 돈   70", 28, F);
+  });
+  return s;
+}
+function sceneFontState() {
+  const art = sheetArt(); let s = "";
+  STATE_KEYS.slice(0, 3).concat(["malgun"]).forEach((k, i) => {
+    const body = `<g transform="translate(-480,0)">${bgOf(R2)()}${opp({ x: 640, y: 446, s: 0.85, hat: true, arm: [0, -277.5], sword: 45, tint: "--sig-big", aim: true, face: "angry", art, aimPath: art && art.aimPath })}${ring()}</g>`
+      + stateText(STATE_LINES.block, 160, 62, k) + stateText(["크게 열림!"], 160, 540, k) + stateText(["무너짐!"], 160, 590, k)
+      + `<rect x="0" y="680" width="320" height="40" fill="${C.p1}"/>` + tx(160, 706, FONT_NAME[k], 15, { fam: `"Malgun Gothic", sans-serif`, w: 700 }, { anchor: "middle" });
+    s += `<svg x="${i * 320}" y="0" width="320" height="720" viewBox="0 0 320 720" overflow="hidden">${body}</svg>` + (i ? `<path d="M${i * 320},0 L${i * 320},720" stroke="${C.ink}" stroke-width="3"/>` : "");
+  });
+  return s;
+}
+// 글자 크기의 아홉 단계(결정 226)
+const SCALE = [
+  [54, "간판", "처음 화면의 가게 이름", "명예 결투 대리 의뢰소", "t"], [46, "큰 수", "결투 결과의 충족도", "충족도 100", "t"], [34, "수", "정산의 충족도, 폐점의 손익", "오늘의 손익 +91", "t"],
+  [28, "머리", "화면 머리 줄, 주 버튼, 받은 돈, 상태 글자", "1일차 — 가게를 닫는다 · 맡는다", "t"], [24, "강조", "간격, 장부의 주요 줄", "간격: 교전 · 수입 +169", "b"],
+  [20, "본문", "사연 대사, 목록, 보통 버튼", "깃털만 잘라 주세요. 그 사람 몸에 상처는 내지 말고요.", "b"], [18, "보조", "조건, HUD의 라벨, 작은 버튼", "모자에 유효타 한 번. 스침은 어디든 괜찮다.", "b"],
+  [16, "설명", "힌트, 살 것의 설명, 안내", "흥정: 가게의 이름을 보고 값을 치를 손님이다", "b"], [14, "깨알", "도움말 띠, 각주", "좌클릭 공격 · 우클릭 막기 · 마우스 위치로 방향·높이 · W/S 간격", "b"],
+];
+function sceneScale() {
+  let s = `<rect width="1280" height="720" fill="${C.p1}" filter="url(#paper)"/>`, y = 16;
+  for (const [size, name, where, sample, kind] of SCALE) {
+    y += size + 16;
+    s += tx(24, y, `${size}`, 16, bodyF(true), { fill: C.red }) + tx(64, y, name, 16, bodyF(false)) + tx(130, y, where, 14, bodyF(false), { fill: C.soft }) + tx(430, y, sample, size, kind === "t" ? titleF() : bodyF(false));
+    y += 8;
+  }
+  return s;
+}
+function sceneUiKit() {
+  let s = `<rect width="1280" height="720" fill="var(--parch-2)" filter="url(#paper)"/>`;
+  ["a", "b", "c"].forEach((ui, i) => {
+    const x = i * 427 + 8, T = THEME[ui], F = bodyF(false);
+    s += tx(x + 8, 24, T.name, 18, bodyF(true));
+    s += UI[ui].panel(x, 34, 410, 150) + panelHead(ui, x + 22, 70, "패널의 머리 글", 20, 366) + txs(["본문 글자는 이 색이다. 흐린 글자는", "색으로 낸다."], x + 22, 104, 26, 18, F) + tx(x + 22, 166, "붉은 글자: 조건과 평판", 17, F, { fill: C.red }) + tx(x + 250, 166, "흐린 글자", 17, F, { fill: C.soft });
+    [["보통", "normal"], ["올림", "hover"], ["누름", "press"], ["못 누름", "off"], ["값이 걸림", "haggled"]].forEach(([t, st], k) => { s += btn(ui, x + (k % 3) * 138, 196 + Math.floor(k / 3) * 52, 130, 44, t, 18, st); });
+    s += btn(ui, x + 276, 248, 134, 44, "맡는다", 22, "primary");
+    // 게이지: 밝은 패널 위의 것과 결투 HUD 판 위의 것
+    s += UI[ui].panel(x, 304, 410, 170, true) + tx(x + 16, 328, "자세 칸(상대 / 나)", 14, hudF(false), { fill: T.hud.soft });
+    s += cellRow(ui, x + 16, 338, 5, 3, T.hud.cellOn, T.hud.cellOff, false, true) + cellRow(ui, x + 180, 338, 3, 2, T.hud.cellMine, T.hud.cellOff, false, true);
+    [0, 0.6, 1].forEach((v, k) => { s += UI[ui].bar(x + 16 + k * 130, 366, 118, 18, v, T.hud.barOn, T.hud.barOff, T.hud.border); });
+    s += tx(x + 16, 400, "충족도 0 · 60 · 100", 13, hudF(false), { fill: T.hud.soft });
+    s += bandGauge(ui, x + 12, 410, 186, 24, "엉킴", 44, 0.4, C.bindNormal, C.p1) + bandGauge(ui, x + 210, 410, 186, 24, "엉킴", 44, 0.9, C.bindWarn, C.bindWarn);
+    s += bandGauge(ui, x + 12, 440, 186, 24, "방심", 52, 0.5, C.compNormal, C.p1) + bandGauge(ui, x + 210, 440, 186, 24, "방심!", 52, 1, C.compFull, C.compFull);
+    // 장부의 줄 넷
+    s += UI[ui].panel(x, 484, 410, 156) + ledgerRow(ui, x + 22, 520, 366, "수입", "+169", 20) + ledgerRow(ui, x + 22, 550, 366, "임대료", "-60", 20) + ledgerRow(ui, x + 22, 580, 366, "치료비", "-18", 20) + ledgerRow(ui, x + 22, 620, 366, "오늘의 손익", "+91", 24, { total: true, bold: true });
+    // 선 굵기 넷과 교전의 인물 바깥 선(4.4)
+    [[3, "패널 3"], [2.5, "버튼 2.5"], [1.5, "게이지 1.5"], [1, "장식 1"], [4.4, "인물(교전) 4.4"]].forEach(([w, t], k) => {
+      s += `<path d="M${x + 4 + k * 82},660 l64,0" stroke="${C.ink}" stroke-width="${w}"/>` + tx(x + 4 + k * 82, 684, t, 12, F, { fill: C.soft });
+    });
+  });
+  return s;
+}
+// 재기용: 한 색 바탕 위에 조립한 바르톨로 셋. 골반의 화면 좌표: 멀리 (200, 420) · 교전 (520, 470) · 밀착 (930, 520)
+function sceneSizeLines() {
+  const art = sheetArt(), o = { hat: true, arm: [-65, -180], sword: -25, face: "smug", art };
+  let s = `<rect width="1280" height="720" fill="var(--in-bg)"/>` + opp(Object.assign({ x: 200, y: 420, s: 0.55 }, o)) + opp(Object.assign({ x: 520, y: 470, s: 0.85 }, o)) + opp(Object.assign({ x: 930, y: 520, s: 1.1 }, o));
+  // 반 화소 자리에 두어 3이 꽉 찬 세 화소로 구워지게 한다
+  [[3, 100.5], [2.5, 160.5], [1.5, 220.5], [1, 280.5]].forEach(([w, y]) => { s += `<path d="M1130,${y} L1250,${y}" stroke="${C.ink}" stroke-width="${w}"/>`; });
+  return s;
+}
+// 밀착(1.1)의 머리~가슴을 창 1280 · 1920 · 2560의 크기(1 · 1.5 · 2배)로. 넷째 칸은 뒷골목의 왼쪽 가장자리를 1.5배로.
+function sceneSizeRes() {
+  const art = sheetArt(), spec = sheetSpec(), k = spec ? spec.k : 1;
+  if (!art) return noneScene("파츠 시트의 그림이 없다(로컬에만 있다). 해상도는 셈으로만 적는다");
+  let s = "";
+  [1, 1.5, 2].forEach((f, i) => {
+    const sc = 1.1 * f, ratio = (k * sc).toFixed(2);
+    const body = `<rect width="320" height="720" fill="var(--in-bg)"/>` + opp({ x: 160, y: 420 + 200 * sc, s: sc, hat: true, arm: [-65, -180], sword: -25, face: "smug", art })
+      + `<rect x="0" y="672" width="320" height="48" fill="${C.p1}"/>` + txs([`창 ${[1280, 1920, 2560][i]} · 밀착 × ${f}`, `화면 화소 ÷ 원본 화소 = ${ratio}`], 10, 692, 20, 14, { fam: `"Malgun Gothic", sans-serif`, w: 700 });
+    s += `<svg x="${i * 320}" y="0" width="320" height="720" viewBox="0 0 320 720" overflow="hidden">${body}</svg>`;
+  });
+  s += `<svg x="960" y="0" width="320" height="720" viewBox="0 0 320 720" overflow="hidden"><image href="${R2.raw}" x="0" y="-380" width="1920" height="1280"/><rect x="0" y="672" width="320" height="48" fill="${C.p1}"/>${txs(["창 1920 · 뒷골목의 왼쪽 가장자리", "화면 화소 ÷ 원본 화소 = 1.25"], 10, 692, 20, 14, { fam: `"Malgun Gothic", sans-serif`, w: 700 })}</svg>`;
+  for (let i = 1; i < 4; i++) s += `<path d="M${i * 320},0 L${i * 320},720" stroke="${C.ink}" stroke-width="3"/>`;
+  return s;
+}
+
+// ---------------------------------------------------------------- <pre>에 적는 값
+function writeMeasures() {
+  const put = (id, lines) => { document.getElementById(id).textContent = lines.join("\n"); };
+  // font-status: loaded이고 폭이 시스템 글꼴만일 때와 다르면 그 글꼴이 실제로 쓰였다
+  const sample = "의뢰를 받아 결투를 대신 치러 드립니다";
+  put("font-status", FONT_FACES.map(([key, weight, face]) => {
+    const w = textWidth({ fam: `"f025-${key}", monospace`, w: String(weight).split(" ")[0] }, 40, sample), fb = textWidth({ fam: "monospace", w: 400 }, 40, sample);
+    return `${key}/${weight},${face.status},${w.toFixed(1)},${fb.toFixed(1)}`;
+  }));
+  const tm = [];
+  const rows = BODY_KEYS.map(k => [k, BODY_W[k] || 400]).concat([["nanumsquareround", 400]], BODY_KEYS.map(k => [k, BOLD_W[k]]), [["notosanskr", 500], ["songmyung", 400], ["hahmlet", 700], ["batang", 400], ["malgun", 400]]);
+  for (const [k, w] of rows) for (let size = 12; size <= 20; size++) tm.push([k, w, size].concat(typeMetric(famOf(k), w, size)).join(","));
+  put("type-metrics", tm);
+  put("state-box", STATE_KEYS.concat(["malgun"]).map(k => stateBox(k).join(",")));
+  // contrast: 이름,앞색,바탕색,비
+  const ct = [], line = (name, fg, bg) => ct.push(`${name},${fg},${bg},${ratio(fg, bg).toFixed(2)}`);
+  for (const ui of ["a", "b", "c"]) {
+    const T = THEME[ui], Hd = T.hud;
+    line(`${ui} 본문/패널`, T.ink, T.panel); line(`${ui} 흐린 글자/패널`, T.soft, T.panel); line(`${ui} 붉은 글자/패널`, T.red, T.panel);
+    line(`${ui} 버튼의 글자`, T.btnInk, T.btn); line(`${ui} 버튼 올림`, T.btnInk, T.btnHover); line(`${ui} 버튼 누름`, T.btnInk, T.btnPress);
+    line(`${ui} 못 누르는 버튼(3.0까지)`, T.btnOffInk, T.btnOff); line(`${ui} 값이 걸린 버튼(3.0까지)`, T.btnHaggled, T.btnOff); line(`${ui} 주 버튼(28: 3.0)`, T.btnPrimaryInk, T.btnPrimary);
+    line(`${ui} HUD 글자/판`, Hd.ink, Hd.panel); line(`${ui} HUD 흐린 글자/판`, Hd.soft, Hd.panel); line(`${ui} HUD 붉은 글자/판`, Hd.red, Hd.panel);
+    line(`${ui} 자세 칸(상대) 찬/빈`, Hd.cellOn, Hd.cellOff); line(`${ui} 자세 칸(나) 찬/빈`, Hd.cellMine, Hd.cellOff); line(`${ui} 충족도 찬/빈`, Hd.barOn, Hd.barOff);
+    line(`${ui} 충족도 라벨/빈 곳`, Hd.ink, Hd.barOff);
+  }
+  line("머리 줄의 글자/윗띠", C.ink, C.p1); line("머리 줄의 붉은 글자/윗띠", C.red, C.p1); line("벽 위의 붉은 글자(평판 줄)", C.red, C.p1); line("카운터 띠 위의 글자", C.p1, C.wood);
+  // 패널이 바깥 바탕에서 갈린다: ui,panel,bg,fillRatio,borderRatio,max
+  const pan = (ui, kind, fill, border) => { for (const [bn, bg] of [["shade", C.shade], ["parch", C.p1]]) { const a = ratio(fill, bg), b = ratio(border, bg); ct.push(`panel,${ui},${kind},${bn},${a.toFixed(2)},${b.toFixed(2)},${Math.max(a, b).toFixed(2)}`); } };
+  for (const ui of ["a", "b", "c"]) { pan(ui, "light", C.p1, ui === "c" ? C.stWood : C.ink); pan(ui, "hud", THEME[ui].hud.panel, THEME[ui].hud.border); }
+  put("contrast", ct);
+  // gauge-states: ui,gauge,normal,warn,empty,hueDiff,normalS,warnVsEmpty,normalVsEmpty,labelVsBand
+  const gs = [];
+  for (const ui of ["a", "b", "c"]) for (const [g, n, w] of [["bind", C.bindNormal, C.bindWarn], ["complacency", C.compNormal, C.compFull]])
+    gs.push([ui, g, n, w, C.band, hueDiff(n, w).toFixed(0), hsv(n).s.toFixed(2), ratio(w, C.band).toFixed(2), ratio(n, C.band).toFixed(2), ratio(w, C.band).toFixed(2)].join(","));
+  put("gauge-states", gs);
+  // fit: key,button,textWidth,buttonWidth,ok (글자의 좌우 여백 각 16)
+  const BUTTONS = [["값을 올려 부른다", 18, 210], ["돌려보낸다", 20, 230], ["맡는다", 28, 320], ["오늘은 그만", 16, 170], ["다음 의뢰인", 28, 320], ["가게를 닫는다", 28, 320], ["다음 날을 연다", 28, 380], ["처음 화면으로", 18, 220], ["가게를 연다", 30, 400], ["연습 — 의뢰를 골라 결투", 20, 400]];
+  const ft = [];
+  for (const k of BODY_KEYS) for (const [t, size, bw] of BUTTONS) { const w = textWidth(bodyF(false, k), size, t); ft.push(`${k},${t},${w.toFixed(0)},${bw},${w <= bw - 32 ? 1 : 0}`); }
+  put("fit", ft);
+}
+
+// ---------------------------------------------------------------- 페이지 만들기 (글꼴이 다 읽힌 뒤에 그린다)
+const FONT_FACES = [];
+for (const f of FONTS) for (const [file, weight] of f.files) FONT_FACES.push([f.key, weight, new FontFace(`f025-${f.key}`, `url(../generated/fonts/${f.key}/${file})`, { weight })]);
+const SCENES = {
+  "font-body": sceneFontBody, "font-title": sceneFontTitle, "font-state": sceneFontState, "scale": sceneScale,
+  "ui-kit": sceneUiKit, "ui-duel": sceneUiDuel, "ui-counter": sceneUiCounter, "ui-settle": sceneUiSettle, "ui-closing": sceneUiClosing,
+  "size-lines": sceneSizeLines, "size-res": sceneSizeRes,
+};
+Promise.allSettled(FONT_FACES.map(([, , face]) => face.load().then(f => document.fonts.add(f)))).then(() => {
+  document.getElementById("genDefs").innerHTML = tintFilters();
+  for (const k of STATE_KEYS.concat(["malgun"])) { stateBox(k); const ctx = mkCanvas(8, 8), F = stateF(k); ctx.font = `${F.w} 28px ${F.fam}`; ASC[k] = ctx.measureText("한").fontBoundingBoxAscent; }
+  for (const [id, fn] of Object.entries(SCENES)) document.querySelector(`#${id} svg`).innerHTML = fn();
+  writeMeasures();
+  document.body.setAttribute("data-ready", "1");
+});
+
+// 단독 보기(#<id>)
+const hash = decodeURIComponent(location.hash.slice(1));
+if (hash) {
+  const target = document.getElementById(hash);
+  if (target) { document.body.classList.add("solo"); target.classList.add("solo-target"); }
+}
+</script>
+</body>
+</html>

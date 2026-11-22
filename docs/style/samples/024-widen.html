@@ -1,0 +1,886 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>고른 길로 넓히기 견본</title>
+<style>
+/* 색은 모두 여기에 둔다(계획 021 작업 3). 다리 B와 짙은 무대만 남겼다(020의 답). */
+:root {
+  --ink: #3B2A1E; --ink-soft: #6B5440;
+  --parch-1: #E9D8B4; --parch-2: #D2B98C; --parch-3: #A8895E;
+  --stage-dark: #5E4C39; --stage-dark-2: #7A6449;
+  --red: #A5533F; --green: #6F7F4F; --blue: #5C6F7E; --ochre: #C08A3E; --wood: #7A5232;
+  --skin-1: #EBC49F; --skin-2: #C98E66; --skin-3: #8E5E40;
+  /* 야외 무대의 짙은 톤. x 290~990에 쓰는 색은 모두 L ≤ 0.20(결정 182·190) */
+  --st-shade: #3A3027; --st-sky: #3E4A55; --st-ground: #4E4336; --st-wall: #5E4C39;
+  --st-wall-2: #54473A; --st-wall-3: #4A3F34; --st-timber: #5A4632; --st-wood: #4A3A2C;
+  --st-iron: #2E2620; --st-leaf: #46503A; --st-sil: #2E2A28; --st-emblem: #7A6449;
+  /* 신호색: 지금 코드의 값 그대로(결정 181) */
+  --sig-thrust: #FFE640; --sig-cut: #FFBF33; --sig-big: #FF801A; --sig-strike: #F23333;
+  --sig-recovery: #4D80F2; --sig-stagger: #A659D9; --sig-touched: #FFFFFF;
+  --sig-aim: #FFFF66; --sig-band: #4DFF80;
+  --sw-ready: #D9D9E6; --sw-guard: #4DD973; --sw-fresh: #66F2FF; --sw-parry: #FFD933;
+  --sw-grazed: #F24040; --sw-windup: #FFE64D; --sw-bind: #FF7333;
+  /* 다리 B: 굵기가 변하는 고동색 잉크 선, 배경과 같은 바랜 칠, 평평한 그림자 한 단계 */
+  --line: #3B2A1E; --lw: 5.2;
+  --c-doublet: #5C6F7E; --c-doublet-sh: #4A5A67;
+  --c-legs: #6B5440; --c-legs-sh: #57442F;
+  --c-skin: #EBC49F; --c-skin-sh: #C98E66;
+  --c-hat: #A5533F; --c-hat-sh: #84422F;
+  --c-feather: #E9D8B4; --c-steel: #CFC8BA; --c-hair: #3B2A1E;
+  --c-collar: #E9D8B4; --c-boot: #3B2A1E;
+  --c-glove: #7A5232; --c-glove-sh: #634228; --c-psleeve: #5E6648;
+  /* 의뢰인 둘 */
+  --cl-dress: #6F7F4F; --cl-dress-sh: #59663F; --cl-apron: #E9D8B4; --cl-apron-sh: #D2B98C; --cl-hair: #7A5232; --cl-hat: #A5533F; --cl-ribbon: #E2D3B4;
+  --vi-robe: #7E4A4A; --vi-robe-sh: #663B3B; --vi-fur: #A8895E; --vi-fur-sh: #8C7050; --vi-cap: #3B2A1E; --vi-gold: #C08A3E; --vi-purse: #7A5232;
+  --in-bg: #D8D8D8;
+  /* 자세 안내도(결정 205): 몸과 칼 팔만 가른다 */
+  --pose-body: #9A9A9A; --pose-arm: #6E6E6E;
+}
+
+/* 파츠는 칠 층과 선 층 둘이다. 상태 색은 칠 층에만 80% 섞는다(Godot의 base.lerp(tint, 0.8)과 같은 셈) */
+.fill > * { fill: var(--base); stroke: none; }
+.opp.tint-on .tinted > .fill > * { fill: color-mix(in srgb, var(--base) 20%, var(--tint) 80%); }
+.line > * { fill: none; stroke: var(--line); stroke-width: var(--lw); stroke-linejoin: round; stroke-linecap: round; }
+.line > .ink { fill: var(--line); stroke: none; }
+.line > .eye-w { fill: var(--c-collar); }
+.line > .thin { stroke-width: calc(var(--lw) * 0.55); }
+.line > .thick { stroke-width: calc(var(--lw) * 1.35); }
+.lines-b .line { filter: url(#inkline); }
+.sig-blade { fill: var(--sw-state); }
+
+.ui { font-family: "Batang", "BatangChe", "Gungsuh", serif; fill: var(--ink); }
+.state { font: bold 28px "Malgun Gothic", sans-serif; fill: #FFFFFF; stroke: #000000; stroke-width: 8; paint-order: stroke; stroke-linejoin: round; }
+.none-note { font: 22px "Batang", serif; fill: var(--parch-1); }
+
+html, body { margin: 0; background: #2A2018; color: #E9D8B4; font-family: "Batang", serif; }
+header { max-width: 1240px; margin: 0 auto; padding: 20px; line-height: 1.6; }
+header h1 { margin: 0 0 8px; font-size: 26px; }
+header ol li { margin-bottom: 8px; }
+section { max-width: 1280px; margin: 0 auto 40px; }
+section h2 { font-size: 20px; margin: 0 20px 8px; }
+section p.cap { margin: 8px 20px 0; font-size: 15px; line-height: 1.5; }
+svg.scene { width: 100%; height: auto; display: block; background: #D2B98C; }
+.gray svg.scene { filter: grayscale(1); }
+body.solo header, body.solo section, body.solo h2, body.solo p.cap { display: none; }
+body.solo section.solo-target { display: block; margin: 0; max-width: none; }
+body.solo svg.scene { width: 1280px; height: 720px; }
+body.solo svg.scene.sz-portrait { width: 1024px; height: 1536px; }
+body.solo svg.scene.sz-land { width: 1536px; height: 1024px; }
+body.solo { overflow: hidden; }
+</style>
+</head>
+<body>
+<header>
+  <h1>고른 길로 넓히기 — 계획 024</h1>
+  <p><b>보는 법</b>: 023에서 고르신 길(섞은 SVG를 화풍의 참고로, 그만큼 단순하게, 만듦새를 다듬고 디테일만 조금)로 넓힌 그림입니다. 바르톨로의 파츠 시트를 잘라 결투 화면에서 조립했고, 무대 둘(안뜰·광장)과 비토리오를 그렸습니다. 명세는 <code>docs/style/STYLE_SPEC.md</code>, 기록은 <code>docs/style/GENERATION.md</code>에 있습니다.</p>
+  <ol>
+    <li><b>파츠 시트</b>: 전신 그림(R1i)과 같은 사람인가. 조립한 모습과 상태 넷이 괜찮은가(<code>parts-raw</code>, <code>parts-idle</code>, <code>parts-states</code>, <code>parts-duel</code>, <code>parts-far</code>).</li>
+    <li><b>무대 둘</b>과 <b>비토리오</b>: 뒷골목·클라라와 같은 결인가.</li>
+    <li><b>기준 이미지</b>: <code>basis</code>의 일곱 장이 저장소에 올라갑니다.</li>
+  </ol>
+</header>
+<main id="main">
+<section id="parts-raw"><h2>바르톨로 파츠 시트 · 원본</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="parts-idle"><h2>대기 — 섞은 SVG · 전신 R1i · 시트를 조립한 것</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg><p class="cap">셋 모두 같은 크기(목~골반을 맞췄다). 조립한 것은 지금 게임의 놓임(팔은 어깨, 칼 −25°)이다.</p></section>
+<section id="idle-compare"><h2>대기 자세의 세 안 (게임은 바꾸지 않았다. 4단계 제안)</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg><p class="cap">가: 지금 게임의 놓임 · 나: 포즈 값 둘만 바꾼 것(팔을 바깥으로, 칼 각) · 다: 팔을 기울이기까지(코드가 바뀐다).</p></section>
+<section id="parts-states"><h2>조립한 바르톨로 · 상태 넷</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg><p class="cap">머리는 상태마다 바뀐다: 대기·예비 동작은 첫째, 빈틈은 둘째(당황), 무너짐은 셋째(어지러움).</p></section>
+<section id="parts-duel"><h2>조립한 바르톨로 · 뒷골목의 큰 베기 예비 동작</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="parts-far"><h2>조립한 바르톨로 · 멀리 — 방심</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="stage-court"><h2>무대 · 안뜰 — 같은 장면</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="stage-piazza"><h2>무대 · 광장 — 같은 장면</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="cmp-stage"><h2>견줌 · 안뜰과 광장 — 섞은 SVG · 021 G5 · 024</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="client-counter"><h2>카운터의 비토리오</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="cmp-client"><h2>견줌 · 비토리오 — 섞은 SVG · 021 G4 · 024</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="basis"><h2>기준 이미지 후보 일곱</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+<section id="palette"><h2>확정 팔레트 — 주는 값과 기준 그림에서 잰 값</h2><svg class="scene" viewBox="0 0 1280 720" width="1280" height="720"></svg></section>
+</main>
+<pre id="tint-pts" style="display:none"></pre>
+
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <pattern id="hatchBg" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(-35)">
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#6B5440" stroke-width="1.1"/>
+    </pattern>
+    <pattern id="crossBg" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#6B5440" stroke-width="1.1"/>
+      <line x1="0" y1="0" x2="6" y2="0" stroke="#6B5440" stroke-width="0.8"/>
+    </pattern>
+    <!-- 다리 B의 선: 오른쪽 아래가 두꺼워지는 겹침과 거친 가장자리 -->
+    <filter id="inkline" x="-10%" y="-10%" width="120%" height="120%">
+      <feOffset in="SourceGraphic" dx="1.4" dy="1.7" result="o"/>
+      <feMerge result="m"><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge>
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="4" result="n"/>
+      <feDisplacementMap in="m" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <!-- 배경의 양피지 -->
+    <filter id="paper" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.02" numOctaves="3" seed="2" result="big"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="5" result="fine"/>
+      <feColorMatrix in="big" type="matrix" values="0 0 0 0 0.36  0 0 0 0 0.25  0 0 0 0 0.15  0 0 0 0.45 -0.14" result="blot"/>
+      <feColorMatrix in="fine" type="matrix" values="0 0 0 0 0.3  0 0 0 0 0.2  0 0 0 0 0.12  0 0 0 0.3 -0.08" result="grit"/>
+      <feMerge result="all"><feMergeNode in="SourceGraphic"/><feMergeNode in="blot"/><feMergeNode in="grit"/></feMerge>
+      <feComposite in="all" in2="SourceAlpha" operator="in"/>
+    </filter>
+  </defs>
+</svg>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs id="genDefs"></defs></svg>
+
+<script>
+"use strict";
+
+// ---------------------------------------------------------------- 상대 (결정 12의 이름·계층·관절)
+// 관절 자리는 scenes/duel/opponent_view.tscn과 같다: 목 (0,-200), 모자는 머리 꼭대기, 손목은 어깨 아래 105, 칼자루는 손목 아래 15.
+// 머리 높이 104, 모자 45(020의 답): 교전에서 446 - (200+104+45)*0.85 = 149.4 ≥ 142(두 줄 상태 글자의 아래 끝).
+const TORSO = "M-62,-198 Q-72,-198 -71,-186 L-60,-10 Q-59,0 -48,0 L48,0 Q59,0 60,-10 L71,-186 Q72,-198 62,-198 Z";
+// 겹침 여유(STYLE_BIBLE 5번): 목 밑동은 목 위로 12, 팔 윗끝은 어깨 위로 14
+const OVERLAP = { neck: 12, armHead: 14 };
+const P = {
+  breech: "M-57,0 L57,0 L60,56 Q59,74 36,74 L13,74 Q12,40 0,38 Q-12,40 -13,74 L-36,74 Q-59,74 -60,56 Z",
+  breechSh: "M34,0 L57,0 L60,56 Q59,74 36,74 L28,74 Q32,30 34,0 Z",
+  stockL: "M-45,72 L-19,72 L-21,152 L-43,152 Z", stockR: "M19,72 L45,72 L43,152 L21,152 Z",
+  stockSh: "M36,72 L45,72 L43,152 L36,152 Z M-28,72 L-19,72 L-21,152 L-28,152 Z",
+  shoeL: "M-44,148 L-20,148 Q-16,160 -18,170 L-58,170 Q-60,158 -44,148 Z",
+  shoeR: "M20,148 L44,148 Q60,158 58,170 L18,170 Q16,160 20,148 Z",
+  neck: "M-17,-212 L17,-212 L17,-194 L-17,-194 Z",
+  torsoSh: "M42,-198 L62,-198 Q72,-198 71,-186 L60,-10 Q59,0 48,0 L34,0 Z",
+  belt: "M-59,-30 L59,-30 L58,-14 L-58,-14 Z",
+  face: "M-46,-8 Q-56,-52 -50,-78 Q-44,-104 0,-104 Q44,-104 50,-78 Q56,-52 46,-8 Q28,6 0,6 Q-28,6 -46,-8 Z",
+  faceSh: "M30,-100 Q44,-100 50,-78 Q56,-52 46,-8 Q36,1 24,4 Q40,-40 30,-100 Z",
+  earL: "M-49,-64 Q-63,-62 -61,-47 Q-59,-35 -47,-38 Z", earR: "M49,-64 Q63,-62 61,-47 Q59,-35 47,-38 Z",
+  hair: "M-52,-66 Q-56,-100 -30,-110 Q0,-117 30,-110 Q56,-100 52,-66 Q44,-84 26,-86 Q8,-98 -8,-90 Q-30,-94 -44,-80 Q-48,-74 -52,-66 Z",
+  nose: "M-5,-62 Q-16,-40 -11,-31 Q0,-24 12,-31 Q15,-42 5,-62 Z",
+  mustache: "M-34,-20 Q-20,-34 0,-26 Q20,-34 34,-20 Q40,-10 30,-12 Q16,-22 0,-18 Q-16,-22 -30,-12 Q-40,-10 -34,-20 Z",
+  goatee: "M-7,-6 Q0,7 7,-6 Q0,-2 -7,-6 Z",
+  brim: "M-74,0 Q-78,-12 -52,-14 L52,-14 Q78,-12 74,0 Q40,8 0,8 Q-40,8 -74,0 Z",
+  crown: "M-38,-12 L-33,-42 Q0,-48 33,-42 L38,-12 Z",
+  crownSh: "M18,-44 Q28,-43 33,-42 L38,-12 L26,-12 Z",
+  band: "M-38,-12 L-37,-22 L37,-22 L38,-12 Z",
+  feather: "M30,-28 Q78,-50 152,-30 Q106,-14 34,-18 Z",
+  sleeve: "M-17,2 Q-17,-14 0,-14 Q17,-14 17,2 L15,96 L-15,96 Z",
+  sleeveSh: "M6,-12 Q17,-10 17,2 L15,96 L7,96 Z",
+  cuff: "M-18,90 L18,90 L17,104 L-17,104 Z",
+  fist: "M-17,0 L17,0 Q20,14 17,28 Q0,34 -17,28 Q-20,14 -17,0 Z",
+  blade: "M-4.5,-24 L-4.5,-174 L0,-192 L4.5,-174 L4.5,-24 Z",
+  guard: "M-27,-25 Q-31,-20 -27,-15 L27,-15 Q31,-20 27,-25 Z",
+  grip: "M-4,-15 L4,-15 L4,4 L-4,4 Z",
+};
+const sh = (cls, d, base) => `<path class="${cls}" d="${d}" style="--base: var(${base})"/>`;
+const f = (d, base) => `<path d="${d}" style="--base: var(${base})"/>`;
+const l = (d, cls = "") => `<path${cls ? ` class="${cls}"` : ""} d="${d}"/>`;
+
+const FACES = {
+  idle: `${l("M-30,-70 Q-18,-76 -8,-71", "thick")}${l("M8,-71 Q18,-76 30,-70", "thick")}<circle class="ink" cx="-18" cy="-58" r="4.6"/><circle class="ink" cx="18" cy="-58" r="4.6"/>${l("M-8,-9 Q0,-6 8,-9")}`,
+  angry: `${l("M-31,-77 L-7,-66", "thick")}${l("M7,-66 L31,-77", "thick")}<circle class="ink" cx="-18" cy="-57" r="4.6"/><circle class="ink" cx="18" cy="-57" r="4.6"/><rect class="eye-w" x="-12" y="-15" width="24" height="10" rx="2"/>${l("M-4,-15 L-4,-5 M4,-15 L4,-5", "thin")}`,
+  focus: `${l("M-30,-73 L-8,-68", "thick")}${l("M8,-68 L30,-73", "thick")}${l("M-25,-58 L-11,-58")}<circle class="ink" cx="18" cy="-58" r="4.6"/>${l("M-9,-9 L9,-9")}`,
+  oops: `${l("M-30,-80 Q-18,-88 -8,-82", "thick")}${l("M8,-82 Q18,-88 30,-80", "thick")}<circle class="eye-w" cx="-18" cy="-58" r="8.5"/><circle class="eye-w" cx="18" cy="-58" r="8.5"/>${l("M-18,-58 m-8.5,0 a8.5,8.5 0 1,0 17,0 a8.5,8.5 0 1,0 -17,0", "thin")}${l("M18,-58 m-8.5,0 a8.5,8.5 0 1,0 17,0 a8.5,8.5 0 1,0 -17,0", "thin")}<circle class="ink" cx="-18" cy="-57" r="3.4"/><circle class="ink" cx="18" cy="-57" r="3.4"/><ellipse class="ink" cx="0" cy="-8" rx="7" ry="8"/>`,
+  dizzy: `${l("M-30,-74 Q-18,-84 -8,-74", "thick")}${l("M8,-80 Q18,-72 30,-78", "thick")}${l("M-24,-64 L-12,-52 M-12,-64 L-24,-52")}${l("M12,-64 L24,-52 M24,-64 L12,-52")}${l("M-12,-8 q4,-4 8,0 q4,4 8,0 q4,-4 8,0")}`,
+  smug: `${l("M-30,-74 Q-18,-80 -8,-74", "thick")}${l("M8,-74 Q18,-80 30,-74", "thick")}${l("M-27,-60 Q-18,-55 -9,-60")}${l("M9,-60 Q18,-55 27,-60")}${l("M-10,-9 Q2,-4 12,-12")}`,
+};
+
+// 파츠 하나씩 그린다. opp()와 파츠 시트가 같은 그림을 쓴다.
+const PART = {
+  Legs: () => `<g class="fill">${f(P.breech, "--c-legs")}${sh("sh", P.breechSh, "--c-legs-sh")}${f(P.stockL, "--c-collar")}${f(P.stockR, "--c-collar")}${sh("sh", P.stockSh, "--c-legs-sh")}${f(P.shoeL, "--c-boot")}${f(P.shoeR, "--c-boot")}</g>
+    <g class="line">${l(P.breech)}${l(P.stockL)}${l(P.stockR)}${l(P.shoeL)}${l(P.shoeR)}${l("M-36,10 Q-30,40 -38,66 M36,10 Q30,40 38,66", "thin")}${l("M-46,78 L-18,78 M18,78 L46,78", "thin")}</g>`,
+  Torso: () => `<g class="fill">${f(P.neck, "--c-skin")}${f(TORSO, "--c-doublet")}${sh("sh", P.torsoSh, "--c-doublet-sh")}${f(P.belt, "--c-boot")}<ellipse cx="0" cy="-198" rx="44" ry="12" style="--base: var(--c-collar)"/></g>
+    <g class="line">${l(TORSO)}${l("M-36,-190 Q-40,-100 -32,-34 M36,-190 Q40,-100 32,-34", "thin")}${l(P.belt)}<rect x="-9" y="-33" width="18" height="22" rx="2"/><circle class="ink" cx="0" cy="-168" r="3.4"/><circle class="ink" cx="0" cy="-143" r="3.4"/><circle class="ink" cx="0" cy="-118" r="3.4"/><circle class="ink" cx="0" cy="-93" r="3.4"/><circle class="ink" cx="0" cy="-68" r="3.4"/><ellipse cx="0" cy="-198" rx="44" ry="12"/>${l("M-30,-205 q5,8 10,0 q5,8 10,0 q5,8 10,0 q5,8 10,0 q5,8 10,0 q5,8 10,0", "thin")}</g>`,
+  Head: face => `<g class="fill">${f(P.earL, "--c-skin")}${f(P.earR, "--c-skin")}${f(P.face, "--c-skin")}${sh("sh", P.faceSh, "--c-skin-sh")}${f(P.hair, "--c-hair")}${f(P.nose, "--c-skin-sh")}${f(P.mustache, "--c-hair")}${f(P.goatee, "--c-hair")}</g>
+    <g class="line">${l(P.earL)}${l(P.earR)}${l(P.face)}${l(P.hair)}${l(P.nose)}${l(P.mustache)}${FACES[face || "idle"]}</g>`,
+  Hat: () => `<g class="fill">${f(P.crown, "--c-hat")}${sh("sh", P.crownSh, "--c-hat-sh")}${f(P.band, "--c-hat-sh")}${f(P.brim, "--c-hat")}</g>
+    <g class="line">${l(P.crown)}${l(P.band, "thin")}${l(P.brim)}</g>`,
+  Feather: () => `<g class="fill">${f(P.feather, "--c-feather")}</g>
+    <g class="line">${l(P.feather)}${l("M32,-23 Q90,-36 150,-30", "thin")}${l("M60,-30 l8,-9 M80,-34 l8,-8 M100,-35 l8,-7 M120,-34 l8,-5 M66,-27 l9,6 M88,-29 l9,6 M110,-30 l8,5", "thin")}</g>`,
+  Arm: () => `<g class="fill">${f(P.sleeve, "--c-doublet")}${sh("sh", P.sleeveSh, "--c-doublet-sh")}${f(P.cuff, "--c-collar")}</g>
+    <g class="line">${l(P.sleeve)}${l(P.cuff)}</g>`,
+  Hand: () => `<g class="fill">${f(P.fist, "--c-skin")}</g>
+    <g class="line">${l(P.fist)}${l("M-9,8 L-9,14 M0,8 L0,15 M9,8 L9,14", "thin")}</g>`,
+  Sword: () => `<g class="fill">${f(P.blade, "--c-steel")}${f(P.grip, "--c-boot")}${f(P.guard, "--c-steel")}<circle cx="0" cy="8" r="5" style="--base: var(--c-steel)"/></g>
+    <g class="line">${l(P.blade)}${l("M0,-30 L0,-168", "thin")}${l(P.guard)}${l("M-24,-18 Q-28,8 0,10", "thin")}<circle cx="0" cy="8" r="5"/></g>`,
+};
+
+// o: x, y, s(크기), hat, arm[절대 자리], sword(도), head(도), tint(변수 이름), headClosed, aim, face, art(생성 그림이면 그 파츠 함수 묶음)
+function opp(o) {
+  const tint = o.tint ? ` tint-on" style="--tint: var(${o.tint})` : "";
+  const headTint = o.headClosed ? "" : "tinted";
+  const A = o.art || PART;
+  const aim = o.aim ? `<g class="aim-outline"><path d="${o.aimPath || TORSO}" fill="none" stroke="var(--sig-aim)" stroke-width="5"/></g>` : "";
+  const t = o.tint || "";
+  return `<g class="opp${tint}" transform="translate(${o.x},${o.y}) scale(${o.s})">
+  <g data-part="Legs" class="tinted">${A.Legs(t)}</g>
+  <g data-part="Torso" class="tinted">${A.Torso(t)}
+    <g data-part="Head" class="${headTint}" transform="translate(0,-200) rotate(${o.head || 0})">${A.Head(o.face, o.headClosed ? "" : t)}
+      <g data-part="Hat" transform="translate(0,-104)"${o.hat ? "" : ` style="display:none"`}>${A.Hat()}
+        <g data-part="Feather">${A.Feather()}</g>
+      </g>
+    </g>
+    <g data-part="Arm" class="tinted" transform="translate(${o.arm[0]},${o.arm[1]}) rotate(${o.armRot || 0})">${A.Arm(t)}
+      <g data-part="Hand" class="tinted" transform="translate(0,105)">${A.Hand(t)}
+        <g data-part="Sword" transform="translate(0,15) rotate(${o.sword})">${A.Sword()}</g>
+      </g>
+    </g>
+    ${aim}
+  </g>
+</g>`;
+}
+
+// ---------------------------------------------------------------- 내 손과 칼 (player_sword_view: 칼 전체가 상태 색이다)
+function playerHand(x, y, stateVar, bladeWidth) {
+  return `<g class="phand" transform="translate(${x},${y})" style="--sw-state: var(${stateVar})">
+  <g transform="scale(${bladeWidth},1)">
+    <path class="sig-blade" d="M-6,-240 L6,-240 L9,-10 L-9,-10 Z"/><path class="sig-blade" d="M-40,-10 L40,-10 L40,4 L-40,4 Z"/>
+    <g class="line"><path d="M-6,-240 L6,-240 L9,-10 L-9,-10 Z"/><path d="M-40,-10 L40,-10 L40,4 L-40,4 Z"/><path class="thin" d="M0,-225 L0,-20"/></g>
+  </g>
+  <g class="fill">${f("M-44,78 L44,78 L52,150 L-52,150 Z", "--c-psleeve")}${f("M-36,2 Q-38,40 -34,86 L34,86 Q38,40 36,2 Q0,-6 -36,2 Z", "--c-glove")}${sh("sh", "M16,0 Q36,0 36,2 Q38,40 34,86 L20,86 Q26,40 16,0 Z", "--c-glove-sh")}${f("M-40,74 L40,74 L42,92 L-42,92 Z", "--c-collar")}</g>
+  <g class="line">${l("M-44,78 L-52,150 M44,78 L52,150")}${l("M-36,2 Q-38,40 -34,86 L34,86 Q38,40 36,2 Q0,-6 -36,2 Z")}${l("M-26,20 Q0,14 26,20 M-28,42 Q0,36 28,42", "thin")}${l("M-40,74 L40,74 L42,92 L-42,92 Z")}</g>
+</g>`;
+}
+
+// ---------------------------------------------------------------- 야외 무대 (결정 190)
+// 조용한 구역 = 신호가 쓰는 곳: 교전(0.85)·밀착(1.1) 상대 몸의 둘레 + 20, 고리(442~838, 108~504), 두 줄 글자(540~740, 62~142).
+// 몸의 둘레는 포즈 상수(STRIKE_OFFSET, 예비 동작의 pose_arm_offset)로 셈한 x -170~170, y -354(깃털)~170이다(palette에 셈).
+const Q = { x0: 433, x1: 847, y0: 62, y1: 683 };
+function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+const paperBg = () => `<rect width="1280" height="720" fill="var(--parch-2)" filter="url(#paper)"/>`;
+// 판석·돌 테두리: 가운데로 모이는 선 없이, 가장자리 띠에만 그린다
+function stones(x0, x1, y0, y1, seed, fill) {
+  const R = rng(seed); let s = "";
+  for (let y = y0, row = 0; y < y1; row++) {
+    const h = 24 + Math.round(R() * 10);
+    for (let x = x0 - (row % 2) * 22; x < x1;) {
+      const w = 38 + Math.round(R() * 34);
+      const xa = Math.max(x, x0), xb = Math.min(x + w, x1);
+      if (xb - xa > 8) s += `<path d="M${xa + 3},${y + 2} L${xb - 2},${y + 1 + R() * 3} L${xb - 3},${y + h - 2} L${xa + 2},${y + h - 1 - R() * 3} Z" fill="${fill}" stroke="var(--ink-soft)" stroke-width="1.4"/>`;
+      x += w;
+    }
+    y += h;
+  }
+  return s;
+}
+function hatchRect(x, y, w, h, op = 0.5) { return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="url(#hatchBg)" opacity="${op}"/>`; }
+function shutter(x, y, w, h, fill) {
+  let s = `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}" stroke="var(--ink)" stroke-width="2"/>`;
+  for (let k = 1; k < 4; k++) s += `<path d="M${x + (w * k) / 4},${y + 3} L${x + (w * k) / 4},${y + h - 3}" stroke="var(--ink-soft)" stroke-width="1.2"/>`;
+  return s + `<path d="M${x},${y + h / 2} L${x + w},${y + h / 2}" stroke="var(--ink)" stroke-width="1.6"/>`;
+}
+
+function stageAlley() {
+  let s = paperBg();
+  // 가운데의 큰 톤 덩이(선 없음): 골목 안쪽의 깊은 그늘, 그 위의 좁은 밤하늘, 돌바닥
+  s += `<rect x="240" y="0" width="800" height="720" fill="var(--st-shade)"/>`;
+  s += `<path d="M300,0 L990,0 L990,62 L940,74 L905,92 L868,110 L812,104 L760,118 L700,110 L640,124 L580,114 L520,128 L470,120 L430,134 L300,126 Z" fill="var(--st-sky)"/>`;
+  s += `<path d="M556,252 L626,196 L700,246 L716,238 L812,232 L812,548 L556,552 Z" fill="var(--st-wall-3)"/><path d="M736,360 L782,358 L782,546 L736,547 Z" fill="var(--st-shade)"/>`;
+  s += `<path d="M240,556 L560,548 L760,544 L1040,538 L1040,720 L240,720 Z" fill="var(--st-ground)"/>`;
+  // 오른쪽: 물러나는 집 벽 셋(원근으로 작아진다)
+  s += `<path d="M1000,40 L934,88 L934,566 L1000,606 Z" fill="var(--st-wall)"/>${shutter(950, 250, 36, 70, "var(--st-wood)")}${shutter(950, 400, 36, 64, "var(--st-wood)")}
+    <path d="M1000,40 L934,88 L934,566 L1000,606" fill="none" stroke="var(--ink)" stroke-width="2.4"/><path d="M1000,40 L934,88 M1006,30 L928,82 L924,92" fill="none" stroke="var(--ink)" stroke-width="3"/>`;
+  s += `<path d="M934,88 L888,120 L888,536 L934,566 Z" fill="var(--st-wall-2)"/>${shutter(900, 260, 24, 54, "var(--st-wood)")}
+    <path d="M934,88 L888,120 L888,536" fill="none" stroke="var(--ink)" stroke-width="2"/><path d="M938,84 L884,118 L880,126" fill="none" stroke="var(--ink)" stroke-width="2.6"/>`;
+  s += `<path d="M888,120 L856,142 L856,516 L888,536 Z" fill="var(--st-wall-3)"/><path d="M866,250 L880,248 L880,290 L866,292 Z" fill="var(--st-wood)" stroke="var(--ink)" stroke-width="1.4"/>
+    <path d="M888,120 L856,142 L856,516" fill="none" stroke="var(--ink)" stroke-width="1.6"/><path d="M891,117 L854,141 L852,148" fill="none" stroke="var(--ink)" stroke-width="2"/>`;
+  // 오른쪽 가까운 집(가장자리): 회벽과 나무 들보, 닫힌 덧창, 불 꺼진 벽등
+  s += `<path d="M1004,0 L1280,0 L1280,720 L996,720 L1000,40 Z" fill="var(--parch-1)"/>${hatchRect(1000, 0, 40, 720, 0.55)}
+    <path d="M1002,0 L996,720" stroke="var(--ink)" stroke-width="4"/><rect x="1000" y="150" width="280" height="14" fill="var(--wood)" stroke="var(--ink)" stroke-width="2"/><rect x="1000" y="410" width="280" height="14" fill="var(--wood)" stroke="var(--ink)" stroke-width="2"/>
+    <path d="M1060,164 L1140,410 M1220,164 L1140,410" stroke="var(--wood)" stroke-width="12"/><path d="M1060,164 L1140,410 M1220,164 L1140,410" stroke="var(--ink)" stroke-width="1.4" fill="none"/>
+    ${shutter(1050, 220, 54, 120, "var(--parch-3)")}${shutter(1180, 220, 54, 120, "var(--parch-3)")}
+    <path d="M1030,470 l0,-26 l26,0" fill="none" stroke="var(--ink)" stroke-width="3"/><path d="M1048,446 l-8,10 l16,0 Z M1040,456 l0,26 l16,0 l0,-26" fill="var(--parch-3)" stroke="var(--ink)" stroke-width="2"/>
+    <path d="M1000,196 L948,196 L948,206 L1000,206" fill="var(--st-iron)" stroke="var(--ink)" stroke-width="1.6"/><path d="M956,206 l0,14 M944,220 l24,0 l-4,30 l-16,0 Z" fill="var(--st-wood)" stroke="var(--ink)" stroke-width="2"/>
+    <path d="M952,604 L1040,604 L1040,540 L952,540 Z" fill="var(--st-wood)" stroke="var(--ink)" stroke-width="2.4"/><path d="M952,572 L1040,572 M996,540 L996,604" stroke="var(--ink-soft)" stroke-width="1.6"/>`;
+  // 왼쪽 가까운 집: 아래층 회벽, 위층이 x 약 425까지 내민다
+  s += `<path d="M0,250 L284,250 L284,720 L0,720 Z" fill="var(--parch-1)"/>${hatchRect(244, 250, 40, 470, 0.55)}
+    <rect x="0" y="250" width="284" height="12" fill="var(--wood)" stroke="var(--ink)" stroke-width="2"/><path d="M40,262 L40,720 M150,262 L150,720" stroke="var(--wood)" stroke-width="12"/><path d="M40,262 L40,720 M150,262 L150,720" stroke="var(--ink)" stroke-width="1.2"/>
+    <path d="M176,700 L176,410 Q176,372 214,372 Q252,372 252,410 L252,700" fill="var(--parch-3)" stroke="var(--ink)" stroke-width="3"/>${hatchRect(176, 380, 76, 320, 0.7)}
+    <path d="M60,350 l0,-24 l24,0" fill="none" stroke="var(--ink)" stroke-width="3"/><path d="M78,326 l-8,10 l16,0 Z M70,336 l0,24 l16,0 l0,-24" fill="var(--parch-3)" stroke="var(--ink)" stroke-width="2"/>
+    <path d="M284,250 L284,720" stroke="var(--ink)" stroke-width="4"/>`;
+  s += `<path d="M0,0 L408,0 L424,230 L418,252 L0,252 Z" fill="var(--st-timber)"/>
+    <path d="M0,0 L408,0 L424,230 L418,252 L0,252" fill="none" stroke="var(--ink)" stroke-width="3"/>
+    <path d="M300,252 L330,218 M360,250 L392,214 M300,30 L408,200 M408,30 L300,200" stroke="var(--ink-soft)" stroke-width="2.2" fill="none"/>
+    <path d="M296,252 L296,40 M412,240 L402,40" stroke="var(--ink)" stroke-width="2" fill="none"/>`;
+  // 위층 밑에 걸린 쇠 간판
+  s += `<path d="M296,268 L420,268 M330,268 q-20,14 -4,28 M384,268 l0,0" stroke="var(--st-iron)" stroke-width="6" fill="none"/><path d="M296,262 L420,262 L420,274 L296,274 Z" fill="var(--st-iron)" stroke="var(--ink)" stroke-width="1.6"/>
+    <path d="M352,274 L352,290 M404,274 L404,290" stroke="var(--st-iron)" stroke-width="3"/>
+    <rect x="340" y="290" width="76" height="66" rx="4" fill="var(--st-wood)" stroke="var(--ink)" stroke-width="3"/>
+    <path d="M356,302 L372,302 L374,330 L398,334 Q404,342 398,346 L356,346 Z" fill="var(--st-emblem)" stroke="var(--ink)" stroke-width="1.8"/>`;
+  // 문 앞의 통(왼쪽 아래 경계를 끊는다)
+  s += `<path d="M262,600 Q258,560 270,520 L350,520 Q362,560 358,600 Q362,640 350,680 L270,680 Q258,640 262,600 Z" fill="var(--st-wood)" stroke="var(--ink)" stroke-width="2.6"/>
+    <path d="M264,556 L356,556 M264,644 L356,644" stroke="var(--st-iron)" stroke-width="5"/><path d="M290,522 Q284,600 290,678 M330,522 Q336,600 330,678" stroke="var(--ink-soft)" stroke-width="1.4" fill="none"/>`;
+  // 돌바닥의 돌: 가장자리 띠에만
+  s += stones(0, 262, 690, 720, 3, "var(--parch-3)") + stones(362, 425, 600, 720, 5, "var(--st-ground)") + stones(856, 996, 590, 720, 7, "var(--st-ground)");
+  return s;
+}
+
+function stageCourt() {
+  let s = paperBg();
+  // 가운데의 큰 톤: 그늘진 회벽, 담 위의 밤하늘, 판석 땅
+  s += `<rect x="240" y="0" width="800" height="720" fill="var(--st-wall)"/>`;
+  s += `<path d="M240,0 L1040,0 L1040,88 L700,96 L420,104 L240,108 Z" fill="var(--st-sky)"/>`;
+  s += `<path d="M240,108 L420,104 L700,96 L1040,88 L1040,104 L240,124 Z" fill="var(--st-wall-2)"/>`;
+  s += `<path d="M240,530 L1040,516 L1040,720 L240,720 Z" fill="var(--st-ground)"/>`;
+  // 오른쪽 뒤 벽: 큰 나무 대문 두 짝과 쇠 장식(x 852~1004)
+  s += `<rect x="852" y="186" width="160" height="22" fill="var(--st-wall-2)" stroke="var(--ink)" stroke-width="2.4"/>${hatchRect(852, 186, 160, 22, 0.5)}
+    <rect x="860" y="208" width="144" height="312" fill="var(--st-wood)" stroke="var(--ink)" stroke-width="3"/>
+    <path d="M932,208 L932,520" stroke="var(--ink)" stroke-width="3"/>
+    ${[878, 896, 914, 950, 968, 986].map(x => `<path d="M${x},212 L${x},516" stroke="var(--ink-soft)" stroke-width="1.2"/>`).join("")}
+    <path d="M862,262 L1002,262 M862,462 L1002,462" stroke="var(--st-iron)" stroke-width="9"/><path d="M862,262 L1002,262 M862,462 L1002,462" stroke="var(--ink)" stroke-width="1.2"/>
+    ${[870, 900, 964, 994].map(x => `<circle cx="${x}" cy="262" r="3.4" fill="var(--st-emblem)"/><circle cx="${x}" cy="462" r="3.4" fill="var(--st-emblem)"/>`).join("")}
+    <circle cx="918" cy="366" r="11" fill="none" stroke="var(--st-iron)" stroke-width="4"/><circle cx="946" cy="366" r="11" fill="none" stroke="var(--st-iron)" stroke-width="4"/>`;
+  // 오른쪽 가장자리: 회벽과 창, 화분 상자
+  s += `<path d="M1012,0 L1280,0 L1280,720 L1012,720 L1012,520 L1004,520 L1004,186 L1012,186 Z" fill="var(--parch-1)"/>${hatchRect(1012, 0, 36, 720, 0.5)}
+    <path d="M1012,0 L1012,186 M1012,520 L1012,720" stroke="var(--ink)" stroke-width="3"/>
+    <rect x="1090" y="190" width="110" height="150" fill="var(--parch-3)" stroke="var(--ink)" stroke-width="3"/><path d="M1145,190 L1145,340 M1090,265 L1200,265" stroke="var(--ink)" stroke-width="2"/>${hatchRect(1090, 190, 110, 150, 0.6)}
+    <rect x="1080" y="340" width="130" height="22" fill="var(--wood)" stroke="var(--ink)" stroke-width="2"/>
+    <path d="M1090,340 q10,-30 22,-6 q8,-26 20,-4 q10,-24 22,-2 q10,-22 22,0 q8,-18 18,8" fill="var(--green)" stroke="var(--ink)" stroke-width="2"/>`;
+  // 왼쪽 위: 담 너머 큰 나무의 잎 덩이
+  let leaves = "M0,0 L404,0 ";
+  const R = rng(9);
+  const pts = [[396, 40], [404, 90], [390, 140], [400, 190], [372, 236], [330, 262], [290, 250], [240, 284], [180, 270], [130, 296], [70, 276], [0, 290]];
+  pts.forEach(([x, y]) => { leaves += `Q${x + 12 + R() * 10},${y - 24} ${x},${y} `; });
+  leaves += "Z";
+  s += `<path d="${leaves}" fill="var(--st-leaf)" stroke="var(--ink)" stroke-width="2.6"/>`;
+  let scallop = "";
+  for (let i = 0; i < 26; i++) { const x = 20 + R() * 370, y = 20 + R() * 220; scallop += `M${x},${y} q10,-12 20,0 q10,-12 20,0 `; }
+  s += `<path d="${scallop}" fill="none" stroke="var(--ink-soft)" stroke-width="1.6"/>`;
+  // 왼쪽 가장자리: 담과 돌우물, 두레박, 화분
+  s += `<path d="M0,300 L284,300 L276,720 L0,720 Z" fill="var(--parch-2)"/>${hatchRect(240, 300, 40, 420, 0.5)}<path d="M284,300 L276,720" stroke="var(--ink)" stroke-width="3"/>`;
+  s += `<path d="M84,560 L84,330 M256,560 L256,330 M72,330 L268,330" stroke="var(--wood)" stroke-width="12" fill="none"/><path d="M84,560 L84,330 M256,560 L256,330 M72,330 L268,330" stroke="var(--ink)" stroke-width="1.4" fill="none"/>
+    <rect x="150" y="320" width="40" height="20" rx="8" fill="var(--wood)" stroke="var(--ink)" stroke-width="2"/><path d="M170,340 L170,402" stroke="var(--ink)" stroke-width="2"/>
+    <path d="M152,402 L188,402 L184,440 L156,440 Z" fill="var(--parch-3)" stroke="var(--ink)" stroke-width="2.4"/><path d="M152,412 L188,412" stroke="var(--ink)" stroke-width="2"/>
+    <path d="M60,500 Q170,474 280,500 L280,610 Q170,636 60,610 Z" fill="var(--parch-1)" stroke="var(--ink)" stroke-width="3"/><ellipse cx="170" cy="500" rx="110" ry="24" fill="var(--st-shade)" stroke="var(--ink)" stroke-width="3"/>
+    ${stones(64, 276, 512, 608, 4, "var(--parch-2)")}`;
+  s += `<path d="M10,620 L50,620 L44,676 L16,676 Z" fill="var(--red)" stroke="var(--ink)" stroke-width="2"/><path d="M12,620 q8,-34 18,-8 q8,-30 18,4" fill="var(--green)" stroke="var(--ink)" stroke-width="2"/>`;
+  // 판석의 돌: 가장자리 띠에만
+  s += stones(0, 276, 680, 720, 6, "var(--parch-3)") + stones(284, 425, 560, 720, 8, "var(--st-ground)") + stones(856, 1004, 560, 720, 10, "var(--st-ground)");
+  return s;
+}
+
+function stagePiazza() {
+  let s = paperBg();
+  // 해 진 뒤의 하늘과 먼 집들의 실루엣(선 없음, 두 톤 모두 L ≤ 0.20), 광장 바닥
+  s += `<rect x="240" y="0" width="800" height="720" fill="var(--st-sky)"/>`;
+  s += `<path d="M0,300 L60,300 L60,262 L118,232 L176,262 L176,286 L230,286 L230,250 L262,250 L262,236 L274,236 L274,250 L300,250 L300,272 L370,272 L404,240 L438,272 L438,292 L520,292 L520,258 L548,236 L576,258 L576,284 L640,284 L640,268 L700,268 L700,246 L716,246 L716,268 L780,268 L780,292 L846,292 L846,262 L880,262 L880,140 L894,112 L910,84 L926,112 L940,140 L940,262 L990,262 L1010,240 L1060,240 L1080,270 L1280,270 L1280,470 L0,470 Z" fill="var(--st-sil)"/>`;
+  s += `<path d="M892,168 L928,168 L928,206 L892,206 Z" fill="var(--st-wall-3)"/>`;
+  s += `<path d="M240,452 L1040,444 L1040,720 L240,720 Z" fill="var(--st-ground)"/>`;
+  // 왼쪽 가장자리: 분수의 가장자리와 물기둥
+  s += `<path d="M0,0 L236,0 L236,150 L258,158 L250,172 L0,172 Z" fill="var(--parch-1)"/>${hatchRect(196, 0, 40, 160, 0.55)}
+    <path d="M236,0 L236,150 L258,158 L250,172 L0,172" fill="none" stroke="var(--ink)" stroke-width="3"/><path d="M0,150 L236,150" stroke="var(--wood)" stroke-width="10"/><path d="M0,150 L236,150" stroke="var(--ink)" stroke-width="1.4"/>
+    ${shutter(60, 30, 44, 90, "var(--parch-3)")}${shutter(140, 30, 44, 90, "var(--parch-3)")}`;
+  s += `<path d="M92,470 L92,262 Q92,250 104,250 L132,250 Q144,250 144,262 L144,470 Z" fill="var(--parch-1)" stroke="var(--ink)" stroke-width="3"/>${hatchRect(120, 250, 24, 220, 0.6)}
+    <path d="M60,250 Q118,226 176,250 Q118,262 60,250 Z" fill="var(--parch-2)" stroke="var(--ink)" stroke-width="2.6"/>
+    <path d="M76,248 Q50,290 40,330 M160,248 Q190,290 206,330" stroke="var(--blue)" stroke-width="3" fill="none"/>
+    <path d="M-20,480 Q130,440 284,486 L284,600 Q130,640 -20,600 Z" fill="var(--parch-1)" stroke="var(--ink)" stroke-width="3"/>
+    <path d="M-20,490 Q130,454 280,494 Q130,520 -20,520 Z" fill="var(--blue)" stroke="var(--ink)" stroke-width="2.4"/>
+    ${stones(0, 280, 524, 600, 12, "var(--parch-2)")}${hatchRect(240, 486, 44, 114, 0.6)}`;
+  // 오른쪽 가장자리: 차양을 접은 장터 좌판과 나무 상자
+  s += `<path d="M1048,0 L1280,0 L1280,226 L1036,226 L1030,206 L1048,196 Z" fill="var(--parch-1)"/>${hatchRect(1048, 0, 40, 200, 0.55)}
+    <path d="M1048,0 L1048,196 L1030,206 L1036,226 L1280,226" fill="none" stroke="var(--ink)" stroke-width="3"/>${shutter(1120, 40, 50, 100, "var(--parch-3)")}${shutter(1200, 40, 50, 100, "var(--parch-3)")}
+    <path d="M1048,170 L1010,170 M1016,170 l0,16" stroke="var(--st-iron)" stroke-width="4" fill="none"/><path d="M1006,186 l20,0 l-4,26 l-12,0 Z" fill="var(--parch-3)" stroke="var(--ink)" stroke-width="2"/>
+    <path d="M1022,600 L1022,226 M1262,600 L1262,226" stroke="var(--wood)" stroke-width="12"/><path d="M1022,600 L1022,226 M1262,600 L1262,226" stroke="var(--ink)" stroke-width="1.4"/>
+    <path d="M1000,228 Q1140,212 1278,228 Q1286,246 1278,262 Q1140,278 1000,262 Q992,246 1000,228 Z" fill="var(--red)" stroke="var(--ink)" stroke-width="3"/>
+    ${[1040, 1080, 1120, 1160, 1200, 1240].map(x => `<path d="M${x},220 Q${x + 6},246 ${x},270" stroke="var(--parch-1)" stroke-width="8" fill="none"/>`).join("")}
+    <path d="M1010,430 L1278,430 L1278,450 L1010,450 Z" fill="var(--wood)" stroke="var(--ink)" stroke-width="2.4"/><path d="M1016,450 L1272,450 L1272,600 L1016,600 Z" fill="var(--parch-3)" stroke="var(--ink)" stroke-width="2.4"/>${hatchRect(1016, 450, 256, 150, 0.55)}
+    <path d="M1060,430 q20,-30 40,0 M1140,430 q22,-34 44,0" fill="var(--ochre)" stroke="var(--ink)" stroke-width="2"/>`;
+  s += `<rect x="872" y="500" width="70" height="60" fill="var(--st-wood)" stroke="var(--ink)" stroke-width="2.4"/><path d="M872,530 L942,530 M907,500 L907,560" stroke="var(--ink-soft)" stroke-width="1.6"/>
+    <rect x="900" y="452" width="56" height="48" fill="var(--st-wood)" stroke="var(--ink)" stroke-width="2.4"/><path d="M900,476 L956,476" stroke="var(--ink-soft)" stroke-width="1.6"/>
+    <rect x="944" y="512" width="60" height="88" fill="var(--st-wood)" stroke="var(--ink)" stroke-width="2.4"/><path d="M944,556 L1004,556" stroke="var(--ink-soft)" stroke-width="1.6"/>`;
+  s += stones(0, 280, 640, 720, 13, "var(--parch-3)") + stones(284, 425, 600, 720, 14, "var(--st-ground)") + stones(856, 1010, 600, 720, 15, "var(--st-ground)");
+  return s;
+}
+const STAGES = { alley: stageAlley, court: stageCourt, piazza: stagePiazza };
+const STAGE_NAMES = { alley: "뒷골목", court: "안뜰", piazza: "광장" };
+const STAGE_PICK = "alley";
+
+// ---------------------------------------------------------------- HUD (자리와 글은 지금 duel_hud.gd 그대로, 꾸밈만 양피지)
+function panel(x, y, w, h) {
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="var(--parch-1)" stroke="var(--ink)" stroke-width="2"/><rect x="${x + 4}" y="${y + 4}" width="${w - 8}" height="${h - 8}" fill="none" stroke="var(--ink-soft)" stroke-width="0.8"/>`;
+}
+function cells(cx, y, n, filled, color, centered) {
+  const w = 24, g = 4, total = n * w + (n - 1) * g;
+  const x0 = centered ? cx - total / 2 : cx;
+  let s = "";
+  for (let i = 0; i < n; i++) s += `<rect x="${x0 + i * (w + g)}" y="${y}" width="${w}" height="14" fill="${i < filled ? color : "var(--parch-2)"}" stroke="var(--ink)" stroke-width="1.4"/>`;
+  return s;
+}
+function wrap(text, n) {
+  const out = []; let line = "";
+  for (const word of text.split(" ")) {
+    if ((line + " " + word).trim().length > n && line) { out.push(line); line = word; } else line = (line + " " + word).trim();
+  }
+  if (line) out.push(line);
+  return out;
+}
+function tspans(lines, x, y, dy) { return lines.map((t, i) => `<tspan x="${x}" y="${y + i * dy}">${t}</tspan>`).join(""); }
+function duelHud(h) {
+  return `${panel(334, 4, 612, 58)}<text class="ui" x="640" y="28" text-anchor="middle" font-size="18">바르톨로 — 자세 9/9</text>${cells(640, 40, 9, 9, "var(--ochre)", true)}
+  ${panel(10, 6, 330, 150)}<text class="ui" x="20" y="38" font-size="24">간격: ${h.dist}</text>
+  <text class="ui" x="160" y="34" font-size="15">엉킴</text><rect x="196" y="21" width="134" height="16" fill="var(--parch-2)" stroke="var(--ink)" stroke-width="1.2"/>
+  <text class="ui" font-size="15" style="fill: var(--red)">${tspans(wrap(h.cond, 21), 20, 66, 19)}</text>
+  <rect x="20" y="128" width="310" height="18" fill="var(--parch-2)" stroke="var(--ink)" stroke-width="1.2"/><rect x="20" y="128" width="${h.meter}" height="18" fill="var(--green)"/><text class="ui" x="26" y="142" font-size="13">충족도</text>
+  ${panel(900, 6, 372, 58)}<text class="ui" x="1260" y="30" text-anchor="end" font-size="20">남은 시간 72.4초 · 경과 17.6초</text>
+  <text class="ui" x="914" y="54" font-size="15">${h.complCaption}</text><rect x="960" y="41" width="150" height="16" fill="var(--parch-2)" stroke="var(--ink)" stroke-width="1.2"/><rect x="960" y="41" width="${150 * h.compl}" height="16" fill="var(--ochre)"/>
+  ${panel(10, 556, 340, 58)}<text class="ui" x="20" y="588" font-size="18">내 자세 3/3</text>${cells(20, 596, 3, 3, "var(--green)", false)}
+  ${panel(780, 550, 492, 64)}<text class="ui" text-anchor="end" font-size="18">${tspans([h.aim, "내 상태: " + h.me], 1260, 576, 24)}</text>
+  <rect x="0" y="616" width="1280" height="104" fill="var(--parch-1)" opacity="0.92"/><path d="M0,616 L1280,616" stroke="var(--ink)" stroke-width="2.5"/>
+  <text class="ui" text-anchor="middle" font-size="14" opacity="0.8">${tspans(["좌클릭 공격 · 우클릭 막기 (떼고 있다가 고리가 띠에 들어올 때 누르면 패리) · 마우스 위치로 방향·높이 · W/S 간격 · F1 디버그", "빈틈이 아닐 때 공격하면 상대가 자세를 되찾는다"], 640, 700, 18)}</text>`;
+}
+function stateText(lines, cx, y0) {
+  return `<text class="state" text-anchor="middle">${tspans(lines, cx, y0 + 32, 40)}</text>`;
+}
+function ring() {
+  // 큰 베기의 고리: 화면 (640, 306), 남은 0.825초 x 240 = 198, 띠 240 x 0.18 = 43.2
+  return `<g transform="translate(640,306)">
+    <circle r="43.2" fill="var(--sig-band)" fill-opacity="0.22" stroke="var(--sig-band)" stroke-opacity="0.95" stroke-width="3"/>
+    <circle r="198" fill="none" stroke="#FFFFFF" stroke-opacity="0.95" stroke-width="5"/>
+    <circle r="4" fill="#FFFFFF" fill-opacity="0.9"/>
+  </g>`;
+}
+
+const COND_FEATHER = "모자로 끝내기 — 유효타만 본다. 모자에 유효타 한 번. 스침은 어디든 괜찮고, 다른 곳의 유효타는 감점.";
+const COND_FIRST = "첫 피 — 유효타만 본다. 상대의 몸통·팔·손·다리에 유효타 한 번. 머리를 치면 감점.";
+
+// ---------------------------------------------------------------- 장면
+// 큰 베기의 예비 동작, 진행 0.25: 팔 = CHEST + (0,-150).lerp((0,60), 0.25) = (0, -277.5), 칼 lerp(0, 180, 0.25) = 45도
+function duelScene(stageFn, art, aimPath) {
+  return stageFn()
+    + opp({ x: 640, y: 446, s: 0.85, hat: true, arm: [0, -277.5], sword: 45, tint: "--sig-big", aim: true, face: "angry", art, aimPath })
+    + duelHud({ dist: "교전", cond: COND_FEATHER, meter: 0, aim: "조준: 찌르기 · 중단 → 몸통", me: "막기 — 가운데", compl: 0, complCaption: "경계" })
+    + playerHand(640, 625, "--sw-fresh", 1.8)
+    + ring()
+    + stateText(["큰 베기!!", "받아낼 준비"], 640, 62);
+}
+// 멀리: 크기 0.55, 원점 (640, 406). 방심: 팔은 어깨, 칼만 -140도
+function farScene(stageFn, art, aimPath) {
+  return stageFn()
+    + opp({ x: 640, y: 406, s: 0.55, hat: false, arm: [-65, -180], sword: -140, aim: true, face: "smug", art, aimPath })
+    + duelHud({ dist: "멀리", cond: COND_FIRST, meter: 0, aim: "조준: 런지 · 중단 → 몸통", me: "준비", compl: 1, complCaption: "방심!" })
+    + playerHand(640, 650, "--sw-ready", 1)
+    + stateText(["방심"], 640, 62);
+}
+const STATES = [
+  { cap: ["① 대기", "칠·글자 없음. 팔은 어깨, 칼 -25°"], o: { arm: [-65, -180], sword: -25, face: "idle" }, head: "smug", text: [] },
+  { cap: ["② 찌르기의 예비 동작(진행 0.3)", "노랑 80%"], o: { arm: [0, -211], sword: 180, tint: "--sig-thrust", face: "focus" }, head: "smug", text: ["찌르기"] },
+  { cap: ["③ 빈틈 — 왼쪽 베기가 막힌 뒤", "파랑 80%. 머리는 물들지 않는다"], o: { arm: [-120, -140], sword: -120, tint: "--sig-recovery", headClosed: true, face: "oops" }, head: "oops", text: ["빈틈"] },
+  { cap: ["④ 무너짐", "보라 80%. 팔 처짐, 칼 165°, 고개 22.9°"], o: { arm: [-65, -130], sword: 165, head: 22.9, tint: "--sig-stagger", face: "dizzy" }, head: "dizzy", text: ["무너짐!"] },
+];
+function statesScene(art, note) {
+  let s = `<rect width="1280" height="720" fill="var(--parch-2)" filter="url(#paper)"/>`;
+  const stage = STAGES[STAGE_PICK]();
+  STATES.forEach((st, i) => {
+    s += `<svg x="${i * 320}" y="0" width="320" height="720" viewBox="0 0 320 720" overflow="hidden">
+      <g transform="translate(-480,0)">${stage}</g>
+      ${opp(Object.assign({ x: 160, y: 506, s: 0.55, hat: false, art: art && art.pick ? art.pick(st.head) : art }, st.o))}
+      ${st.text.length ? stateText(st.text, 160, 62) : ""}
+      <rect y="640" width="320" height="80" fill="var(--parch-1)"/><path d="M0,640 L320,640" stroke="var(--ink)" stroke-width="2"/>
+      <text class="ui" font-size="15">${tspans(st.cap, 12, 664, 22)}</text>
+      <text class="ui" x="308" y="708" text-anchor="end" font-size="11" opacity="0.7">크기 0.55 (교전은 0.85)</text>
+    </svg>`;
+    if (i > 0) s += `<path d="M${i * 320},0 L${i * 320},720" stroke="var(--ink)" stroke-width="3"/>`;
+  });
+  if (note) s += `<rect x="340" y="166" width="600" height="34" rx="4" fill="var(--parch-1)" stroke="var(--ink)" stroke-width="2"/><text class="ui" x="640" y="189" text-anchor="middle" font-size="16">${note}</text>`;
+  return s;
+}
+
+// ---------------------------------------------------------------- 카운터 (counter.gd _build의 자리)
+// 자리 (120, 164), 크기 220 x 390 안. 카운터 띠(y 540)가 아랫부분을 가린다.
+// pose가 참이면 자세 안내도다: 같은 꼴을 회색 둘로만 채운다(머리·몸 / 손)
+function clientClara(pose) {
+  const dress = "M36,214 Q110,190 184,214 L206,392 L14,392 Z";
+  const dressSh = "M150,198 Q170,204 184,214 L206,392 L178,392 Z";
+  const apron = "M64,262 Q110,252 156,262 L170,392 L50,392 Z";
+  const apronSh = "M134,256 L156,262 L170,392 L150,392 Z";
+  const head = "M50,124 Q44,60 110,54 Q176,60 170,124 Q172,184 110,196 Q48,184 50,124 Z";
+  const headSh = "M146,64 Q176,78 170,124 Q172,184 110,196 Q160,160 146,64 Z";
+  const hair = "M44,128 Q34,60 110,44 Q186,60 176,128 Q168,92 140,82 Q110,94 80,82 Q52,92 44,128 Z";
+  const bun = "M150,40 Q196,34 196,74 Q194,104 164,96 Z";
+  const hat = "M58,62 Q70,26 120,24 Q168,26 172,56 Q120,44 58,62 Z";
+  const handL = "M74,330 Q62,318 74,306 L102,306 Q112,318 104,334 Q90,342 74,330 Z";
+  const handR = "M146,330 Q158,318 146,306 L118,306 Q108,318 116,334 Q130,342 146,330 Z";
+  if (pose) return `<g transform="translate(120,164)">${[bun, dress, apron, head, hair, hat, "M120,26 L132,8 L140,30 Z"].map(d => pg(d, "--pose-body")).join("")}<ellipse cx="110" cy="206" rx="40" ry="12" fill="var(--pose-body)"/>${[handL, handR].map(d => pg(d, "--pose-arm")).join("")}</g>`;
+  return `<g class="client" transform="translate(120,164)">
+  <g class="fill">${f(bun, "--cl-hair")}${f(dress, "--cl-dress")}${sh("sh", dressSh, "--cl-dress-sh")}${f(apron, "--cl-apron")}${sh("sh", apronSh, "--cl-apron-sh")}<ellipse cx="110" cy="206" rx="40" ry="12" style="--base: var(--c-skin)"/>${f(head, "--c-skin")}${sh("sh", headSh, "--c-skin-sh")}${f(hair, "--cl-hair")}${f(hat, "--cl-hat")}${f("M120,26 L132,8 L140,30 Z", "--cl-ribbon")}${f(handL, "--c-skin")}${f(handR, "--c-skin")}</g>
+  <g class="line">${l(bun)}${l(dress)}${l(apron)}${l(head)}${l(hair)}${l(hat)}${l("M120,26 L132,8 L140,30", "thin")}${l("M60,56 Q118,40 172,52", "thin")}
+    ${l("M66,104 Q80,94 94,100", "thick")}${l("M126,100 Q140,94 154,104", "thick")}<circle class="ink" cx="82" cy="120" r="6"/><circle class="ink" cx="138" cy="120" r="6"/>
+    ${l("M104,132 Q100,152 108,156")}${l("M96,174 Q110,168 124,174")}${l("M70,150 Q76,154 82,150 M138,150 Q144,154 150,150", "thin")}
+    <ellipse cx="110" cy="206" rx="40" ry="12"/>${l("M78,214 Q110,236 142,214", "thin")}${l("M96,232 L124,232 M96,248 L124,248", "thin")}
+    ${l(handL)}${l(handR)}${l("M120,286 L138,302 M132,286 L126,304", "thin")}<circle cx="120" cy="286" r="4"/><circle cx="132" cy="286" r="4"/></g>
+</g>`;
+}
+function clientVittorio() {
+  const robe = "M10,232 Q110,186 210,232 L220,392 L0,392 Z";
+  const robeSh = "M160,206 Q190,214 210,232 L220,392 L186,392 Z";
+  const fur = "M30,226 Q110,180 190,226 L170,262 Q110,226 50,262 Z";
+  const head = "M44,128 Q38,58 110,52 Q182,58 176,128 Q180,192 110,206 Q40,192 44,128 Z";
+  const headSh = "M148,62 Q182,78 176,128 Q180,192 110,206 Q166,164 148,62 Z";
+  const chin = "M74,190 Q110,214 146,190";
+  const cap = "M48,88 Q52,40 110,38 Q168,40 172,88 Q110,70 48,88 Z";
+  const purse = "M128,316 Q120,346 142,360 Q170,362 176,336 Q172,312 156,308 Z";
+  const handL = "M58,334 Q46,320 58,306 L88,304 Q98,320 90,338 Q74,346 58,334 Z";
+  const handR = "M150,330 Q140,316 152,302 L178,302 Q188,316 180,332 Q166,340 150,330 Z";
+  return `<g class="client" transform="translate(120,164)">
+  <g class="fill">${f(robe, "--vi-robe")}${sh("sh", robeSh, "--vi-robe-sh")}${f(fur, "--vi-fur")}${f(head, "--c-skin")}${sh("sh", headSh, "--c-skin-sh")}${f(cap, "--vi-cap")}${f(purse, "--vi-purse")}${f(handL, "--c-skin")}${f(handR, "--c-skin")}</g>
+  <g class="line">${l(robe)}${l(fur)}${l("M40,238 l6,-10 M64,226 l4,-10 M88,218 l2,-10 M132,218 l-2,-10 M156,226 l-4,-10 M180,238 l-6,-10", "thin")}${l(head)}${l(chin, "thin")}${l(cap)}
+    ${l("M60,104 Q76,96 92,104", "thick")}${l("M128,104 Q144,96 160,104", "thick")}${l("M64,120 Q78,126 92,120")}${l("M128,120 Q142,126 156,120")}
+    ${l("M102,124 Q96,150 106,156 Q114,158 120,152")}${l("M82,172 Q100,164 110,170 Q120,164 138,172", "thick")}${l("M94,184 Q112,190 132,178")}
+    ${l("M70,240 Q110,300 150,240", "thick")}<circle cx="110" cy="296" r="12"/>${l(purse)}${l("M134,318 Q150,326 168,316", "thin")}
+    ${l(handL)}${l(handR)}</g>
+  <g class="fill"><circle cx="110" cy="296" r="10" style="--base: var(--vi-gold)"/><circle cx="66" cy="318" r="4" style="--base: var(--vi-gold)"/><circle cx="170" cy="314" r="4" style="--base: var(--vi-gold)"/></g>
+  <path d="M70,240 Q110,300 150,240" fill="none" stroke="var(--vi-gold)" stroke-width="3" stroke-dasharray="6 4"/>
+</g>`;
+}
+const CLIENTS = {
+  1: { name: "모자 장인 클라라", art: clientClara, text: "바르톨로가 쓰고 다니는 그 모자, 값도 안 치르고 가져간 제 물건이에요. 깃털만 잘라 주세요. 칼을 섞는 거야 어쩔 수 없지만, 그 사람 몸에 상처는 내지 말고요. 다치면 제가 곤란해져요.", cond: COND_FEATHER, hint: "흥정: 가게의 이름을 보고 값을 치를 손님이다", pay: "기본 보수 45 · 팁 최대 25" },
+  2: { name: "대금업자 비토리오", art: clientVittorio, text: "바르톨로가 사람들 앞에서 나를 사기꾼이라 했소. 뭐, 이자를 좀 세게 받긴 했지. 그래도 값은 치르게 해야겠소. 피 한 방울이면 되오. 얼굴은 두시오. 돈은 넉넉히 드리리다.", cond: COND_FIRST, hint: "흥정: 아주 이름난 가게라야 값을 올려 줄 손님이다", pay: "기본 보수 55 · 팁 최대 20" },
+};
+function button(x, y, w, h, text, size) {
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" fill="var(--parch-1)" stroke="var(--ink)" stroke-width="2.5"/><rect x="${x + 4}" y="${y + 4}" width="${w - 8}" height="${h - 8}" rx="2" fill="none" stroke="var(--ink-soft)" stroke-width="1"/><text class="ui" x="${x + w / 2}" y="${y + h / 2 + size * 0.36}" text-anchor="middle" font-size="${size}">${text}</text>`;
+}
+function counterScene(c, figure) {
+  let shelves = "";
+  for (let i = 0; i < 4; i++) {
+    const y = 120 + i * 90;
+    shelves += `<rect x="18" y="${y}" width="84" height="8" fill="var(--wood)" stroke="var(--ink)" stroke-width="1.6"/>`;
+    for (let k = 0; k < 3; k++) shelves += `<path d="M${30 + k * 26},${y} L${36 + k * 26},${y - 70}" stroke="var(--ink)" stroke-width="3"/><path d="M${24 + k * 26},${y - 14} L${44 + k * 26},${y - 16}" stroke="var(--ink)" stroke-width="3"/>`;
+  }
+  let beams = "";
+  for (let x = 0; x < 1280; x += 160) beams += `<rect x="${x}" y="0" width="22" height="540" fill="url(#hatchBg)" opacity="0.5"/>`;
+  const dlg = wrap(c.text, 40);
+  return `<rect width="1280" height="720" fill="var(--parch-1)" filter="url(#paper)"/>${beams}
+  <rect x="0" y="0" width="1280" height="64" fill="var(--parch-2)"/><path d="M0,64 L1280,64" stroke="var(--ink)" stroke-width="2.5"/>
+  ${shelves}
+  <rect x="150" y="78" width="200" height="64" fill="var(--parch-2)" stroke="var(--ink)" stroke-width="2.5"/><rect x="156" y="84" width="188" height="52" fill="none" stroke="var(--ink-soft)" stroke-width="1"/><text class="ui" x="250" y="118" text-anchor="middle" font-size="20">대리 결투 의뢰소</text>
+  ${figure}
+  <rect x="0" y="540" width="1280" height="180" fill="var(--wood)"/><rect x="0" y="540" width="1280" height="14" fill="var(--parch-3)"/>
+  <path d="M0,540 L1280,540 M0,554 L1280,554" stroke="var(--ink)" stroke-width="2.5"/>
+  <g opacity="0.55">${[590, 630, 670, 705].map(y => `<path d="M0,${y} Q320,${y - 8} 640,${y} T1280,${y}" fill="none" stroke="var(--ink)" stroke-width="1.4"/>`).join("")}</g>
+  <text class="ui" x="32" y="40" font-size="22">1일차 · 손님 1/3 (문밖에 2명) · 오늘 남은 결투 3 · 소지금 0</text>
+  <text class="ui" x="1248" y="40" text-anchor="end" font-size="20" style="fill: var(--red)">평판 20 · 별 3/5 (다음 24)</text>
+  <rect x="410" y="70" width="830" height="440" rx="6" fill="var(--parch-1)" stroke="var(--ink)" stroke-width="3"/><rect x="418" y="78" width="814" height="424" rx="3" fill="none" stroke="var(--ink-soft)" stroke-width="1.2"/>
+  ${[[418, 78], [1232, 78], [418, 502], [1232, 502]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="7" fill="var(--parch-2)" stroke="var(--ink)" stroke-width="2"/>`).join("")}
+  <text class="ui" font-size="21" font-weight="bold">${tspans([c.name], 436, 108, 30)}</text>
+  <text class="ui" font-size="19">${tspans(dlg, 436, 142, 30)}</text>
+  <text class="ui" font-size="18" style="fill: var(--red)">${tspans(wrap(c.cond, 42), 436, 142 + dlg.length * 30 + 20, 26)}</text>
+  <text class="ui" font-size="17" opacity="0.8">${tspans([c.hint, "상대: 바르톨로", c.pay], 436, 418, 26)}</text>
+  ${button(410, 600, 210, 56, "값을 올려 부른다", 18)}${button(640, 600, 230, 56, "돌려보낸다", 20)}${button(900, 590, 320, 76, "맡는다", 28)}${button(40, 650, 170, 42, "오늘은 그만", 16)}`;
+}
+
+
+// ---------------------------------------------------------------- 생성 그림 (계획 023의 기준 셋과 024의 넷)
+// 관절은 그림 좌표(화소)다.
+const R1I = { raw: "../generated/023-R1i-bartolo-front.png", cut: "../generated/cut/023-R1i-bartolo-front.png", w: 1024, h: 1536, neck: [515, 545], pel: [515, 983] };
+const R2 = { raw: "../generated/023-R2-stage-alley.png", bright: 1 };
+const R3 = { raw: "../generated/023-R3-client-clara.png", cut: "../generated/cut/023-R3-client-clara.png" };
+const G5 = { court: "../generated/021-G5-stage-court.png", piazza: "../generated/021-G5-stage-piazza.png" };
+// 파츠 시트의 표: 차례(a, b …)마다 관절·다각형·k·배율·칼의 원래 각·상태별 머리. ?pick=으로 고른다.
+const SHEET = {};
+const RB = (x0, y0, x1, y1) => [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+// P1a. k = 200 / (몸통의 골반 853 − 목 516) = 0.5935.
+// 머리: 목(턱 밑) 345, 머리털 꼭대기 130 → 127.6이라 0.917배로 117(모자 원점 104)에 맞춘다. 모자: 원점(챙 밑에서 16 위) 290, 꼭대기 196 → 55.8이라 0.94배로 52.4.
+// 팔: 위 529~아래 785(256화소)를 틀의 118(−14~104)에 맞춰 세로 0.777, 가로는 R1i의 소매 폭(35)에 맞춰 0.75. 주먹 0.76. 깃털은 밑동 (1248, 262)가 모자 좌표 (30, −23)에 오게 둔다.
+SHEET.a = {
+  raw: "../generated/024-P1a-bartolo-parts.png", src: "../generated/cut/024-P1a-bartolo-parts.png", w: 1536, h: 1024, k: 200 / 337,
+  heads: { smug: "Head", oops: "HeadOops", dizzy: "HeadDizzy" },
+  aim: [[125, 560], [150, 520], [330, 520], [350, 560], [345, 850], [130, 850]],
+  parts: {
+    Head: { joint: [172, 345], sx: 0.917, sy: 0.917, poly: RB(60, 122, 284, 374) },
+    HeadOops: { joint: [453.5, 346], sx: 0.917, sy: 0.917, poly: RB(340, 122, 567, 375) },
+    HeadDizzy: { joint: [736.5, 347], sx: 0.917, sy: 0.917, poly: RB(623, 122, 850, 376) },
+    Hat: { joint: [1049, 290], sx: 0.94, sy: 0.94, poly: RB(909, 188, 1190, 314) },
+    Feather: { joint: [1194, 303], sx: 0.94, sy: 0.94, poly: RB(1237, 222, 1483, 292) },
+    Torso: { joint: [236, 853], poly: RB(109, 493, 365, 861) },
+    Legs: { joint: [594, 524], poly: RB(452, 513, 738, 850) },
+    Arm: { joint: [888, 559], sx: 0.75, sy: 0.777, poly: RB(840, 519, 936, 793) },
+    Hand: { joint: [1110, 597], sx: 0.76, sy: 0.76, poly: RB(1061, 585, 1160, 693) },
+    Sword: { joint: [1336, 812], poly: RB(1263, 469, 1409, 867) },
+  },
+  // 상태 색을 재는 점(파츠 단위). 그림의 화소 → (화소 − 관절) × k × 배율
+  tintPts: [
+    ["torso-fill", "fill", "Torso", -39.2, -90.8], ["torso-shadow", "fill", "Torso", 49.9, -90.8],
+    ["arm-fill", "fill", "Arm", -7.1, 37.4], ["arm-shadow", "fill", "Arm", 8.9, 37.4],
+    ["legs-fill", "fill", "Legs", -2.4, 18.4], ["legs-shadow", "fill", "Legs", 48.1, 21.4],
+    ["torso-line", "line", "Torso", -80.7, -90.8, 1, 0], ["legs-line", "line", "Legs", -73.6, 21.4, 1, 0], ["arm-line", "line", "Arm", -23.6, 37.4, 1, 0],
+    ["head-skin", "same", "Head", 0, -78.9], ["hat", "same", "Hat", 0, -39], ["blade", "same", "Sword", 0, -125.8],
+  ],
+};
+const SHEET_PICK = "a";
+// 안뜰·광장은 그림의 위아래에 회색 띠(약 78화소)가 있어 0.84배로 맞춰 잘라 낸다(가운데 1524×857).
+const S1 = { raw: "../generated/024-S1a-stage-court.png", bright: 1, zoom: 0.84 };
+const S2 = { raw: "../generated/024-S2a-stage-piazza.png", bright: 1, zoom: 0.84 };
+const V1 = { raw: "../generated/024-V1a-client-vittorio.png", cut: "../generated/cut/024-V1a-client-vittorio.png" };
+const WHY = {
+  sheet: "파츠 시트를 아직 만들지 않았다",
+  s1: "안뜰을 아직 만들지 않았다",
+  s2: "광장을 아직 만들지 않았다",
+  v1: "비토리오를 아직 만들지 않았다",
+};
+// 대기 자세의 세 안(결정 213). 값은 R1i에서 읽은 것이다(GENERATION.md "계획 024").
+// R1i(k 0.457): 어깨 (381,580), 손목 (300,770), 주먹 가운데 x 282, 칼날 (78,420)~(187,700).
+// 팔의 기울기 atan(81/190) = 23°, 어깨~주먹의 가로 벌어짐 99화소 = 45, 칼 atan(109/280) = −21°.
+const IDLE_ARM_X = -110, IDLE_SWORD = -21, IDLE_ARM_ROT = 23;
+const IDLE = {
+  a: { label: "가 · 지금 (팔 −65, 칼 −25°)", arm: [-65, -180], sword: -25 },
+  b: { label: "나 · 포즈 값만 (팔 −110, 칼 −21°)", arm: [IDLE_ARM_X, -180], sword: IDLE_SWORD },
+  c: { label: "다 · 팔 회전까지 (팔 23°, 칼 −21°)", arm: [-65, -180], armRot: IDLE_ARM_ROT, sword: IDLE_SWORD - IDLE_ARM_ROT },
+};
+function noneScene(why) {
+  return `<rect width="1280" height="720" fill="var(--st-shade)"/><text class="none-note" x="640" y="350" text-anchor="middle">만들지 않았다</text><text class="none-note" x="640" y="392" text-anchor="middle" font-size="17">${why}</text>`;
+}
+// 상태 색은 칠에만(결정 181을 래스터로): sRGB의 Y가 0.22 아래면 선, 0.30 위면 칠, 그 사이는 비례. 칠에 신호색 80%를 덮고 선을 다시 얹는다.
+const TINT_SIGS = ["--sig-thrust", "--sig-cut", "--sig-big", "--sig-strike", "--sig-recovery", "--sig-stagger"];
+function tintFilters() {
+  return TINT_SIGS.map(v => `<filter id="tf${v}" color-interpolation-filters="sRGB" x="0" y="0" width="100%" height="100%">
+    <feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -2.6575 -8.94 -0.9025 0 3.75" result="lineA"/>
+    <feComposite in="lineA" in2="SourceAlpha" operator="in" result="lineMask"/>
+    <feComposite in="SourceGraphic" in2="lineMask" operator="in" result="lines"/>
+    <feFlood flood-color="${cssVar(v)}" flood-opacity="0.8" result="sig"/>
+    <feComposite in="sig" in2="SourceAlpha" operator="in" result="sigIn"/>
+    <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="sigIn"/><feMergeNode in="lines"/></feMerge>
+  </filter>`).join("");
+}
+// 생성 그림의 파츠: 그림 좌표의 다각형으로 자르고, 관절 점을 원점에 두고 k(파츠 단위/화소)로 줄인다.
+// spec.parts[이름] = { poly: [[x,y]...], joint: [x,y], sx, sy, rot }. 상태 색은 t(신호 변수 이름)가 있을 때 필터로 입힌다.
+let clipSeq = 0;
+function genPartSvg(spec, name, t) {
+  const p = spec.parts[name];
+  if (!p) return "";
+  const id = `gc${++clipSeq}`;
+  const pts = p.poly.map(([x, y]) => `${x},${y}`).join(" ");
+  const k = spec.k, sx = (p.sx || 1) * k, sy = (p.sy || 1) * k;
+  const filt = t ? ` filter="url(#tf${t})"` : "";
+  return `<g transform="rotate(${p.rot || 0}) scale(${sx},${sy}) translate(${-p.joint[0]},${-p.joint[1]})">
+    <clipPath id="${id}"><polygon points="${pts}"/></clipPath>
+    <g clip-path="url(#${id})"><image href="${p.src || spec.src}" x="0" y="0" width="${spec.w}" height="${spec.h}"${filt}/></g>
+  </g>`;
+}
+function genArt(spec, headKey) {
+  const head = headKey && spec.heads ? spec.heads[headKey] || spec.heads.smug : "Head";
+  return {
+    Legs: t => genPartSvg(spec, "Legs", t),
+    Torso: t => genPartSvg(spec, "Torso", t),
+    Head: (face, t) => genPartSvg(spec, head, t),
+    Hat: () => genPartSvg(spec, "Hat"),
+    Feather: () => genPartSvg(spec, "Feather"),
+    Arm: t => genPartSvg(spec, "Arm", t),
+    Hand: t => genPartSvg(spec, "Hand", t),
+    Sword: () => genPartSvg(spec, "Sword"),
+  };
+}
+// 조준 테두리: 몸통 윤곽을 따라 그림 좌표로 짚은 다각형(spec.aim)
+function genAimPath(spec) {
+  const p = spec.parts.Torso;
+  return "M" + (spec.aim || p.poly).map(([x, y]) => `${((x - p.joint[0]) * spec.k).toFixed(1)},${((y - p.joint[1]) * spec.k).toFixed(1)}`).join(" L") + " Z";
+}
+
+// ---------------------------------------------------------------- 대비와 색 (WCAG 상대 휘도)
+const hex2rgb = h => { h = h.trim().replace("#", ""); return [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16)); };
+const lin = c => { c /= 255; return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+const lum = h => { const [r, g, b] = hex2rgb(h); return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b); };
+const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+const mix = (a, b, t) => { const A = hex2rgb(a), B = hex2rgb(b); return "#" + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, "0")).join("").toUpperCase(); };
+const hsv = h => { const [r, g, b] = hex2rgb(h).map(v => v / 255); const mx = Math.max(r, g, b), mn = Math.min(r, g, b); return { s: mx === 0 ? 0 : (mx - mn) / mx, v: mx }; };
+const r2 = x => x.toFixed(2);
+function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+const yv = h => { const [r, g, b] = hex2rgb(h); return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255; };
+
+// ---------------------------------------------------------------- 생성 그림을 세우기
+const PARAMS = new URLSearchParams(location.search);
+// bare=1: HUD·글자·무대 없이 한 색 바탕 위에 상대만 같은 자리·크기로 그린다(재기용)
+const BARE = PARAMS.get("bare") === "1";
+const bareBg = `<rect width="1280" height="720" fill="var(--in-bg)"/>`;
+const sheetSpec = () => { const k = PARAMS.get("pick") || SHEET_PICK; return (k && SHEET[k]) || null; };
+function sheetArt() {
+  const spec = sheetSpec();
+  if (!spec) return null;
+  const a = genArt(spec, null);
+  a.pick = headKey => genArt(spec, headKey);
+  a.aimPath = genAimPath(spec);
+  return a;
+}
+// 자르지 않은 그림을 골반 (x, y)에 목~골반 = 200 × s로 세운다
+function uncut(t, x, y, s) {
+  const k = 200 / (t.pel[1] - t.neck[1]);
+  return `<g transform="translate(${x},${y}) scale(${s * k}) translate(${-t.pel[0]},${-t.pel[1]})"><image href="${t.cut}" x="0" y="0" width="${t.w}" height="${t.h}"/></g>`;
+}
+function cmpCell(x, y, w, h, label, body, bg) {
+  return `<svg x="${x}" y="${y}" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" overflow="hidden"><rect width="${w}" height="${h}" fill="${bg || "var(--st-shade)"}"/>${body}<rect x="4" y="4" width="${label.length * 12 + 16}" height="24" rx="3" fill="var(--parch-1)" opacity="0.9"/><text class="ui" x="12" y="21" font-size="15">${label}</text></svg>`;
+}
+const cmpNone = (w, h, dark) => `<text class="none-note" x="${w / 2}" y="${h / 2}" text-anchor="middle" font-size="18"${dark ? ` style="fill: var(--ink)"` : ""}>만들지 않았다</text>`;
+// zoom이 있으면 1536×1024 그림을 그 배율(1280 폭 기준)로 가운데에 놓는다. 없으면 가운데 1536×864를 맞춘다
+const stageImg = (g, w, h) => { const z = g.zoom ? g.zoom * w / 1280 : 0; const geo = z ? `x="${(w - 1536 * z) / 2}" y="${(h - 1024 * z) / 2}" width="${1536 * z}" height="${1024 * z}"` : `x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="xMidYMid slice"`; return `<image href="${g.raw}" ${geo} style="filter: brightness(${g.bright || 1})"/>`; };
+const bgOf = g => () => `<rect width="1280" height="720" fill="var(--st-shade)"/>${stageImg(g, 1280, 720)}`;
+
+function scenePartsRaw() {
+  const spec = sheetSpec();
+  if (!spec) return noneScene(WHY.sheet);
+  return `<rect width="1280" height="720" fill="var(--in-bg)"/><image href="${spec.raw}" x="0" y="0" width="1280" height="720" preserveAspectRatio="xMidYMid meet"/>`;
+}
+function scenePartsIdle() {
+  const art = sheetArt();
+  const at = { x: 213, y: 470, s: 1, hat: true, arm: [-65, -180], sword: -25 };
+  const cellsDef = [
+    ["섞은 SVG", opp(Object.assign({ face: "smug" }, at))],
+    ["전신 R1i(자르지 않음)", uncut(R1I, 213, 470, 1)],
+    ["시트를 조립한 것", art ? opp(Object.assign({ art }, at)) : cmpNone(426, 720)],
+  ];
+  return cellsDef.map(([lab, body], i) => cmpCell(i * 427, 0, 426, 720, lab, body)).join("");
+}
+// 교전 자리: 원점 y 446, 크기 0.85. bare=1이면 "가" 칸만 화면 가운데에 선다(H10의 세로줄을 잰다).
+function sceneIdleCompare() {
+  const art = sheetArt();
+  const one = (key, x) => opp(Object.assign({ x, y: 446, s: 0.85, hat: true, face: "smug", art }, IDLE[key]));
+  if (BARE) return bareBg + one("a", 640);
+  let s = bgOf(R2)();
+  [["a", 250], ["b", 640], ["c", 1030]].forEach(([key, x]) => {
+    s += one(key, x);
+    s += `<rect x="${x - 160}" y="640" width="320" height="30" rx="3" fill="var(--parch-1)" stroke="var(--ink)" stroke-width="1.5"/><text class="ui" x="${x}" y="661" text-anchor="middle" font-size="15">${IDLE[key].label}</text>`;
+  });
+  return s;
+}
+// ---------------------------------------------------------------- 상태 색을 재는 굽기 (계획 024 T1·T2)
+// 같은 상태를 필터를 켠 그림(tint=1)과 끈 그림(tint=0)으로 굽는다. 놓임·머리·모자가 같아 두 장의 같은 화소가 같은 파츠의 같은 자리다.
+function tintCell() {
+  const n = parseInt(PARAMS.get("cell") || "0", 10);
+  if (!BARE || !(n >= 1 && n <= 4)) return null;
+  const st = STATES[n - 1], art = sheetArt();
+  const o = Object.assign({ x: 640, y: 560, s: 1.5, hat: true, art: art ? art.pick(st.head) : null }, st.o);
+  if (PARAMS.get("tint") === "0") delete o.tint;
+  return o;
+}
+// 점은 파츠 좌표(단위)로 둔다: [이름, 종류, 파츠, x, y(, dx, dy)]. 생성 시트는 spec.tintPts로 바꿔 쓴다.
+const TINT_PTS = [
+  ["torso-fill", "fill", "Torso", -25, -110], ["torso-shadow", "fill", "Torso", 52, -110],
+  ["arm-fill", "fill", "Arm", -6, 50], ["arm-shadow", "fill", "Arm", 11, 50],
+  ["legs-fill", "fill", "Legs", -20, 30], ["legs-shadow", "fill", "Legs", 46, 30],
+  ["torso-line", "line", "Torso", -90, -110, 1, 0], ["legs-line", "line", "Legs", -80, 30, 1, 0], ["arm-line", "line", "Arm", -30, 50, 1, 0],
+  ["head-skin", "same", "Head", -30, -42], ["hat", "same", "Hat", 0, -32], ["guard", "same", "Sword", 12, -20],
+];
+function partPt(o, part, px, py) {
+  const rot = (x, y, d) => { const a = d * Math.PI / 180; return [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a)]; };
+  let u;
+  if (part === "Head" || part === "Hat") { const r = rot(px, py - (part === "Hat" ? 104 : 0), o.head || 0); u = [r[0], r[1] - 200]; }
+  else if (part === "Arm" || part === "Hand" || part === "Sword") {
+    let q = part === "Sword" ? rot(px, py, o.sword) : [px, py];
+    q = [q[0], q[1] + (part === "Sword" ? 120 : part === "Hand" ? 105 : 0)];
+    const r = rot(q[0], q[1], o.armRot || 0);
+    u = [o.arm[0] + r[0], o.arm[1] + r[1]];
+  } else u = [px, py];
+  return [Math.round(o.x + o.s * u[0]), Math.round(o.y + o.s * u[1])];
+}
+function tintPtsText(o) {
+  const spec = sheetSpec();
+  return ((spec && spec.tintPts) || TINT_PTS).map(([name, kind, part, px, py, dx, dy]) => {
+    const [x, y] = partPt(o, part, px, py);
+    const out = x < 2 || x > 1277 || y < 2 || y > 717 ? ",OUT" : "";
+    return `${name},${kind},${x},${y}${kind === "line" ? `,${dx},${dy}` : ""}${out}`;
+  }).join("\n");
+}
+function scenePartsStates() {
+  const o = tintCell();
+  if (o) return bareBg + opp(o);
+  const art = sheetArt();
+  return statesScene(art, art ? "" : "시트가 없어 섞은 SVG의 파츠다");
+}
+function scenePartsDuel() {
+  const art = sheetArt();
+  return duelScene(bgOf(R2), art, art && art.aimPath);
+}
+function scenePartsFar() {
+  const art = sheetArt();
+  if (BARE) return bareBg + opp({ x: 640, y: 406, s: 0.55, hat: false, arm: [-65, -180], sword: -140, face: "smug", art });
+  return farScene(bgOf(R2), art, art && art.aimPath);
+}
+function sceneStage(g, why) {
+  if (!g) return noneScene(why);
+  const art = sheetArt();
+  return duelScene(bgOf(g), art, art && art.aimPath);
+}
+function sceneCmpStage() {
+  const img = raw => `<image href="${raw}" x="0" y="60" width="426" height="240" preserveAspectRatio="xMidYMid slice"/>`;
+  let s = "";
+  [["court", S1], ["piazza", S2]].forEach(([key, g], r) => {
+    [["섞은 SVG", `<g transform="translate(0,60) scale(${426 / 1280})">${STAGES[key]()}</g>`], ["021 G5", img(G5[key])], ["024", g ? img(g.raw) : cmpNone(426, 359)]].forEach(([lab, body], c) => {
+      s += cmpCell(c * 427, r * 361, 426, 359, `${STAGE_NAMES[key]} · ${lab}`, body);
+    });
+  });
+  return s;
+}
+function sceneClientCounter() {
+  if (!V1) return noneScene(WHY.v1);
+  return counterScene(CLIENTS[2], `<image href="${V1.cut}" x="80" y="120" width="300" height="450" preserveAspectRatio="xMidYMin meet"/>`);
+}
+function sceneCmpClient() {
+  const img = href => `<image href="${href}" x="0" y="60" width="426" height="639" preserveAspectRatio="xMidYMin meet"/>`;
+  const cellsDef = [
+    ["섞은 SVG", `<g transform="translate(26,60) scale(1.7) translate(-120,-164)">${clientVittorio()}</g>`],
+    ["021 G4", img("../generated/cut/021-G4-client-vittorio.png")],
+    ["024", V1 ? img(V1.cut) : cmpNone(426, 720, true)],
+  ];
+  return cellsDef.map(([lab, body], i) => cmpCell(i * 427, 0, 426, 720, `비토리오 · ${lab}`, body, "var(--parch-1)")).join("");
+}
+function sceneBasis() {
+  const spec = sheetSpec();
+  const pic = (href, w, h) => href ? `<image href="${href}" x="0" y="30" width="${w}" height="${h - 30}" preserveAspectRatio="xMidYMid meet"/>` : cmpNone(w, h, true);
+  const top = [["바르톨로 전신", R1I.raw], ["바르톨로 파츠 시트", spec && spec.raw], ["클라라", R3.raw], ["비토리오", V1 && V1.raw]];
+  const bottom = [["뒷골목", R2.raw], ["안뜰", S1 && S1.raw], ["광장", S2 && S2.raw]];
+  return top.map(([lab, href], i) => cmpCell(i * 320, 0, 319, 359, lab, pic(href, 319, 359), "var(--in-bg)")).join("")
+    + bottom.map(([lab, href], i) => cmpCell(i * 427, 361, 426, 359, lab, pic(href, 426, 359), "var(--in-bg)")).join("");
+}
+
+// ---------------------------------------------------------------- 확정 팔레트 (결정 216)
+// 주는 값이 정본이다. 잰 값은 기준 그림에서 잰 가운데 RGB다(작업 6에서 채운다).
+const PAL = [
+  ["선", "#3B2A1E", "#452B19"],
+  ["저고리", "#5C6F7E", "#697680"], ["저고리 그림자", "#4A5A67", "#515E65"],
+  ["바지", "#836850", "#926D4B"], ["바지 그림자", "#6E5642", "#7A5838"],
+  ["살", "#EBC49F", "#F4C195"], ["모자", "#A5533F", "#B3583E"],
+  ["클라라의 옷", "#6F7F4F", "#788253"], ["클라라의 옷 그림자", "#59663F", "#646C45"],
+  ["비토리오의 옷", "#7E4A4A", "#844E4B"], ["비토리오의 옷 그림자", "#663B3B", "#6A3D3C"],
+];
+const PAL_NOTES = [
+  "주는 값이 정본이다. 잰 값은 기준 그림(바르톨로는 파츠 시트)의 가운데 RGB다.",
+  "그림은 저고리를 더 회색으로(S 27% → 18%), 칠을 조금 밝게 낸다.",
+  "",
+  "받는 범위(상대의 큰 면): 칠·그림자 Y 0.30 이상, 선 Y 0.22 아래, S 50% 이하.",
+  "  파츠 시트: 저고리 0.45 / 0.36 · 바지 0.45 / 0.36 · 선 0.19 — 모두 범위 안.",
+  "  전신 R1i: 저고리 0.47 / 0.37 · 바지 0.45 / 0.37 · 선 0.19 — 모두 범위 안.",
+  "",
+  "선 굵기(확정): 벡터 5.2. 생성 그림은 가운데 × k 5.0~5.6을 겨냥, 3.6~7.8을 받는다.",
+  "  전신 R1i 5.0 · 파츠 시트 4.7 · 클라라 17화소 · 비토리오 18화소(1024 폭).",
+  "",
+  "비토리오의 옷은 그대로다(의뢰인에게는 상태 색이 얹히지 않는다). 그림자 Y 0.28.",
+  "무대의 조용한 구역 L: 뒷골목 0.043 · 안뜰 0.057 · 광장 0.050 (평균 0.20 이하).",
+  "무대의 선 색: 뒷골목 59,41,27 · 안뜰 50,39,27 · 광장 52,44,40.",
+];
+function scenePalette() {
+  let s = `<rect width="1280" height="720" fill="var(--parch-1)"/><text class="ui" x="20" y="30" font-size="19">확정 팔레트 — 프롬프트에 주는 값(정본)과 기준 그림에서 잰 값</text>`;
+  s += `<text class="ui" x="230" y="54" font-size="13">주는 값</text><text class="ui" x="470" y="54" font-size="13">기준 그림에서 잰 값</text>`;
+  PAL.forEach(([name, given, meas], i) => {
+    const y = 64 + i * 34;
+    const sw = (x, hex) => hex ? `<rect x="${x}" y="${y}" width="60" height="26" fill="${hex}" stroke="var(--ink)" stroke-width="1.5"/><text class="ui" x="${x + 68}" y="${y + 18}" font-size="13">${hex} · Y ${r2(yv(hex))} · S${Math.round(hsv(hex).s * 100)}</text>` : `<text class="ui" x="${x}" y="${y + 18}" font-size="13">—</text>`;
+    s += `<text class="ui" x="20" y="${y + 18}" font-size="14">${name}</text>${sw(230, given)}${sw(470, meas)}`;
+  });
+  s += `<text class="ui" font-size="12.5">${tspans(PAL_NOTES, 720, 80, 19)}</text>`;
+  return s;
+}
+
+// ---------------------------------------------------------------- 페이지 만들기
+// 섹션은 HTML에 글로 있다. 여기서는 그림만 채운다.
+const SCENES = {
+  "parts-raw": scenePartsRaw, "parts-idle": scenePartsIdle, "idle-compare": sceneIdleCompare,
+  "parts-states": scenePartsStates, "parts-duel": scenePartsDuel, "parts-far": scenePartsFar,
+  "stage-court": () => sceneStage(S1, WHY.s1), "stage-piazza": () => sceneStage(S2, WHY.s2), "cmp-stage": sceneCmpStage,
+  "client-counter": sceneClientCounter, "cmp-client": sceneCmpClient, "basis": sceneBasis, "palette": scenePalette,
+};
+document.getElementById("genDefs").innerHTML = tintFilters();
+for (const [id, fn] of Object.entries(SCENES)) document.querySelector(`#${id} svg`).innerHTML = fn();
+const tintO = tintCell();
+if (tintO) document.getElementById("tint-pts").textContent = tintPtsText(tintO);
+
+// 단독 보기(#<id>)
+const hash = decodeURIComponent(location.hash.slice(1));
+if (hash) {
+  const target = document.getElementById(hash);
+  if (target) { document.body.classList.add("solo"); target.classList.add("solo-target"); }
+}
+</script>
+</body>
+</html>

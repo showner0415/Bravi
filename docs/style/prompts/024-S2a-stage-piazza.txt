@@ -1,0 +1,22 @@
+Task: call your image generation tool exactly once to create exactly one image. You may use the code tool only to make that one call. Pass the attached guide image to the image generation tool as a referenced image by its path: {WORKDIR}\in-1.png. Give the image generation tool the text from the line that starts with Image: to the end of this message, word for word, as its prompt. Do not run shell commands. Do not read, create, change or delete any file. Do not use a browser, web search, computer use, apps or any other tool. Do not retry. When the image is done, reply with one line: done.
+
+Image: Landscape, 1536x1024 pixels. Background for a duel scene in a 2D game. The top and bottom 80 pixels may be cropped, so keep important things inside the middle band.
+
+Subject: a town square in a Renaissance-era Italian town after sunset. Rooftops, chimneys and a bell tower of distant houses stand as dark silhouettes against the dusk sky and cross the whole picture. On the left the rim of a stone fountain with a column. On the right a market stall with its awning rolled up and wooden crates. Paving stones. No people, no animals.
+
+Composition:
+- Follow the attached layout sketch for the composition only.
+- The area right behind the duelist, the middle 35 percent of the width from top to bottom, has no linework and no small details. Large dark shapes of the place may continue into it as flat tones (the ground, a far wall, a strip of night sky).
+- Everywhere else the place is clearly recognizable even if the top and bottom bands are covered.
+- The edge between the detailed parts and the calm middle is not a straight vertical line, and the left and right sides are not mirror images.
+- No arches, no curtains, no stage, no audience, no railings or balustrades, no spotlights, no floor lines that meet in the center, no frame around the center, no glowing lights.
+
+Style (the attached image is our own drawing. It is the layout and the style reference: use its composition, its simple flat shapes, its colors and how dark and calm the middle is. Draw a new, finished background illustration that stays this simple):
+- A finished cartoon background illustration for a game, in the drawing style of the attached image: large calm flat planes of color and simple shapes with clean edges. Keep it as simple as the attached image. Improve only the craft: clean construction, believable simple perspective and parts that join properly. Add only a little detail on the things near the left and right edges, such as the rim and the column of the fountain, the rolled awning and the posts of the stall and the boards of the crates. The distant rooftops and the bell tower stay plain flat dark shapes. The background is as simple as the cartoon characters that will stand in front of it.
+- Outlines: very dark warm brown, hex 3B2A1E, even weight, smooth clean edges. Near things have slightly thicker outlines than far things.
+- The middle of the image is calm: a few deep, muted, dark flat tones, dark but not black, with no outlines, no objects and no details. All details stay near the left and right edges and along the bottom edge.
+- Fills are flat, with at most one flat shadow tone per color and hard shadow edges. Only the light parchment colored walls near the left and right edges may have a faint even paper grain. A few narrow bands of simple parallel diagonal hatching may run along the edges of those walls and inside door openings.
+- Do not add: an engraving or etching look, cross-hatching, dense linework, brick or stone texture covering the walls, wood grain, plaster cracks, gradients, haze, light rays, glow.
+No text, no signature.
+
+Colors: Dark middle tones around 3A3027, 3E4A55, 4E4336 and 5E4C39. Light stone near the edges parchment E9D8B4, the stall and the crates dark wood 4A3A2C, the distant rooftops and the bell tower very dark warm grey 2E2A28. Avoid bright saturated yellow, orange, red, blue, purple or green, and pure white. The central dark area has no bright or saturated color.
