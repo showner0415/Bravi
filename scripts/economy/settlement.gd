@@ -67,10 +67,12 @@ func _input(event: InputEvent) -> void:
 
 func _build(result: Dictionary) -> void:
 	var rules := day.effective_rules()
-	var header := Ui.add_label(self, "%d일차 · 오늘의 결투 %d/%d 정산" % [
-		day.day_number, day.results.size(), rules.duels_per_day], 22)
+	Ui.add_beams(self)
+	Ui.add_header_rule(self)
+	var header := Ui.add_title(self, "%d일차 · 오늘의 결투 %d/%d 정산" % [
+		day.day_number, day.results.size(), rules.duels_per_day], 28)
 	header.name = "Header"
-	header.position = Vector2(32, 20)
+	header.position = Vector2(32, 14)
 
 	var client := Ui.make_client(result["client_name"])
 	client.name = "Client"
@@ -81,11 +83,11 @@ func _build(result: Dictionary) -> void:
 	var bubble := Ui.add_panel(self, Rect2(410, 70, 830, 96))
 	# 그 구간의 의뢰인의 한마디가 있으면 공통 문구 대신 그것을 보여 준다.
 	var words := reaction_words(result, rules.tip_floor)
-	var reaction := Ui.add_wrapped(bubble, words, 22)
+	var reaction := Ui.add_wrapped(bubble, words, 20)
 	reaction.name = "Reaction"
 
-	var ledger := Ui.add_panel(self, Rect2(410, 186, 830, 324), 10)
-	Ui.add_label(ledger, "충족도 %d" % result["score"], 34, Ui.GOLD)
+	var ledger := Ui.add_panel(self, Rect2(410, 186, 830, 324), 6)
+	Ui.add_title(ledger, "충족도 %d" % result["score"], 34)
 	var threshold := int(result.get("full_pay_score", 100))
 	var haggle_pay := int(result.get("haggle_percent", 0))
 	if haggle_pay > 0:
@@ -100,7 +102,7 @@ func _build(result: Dictionary) -> void:
 		note.name = "FullPayNote"
 	# 오늘의 평판(별)이나 흥정이 기본 보수의 비율을 바꿨으면 그 비율을 뒤에 붙인다(0이 아닌 것만).
 	# 최대(base_max)도 덧붙임이 든 값이다.
-	var base_text := "기본 보수   %d / %d" % [result["base"], result["base_max"]]
+	var base_name := "기본 보수"
 	var star_pay := int(result.get("reputation_pay_percent", 0))
 	var bonus_parts: Array[String] = []
 	if star_pay != 0:
@@ -108,28 +110,28 @@ func _build(result: Dictionary) -> void:
 	if haggle_pay > 0:
 		bonus_parts.append("흥정 +%d%%" % haggle_pay)
 	if not bonus_parts.is_empty():
-		base_text += "  (%s)" % " · ".join(PackedStringArray(bonus_parts))
-	Ui.add_label(ledger, base_text, 22)
+		base_name += "  (%s)" % " · ".join(PackedStringArray(bonus_parts))
+	Ui.add_ledger_row(ledger, "Base", base_name, "%d / %d" % [result["base"], result["base_max"]], 24)
 	# 흥정을 거절당한 판이면 팁의 감점을 뒤에 붙인다. 최대(tip_max)는 이미 깎인 값이다.
-	var tip_text := "팁   %d / %d" % [result["tip"], result["tip_max"]]
+	var tip_name := "팁"
 	var tip_cut := int(result.get("haggle_tip_cut_percent", 0))
 	if tip_cut > 0:
-		tip_text += "  (흥정 거절 %+d%%)" % [-tip_cut]
-	Ui.add_label(ledger, tip_text, 22)
+		tip_name += "  (흥정 거절 %+d%%)" % [-tip_cut]
+	Ui.add_ledger_row(ledger, "Tip", tip_name, "%d / %d" % [result["tip"], result["tip_max"]], 24)
 	shown_total = int(result["total"])
-	Ui.add_label(ledger, "받은 돈   %d" % shown_total, 28)
-	Ui.add_label(ledger, "소지금   %d" % day.money, 20, Ui.DIM)
+	Ui.add_ledger_row(ledger, "Total", "받은 돈", "%d" % shown_total, 28, true)
+	Ui.add_ledger_row(ledger, "Money", "소지금", "%d" % day.money, 20, false, Ui.DIM)
 	if result["injured"]:
-		Ui.add_wrapped(ledger, "유효타를 맞았다 — 치료비 %d (가게를 닫을 때 낸다)" % result["medical_fee"], 20, Ui.RED)
+		Ui.add_wrapped(ledger, "유효타를 맞았다 — 치료비 %d (가게를 닫을 때 낸다)" % result["medical_fee"], 18, Ui.ACCENT)
 
 	# 평판 줄: 장부 패널과 버튼 사이. 결과에 평판이 없으면(평판이 없는 하루) 만들지 않는다.
 	if result.has("reputation_before") and day.has_reputation():
-		var line := Ui.add_label(self, reputation_line(result, day.reputation_rules), 18, Ui.GOLD)
+		var line := Ui.add_label(self, reputation_line(result, day.reputation_rules), 18, Ui.ACCENT)
 		line.name = "ReputationLine"
 		line.position = Vector2(432, 512)
 		line.size = Vector2(808, 28)
 
-	var proceed := Ui.add_button(self, "다음 의뢰인" if day.has_next_commission() else "가게를 닫는다", 28, "Proceed")
+	var proceed := Ui.add_button(self, "다음 의뢰인" if day.has_next_commission() else "가게를 닫는다", 28, "Proceed", true)
 	proceed.position = Vector2(900, 590)
 	proceed.size = Vector2(320, 76)
 	proceed.pressed.connect(_proceed)
@@ -137,7 +139,7 @@ func _build(result: Dictionary) -> void:
 
 	if day.duels_left() <= 0 and day.waiting_count() > 0:
 		# 결투 수가 찼는데 손님이 남았다. 그 손님들은 만나지 못한다.
-		var missed := Ui.add_wrapped(self, MISSED_NOTE % day.waiting_count(), 18, Ui.DIM)
+		var missed := Ui.add_wrapped(self, MISSED_NOTE % day.waiting_count(), 18, Ui.ON_WOOD)
 		missed.name = "MissedNote"
 		missed.position = Vector2(410, 604)
 		missed.size = Vector2(460, 52)

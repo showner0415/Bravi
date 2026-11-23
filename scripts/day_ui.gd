@@ -1,13 +1,24 @@
 extends RefCounted
 ## 하루 루프의 화면(처음 화면, 카운터, 정산, 폐점)이 함께 쓰는 만들기 도우미.
-## 전부 색 사각형과 글자다(애셋 없음). 화면은 1280x720 기준으로 자리를 직접 적는다.
+## 꼴은 025 견본의 필사본이고 프로젝트 테마(`assets/ui/manuscript_theme.tres`)가 그린다(결정 312~315).
+## 화면은 1280x720 기준으로 자리를 직접 적는다.
 
-const BACKGROUND := Color(0.12, 0.12, 0.15)
-const COUNTER_COLOR := Color(0.33, 0.23, 0.15)
-const COUNTER_TOP_COLOR := Color(0.45, 0.32, 0.2)
-const GOLD := Color(0.95, 0.8, 0.3)
-const RED := Color(0.95, 0.42, 0.36)
-const DIM := Color(1, 1, 1, 0.7)
+const HatchRect := preload("res://scripts/ui/hatch_rect.gd")
+const WALL_STYLE := preload("res://assets/ui/wall_style.tres")
+
+## 붉은 글자(조건, 평판, 나쁜 소문, 다침, 손해, 경고). 좋고 나쁨은 붉은 글자가 있고 없음으로 가른다(결정 315).
+const ACCENT := Color("84422F")
+const DIM := Color("6B5440")
+const INK := Color("3B2A1E")
+const PARCHMENT := Color("E9D8B4")
+## 카운터 나무 띠 위에 바로 놓는 글.
+const ON_WOOD := Color("E9D8B4")
+const COUNTER_COLOR := Color("7A5232")
+const COUNTER_TOP_COLOR := Color("A8895E")
+## 들보의 빗금: 견본 hatchBg(간격 6, −35°, 1.1, #6B5440)를 알파 0.5로.
+const HATCH_COLOR := Color("6B5440", 0.5)
+const RULE_WIDTH := 2.5
+const HEADER_HEIGHT := 64.0
 
 ## 카운터(가로 띠)의 윗변 y.
 const COUNTER_Y := 540.0
@@ -49,13 +60,42 @@ static func swallow_arrival_press(screen: Control, event: InputEvent, opened_mse
 		screen.get_viewport().set_input_as_handled()
 
 
-static func add_background(parent: Control, color := BACKGROUND) -> ColorRect:
-	var rect := ColorRect.new()
-	rect.color = color
-	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	rect.set_anchors_preset(Control.PRESET_FULL_RECT)
-	parent.add_child(rect)
-	return rect
+## 양피지 벽(칠과 결만). 화면의 맨 뒤에 붙인다.
+static func add_background(parent: Control) -> Panel:
+	var wall := Panel.new()
+	wall.name = "Wall"
+	wall.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	wall.add_theme_stylebox_override("panel", WALL_STYLE)
+	wall.set_anchors_preset(Control.PRESET_FULL_RECT)
+	parent.add_child(wall)
+	return wall
+
+
+## 들보의 빗금 띠: x 0부터 160마다 폭 22, 나무 띠 위까지(견본 counterBg).
+static func add_beams(parent: Control) -> void:
+	for x in range(0, 1280, 160):
+		var beam := HatchRect.new()
+		beam.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		beam.color = HATCH_COLOR
+		beam.position = Vector2(x, 0)
+		beam.size = Vector2(22, COUNTER_Y)
+		parent.add_child(beam)
+
+
+## 화면 위쪽 머리 띠: 결 없는 양피지와 그 아래 잉크 선(견본 counterBg).
+static func add_header_rule(parent: Control) -> void:
+	_add_rect(parent, Rect2(0, 0, 1280, HEADER_HEIGHT), PARCHMENT)
+	_add_rect(parent, Rect2(0, HEADER_HEIGHT - RULE_WIDTH / 2.0, 1280, RULE_WIDTH), INK)
+
+
+static func _add_rect(parent: Control, rect: Rect2, color: Color) -> ColorRect:
+	var shape := ColorRect.new()
+	shape.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	shape.color = color
+	shape.position = rect.position
+	shape.size = rect.size
+	parent.add_child(shape)
+	return shape
 
 
 static func add_label(parent: Node, text: String, font_size: int, color := Color.WHITE) -> Label:
@@ -75,14 +115,76 @@ static func add_wrapped(parent: Node, text: String, font_size: int, color := Col
 	return label
 
 
-static func add_button(parent: Node, text: String, font_size: int, node_name := "") -> Button:
+## primary면 주 버튼(제목 글꼴의 붉은 글자, 테마의 PrimaryButton).
+static func add_button(parent: Node, text: String, font_size: int, node_name := "", primary := false) -> Button:
 	var button := Button.new()
 	button.text = text
 	button.add_theme_font_size_override("font_size", font_size)
+	if primary:
+		button.theme_type_variation = &"PrimaryButton"
 	if node_name != "":
 		button.name = node_name
 	parent.add_child(button)
 	return button
+
+
+## 제목 글꼴(송명)의 글. 화면 머리 줄과 큰 수가 쓴다(결정 320).
+static func add_title(parent: Node, text: String, font_size: int, color := Color.WHITE) -> Label:
+	var label := add_label(parent, text, font_size, color)
+	label.theme_type_variation = &"TitleLabel"
+	return label
+
+
+## 패널의 머리 글: 붉은 글자와 가는 밑줄(견본 panelHead, 결정 324).
+static func add_panel_head(column: Control, text: String) -> VBoxContainer:
+	var head := VBoxContainer.new()
+	head.name = "PanelHead"
+	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	head.add_theme_constant_override("separation", 4)
+	column.add_child(head)
+	add_label(head, text, 20, ACCENT).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	head.add_child(_rule([0.0], DIM))
+	return head
+
+
+## 장부의 한 줄(결정 325): 위에 줄선, 이름은 왼쪽·수는 오른쪽 맞춤. total이면 줄선 대신 두 줄 선(합계).
+## 노드는 Ledger<key> 아래 Name·Value다(테스트가 찾는다).
+static func add_ledger_row(parent: Control, key: String, name_text: String, value_text: String,
+		font_size: int, total := false, color := Color.WHITE, title := false) -> VBoxContainer:
+	var row := VBoxContainer.new()
+	row.name = "Ledger" + key
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_theme_constant_override("separation", 6)
+	parent.add_child(row)
+	row.add_child(_rule([0.0, 4.0], INK) if total else _rule([0.0], Color(DIM, 0.6)))
+	var line := HBoxContainer.new()
+	line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(line)
+	var name_label: Label = add_title(line, name_text, font_size, color) if title else add_label(line, name_text, font_size, color)
+	name_label.name = "Name"
+	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var value: Label = add_title(line, value_text, font_size, color) if title else add_label(line, value_text, font_size, color)
+	value.name = "Value"
+	value.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	return row
+
+
+## 가로 줄선(두께 1)들. ys는 줄마다의 y(줄선 상자 안).
+static func _rule(ys: Array, color: Color) -> Control:
+	var rule := Control.new()
+	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rule.custom_minimum_size = Vector2(0, float(ys.back()) + 1.0)
+	for y in ys:
+		var line := ColorRect.new()
+		line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		line.color = color
+		line.anchor_right = 1.0
+		line.offset_top = float(y)
+		line.offset_bottom = float(y) + 1.0
+		rule.add_child(line)
+	return rule
 
 
 ## 자리와 크기를 직접 적은 패널. 안에 여백과 세로 줄 세우기가 들어 있다. 돌려주는 것은 그 세로 상자다.
@@ -143,19 +245,12 @@ static func make_client(client_name: String) -> Control:
 
 
 ## 카운터(가로 띠). 의뢰인을 먼저 붙이고 이것을 나중에 붙이면 의뢰인이 카운터 뒤에 선다.
+## 나무 띠, 윗줄 14, 그 위아래 잉크 선(견본 counterBand).
 static func add_counter_band(parent: Control) -> void:
-	var band := ColorRect.new()
-	band.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	band.color = COUNTER_COLOR
-	band.position = Vector2(0, COUNTER_Y)
-	band.size = Vector2(1280, 720 - COUNTER_Y)
-	parent.add_child(band)
-	var top := ColorRect.new()
-	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	top.color = COUNTER_TOP_COLOR
-	top.position = Vector2(0, COUNTER_Y)
-	top.size = Vector2(1280, 14)
-	parent.add_child(top)
+	_add_rect(parent, Rect2(0, COUNTER_Y, 1280, 720 - COUNTER_Y), COUNTER_COLOR)
+	_add_rect(parent, Rect2(0, COUNTER_Y, 1280, 14), COUNTER_TOP_COLOR)
+	for y in [COUNTER_Y, COUNTER_Y + 14.0]:
+		_add_rect(parent, Rect2(0, y - RULE_WIDTH / 2.0, 1280, RULE_WIDTH), INK)
 
 
 ## 방금 돌려보낸 손님의 한마디(흐린 한 줄, 노드 이름 DeclinedLine). 카운터와 폐점이 함께 쓴다.

@@ -332,13 +332,14 @@ func t42_hat_and_display() -> String:
 		P.HEAD: [D.CENTER, H.HIGH], P.SWORD_HAND: [sword_side, H.HIGH],
 		P.TORSO: [D.CENTER, H.MID], P.SWORD_ARM: [sword_side, H.MID], P.LEGS: [D.CENTER, H.LOW],
 	}
-	var help: String = (duel.get_node("HUD").get("_help_label") as Label).text
+	# 조작 안내는 결투 화면이 아니라 처음 화면의 도움말이 보인다(결정 323). 글은 같은 함수가 만든다.
+	var help: String = DuelHud.help_text(opp, false, core.opponent_has_hat, core.weapon)
 	for part: int in aims:
 		var text := _aim_text(duel, aims[part][0], aims[part][1])
 		var heavy := opp.graze_cells(part) >= 2
 		if text.contains("칸)") != heavy:
 			errs.append("[조준 글자] %s(%d칸): '%s'" % [DuelTypes.PART_NAMES[part], opp.graze_cells(part), text])
-	help = (duel.get_node("HUD").get("_help_label") as Label).text
+	help = DuelHud.help_text(opp, false, core.opponent_has_hat, core.weapon)
 	for part: int in aims:
 		if opp.graze_cells(part) >= 2 and not help.contains(DuelTypes.PART_NAMES[part]):
 			errs.append("[조작 안내] 2칸 이상인 %s의 이름이 없음" % DuelTypes.PART_NAMES[part])

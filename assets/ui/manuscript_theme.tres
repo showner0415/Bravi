@@ -1,0 +1,73 @@
+[gd_resource type="Theme" load_steps=11 format=3]
+
+[ext_resource type="FontFile" path="res://assets/fonts/NanumSquareRoundEB.ttf" id="1_body"]
+[ext_resource type="FontVariation" path="res://assets/ui/font_title.tres" id="2_title"]
+[ext_resource type="Script" path="res://scripts/ui/manuscript_panel_style.gd" id="3_panel"]
+[ext_resource type="Script" path="res://scripts/ui/swallowtail_style.gd" id="4_tail"]
+
+[sub_resource type="StyleBox" id="StyleBox_panel"]
+script = ExtResource("3_panel")
+
+[sub_resource type="StyleBox" id="StyleBox_normal"]
+script = ExtResource("4_tail")
+content_margin_left = 28.0
+content_margin_top = 6.0
+content_margin_right = 28.0
+content_margin_bottom = 6.0
+
+[sub_resource type="StyleBox" id="StyleBox_hover"]
+script = ExtResource("4_tail")
+fill_color = Color(0.823529, 0.72549, 0.54902, 1)
+content_margin_left = 28.0
+content_margin_top = 6.0
+content_margin_right = 28.0
+content_margin_bottom = 6.0
+
+[sub_resource type="StyleBox" id="StyleBox_pressed"]
+script = ExtResource("4_tail")
+fill_color = Color(0.721569, 0.6, 0.423529, 1)
+sink = 2.0
+content_margin_left = 28.0
+content_margin_top = 8.0
+content_margin_right = 28.0
+content_margin_bottom = 4.0
+
+[sub_resource type="StyleBox" id="StyleBox_disabled"]
+script = ExtResource("4_tail")
+fill_color = Color(0.823529, 0.72549, 0.54902, 1)
+border_color = Color(0.419608, 0.329412, 0.25098, 1)
+content_margin_left = 28.0
+content_margin_top = 6.0
+content_margin_right = 28.0
+content_margin_bottom = 6.0
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_focus"]
+
+[resource]
+default_font = ExtResource("1_body")
+default_font_size = 20
+Button/colors/font_color = Color(0.231373, 0.164706, 0.117647, 1)
+Button/colors/font_disabled_color = Color(0.419608, 0.329412, 0.25098, 1)
+Button/colors/font_focus_color = Color(0.231373, 0.164706, 0.117647, 1)
+Button/colors/font_hover_color = Color(0.231373, 0.164706, 0.117647, 1)
+Button/colors/font_hover_pressed_color = Color(0.231373, 0.164706, 0.117647, 1)
+Button/colors/font_pressed_color = Color(0.231373, 0.164706, 0.117647, 1)
+Button/styles/disabled = SubResource("StyleBox_disabled")
+Button/styles/focus = SubResource("StyleBoxEmpty_focus")
+Button/styles/hover = SubResource("StyleBox_hover")
+Button/styles/normal = SubResource("StyleBox_normal")
+Button/styles/pressed = SubResource("StyleBox_pressed")
+HaggledButton/base_type = &"Button"
+HaggledButton/colors/font_disabled_color = Color(0.478431, 0.321569, 0.196078, 1)
+Label/colors/font_color = Color(0.231373, 0.164706, 0.117647, 1)
+Panel/styles/panel = SubResource("StyleBox_panel")
+PanelContainer/styles/panel = SubResource("StyleBox_panel")
+PrimaryButton/base_type = &"Button"
+PrimaryButton/colors/font_color = Color(0.517647, 0.258824, 0.184314, 1)
+PrimaryButton/colors/font_focus_color = Color(0.517647, 0.258824, 0.184314, 1)
+PrimaryButton/colors/font_hover_color = Color(0.517647, 0.258824, 0.184314, 1)
+PrimaryButton/colors/font_hover_pressed_color = Color(0.517647, 0.258824, 0.184314, 1)
+PrimaryButton/colors/font_pressed_color = Color(0.517647, 0.258824, 0.184314, 1)
+PrimaryButton/fonts/font = ExtResource("2_title")
+TitleLabel/base_type = &"Label"
+TitleLabel/fonts/font = ExtResource("2_title")

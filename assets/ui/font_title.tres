@@ -1,0 +1,8 @@
+[gd_resource type="FontVariation" load_steps=3 format=3]
+
+[ext_resource type="FontFile" path="res://assets/fonts/SongMyung-Regular.ttf" id="1_song"]
+[ext_resource type="FontFile" path="res://assets/fonts/NanumSquareRoundEB.ttf" id="2_body"]
+
+[resource]
+base_font = ExtResource("1_song")
+fallbacks = Array[Font]([ExtResource("2_body")])

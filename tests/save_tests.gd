@@ -396,16 +396,18 @@ func t58_screens() -> String:
 
 	# 가. 저장이 없는 처음 화면(세션이 없거나 저장이 꺼져 있다).
 	var fresh := _spawn_title(null)
-	_expect(errs, _button_count(fresh) == 2 and _d._has_node(fresh, "Proceed") and _d._has_node(fresh, "Practice"),
-		"[가] 저장이 없는 처음 화면의 버튼 %d개 (기대 2: Proceed, Practice)" % _button_count(fresh))
+	_expect(errs, _button_count(fresh) == 3 and _d._has_node(fresh, "Proceed") and _d._has_node(fresh, "Practice") and _d._has_node(fresh, "Help"),
+		"[가] 저장이 없는 처음 화면의 버튼 %d개 (기대 3: Proceed, Practice, Help)" % _button_count(fresh))
 	_expect(errs, not _d._has_node(fresh, "Continue") and not _d._has_node(fresh, "NewGame") and not _d._has_node(fresh, "SaveUnreadable"),
 		"[가] 저장이 없는 처음 화면에 Continue·NewGame·SaveUnreadable이 있음")
+	_expect(errs, not _d._has_node(fresh, "HelpScreen") and not _d._has_node(fresh, "HelpClose"), "[가] 열기 전인데 HelpScreen·HelpClose가 있음")
 	fresh.free()
 
 	# 나. 읽을 수 없는 저장.
 	var broken := _spawn_title(null, true)
-	_expect(errs, _button_count(broken) == 2 and _d._has_node(broken, "Proceed") and _d._has_node(broken, "SaveUnreadable"),
-		"[나] 읽을 수 없는 저장의 처음 화면: 버튼 %d개 (기대 2와 SaveUnreadable)" % _button_count(broken))
+	_expect(errs, _button_count(broken) == 3 and _d._has_node(broken, "Proceed") and _d._has_node(broken, "Help") and _d._has_node(broken, "SaveUnreadable")
+		and not _d._has_node(broken, "HelpScreen"),
+		"[나] 읽을 수 없는 저장의 처음 화면: 버튼 %d개 (기대 3과 SaveUnreadable, HelpScreen 없음)" % _button_count(broken))
 	broken.free()
 
 	# 다. 저장이 있는 처음 화면: 2일차, 소지금 72, 가진 것 셋, 평판 없음.
@@ -415,8 +417,9 @@ func t58_screens() -> String:
 	var title := _spawn_title(saved)
 	var resume := title.find_child("Continue", true, false) as Button
 	var info: String = _d._label_text(title, "SaveInfo")
-	_expect(errs, _button_count(title) == 3 and resume != null and _d._has_node(title, "NewGame") and _d._has_node(title, "Practice")
-		and not _d._has_node(title, "Proceed"), "[다] 저장이 있는 처음 화면의 버튼 %d개 (기대 3: Continue, NewGame, Practice)" % _button_count(title))
+	_expect(errs, _button_count(title) == 4 and resume != null and _d._has_node(title, "NewGame") and _d._has_node(title, "Practice")
+		and _d._has_node(title, "Help") and not _d._has_node(title, "HelpScreen")
+		and not _d._has_node(title, "Proceed"), "[다] 저장이 있는 처음 화면의 버튼 %d개 (기대 4: Continue, NewGame, Practice, Help)" % _button_count(title))
 	_expect(errs, resume != null and resume.text.contains("2일차"), "[다] Continue의 글에 '2일차'가 없음")
 	_expect(errs, info.contains("소지금 72") and info.contains("3개") and not info.contains("평판"),
 		"[다] SaveInfo '%s' (기대: '소지금 72', '3개', 평판 없음)" % info)
@@ -430,7 +433,7 @@ func t58_screens() -> String:
 	_expect(errs, new_game != null and new_game.text.contains("한 번 더"), "[라] 한 번 누른 뒤 NewGame의 글에 '한 번 더'가 없음")
 	_expect(errs, warning.contains("2일차") and warning.contains("지워진다"), "[라] NewGameWarning '%s' (기대: '2일차', '지워진다')" % warning)
 	_d._press(title, "NewGame")
-	_expect(errs, title.is_inside_tree() and _button_count(title) == 3 and saved.day_number == 2 and saved.money == 72,
+	_expect(errs, title.is_inside_tree() and _button_count(title) == 4 and saved.day_number == 2 and saved.money == 72,
 		"[라] 두 번 누른 뒤 붙인 화면이나 저장이 달라짐")
 	title.free()
 

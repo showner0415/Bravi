@@ -2,16 +2,15 @@ extends Control
 ## 의뢰 선택 화면(연습). data/commissions의 의뢰마다 카드 하나를 만든다(전부 코드로, 애셋 없음).
 ## Esc로 처음 화면에 돌아간다.
 
+const Ui := preload("res://scripts/day_ui.gd")
+
 const COMMISSION_DIR := "res://data/commissions"
 const DUEL_PATH := "res://scenes/duel/duel.tscn"
 const TITLE_PATH := "res://scenes/ui/title.tscn"
 
 
 func _ready() -> void:
-	var background := ColorRect.new()
-	background.color = Color(0.12, 0.12, 0.15)
-	background.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(background)
+	Ui.add_background(self)
 
 	var margin := MarginContainer.new()
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -25,7 +24,8 @@ func _ready() -> void:
 
 	var title := Label.new()
 	title.text = "연습 — 의뢰를 골라 결투  (Esc: 처음 화면)"
-	title.add_theme_font_size_override("font_size", 30)
+	title.add_theme_font_size_override("font_size", 28)
+	title.theme_type_variation = &"TitleLabel"
 	column.add_child(title)
 
 	var cards := HBoxContainer.new()
@@ -68,7 +68,7 @@ func _add_card(parent: Control, commission: Commission) -> Button:
 
 	var opponent := Label.new()
 	opponent.text = "상대: %s" % (commission.opponent.display_name if commission.opponent != null else "?")
-	opponent.modulate = Color(1, 1, 1, 0.7)
+	opponent.add_theme_color_override("font_color", Ui.DIM)
 	column.add_child(opponent)
 
 	var dialogue := Label.new()
@@ -81,8 +81,8 @@ func _add_card(parent: Control, commission: Commission) -> Button:
 	var condition := Label.new()
 	condition.text = "\n".join(commission.describe())
 	condition.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	condition.add_theme_font_size_override("font_size", 17)
-	condition.add_theme_color_override("font_color", Color(0.95, 0.8, 0.3))
+	condition.add_theme_font_size_override("font_size", 18)
+	condition.add_theme_color_override("font_color", Ui.ACCENT)
 	column.add_child(condition)
 
 	var button := Button.new()

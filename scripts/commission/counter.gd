@@ -86,19 +86,21 @@ func _input(event: InputEvent) -> void:
 
 
 func _build(commission: Commission) -> void:
+	Ui.add_beams(self)
+	Ui.add_header_rule(self)
 	shown_waiting = day.waiting_count()
 	shown_duels_left = day.duels_left()
 	# 머리 줄의 남은 결투는 지금 손님과 문밖 손님을 합친 수를 넘지 않게 적는다(손님이 모자라면 그만큼만 치른다).
 	var duels_to_show := mini(shown_duels_left, shown_waiting + 1)
 	var header := Ui.add_label(self, "%d일차 · 손님 %d/%d (문밖에 %d명) · 오늘 남은 결투 %d · 소지금 %d" % [
-		day.day_number, day.index + 1, day.commission_count(), shown_waiting, duels_to_show, day.money], 22)
+		day.day_number, day.index + 1, day.commission_count(), shown_waiting, duels_to_show, day.money], 24)
 	header.name = "Header"
 	header.position = Vector2(32, 16)
 	# 방금 돌려보낸 손님의 한마디. 손님을 맡으면 사라진다.
-	Ui.add_declined_line(self, day.last_declined, Rect2(32, 46, 1216, 22))
+	Ui.add_declined_line(self, day.last_declined, Rect2(32, 42, 1216, 20))
 	if day.has_reputation():
 		shown_reputation = day.reputation
-		var reputation := Ui.add_label(self, Ui.reputation_text(day), 20, Ui.GOLD)
+		var reputation := Ui.add_label(self, Ui.reputation_text(day), 20, Ui.ACCENT)
 		reputation.name = "ReputationLabel"
 		reputation.position = Vector2(848, 18)
 		reputation.size = Vector2(400, 28)
@@ -116,7 +118,7 @@ func _build(commission: Commission) -> void:
 					guest_text += GUEST_NOTE_PAY % pay_percent
 			var guests := Ui.add_label(self, guest_text, 16, Ui.DIM)
 			guests.name = "GuestNote"
-			guests.position = Vector2(32, 46)
+			guests.position = Vector2(32, 42)
 
 	# 의뢰인은 카운터 뒤에 선다(카운터를 나중에 붙인다). 옆에서 한 번 미끄러져 들어온다.
 	var client := Ui.make_client(commission.client_name)
@@ -130,22 +132,23 @@ func _build(commission: Commission) -> void:
 
 	# 말풍선: 사연 전문, 조건, 상대, 보수.
 	var bubble := Ui.add_panel(self, Rect2(410, 70, 830, 440), 12)
-	var dialogue := Ui.add_wrapped(bubble, commission.dialogue, 19)
+	Ui.add_panel_head(bubble, commission.client_name)
+	var dialogue := Ui.add_wrapped(bubble, commission.dialogue, 20)
 	dialogue.name = "Dialogue"
 	dialogue.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	Ui.add_wrapped(bubble, "\n".join(commission.describe()), 18, Ui.GOLD)
+	Ui.add_wrapped(bubble, "\n".join(commission.describe()), 18, Ui.ACCENT)
 	if day.has_reputation():
 		var accept := int(commission.reputation_effect.get("accept", 0))
 		if accept != 0:
-			var hint := Ui.add_label(bubble, HINT_GOOD if accept > 0 else HINT_BAD, 17, Ui.GOLD if accept > 0 else Ui.RED)
+			var hint := Ui.add_label(bubble, HINT_GOOD if accept > 0 else HINT_BAD, 18, Color.WHITE if accept > 0 else Ui.ACCENT)
 			hint.name = "ReputationHint"
 	# 흥정의 한 줄: 손님의 성향이고, 흥정한 뒤에는 손님의 대답이다. 흥정이 켜져 있을 때만 있다.
 	if day.effective_rules().haggle_bonus_percent > 0:
-		_haggle_line = Ui.add_label(bubble, "", 17, Ui.DIM)
+		_haggle_line = Ui.add_label(bubble, "", 18, Ui.DIM)
 		_haggle_line.name = "HaggleLine"
-	Ui.add_label(bubble, "상대: %s" % (commission.opponent.display_name if commission.opponent != null else "?"), 17, Ui.DIM)
+	Ui.add_label(bubble, "상대: %s" % (commission.opponent.display_name if commission.opponent != null else "?"), 18, Ui.DIM)
 	# 보수 줄. 글은 _refresh_haggle()이 채운다(흥정에 따라 바뀐다).
-	_pay_line = Ui.add_label(bubble, "", 17, Ui.DIM)
+	_pay_line = Ui.add_label(bubble, "", 18, Ui.DIM)
 	_pay_line.name = "PayLine"
 
 	# 흥정의 버튼: 값을 올려 부를 수 있는 손님이거나, 이 손님에게 이미 흥정했을 때만 있다.
@@ -156,7 +159,7 @@ func _build(commission: Commission) -> void:
 		_haggle_button.pressed.connect(_on_haggle)
 	_refresh_haggle()
 
-	var proceed := Ui.add_button(self, "맡는다", 28, "Proceed")
+	var proceed := Ui.add_button(self, "맡는다", 28, "Proceed", true)
 	proceed.position = Vector2(900, 590)
 	proceed.size = Vector2(320, 76)
 	proceed.pressed.connect(_accept)
@@ -167,7 +170,7 @@ func _build(commission: Commission) -> void:
 	decline.pressed.connect(_decline)
 	if shown_waiting < shown_duels_left:
 		# 대신 올 손님이 모자라다: 지금 돌려보내면 오늘 치를 수 있는 결투가 하나 준다.
-		var note := Ui.add_label(self, DECLINE_NOTE, 15, Ui.DIM)
+		var note := Ui.add_label(self, DECLINE_NOTE, 16, Ui.ON_WOOD)
 		note.name = "DeclineNote"
 		note.position = Vector2(640, 662)
 
@@ -176,7 +179,7 @@ func _build(commission: Commission) -> void:
 	quit.size = Vector2(170, 42)
 	quit.pressed.connect(_quit)
 	# 하루 중에 그만두면 버려지는 것을 누르기 전에 알린다(저장은 하루 단위다).
-	var quit_note := Ui.add_label(self, QUIT_NOTE, 13, Ui.DIM)
+	var quit_note := Ui.add_label(self, QUIT_NOTE, 14, Ui.ON_WOOD)
 	quit_note.name = "QuitNote"
 	quit_note.position = Vector2(40, 694)
 
@@ -195,7 +198,7 @@ func _refresh_haggle() -> void:
 		_haggle_button.disabled = state != DayState.Haggle.NONE
 		if state == DayState.Haggle.AGREED:
 			_haggle_button.text = HAGGLE_BUTTON_AGREED
-			_haggle_button.add_theme_color_override("font_disabled_color", Ui.GOLD)
+			_haggle_button.theme_type_variation = &"HaggledButton"
 		elif state == DayState.Haggle.REFUSED:
 			_haggle_button.text = HAGGLE_BUTTON_REFUSED
 		else:

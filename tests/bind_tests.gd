@@ -601,11 +601,11 @@ func _scene_display(errs: Array[String], weapon: WeaponData) -> void:
 	if weapon.close_bind_time <= 0.0:
 		# 엉킴이 없는 무기 데이터: 게이지가 보이지 않는 것만 본다.
 		_expect(errs, not bar.visible and not center.visible and not sword_warning.visible, "[씬] 엉킴이 없는 무기인데 게이지나 경고가 보임")
-		_expect(errs, not (hud.get("_help_label") as Label).text.contains("엉킴"), "[씬] 엉킴이 없는 무기인데 조작 안내에 엉킴이 있음")
+		_expect(errs, not DuelHud.help_text(core.opponent_data, false, false, weapon).contains("엉킴"), "[씬] 엉킴이 없는 무기인데 조작 안내에 엉킴이 있음")
 		duel.free()
 		return
 
-	_expect(errs, (hud.get("_help_label") as Label).text.contains("엉킴이 차면 밀려난다"), "[씬] 조작 안내에 엉킴 안내가 없음")
+	_expect(errs, DuelHud.help_text(core.opponent_data, false, false, weapon).contains("엉킴이 차면 밀려난다"), "[씬] 조작 안내에 엉킴 안내가 없음")
 	_expect(errs, bar.visible and is_equal_approx(float(bar.get("ratio")), core.bind_gauge()) and core.bind_gauge() > 0.0,
 		"[씬] 밀착에 들어선 뒤 게이지가 보이지 않거나 값이 코어와 다름 (%.3f, 코어 %.3f)" % [float(bar.get("ratio")), core.bind_gauge()])
 	_expect(errs, not bar.get("warn") and not center.visible and not sword_warning.visible, "[씬] 80%% 미만인데 경고가 보임")

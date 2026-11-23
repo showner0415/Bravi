@@ -1,9 +1,11 @@
 class_name DuelHud
 extends CanvasLayer
-## 결투 화면의 글자와 칸. 전부 코드로 만든다(애셋 없음).
-## Control은 전부 마우스를 무시한다(클릭이 결투 씬의 _unhandled_input까지 가야 하므로).
+## 결투 화면의 글자와 칸. 전부 코드로 만든다(애셋 없음). 패널은 견본 025의 필사본이다(결정 316~319).
+## Control은 전부 마우스를 무시한다(클릭이 결투 씬의 _unhandled_input까지 가야 하므로. 패널이 조준 칸 위에 있다).
 
 const DT := preload("res://scripts/duel/duel_types.gd")
+const Ui := preload("res://scripts/day_ui.gd")
+const STATE_FONT := preload("res://assets/ui/font_state.tres")
 
 const LOG_LINES := 3
 const HELP_RETRY := " · R 다시 하기 · Esc 의뢰 선택"
@@ -17,8 +19,13 @@ const HELP_BIND := " · 밀착은 엉킴이 차면 밀려난다 — 차기 전�
 ## 엉킴 게이지가 이 값 이상이고 간격이 밀착이면 경고를 낸다(게이지의 색, 가운데 글자, 내 칼의 경고 표시).
 const BIND_WARN_RATIO := 0.8
 const BIND_WARN_TEXT := "칼이 엉킨다!"
-## 라벨 테두리와 띠의 색(바이블 6절 경고 규칙 2의 짙은 띠).
+## 게이지의 짙은 띠와 무대 위 글의 테두리 색(바이블 6절 경고 규칙 2).
 const BAND_COLOR := Color("#2E2620")
+## 패널의 층: 무대(−2)와 상대·내 손(0) 사이라 칼과 손이 패널 위로 지난다(결정 316).
+const BACK_LAYER := -1
+## 조준 패널의 윗변(아래 앵커 기준). 덧말이 붙으면 한 줄만큼 올라간다.
+const AIM_PANEL_TOP := -170.0
+const AIM_PANEL_GROW := 24.0
 const HELP_TEXT := "좌클릭 공격 · 우클릭 막기 (떼고 있다가 고리가 띠에 들어올 때 누르면 패리) · 마우스 위치로 방향·높이 · W/S 간격" + HELP_RETRY + " · F1 디버그\n빈틈이 아닐 때 공격하면 상대가 자세를 되찾는다"
 
 
@@ -85,14 +92,77 @@ static func heavy_parts(opponent: OpponentData, has_hat := false) -> Dictionary:
 	return out
 
 
-## 자세 칸. 채워진 칸과 빈 칸을 사각형으로 그린다.
+## 필사본 게이지의 색(바이블 6절, 결정 317).
+const INK := Color("3B2A1E")
+const PARCHMENT := Color("E9D8B4")
+const PARCHMENT_EDGE := Color("A8895E")
+## 짙은 띠 위의 게이지 글자 크기.
+const GAUGE_FONT_SIZE := 16
+
+
+## 사각형 안을 −35° 빗금으로 채운다(바이블 6절 "빗금은 띠로만"의 무늬, 빈 자세 칸).
+static func draw_hatch(canvas: CanvasItem, rect: Rect2, color: Color, spacing := 6.0) -> void:
+	var direction := Vector2(0.573576, 0.819152)
+	var normal := Vector2(direction.y, -direction.x)
+	var low := INF
+	var high := -INF
+	for corner in [rect.position, Vector2(rect.end.x, rect.position.y), Vector2(rect.position.x, rect.end.y), rect.end]:
+		low = minf(low, normal.dot(corner))
+		high = maxf(high, normal.dot(corner))
+	var reach := rect.size.length()
+	var k := floorf(low / spacing) * spacing
+	while k <= high:
+		var segment := _clip_segment(normal * k - direction * reach, normal * k + direction * reach, rect)
+		if segment.size() == 2:
+			canvas.draw_line(segment[0], segment[1], color, 1.0, true)
+		k += spacing
+
+
+## 선분을 사각형으로 자른다(Liang–Barsky). 안에 들지 않으면 빈 배열.
+static func _clip_segment(a: Vector2, b: Vector2, rect: Rect2) -> PackedVector2Array:
+	var d := b - a
+	var t0 := 0.0
+	var t1 := 1.0
+	var p := [-d.x, d.x, -d.y, d.y]
+	var q := [a.x - rect.position.x, rect.end.x - a.x, a.y - rect.position.y, rect.end.y - a.y]
+	for i in 4:
+		var pi_value: float = p[i]
+		var qi_value: float = q[i]
+		if is_zero_approx(pi_value):
+			if qi_value < 0.0:
+				return PackedVector2Array()
+			continue
+		var t := qi_value / pi_value
+		if pi_value < 0.0:
+			t0 = maxf(t0, t)
+		else:
+			t1 = minf(t1, t)
+	if t0 > t1:
+		return PackedVector2Array()
+	return PackedVector2Array([a + d * t0, a + d * t1])
+
+
+## 짙은 띠 위의 게이지(엉킴·방심): 띠, 라벨, 테두리가 있는 막대(견본 bandGauge).
+static func draw_band_gauge(canvas: Control, label_width: float, caption: String, label_color: Color,
+		ratio: float, fill: Color) -> void:
+	var size := canvas.size
+	canvas.draw_rect(Rect2(Vector2.ZERO, size), BAND_COLOR)
+	canvas.draw_string(canvas.get_theme_default_font(), Vector2(6, size.y * 0.5 + 6), caption,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, GAUGE_FONT_SIZE, label_color)
+	var bar := Rect2(label_width, 4, size.x - label_width - 6, size.y - 8)
+	var inner := bar.grow(-1)
+	canvas.draw_rect(Rect2(inner.position, Vector2(inner.size.x * clampf(ratio, 0.0, 1.0), inner.size.y)), fill)
+	canvas.draw_rect(bar, PARCHMENT_EDGE, false, 1.5)
+
+
+## 자세 칸. 찬 칸은 칠, 빈 칸은 양피지에 빗금, 칸마다 잉크 테두리.
 class PostureCells extends Control:
 	var total := 0
 	var filled := 0
 	var cell := Vector2(24, 14)
 	var gap := 4.0
-	var fill_color := Color(0.95, 0.8, 0.3)
-	var empty_color := Color(1, 1, 1, 0.16)
+	var fill_color := Color("7A5232")
+	var empty_color := DuelHud.PARCHMENT
 	var centered := true
 
 	func set_values(p_total: int, p_filled: int) -> void:
@@ -108,11 +178,16 @@ class PostureCells extends Control:
 		for i in total:
 			var rect := Rect2(x0 + i * (cell.x + gap), 0.0, cell.x, cell.y)
 			draw_rect(rect, fill_color if i < filled else empty_color)
+			if i >= filled:
+				DuelHud.draw_hatch(self, rect, Color(DuelHud.INK, 0.6))
+			draw_rect(rect, DuelHud.INK, false, 1.5)
 
 
 ## 조건의 게이지(0~100). value는 채워진 막대, pending은 그 위에 옅게 이어 붙인 "지금 끝나면 더해질 양".
+## 견본의 자: 양피지 막대, 잉크 눈금 아홉, 글은 막대 오른쪽.
 class Meter extends Control:
-	const BAR_WIDTH := 180.0
+	const BAR_WIDTH := 110.0
+	const FILL := Color("59663F")
 	var label := ""
 	var value := 0
 	var pending := 0
@@ -126,24 +201,30 @@ class Meter extends Control:
 		queue_redraw()
 
 	func _draw() -> void:
-		var bar := Rect2(0, 3, BAR_WIDTH, size.y - 6)
-		draw_rect(bar, Color(1, 1, 1, 0.16))
-		var filled := BAR_WIDTH * clampf(value / 100.0, 0.0, 1.0)
-		var extra := BAR_WIDTH * clampf((value + pending) / 100.0, 0.0, 1.0) - filled
-		draw_rect(Rect2(0, bar.position.y, filled, bar.size.y), Color(0.95, 0.35, 0.3))
+		var bar := Rect2(0, 0, BAR_WIDTH, size.y)
+		draw_rect(bar, DuelHud.PARCHMENT)
+		var inner := bar.grow(-1)
+		var filled := inner.size.x * clampf(value / 100.0, 0.0, 1.0)
+		var extra := inner.size.x * clampf((value + pending) / 100.0, 0.0, 1.0) - filled
+		draw_rect(Rect2(inner.position, Vector2(filled, inner.size.y)), FILL)
 		if extra > 0.0:
-			draw_rect(Rect2(filled, bar.position.y, extra, bar.size.y), Color(0.95, 0.35, 0.3, 0.38))
+			draw_rect(Rect2(inner.position.x + filled, inner.position.y, extra, inner.size.y), Color(FILL, 0.38))
+		for k in range(1, 10):
+			var x := BAR_WIDTH * k / 10.0
+			var tick := size.y * (0.6 if k == 5 else 0.35)
+			draw_line(Vector2(x, size.y), Vector2(x, size.y - tick), DuelHud.INK, 1.0)
+		draw_rect(bar, DuelHud.INK, false, 1.5)
 		var text := "%s %d" % [label, value]
 		if pending > 0:
 			text += " (지금 끝나면 +%d)" % pending
-		draw_string(ThemeDB.fallback_font, Vector2(BAR_WIDTH + 10, size.y - 6), text,
-			HORIZONTAL_ALIGNMENT_LEFT, -1, 15)
+		draw_string(get_theme_default_font(), Vector2(BAR_WIDTH + 10, size.y - 4), text,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 14, DuelHud.INK)
 
 
 ## 엉킴 게이지(0~1). 간격 글자 옆에 늘 보인다. warn이면 색이 바뀐다.
 class BindBar extends Control:
 	const LABEL_WIDTH := 44.0
-	const COLOR_FILL := Color(0.6, 0.75, 0.95)
+	const COLOR_FILL := Color("8FA3B3")
 	const COLOR_WARN := Color(1.0, 0.45, 0.2)
 	var ratio := 0.0
 	var warn := false
@@ -160,18 +241,14 @@ class BindBar extends Control:
 		return COLOR_WARN if warn else COLOR_FILL
 
 	func _draw() -> void:
-		draw_string(ThemeDB.fallback_font, Vector2(0, size.y - 6), "엉킴", HORIZONTAL_ALIGNMENT_LEFT, -1, 15,
-			bar_color() if warn else Color(1, 1, 1, 0.8))
-		var bar := Rect2(LABEL_WIDTH, 4, size.x - LABEL_WIDTH, size.y - 8)
-		draw_rect(bar, Color(1, 1, 1, 0.16))
-		draw_rect(Rect2(bar.position, Vector2(bar.size.x * clampf(ratio, 0.0, 1.0), bar.size.y)), bar_color())
+		DuelHud.draw_band_gauge(self, LABEL_WIDTH, "엉킴", COLOR_WARN if warn else DuelHud.PARCHMENT, ratio, bar_color())
 
 
-## 상대의 방심 게이지(0~1). 상대 자세 칸 옆에 보인다. 다 차면 색이 바뀌고("방심!"),
+## 상대의 방심 게이지(0~1). 위 오른쪽 패널에 보인다. 다 차면 색이 바뀌고("방심!"),
 ## 찔린 횟수가 상한에 닿은 뒤에는 빈 채로 "경계"를 알린다(이 판에서는 다시 오지 않는다).
 class ComplacencyBar extends Control:
-	const LABEL_WIDTH := 46.0
-	const COLOR_FILL := Color(0.75, 0.75, 0.8)
+	const LABEL_WIDTH := 52.0
+	const COLOR_FILL := Color("CFC8BA")
 	const COLOR_FULL := Color(0.95, 0.8, 0.3)
 	var ratio := 0.0
 	var wary := false
@@ -192,15 +269,15 @@ class ComplacencyBar extends Control:
 
 	func _draw() -> void:
 		var full := ratio >= 1.0 and not wary
-		var color := COLOR_FULL if full else COLOR_FILL
-		draw_string(ThemeDB.fallback_font, Vector2(0, size.y - 5), caption(), HORIZONTAL_ALIGNMENT_LEFT, -1, 15,
-			color if full else Color(1, 1, 1, 0.45 if wary else 0.8))
-		var bar := Rect2(LABEL_WIDTH, 4, size.x - LABEL_WIDTH, size.y - 8)
-		draw_rect(bar, Color(1, 1, 1, 0.16))
-		draw_rect(Rect2(bar.position, Vector2(bar.size.x * clampf(ratio, 0.0, 1.0), bar.size.y)), color)
+		var label_color := COLOR_FULL if full else Color(DuelHud.PARCHMENT, 0.45 if wary else 1.0)
+		DuelHud.draw_band_gauge(self, LABEL_WIDTH, caption(), label_color, ratio, COLOR_FULL if full else COLOR_FILL)
 
 
+## 무대 위에 바로 놓는 글(기록·디버그·엉킴 경고)이 있는 앞 층(HUD, layer 1).
 var _root: Control
+## 필사본 패널과 그 안의 글·게이지. 상대·내 손 밑 층(Back, layer −1)이다(결정 316).
+var _back_root: Control
+var _aim_panel: Panel
 var _opponent_label: Label
 var _opponent_cells: PostureCells
 var _player_label: Label
@@ -215,82 +292,76 @@ var _log_label: Label
 var _condition_label: Label
 var _meter: Meter
 var _debug_label: Label
-var _help_label: Label
-## 하루 플레이 중의 결투인가(조작 안내에서 다시 하기·나가기를 뺀다).
+## 결투 씬이 놓는다. 조작 안내가 처음 화면의 도움말로 옮겨 가 지금은 쓰는 곳이 없다(결정 323).
 var day_mode := false
 var _log: Array[String] = []
 var _commission: Commission
 
 
 func _ready() -> void:
-	_root = Control.new()
-	_root.name = "Root"
-	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_root.anchor_right = 1.0
-	_root.anchor_bottom = 1.0
-	add_child(_root)
-	# 무대의 밝은 가장자리 위에서도 읽히게 칸·막대 묶음 뒤에 짙은 띠. 033이 필사본 패널로 바꿀 때까지(결정 298).
-	_add_band("BandTopLeft", Vector2(0.0, 0.0), Rect2(12, 6, 334, 148))
-	_add_band("BandTop", Vector2(0.5, 0.0), Rect2(-306, 6, 672, 55))
-	_add_band("BandBottomLeft", Vector2(0.0, 1.0), Rect2(12, -156, 334, 52))
+	_root = _make_root(self)
+	var back := CanvasLayer.new()
+	back.name = "Back"
+	back.layer = BACK_LAYER
+	add_child(back)
+	_back_root = _make_root(back)
 
-	# 상대 자세: 화면 위 가운데(상대 머리 위)
-	_opponent_label = _add_label(Vector2(0.5, 0.0), Rect2(-300, 10, 600, 26), 18, HORIZONTAL_ALIGNMENT_CENTER)
-	_opponent_cells = _add_cells(Vector2(0.5, 0.0), Rect2(-300, 40, 600, 14), true)
-	# 간격: 왼쪽 위 / 시간: 오른쪽 위
-	_distance_label = _add_label(Vector2(0.0, 0.0), Rect2(20, 12, 320, 34), 24, HORIZONTAL_ALIGNMENT_LEFT)
-	_time_label = _add_label(Vector2(1.0, 0.0), Rect2(-380, 12, 360, 30), 20, HORIZONTAL_ALIGNMENT_RIGHT)
-	# 엉킴 게이지: 간격 글자 옆. 엉킴이 없는 무기면 숨긴다.
+	# 패널 다섯: 견본 duelHud의 자리(결정 316). 위 가운데만 양옆과 겹치지 않게 좁혔다.
+	_add_panel("PanelTopLeft", Vector2(0.0, 0.0), Rect2(10, 6, 330, 150))
+	_add_panel("PanelTop", Vector2(0.5, 0.0), Rect2(-294, 4, 548, 56))
+	_add_panel("PanelTopRight", Vector2(1.0, 0.0), Rect2(-380, 6, 372, 58))
+	_add_panel("PanelBottomLeft", Vector2(0.0, 1.0), Rect2(10, -164, 340, 58))
+	_aim_panel = _add_panel("PanelBottomRight", Vector2(1.0, 1.0), Rect2(-500, AIM_PANEL_TOP, 492, 64))
+
+	# 위 가운데: 상대 이름과 자세
+	_opponent_label = _add_label(Vector2(0.5, 0.0), Rect2(-294, 9, 548, 26), 18, HORIZONTAL_ALIGNMENT_CENTER)
+	_opponent_cells = _add_cells(Vector2(0.5, 0.0), Rect2(-294, 40, 548, 14), true)
+	# 위 왼쪽: 간격, 엉킴 막대, 조건, 조건의 게이지
+	_distance_label = _add_label(Vector2(0.0, 0.0), Rect2(20, 12, 130, 34), 24, HORIZONTAL_ALIGNMENT_LEFT)
 	_bind_bar = BindBar.new()
 	_bind_bar.name = "BindBar"
 	_bind_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_place(_bind_bar, Vector2(0.0, 0.0), Rect2(160, 17, 170, 24))
+	_place(_bind_bar, Vector2(0.0, 0.0), Rect2(152, 17, 182, 24))
 	_bind_bar.visible = false
-	_root.add_child(_bind_bar)
-	# 엉킴 경고: 화면 가운데, 상대의 상태 글자 아래. 밀착에서 눈이 가 있는 자리다.
-	_bind_warning = _add_label(Vector2(0.5, 0.0), Rect2(-300, 104, 600, 34), 26, HORIZONTAL_ALIGNMENT_CENTER)
-	_bind_warning.name = "BindWarning"
-	_bind_warning.text = BIND_WARN_TEXT
-	_bind_warning.add_theme_color_override("font_color", BindBar.COLOR_WARN)
-	_bind_warning.visible = false
-	# 방심 게이지: 상대 자세 칸의 오른쪽. 선공이 없는 판에서는 숨긴다.
+	_back_root.add_child(_bind_bar)
+	_condition_label = _add_label(Vector2(0.0, 0.0), Rect2(20, 50, 310, 74), 16, HORIZONTAL_ALIGNMENT_LEFT)
+	_condition_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_condition_label.add_theme_color_override("font_color", Ui.ACCENT)
+	_meter = Meter.new()
+	_meter.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_place(_meter, Vector2(0.0, 0.0), Rect2(20, 128, 310, 18))
+	_meter.visible = false
+	_back_root.add_child(_meter)
+	# 위 오른쪽: 시간과 방심 막대(견본 자리)
+	_time_label = _add_label(Vector2(1.0, 0.0), Rect2(-380, 9, 360, 26), 20, HORIZONTAL_ALIGNMENT_RIGHT)
 	_complacency_bar = ComplacencyBar.new()
 	_complacency_bar.name = "ComplacencyBar"
 	_complacency_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_place(_complacency_bar, Vector2(0.5, 0.0), Rect2(210, 36, 150, 22))
+	_place(_complacency_bar, Vector2(1.0, 0.0), Rect2(-374, 35, 210, 24))
 	_complacency_bar.visible = false
-	_root.add_child(_complacency_bar)
-	# 내 자세: 왼쪽 아래
-	_player_label = _add_label(Vector2(0.0, 1.0), Rect2(20, -150, 320, 26), 18, HORIZONTAL_ALIGNMENT_LEFT)
-	_player_cells = _add_cells(Vector2(0.0, 1.0), Rect2(20, -120, 320, 14), false)
-	_player_cells.fill_color = Color(0.4, 0.9, 0.6)
-	# 조준: 오른쪽 아래. 가장 긴 글(런지의 "기다린다")이 한 줄에 들어가는 폭이다.
-	_aim_label = _add_label(Vector2(1.0, 1.0), Rect2(-720, -162, 700, 60), 18, HORIZONTAL_ALIGNMENT_RIGHT)
-	# 최근 사건: 왼쪽 가운데
-	_log_label = _add_label(Vector2(0.0, 0.5), Rect2(20, -60, 520, 100), 20, HORIZONTAL_ALIGNMENT_LEFT)
-	# 조작 안내: 아래 가운데 (네 줄까지). 내 손과 겹치는 자리라 글자가 묻히지 않게 어두운 띠를 깐다.
-	var help_bar := ColorRect.new()
-	help_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	help_bar.color = Color(0.08, 0.08, 0.1, 0.85)
-	help_bar.anchor_right = 1.0
-	help_bar.anchor_top = 1.0
-	help_bar.anchor_bottom = 1.0
-	help_bar.offset_top = -104.0
-	_root.add_child(help_bar)
-	_help_label = _add_label(Vector2(0.5, 1.0), Rect2(-620, -102, 1240, 98), 14, HORIZONTAL_ALIGNMENT_CENTER)
-	_help_label.text = HELP_TEXT
-	_help_label.modulate = Color(1, 1, 1, 0.7)
-	# 의뢰 조건과 조건의 게이지: 왼쪽 위, 간격 아래
-	_condition_label = _add_label(Vector2(0.0, 0.0), Rect2(20, 50, 310, 70), 15, HORIZONTAL_ALIGNMENT_LEFT)
-	_condition_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_condition_label.add_theme_color_override("font_color", Color(0.95, 0.8, 0.3))
-	_meter = Meter.new()
-	_meter.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_place(_meter, Vector2(0.0, 0.0), Rect2(20, 126, 310, 22))
-	_meter.visible = false
-	_root.add_child(_meter)
+	_back_root.add_child(_complacency_bar)
+	# 아래 왼쪽: 내 자세
+	_player_label = _add_label(Vector2(0.0, 1.0), Rect2(20, -160, 320, 26), 18, HORIZONTAL_ALIGNMENT_LEFT)
+	_player_cells = _add_cells(Vector2(0.0, 1.0), Rect2(20, -130, 320, 14), false)
+	_player_cells.fill_color = Color("59663F")
+	# 아래 오른쪽: 조준. 덧말(런지·멀리)이 붙으면 한 줄 늘고 패널이 위로 자란다(refresh).
+	_aim_label = _add_label(Vector2(1.0, 1.0), Rect2(-492, -194, 472, 84), 18, HORIZONTAL_ALIGNMENT_RIGHT)
+	_aim_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+
+	# 엉킴 경고: 아래 가운데, 내 칼 바로 위(결정 318. 밀착의 모자·상태 글자와 겹치지 않는다).
+	_bind_warning = _add_label(Vector2(0.5, 1.0), Rect2(-130, -170, 260, 40), 28, HORIZONTAL_ALIGNMENT_CENTER, true)
+	_bind_warning.name = "BindWarning"
+	_bind_warning.text = BIND_WARN_TEXT
+	_bind_warning.add_theme_font_override("font", STATE_FONT)
+	_bind_warning.add_theme_color_override("font_color", BindBar.COLOR_WARN)
+	_bind_warning.add_theme_color_override("font_outline_color", Color.BLACK)
+	_bind_warning.add_theme_constant_override("outline_size", 8)
+	_bind_warning.visible = false
+	# 최근 사건: 왼쪽 가운데, 조용한 구역 밖(결정 319)
+	_log_label = _add_label(Vector2(0.0, 0.5), Rect2(20, -80, 410, 160), 20, HORIZONTAL_ALIGNMENT_LEFT, true)
+	_log_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	# 디버그: 오른쪽 가운데 (기본 꺼짐)
-	_debug_label = _add_label(Vector2(1.0, 0.5), Rect2(-380, -130, 360, 260), 16, HORIZONTAL_ALIGNMENT_RIGHT)
+	_debug_label = _add_label(Vector2(1.0, 0.5), Rect2(-380, -130, 360, 260), 16, HORIZONTAL_ALIGNMENT_RIGHT, true)
 	_debug_label.visible = false
 
 
@@ -324,9 +395,6 @@ func refresh(core: DuelCore) -> void:
 	var opp := core.opponent_data
 	_opponent_label.text = "%s — 자세 %d/%d" % [opp.display_name, core.brain.posture, opp.posture_max]
 	_opponent_cells.set_values(opp.posture_max, core.brain.posture)
-	var help := help_text(opp, day_mode, core.opponent_has_hat, core.weapon)
-	if _help_label.text != help:
-		_help_label.text = help
 	_player_label.text = "내 자세 %d/%d" % [core.player_posture, core.rules.player_posture_max]
 	_player_cells.set_values(core.rules.player_posture_max, core.player_posture)
 	_distance_label.text = "간격: %s" % DT.DISTANCE_NAMES[core.distance]
@@ -347,10 +415,15 @@ func refresh(core: DuelCore) -> void:
 	var aim_cells := opp.graze_cells(part)
 	if aim_cells >= 2:
 		aim += " (%d칸)" % aim_cells
+	# 덧말은 줄을 바꿔 붙이고, 그동안 조준 패널이 한 줄 자란다(견본보다 한 줄 많은 유일한 때. 결정 316).
+	var note := ""
 	if lunge:
-		aim += " " + lunge_aim_note(core)
+		note = lunge_aim_note(core)
 	elif core.distance == DT.Distance.FAR:
-		aim += " (멀리: 닿지 않음)"
+		note = "(멀리: 닿지 않음)"
+	if note != "":
+		aim += "\n" + note
+	_aim_panel.offset_top = AIM_PANEL_TOP - (AIM_PANEL_GROW if note != "" else 0.0)
 	var state: String = DT.PLAYER_STATE_NAMES[core.player_state]
 	if core.player_state == DT.PlayerState.GUARD:
 		state += " — %s" % DT.GUARD_NAMES[core.aim_direction]
@@ -460,26 +533,30 @@ func _describe(ev: Dictionary) -> String:
 	return ""
 
 
-func _add_label(anchor: Vector2, rect: Rect2, font_size: int, align: HorizontalAlignment) -> Label:
+## on_stage면 무대 위에 바로 놓는 글이다(앞 층, 양피지 글자에 짙은 테두리. 결정 319).
+## 아니면 패널 안의 글이다(뒤 층, 테마의 잉크 글자, 테두리 없음).
+func _add_label(anchor: Vector2, rect: Rect2, font_size: int, align: HorizontalAlignment, on_stage := false) -> Label:
 	var label := Label.new()
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	label.add_theme_font_size_override("font_size", font_size)
 	label.horizontal_alignment = align
-	# 무대 위에서 흰·노란 글자가 묻히지 않게(결정 298)
-	label.add_theme_constant_override("outline_size", 4)
-	label.add_theme_color_override("font_outline_color", BAND_COLOR)
+	if on_stage:
+		label.add_theme_color_override("font_color", Ui.ON_WOOD)
+		label.add_theme_constant_override("outline_size", 4)
+		label.add_theme_color_override("font_outline_color", BAND_COLOR)
 	_place(label, anchor, rect)
-	_root.add_child(label)
+	(_root if on_stage else _back_root).add_child(label)
 	return label
 
 
-func _add_band(band_name: String, anchor: Vector2, rect: Rect2) -> void:
-	var band := ColorRect.new()
-	band.name = band_name
-	band.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	band.color = Color(BAND_COLOR, 0.85)
-	_place(band, anchor, rect)
-	_root.add_child(band)
+func _add_panel(panel_name: String, anchor: Vector2, rect: Rect2) -> Panel:
+	var panel := Panel.new()
+	panel.name = panel_name
+	# Panel의 기본값은 STOP이다. 놓치면 패널 위 조준 칸의 클릭이 공격·막기로 가지 않는다(결정 314).
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_place(panel, anchor, rect)
+	_back_root.add_child(panel)
+	return panel
 
 
 func _add_cells(anchor: Vector2, rect: Rect2, centered: bool) -> PostureCells:
@@ -487,8 +564,18 @@ func _add_cells(anchor: Vector2, rect: Rect2, centered: bool) -> PostureCells:
 	cells.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	cells.centered = centered
 	_place(cells, anchor, rect)
-	_root.add_child(cells)
+	_back_root.add_child(cells)
 	return cells
+
+
+static func _make_root(layer: CanvasLayer) -> Control:
+	var root := Control.new()
+	root.name = "Root"
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.anchor_right = 1.0
+	root.anchor_bottom = 1.0
+	layer.add_child(root)
+	return root
 
 
 ## anchor 지점을 기준으로 한 고정 크기 사각형에 놓는다.

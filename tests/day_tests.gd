@@ -426,7 +426,8 @@ func t32_duel_day_mode() -> String:
 	var panel: ResultPanel = duel.get_node("ResultPanel")
 
 	_expect(errs, duel.get("commission") == day.current_commission(), "하루 모드의 의뢰가 day의 지금 의뢰가 아님")
-	var help: String = (duel.get_node("HUD").get("_help_label") as Label).text
+	var help: String = DuelHud.help_text(core.opponent_data, true, core.opponent_has_hat, core.weapon)
+	_expect(errs, duel.get_node("HUD").get("_help_label") == null, "결투 HUD에 조작 안내가 남아 있음(결정 323)")
 	_expect(errs, not help.contains("다시 하기"), "하루 모드의 조작 안내에 다시 하기가 있음")
 	_expect(errs, help.contains("좌클릭 공격"), "하루 모드의 조작 안내가 비어 있음")
 
@@ -510,7 +511,8 @@ func t33_screens() -> String:
 
 	# 처음 화면
 	var title := _spawn_screen(Session.TITLE_PATH, null)
-	_expect(errs, title.find_children("*", "Button", true, false).size() == 2, "처음 화면의 버튼이 2개가 아님")
+	_expect(errs, title.find_children("*", "Button", true, false).size() == 3, "처음 화면의 버튼이 3개가 아님")
+	_expect(errs, title.find_child("Help", true, false) is Button, "처음 화면에 Help가 없음")
 	_expect(errs, title.find_child("Proceed", true, false) is Button, "처음 화면에 Proceed가 없음")
 	title.free()
 

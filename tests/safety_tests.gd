@@ -41,6 +41,13 @@ func _expect(errs: Array[String], cond: bool, msg: String) -> void:
 		errs.append(msg)
 
 
+## 폐점 장부의 줄(Ledger<key>)에서 Name이나 Value의 글. 없으면 빈 글.
+func _ledger(screen: Node, key: String, part: String) -> String:
+	var row := screen.find_child("Ledger" + key, true, false)
+	var label: Label = row.find_child(part, true, false) as Label if row != null else null
+	return label.text if label != null else ""
+
+
 func _result(errs: Array[String]) -> String:
 	return "OK" if errs.is_empty() else " / ".join(errs)
 
@@ -182,17 +189,18 @@ func t62_labels() -> String:
 		calm.finish_duel(_d._record(DT.EndReason.CONDITION))
 		calm.proceed()
 	var closing: Node = _d._spawn_screen(Session.CLOSING_PATH, calm)
-	var text: String = Ui.all_text(closing)
 	_expect(errs, calm.phase == DayState.Phase.CLOSING, "[다] 셋을 끝냈는데 폐점이 아님")
-	_expect(errs, text.contains("치료비   0  (0회)") and text.contains("임대료   -60") and not text.contains("치료비   -0"),
-		"[다] 다치지 않은 날의 폐점 장부에 '치료비   0  (0회)'나 '임대료   -60'이 없거나 '-0'이 있음")
+	_expect(errs, _ledger(closing, "Medical", "Name").contains("(0회)") and _ledger(closing, "Medical", "Value") == "0"
+		and _ledger(closing, "Rent", "Value") == "-60",
+		"[다] 다치지 않은 날의 폐점 장부: 치료비 '%s' '%s', 임대료 '%s' (기대 (0회)·0·-60)" % [
+			_ledger(closing, "Medical", "Name"), _ledger(closing, "Medical", "Value"), _ledger(closing, "Rent", "Value")])
 	closing.free()
 
 	# 라. 다친 날의 폐점: 전과 같은 글이다.
 	var hurt := DayState.new(_d._rules(70, 60, 20, 250), _d._three_fixed())
 	_d._run_fixed_day(hurt)
 	closing = _d._spawn_screen(Session.CLOSING_PATH, hurt)
-	text = Ui.all_text(closing)
-	_expect(errs, text.contains("치료비   -20  (1회)"), "[라] 다친 날의 폐점 장부에 '치료비   -20  (1회)'가 없음")
+	_expect(errs, _ledger(closing, "Medical", "Name").contains("(1회)") and _ledger(closing, "Medical", "Value") == "-20",
+		"[라] 다친 날의 폐점 장부의 치료비 줄: '%s' '%s' (기대 (1회)·-20)" % [_ledger(closing, "Medical", "Name"), _ledger(closing, "Medical", "Value")])
 	closing.free()
 	return _result(errs)

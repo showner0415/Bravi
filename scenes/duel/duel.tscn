@@ -11,7 +11,7 @@
 script = ExtResource("1_scene")
 
 [node name="Background" type="CanvasLayer" parent="."]
-layer = -1
+layer = -2
 
 [node name="Color" type="ColorRect" parent="Background"]
 anchors_preset = 15

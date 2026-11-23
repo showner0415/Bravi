@@ -1,9 +1,10 @@
 class_name ResultPanel
 extends CanvasLayer
 ## 결투가 끝나면 결투 씬 위에 뜨는 패널: 결과, 충족도, 항목별 내역, 결투 시간.
-## 전부 코드로 만든다(애셋 없음). Control은 전부 마우스를 무시한다.
+## 전부 코드로 만든다(애셋 없음). 패널은 테마의 필사본이다(결정 314). Control은 전부 마우스를 무시한다.
 
 const DT := preload("res://scripts/duel/duel_types.gd")
+const Ui := preload("res://scripts/day_ui.gd")
 
 const PANEL_SIZE := Vector2(820, 490)
 
@@ -14,7 +15,7 @@ var shown_score := -1
 ## 맨 아래 안내 글. 하루 플레이 중의 결투는 다른 글을 넣는다.
 var footer_text := DEFAULT_FOOTER
 
-var _panel: ColorRect
+var _panel: Panel
 var _title: Label
 var _score: Label
 var _details: Label
@@ -22,9 +23,8 @@ var _footer: Label
 
 
 func _ready() -> void:
-	_panel = ColorRect.new()
+	_panel = Panel.new()
 	_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_panel.color = Color(0, 0, 0, 0.82)
 	_panel.anchor_left = 0.5
 	_panel.anchor_right = 0.5
 	_panel.anchor_top = 0.5
@@ -35,15 +35,16 @@ func _ready() -> void:
 	_panel.offset_bottom = PANEL_SIZE.y * 0.5
 	add_child(_panel)
 
-	_title = _add_label(Rect2(20, 18, PANEL_SIZE.x - 40, 44), 30)
+	_title = _add_label(Rect2(20, 18, PANEL_SIZE.x - 40, 44), 28)
+	_title.theme_type_variation = &"TitleLabel"
 	_score = _add_label(Rect2(20, 66, PANEL_SIZE.x - 40, 64), 46)
-	_score.add_theme_color_override("font_color", Color(0.95, 0.8, 0.3))
+	_score.theme_type_variation = &"TitleLabel"
 	# 내역은 가장 많을 때 열 줄쯤이다(지기 의뢰의 의심 항목 전부 + 합계 + 결투 시간).
-	_details = _add_label(Rect2(40, 138, PANEL_SIZE.x - 80, 290), 19)
+	_details = _add_label(Rect2(40, 138, PANEL_SIZE.x - 80, 290), 20)
 	_details.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	_details.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_footer = _add_label(Rect2(20, PANEL_SIZE.y - 54, PANEL_SIZE.x - 40, 36), 20)
-	_footer.modulate = Color(1, 1, 1, 0.75)
+	_footer.add_theme_color_override("font_color", Ui.DIM)
 	hide_result()
 
 

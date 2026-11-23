@@ -49,13 +49,16 @@ func _input(event: InputEvent) -> void:
 
 
 func _build(summary: Dictionary) -> void:
-	var header := Ui.add_label(self, "%d일차 — 가게를 닫는다" % day.day_number, 30)
+	Ui.add_beams(self)
+	Ui.add_header_rule(self)
+	var header := Ui.add_title(self, "%d일차 — 가게를 닫는다" % day.day_number, 28)
 	header.name = "Header"
-	header.position = Vector2(32, 20)
+	header.position = Vector2(32, 14)
+	Ui.add_counter_band(self)
 	# 마지막 손님을 돌려보내서 폐점에 왔으면 그 손님의 한마디.
 	Ui.add_declined_line(self, day.last_declined, Rect2(420, 30, 828, 22))
 
-	var book := Ui.add_panel(self, Rect2(32, 84, 600, 500), 8)
+	var book := Ui.add_panel(self, Rect2(32, 84, 600, 500), 6)
 	Ui.add_label(book, "오늘의 의뢰", 20, Ui.DIM)
 	if day.results.is_empty():
 		Ui.add_label(book, "맡은 의뢰가 없다", 20)
@@ -68,44 +71,44 @@ func _build(summary: Dictionary) -> void:
 	var declined: Array = summary.get("declined", [])
 	if not declined.is_empty():
 		# 이름이 여럿이면 장부보다 길다. 줄바꿈되는 글자로 둔다.
-		var names := Ui.add_wrapped(book, "돌려보낸 손님: %s" % ", ".join(PackedStringArray(declined)), 17, Ui.DIM)
+		var names := Ui.add_wrapped(book, "돌려보낸 손님: %s" % ", ".join(PackedStringArray(declined)), 18, Ui.DIM)
 		names.name = "DeclinedNames"
 	var missed := int(summary.get("missed", 0))
 	if missed > 0:
-		var missed_line := Ui.add_label(book, "만나지 못한 손님 %d명" % missed, 17, Ui.DIM)
+		var missed_line := Ui.add_label(book, "만나지 못한 손님 %d명" % missed, 18, Ui.DIM)
 		missed_line.name = "MissedLine"
 
 	var gap := Control.new()
 	gap.custom_minimum_size = Vector2(0, 10)
 	book.add_child(gap)
 
-	Ui.add_label(book, "수입   %s" % ledger_amount(int(summary["income"]), "+"), 22)
-	Ui.add_label(book, "임대료   %s" % ledger_amount(int(summary["rent"]), "-"), 22)
+	Ui.add_ledger_row(book, "Income", "수입", ledger_amount(int(summary["income"]), "+"), 24)
+	Ui.add_ledger_row(book, "Rent", "임대료", ledger_amount(int(summary["rent"]), "-"), 24)
 	# 단가는 적지 않는다(결과마다 그때의 단가가 들어 있고, 날마다 달라질 수 있다).
-	Ui.add_label(book, "치료비   %s  (%d회)" % [ledger_amount(int(summary["medical"]), "-"), summary["injuries"]], 22)
+	Ui.add_ledger_row(book, "Medical", "치료비  (%d회)" % summary["injuries"], ledger_amount(int(summary["medical"]), "-"), 24)
 	shown_profit = int(summary["profit"])
 	shown = true
-	var profit_text := "오늘의 손익   %s%d" % ["+" if shown_profit >= 0 else "", shown_profit]
-	var profit := Ui.add_label(book, profit_text, 32, Ui.GOLD if shown_profit >= 0 else Ui.RED)
-	profit.name = "Profit"
-	Ui.add_label(book, "소지금   %d → %d" % [summary["money_before"], summary["money_after"]], 22)
+	var profit_value := "%s%d" % ["+" if shown_profit >= 0 else "", shown_profit]
+	Ui.add_ledger_row(book, "Profit", "오늘의 손익", profit_value, 34, true,
+		Color.WHITE if shown_profit >= 0 else Ui.ACCENT, true)
+	Ui.add_ledger_row(book, "Money", "소지금", "%d → %d" % [summary["money_before"], summary["money_after"]], 24)
 
-	# 평판과 내일의 손님: 장부 패널 아래. 평판이 없는 하루면 만들지 않는다.
+	# 평판과 내일의 손님: 장부 패널 아래(나무 띠 위). 평판이 없는 하루면 만들지 않는다.
 	if day.has_reputation() and summary.has("reputation"):
-		_reputation_ledger = Ui.add_label(self, "", 16, Ui.GOLD)
+		_reputation_ledger = Ui.add_label(self, "", 16, Ui.ON_WOOD)
 		_reputation_ledger.name = "ReputationLedger"
 		_reputation_ledger.position = Vector2(40, 585)
 		_reputation_ledger.size = Vector2(600, 46)
 
 	_build_shop()
 
-	_hint = Ui.add_label(self, SHOP_HINT, 16, Ui.GOLD)
+	_hint = Ui.add_label(self, SHOP_HINT, 16, Ui.ON_WOOD)
 	_hint.name = "ShopHint"
 	_hint.position = Vector2(656, 592)
 	_hint.size = Vector2(592, 24)
 	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 
-	_proceed = Ui.add_button(self, "다음 날을 연다", 28, "Proceed")
+	_proceed = Ui.add_button(self, "다음 날을 연다", 28, "Proceed", true)
 	_proceed.position = Vector2(868, 622)
 	_proceed.size = Vector2(380, 76)
 	_proceed.pressed.connect(_next_day)
@@ -129,7 +132,7 @@ func refresh_saved_note(saved_day: int) -> void:
 	if _saved_note == null:
 		if not saved_now:
 			return
-		_saved_note = Ui.add_label(self, SAVED_NOTE % (day.day_number + 1), 16, Ui.DIM)
+		_saved_note = Ui.add_label(self, SAVED_NOTE % (day.day_number + 1), 16, Ui.ON_WOOD)
 		_saved_note.name = "SavedNote"
 		_saved_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_saved_note.position = Vector2(268, 650)
@@ -148,15 +151,14 @@ func _build_shop() -> void:
 	if _buy_upgrades.is_empty():
 		Ui.add_label(shop, "살 것이 없다", 20)
 	for upgrade in _buy_upgrades:
-		var button := Ui.add_button(shop, "", 22, "Buy_%s" % upgrade.id)
-		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		var button := Ui.add_button(shop, "", 24, "Buy_%s" % upgrade.id)
 		button.pressed.connect(_buy.bind(upgrade))
 		_buy_buttons.append(button)
 		Ui.add_wrapped(shop, upgrade.description, 16, Ui.DIM)
 	var gap := Control.new()
 	gap.custom_minimum_size = Vector2(0, 6)
 	shop.add_child(gap)
-	_money_label = Ui.add_label(shop, "", 22)
+	_money_label = Ui.add_label(shop, "", 24)
 	_money_label.name = "Money"
 
 
@@ -170,10 +172,10 @@ func refresh_shop() -> void:
 		var button := _buy_buttons[i]
 		if day.owns(upgrade):
 			button.text = "%s — 샀다" % upgrade.display_name
-			button.add_theme_color_override("font_disabled_color", Ui.GOLD)
+			button.theme_type_variation = &"HaggledButton"
 		else:
 			button.text = "%s — 값 %d" % [upgrade.display_name, upgrade.price]
-			button.remove_theme_color_override("font_disabled_color")
+			button.theme_type_variation = &""
 		button.disabled = not day.can_buy(upgrade)
 	shown_money = day.money
 	_money_label.text = "지금 소지금 %d" % shown_money
