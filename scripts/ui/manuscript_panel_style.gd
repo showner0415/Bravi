@@ -5,7 +5,8 @@ extends StyleBox
 const PaperGrain := preload("res://scripts/ui/paper_grain.gd")
 
 @export var fill_color := Color("E9D8B4")
-@export var grain := 1.0
+## 견본과 나란히 대어 맞춘 세기(판 N). 1.0이면 견본보다 짙다.
+@export var grain := 0.55
 @export var border_color := Color("3B2A1E")
 @export var border_width := 3.0
 @export var inner_color := Color("6B5440")

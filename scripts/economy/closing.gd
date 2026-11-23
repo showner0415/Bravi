@@ -152,6 +152,7 @@ func _build_shop() -> void:
 		Ui.add_label(shop, "살 것이 없다", 20)
 	for upgrade in _buy_upgrades:
 		var button := Ui.add_button(shop, "", 24, "Buy_%s" % upgrade.id)
+		button.custom_minimum_size = Vector2(0, 48)
 		button.pressed.connect(_buy.bind(upgrade))
 		_buy_buttons.append(button)
 		Ui.add_wrapped(shop, upgrade.description, 16, Ui.DIM)

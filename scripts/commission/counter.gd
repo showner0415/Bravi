@@ -135,8 +135,12 @@ func _build(commission: Commission) -> void:
 	Ui.add_panel_head(bubble, commission.client_name)
 	var dialogue := Ui.add_wrapped(bubble, commission.dialogue, 20)
 	dialogue.name = "Dialogue"
-	dialogue.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	Ui.add_wrapped(bubble, "\n".join(commission.describe()), 18, Ui.ACCENT)
+	# 견본처럼 조건은 사연 바로 아래에, 소문·흥정·상대·보수는 패널 바닥에 붙는다.
+	var gap := Control.new()
+	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	gap.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	bubble.add_child(gap)
 	if day.has_reputation():
 		var accept := int(commission.reputation_effect.get("accept", 0))
 		if accept != 0:

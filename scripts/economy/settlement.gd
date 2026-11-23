@@ -128,7 +128,7 @@ func _build(result: Dictionary) -> void:
 	if result.has("reputation_before") and day.has_reputation():
 		var line := Ui.add_label(self, reputation_line(result, day.reputation_rules), 18, Ui.ACCENT)
 		line.name = "ReputationLine"
-		line.position = Vector2(432, 512)
+		line.position = Vector2(432, 514)
 		line.size = Vector2(808, 28)
 
 	var proceed := Ui.add_button(self, "다음 의뢰인" if day.has_next_commission() else "가게를 닫는다", 28, "Proceed", true)
