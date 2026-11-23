@@ -172,6 +172,14 @@
 - 방향: `run_stage_shots.ps1`·`run_ui_shots.ps1`의 꼴로 장마다 `size,` 줄을 내고 러너가 기대 크기와 견준다. 고칠 곳은 두 파일이다.
 - 다시 볼 때: 손 그림을 다시 찍는 계획(032b).
 
+### 033-2 양피지의 질감이 너무 깔끔하다 (그린 질감, 033b)
+
+- 위치: `scripts/ui/paper_grain.gd`(결 텍스처), `scripts/ui/manuscript_panel_style.gd`·`swallowtail_style.gd`, `assets/ui/manuscript_theme.tres`·`wall_style.tres`.
+- 문제: 사용자(2026-11-23, 판 N1): "일단 그대로 두는데, 텍스쳐가 너무 깔끔하고 질감이 없어보여. 나중에 바꾸는걸로 하자." 코드로 그린 결은 견본의 필터를 흉내 낸 것뿐이다.
+- 그대로 둔 까닭: 사용자가 나중으로 미뤘다.
+- 방향: 계획 033b — 양피지·장식 테두리·버튼을 그림으로 만들어(Codex, 장 수는 돌리기 전에 사용자에게 알린다) 테마의 StyleBox 셋과 결 텍스처만 갈아 끼운다. 033의 코드·테스트는 다시 열지 않는다(결정 322).
+- 다시 볼 때: 사용자가 하라고 할 때. 늦어도 037(4단계 점검).
+
 ### 033-1 도움말 화면의 상대마다 다른 줄
 
 - 위치: `scripts/title.gd` `help_groups`(기본 상대 `DuelScene.DEFAULT_OPPONENT_PATH`와 기본 무기에서 `DuelHud.help_text`를 조립한다).
