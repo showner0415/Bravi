@@ -1,11 +1,13 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/duel/player_sword_view.gd" id="1_view"]
 [ext_resource type="Resource" path="res://data/player/hand_art.tres" id="2_hand_art"]
+[ext_resource type="Resource" path="res://data/player/sword_art.tres" id="3_sword_art"]
 
 [node name="PlayerSwordView" type="Node2D"]
 script = ExtResource("1_view")
 hand_art = ExtResource("2_hand_art")
+sword_art = ExtResource("3_sword_art")
 
 [node name="HandArt" type="Sprite2D" parent="."]
 visible = false
@@ -15,6 +17,11 @@ centered = false
 [node name="Sword" type="Polygon2D" parent="."]
 color = Color(0.85, 0.85, 0.9, 1)
 polygon = PackedVector2Array(-6, -240, 6, -240, 9, -10, 40, -10, 40, 4, -40, 4, -40, -10, -9, -10)
+
+[node name="Art" type="Sprite2D" parent="Sword"]
+visible = false
+texture_filter = 4
+centered = false
 
 [node name="Hand" type="Polygon2D" parent="."]
 color = Color(0.7, 0.66, 0.6, 1)

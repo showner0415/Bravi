@@ -897,3 +897,34 @@ S-FIG의 둘째 항목 끝에 표정 한 문장을 붙이고, 넷째 항목의 �
 | 바르톨로 파츠 시트 | The three heads show the three expressions listed above and are clearly the same man. | 그대로 | 위 C-FIG 그대로 |
 | 클라라 | Her character shows in the expression: worried and polite, eyebrows raised in the middle. | 뺀다(머리털이 나무 갈색이다) | Use the colors of the sketch. Main fills: muted olive green 6F7F4F for the dress, parchment E9D8B4 for the apron, wood brown 7A5232 for the hair, faded brick red A5533F for the hat, pale parchment E2D3B4 for the ribbon, skin EBC49F. |
 | 비토리오 | His character shows in the expression: smug and self-satisfied, half-closed eyes and a thin smile. | His cap is filled with the same very dark brown as the outlines. | Use the colors of the sketch. Main fills: dusty dark red-brown 7E4A4A for the robe, ochre brown A8895E for the fur collar, very dark brown 3B2A1E for the cap, ochre C08A3E for the gold chain and the rings, wood brown 7A5232 for the purse, skin EBC49F. |
+
+## 계획 032b의 블록 (내 칼)
+
+프롬프트 `docs/style/prompts/032b-W1a-player-sword.txt`의 `Image:`부터 끝까지가 이 블록이다(결정 195의 차례: 명세가 먼저, 프롬프트가 옮겨 적는다). 넣는 그림 셋: 스케치 `generated/in/032b-in-sword.png`, `basis/player-hand.png`, `basis/bartolo-arms2.png`. 참고 사진은 넣지 않는다(사용자 답). 칠은 강철 `CFC8BA`, 그림자 `B3AB9C`(둘 다 Y 0.30 위라 상태 색 셰이더가 칠로 본다).
+
+```
+Image: Portrait, 1024x1536 pixels. One illustration of a single fencing rapier without its handle, for a 2D game, standing upright.
+
+Subject: one fencing rapier for a stage duel, drawn alone, with no hand. A straight, slim blade that narrows evenly to a sharp point. At its base a low, round, dome shaped cup guard, and right below the cup a straight crossbar with rounded ends.
+
+Pose and layout:
+- The first referenced image is our own sketch of this rapier and it is the base. Keep it: the same outline, the same proportions, the same size and place on the image. The rapier stands perfectly upright in the middle of the image with the point at the top. The left half and the right half mirror each other.
+- The blade is about 0.85 of the image height. The cup guard is a low dome, clearly wider than the blade and much lower than it is wide. The crossbar is a little wider than the cup.
+- The lower edge of the crossbar is one straight horizontal line and it is the lowest thing in the drawing. Do not draw a handle, a grip, a knob or a hand below it. Nothing is drawn below the crossbar.
+- The second and third referenced images are our own drawings from the same game: a gloved hand and a character holding a rapier. Redraw the rapier so it looks like it belongs to the same game: the same kind of shapes, outlines, fills and shadows. Do not draw that hand, that character, his clothes or his sleeves.
+- The piece is drawn complete. Empty space around it. No other parts, no labels, no numbers, no guide lines, no dots. Nothing is cropped.
+
+Style (draw a new, original illustration in the style of the second and third referenced images, as described here):
+- A finished cartoon illustration of one rapier for a game, drawn with care, in the drawing style of the second and third referenced images: soft, simple, rounded-geometric shapes with straight sides and rounded corners. Simple and flat: a clean cartoon, not realistic and not painterly.
+- Keep it as simple as the first image: the same small number of shapes. No engraving, no rivets, no rings, no extra bars, no ornaments.
+- Outlines: very dark warm brown, hex 3B2A1E. One even, bold line weight on every outer contour, the same line weight as the second image, smooth clean edges, round ends. No tapering, no wobble, no rough or broken edges. Inner lines are the same color and about half as thick.
+- Fills: flat solid colors, muted and faded.
+- Shadows: exactly one shadow tone per color, a slightly darker version of the same color and still clearly lighter than the outlines. Each shadow is one simple flat shape with a hard edge on the right side of the form, as if the light comes from the upper left. Shadows have no outline.
+- Do not add: hatching, cross-hatching, engraving or etching lines, brush or ink texture, paper texture, gradients, soft or blurred shadow edges, highlights or shine, sparkles, glow, blood.
+
+Colors:
+- Main fill and its shadow tone: pale warm steel grey CFC8BA with shadow B3AB9C for the blade, the cup guard and the crossbar. The shadow stays light, far lighter than the outlines.
+- Avoid bright saturated yellow, orange, red, blue, purple or green, and pure white. The whole rapier is greyish and low in saturation.
+
+Background: one plain flat light grey color, about #D8D8D8, everywhere around the rapier. No floor, no cast shadow, no scenery, no frame, no text, no letters, no signature, no watermark.
+```

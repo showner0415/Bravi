@@ -1,0 +1,26 @@
+Task: call your image generation tool exactly once to create exactly one image. You may use the code tool only to make that one call. Pass all three attached images to the image generation tool as referenced images by their paths: {WORKDIR}\in-1.png, {WORKDIR}\in-2.png and {WORKDIR}\in-3.png. Give the image generation tool the text from the line that starts with Image: to the end of this message, word for word, as its prompt. Do not run shell commands. Do not read, create, change or delete any file. Do not use a browser, web search, computer use, apps or any other tool. Do not retry. When the image is done, reply with one line: done.
+
+Image: Portrait, 1024x1536 pixels. One illustration of a single fencing rapier without its handle, for a 2D game, standing upright.
+
+Subject: one fencing rapier for a stage duel, drawn alone, with no hand. A straight, slim blade that narrows evenly to a sharp point. At its base a low, round, dome shaped cup guard, and right below the cup a straight crossbar with rounded ends.
+
+Pose and layout:
+- The first referenced image is our own sketch of this rapier and it is the base. Keep it: the same outline, the same proportions, the same size and place on the image. The rapier stands perfectly upright in the middle of the image with the point at the top. The left half and the right half mirror each other.
+- The blade is about 0.85 of the image height. The cup guard is a low dome, clearly wider than the blade and much lower than it is wide. The crossbar is a little wider than the cup.
+- The lower edge of the crossbar is one straight horizontal line and it is the lowest thing in the drawing. Do not draw a handle, a grip, a knob or a hand below it. Nothing is drawn below the crossbar.
+- The second and third referenced images are our own drawings from the same game: a gloved hand and a character holding a rapier. Redraw the rapier so it looks like it belongs to the same game: the same kind of shapes, outlines, fills and shadows. Do not draw that hand, that character, his clothes or his sleeves.
+- The piece is drawn complete. Empty space around it. No other parts, no labels, no numbers, no guide lines, no dots. Nothing is cropped.
+
+Style (draw a new, original illustration in the style of the second and third referenced images, as described here):
+- A finished cartoon illustration of one rapier for a game, drawn with care, in the drawing style of the second and third referenced images: soft, simple, rounded-geometric shapes with straight sides and rounded corners. Simple and flat: a clean cartoon, not realistic and not painterly.
+- Keep it as simple as the first image: the same small number of shapes. No engraving, no rivets, no rings, no extra bars, no ornaments.
+- Outlines: very dark warm brown, hex 3B2A1E. One even, bold line weight on every outer contour, the same line weight as the second image, smooth clean edges, round ends. No tapering, no wobble, no rough or broken edges. Inner lines are the same color and about half as thick.
+- Fills: flat solid colors, muted and faded.
+- Shadows: exactly one shadow tone per color, a slightly darker version of the same color and still clearly lighter than the outlines. Each shadow is one simple flat shape with a hard edge on the right side of the form, as if the light comes from the upper left. Shadows have no outline.
+- Do not add: hatching, cross-hatching, engraving or etching lines, brush or ink texture, paper texture, gradients, soft or blurred shadow edges, highlights or shine, sparkles, glow, blood.
+
+Colors:
+- Main fill and its shadow tone: pale warm steel grey CFC8BA with shadow B3AB9C for the blade, the cup guard and the crossbar. The shadow stays light, far lighter than the outlines.
+- Avoid bright saturated yellow, orange, red, blue, purple or green, and pure white. The whole rapier is greyish and low in saturation.
+
+Background: one plain flat light grey color, about #D8D8D8, everywhere around the rapier. No floor, no cast shadow, no scenery, no frame, no text, no letters, no signature, no watermark.

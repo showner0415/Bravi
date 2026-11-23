@@ -38,6 +38,20 @@ var _clock := 0.0
 
 ## 손 그림. 비면 자리 표시(Hand·Label)가 보인다(결정 302).
 @export var hand_art: PartArt
+## 칼 그림(레이피어). 비면 씬의 여덟 점 다각형과 선이다(결정 328).
+@export var sword_art: PartArt
+
+## 상대의 상태 색 셰이더를 내 칼 그림에 쓴다: 칠만 상태 색이 되고 짙은 선은 남는다(결정 327).
+const TINT_SHADER := preload("res://scenes/duel/opponent_part.gdshader")
+## 칼에는 남길 고유 색이 없어 상태 색을 다 얹는다(상대는 80%).
+const TINT_AMOUNT := 1.0
+## 그림이 테두리 위에 그려져 바깥 절반 3.5만 보인다(결정 330).
+const BIND_ART_WIDTH := 7.0
+const GUARD_WIDTH := 1.8
+## 막기 때 그림 뒤에 보이는 넓은 색 면의 불투명도(사용자가 고른 시안의 값, 결정 329).
+const GUARD_PLATE_ALPHA := 0.784
+
+var _sword_material: ShaderMaterial
 
 @onready var _sword: Polygon2D = $Sword
 ## 엉킴 경고: 칼의 테두리. 칼 뒤에 그려 칼의 상태 색이 그대로 보인다.
@@ -45,25 +59,50 @@ var _bind_warning: Line2D
 
 
 func _ready() -> void:
+	# 엉킴 테두리가 바뀐 다각형을 따르게 맨 먼저 한다.
+	var has_sword_art := _apply_sword_art()
 	_bind_warning = Line2D.new()
 	_bind_warning.name = "BindWarning"
 	_bind_warning.points = _sword.polygon
 	_bind_warning.closed = true
-	_bind_warning.width = BIND_OUTLINE_WIDTH
+	_bind_warning.width = BIND_ART_WIDTH if has_sword_art else BIND_OUTLINE_WIDTH
 	_bind_warning.default_color = COLOR_BIND
 	_bind_warning.joint_mode = Line2D.LINE_JOINT_ROUND
 	_bind_warning.show_behind_parent = true
 	_bind_warning.visible = false
 	_sword.add_child(_bind_warning)
-	var outline := Line2D.new()
-	outline.name = "Outline"
-	outline.points = _sword.polygon
-	outline.closed = true
-	outline.width = OUTLINE_WIDTH
-	outline.default_color = OUTLINE_COLOR
-	outline.joint_mode = Line2D.LINE_JOINT_ROUND
-	_sword.add_child(outline)
+	# 그림에는 선이 들어 있다. 따로 긋는 선은 그림이 없을 때만 쓴다.
+	if not has_sword_art:
+		var outline := Line2D.new()
+		outline.name = "Outline"
+		outline.points = _sword.polygon
+		outline.closed = true
+		outline.width = OUTLINE_WIDTH
+		outline.default_color = OUTLINE_COLOR
+		outline.joint_mode = Line2D.LINE_JOINT_ROUND
+		_sword.add_child(outline)
 	_apply_hand_art()
+
+
+## 칼 그림을 건다. Sword(다각형)는 그림의 실루엣 꼴이 되어 막기 때만 보이는 신호 판으로 남는다(결정 328).
+func _apply_sword_art() -> bool:
+	var art: Sprite2D = $Sword/Art
+	var has_art := sword_art != null and sword_art.texture != null and sword_art.outline.size() >= 3
+	art.visible = has_art
+	if not has_art:
+		return false
+	var points := PackedVector2Array()
+	for point in sword_art.outline:
+		points.append((point - sword_art.joint) * sword_art.units_per_px)
+	_sword.polygon = points
+	art.texture = sword_art.texture
+	art.offset = -sword_art.joint
+	art.scale = sword_art.units_per_px
+	_sword_material = ShaderMaterial.new()
+	_sword_material.shader = TINT_SHADER
+	_sword_material.set_shader_parameter(&"tint_amount", TINT_AMOUNT)
+	art.material = _sword_material
+	return true
 
 
 func _apply_hand_art() -> void:
@@ -123,7 +162,7 @@ func update_view(core: DuelCore, display_time: float, viewport_size: Vector2, de
 			color = COLOR_RECOVER
 		DT.PlayerState.GUARD:
 			target.y -= 25.0
-			blade_width = 1.8
+			blade_width = GUARD_WIDTH
 			var in_parry_window := display_time - core.guard_enter_time <= core.weapon.parry_window
 			color = COLOR_GUARD_FRESH if (core.guard_fresh and in_parry_window) else COLOR_GUARD
 		DT.PlayerState.STEPPING:
@@ -140,6 +179,11 @@ func update_view(core: DuelCore, display_time: float, viewport_size: Vector2, de
 	rotation = lerpf(rotation, tilt, smooth)
 	_sword.color = color
 	_sword.scale = Vector2(blade_width, 1.0)
+	if _sword_material != null:
+		_sword_material.set_shader_parameter(&"tint_color", Vector3(color.r, color.g, color.b))
+		# 그림은 늘이지 않는다: 판의 가로 배율을 되돌린다(결정 329).
+		($Sword/Art as Sprite2D).scale.x = sword_art.units_per_px.x / blade_width
+		_sword.self_modulate.a = GUARD_PLATE_ALPHA if state == DT.PlayerState.GUARD else 0.0
 	# 엉킴 경고는 칼의 색을 덮지 않는다(막기·패리 창의 색이 그대로 보여야 한다). 테두리만 켠다.
 	_bind_warning.visible = DuelHud.bind_warning_now(core)
 	if _bind_warning.visible:

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="PartArt" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/duel/part_art.gd" id="1_part"]
+[ext_resource type="Texture2D" path="res://assets/art/player/sword.png" id="2_sword"]
+
+[resource]
+script = ExtResource("1_part")
+texture = ExtResource("2_sword")
+joint = Vector2(244, 1388.2)
+units_per_px = Vector2(0.20199, 0.20199)
+outline = PackedVector2Array(240, 2, 251, 3, 261, 11, 264, 19, 265, 40, 292, 1213, 318, 1219, 355, 1234, 384, 1252, 410, 1276, 432, 1310, 441, 1335, 444, 1355, 470, 1357, 476, 1360, 484, 1370, 486, 1376, 485, 1391, 476, 1403, 467, 1407, 30, 1408, 12, 1403, 5, 1395, 2, 1386, 4, 1370, 11, 1361, 21, 1356, 44, 1355, 48, 1331, 58, 1306, 75, 1280, 92, 1262, 119, 1242, 146, 1228, 198, 1212, 223, 30, 224, 18, 228, 9)

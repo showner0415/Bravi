@@ -3,8 +3,8 @@
 #   powershell -ExecutionPolicy Bypass -File tests/run_hand_shots.ps1 -Shots "$env:TEMP\bravi-032-shots"
 #   powershell -ExecutionPolicy Bypass -File tests/run_hand_shots.ps1 -Shots "$env:TEMP\bravi-032-shots-1920" -Resolution 1920x1080
 #
-# Runs tests/hand_shots.tscn: the duel scene (feather_cut, alley) held still, the player's sword state set by hand, 15 shots.
-# Judges the run: exit code 0, one "HAND SHOTS OK 15" line, no ERROR lines, fifteen "hand," lines all with y1 >= 720
+# Runs tests/hand_shots.tscn: the duel scene (feather_cut, alley) held still, the player's sword state set by hand, 18 shots.
+# Judges the run: exit code 0, one "HAND SHOTS OK 18" line, no ERROR lines, eighteen "size," lines equal to the resolution, eighteen "hand," lines all with y1 >= 720
 # (the sleeve end is below the screen), fifteen "bind," lines with only the bind warning shot "true".
 #
 # Godot path: -Godot argument, else the GODOT environment variable, else the candidates in tests/godot_path.ps1.
@@ -47,7 +47,7 @@ $out | ForEach-Object { Write-Output $_ }
 
 $errors = @($out | Where-Object { $_ -match $errorPattern })
 $warnings = @($out | Where-Object { $_ -match '^\s*WARNING:' })
-$ok = @($out | Where-Object { $_ -match '^HAND SHOTS OK 15$' })
+$ok = @($out | Where-Object { $_ -match '^HAND SHOTS OK 18$' })
 $hands = @($out | Where-Object { $_ -match '^hand,' })
 $badHand = @($hands | Where-Object { [double](($_ -split ',')[5]) -lt 720 })
 $binds = @($out | Where-Object { $_ -match '^bind,' })
@@ -55,10 +55,13 @@ $badBind = @($binds | Where-Object { $q = $_ -split ','; ($q[1] -like 'bind-warn
 
 $reasons = @()
 if ($runExit -ne 0) { $reasons += "exit code $runExit" }
-if ($ok.Count -ne 1) { $reasons += 'no "HAND SHOTS OK 15" line' }
+if ($ok.Count -ne 1) { $reasons += 'no "HAND SHOTS OK 18" line' }
 if ($errors.Count -gt 0) { $reasons += "error lines $($errors.Count)" }
-if ($hands.Count -ne 15 -or $badHand.Count -gt 0) { $reasons += "hand lines $($hands.Count), sleeve end above 720 $($badHand.Count)" }
-if ($binds.Count -ne 15 -or $badBind.Count -gt 0) { $reasons += "bind lines $($binds.Count), wrong $($badBind.Count)" }
+if ($hands.Count -ne 18 -or $badHand.Count -gt 0) { $reasons += "hand lines $($hands.Count), sleeve end above 720 $($badHand.Count)" }
+if ($binds.Count -ne 18 -or $badBind.Count -gt 0) { $reasons += "bind lines $($binds.Count), wrong $($badBind.Count)" }
+$sizes = @($out | Where-Object { $_ -match '^size,' })
+$badSize = @($sizes | Where-Object { ($_ -split ',')[2] -ne $wantSize })
+if ($sizes.Count -ne 18 -or $badSize.Count -gt 0) { $reasons += "size lines $($sizes.Count), not $wantSize $($badSize.Count)" }
 
 Write-Output ''
 if ($reasons.Count -eq 0) {

@@ -1,7 +1,8 @@
 extends Node
 ## 내 손 그림 찍기(계획 032 작업 9). 클라라의 의뢰로 결투 씬을 붙이고, 판을 멈춘 채 내 칼의 상태를 손으로 놓아 열다섯 장을 찍는다.
 ## 실행: tests/run_hand_shots.ps1 (창, -- --shots=<폴더>). 폴더가 없거나 헤드리스면 저장하지 않고 돈다.
-## 장마다 "hand,<장>,<x0>,<y0>,<x1>,<y1>"(HandArt의 화면 상자)과 "bind,<장>,<true|false>"를 낸다.
+## 장마다 "hand,<장>,<x0>,<y0>,<x1>,<y1>"(HandArt의 화면 상자), "bind,<장>,<true|false>", "size,<장>,<w>x<h>"를 내고,
+## 칼 그림이 있으면 "sword,<장>,<x0>,<y0>,<x1>,<y1>"(Sword/Art의 화면 상자)도 낸다(계획 032b).
 
 const DT := preload("res://scripts/duel/duel_types.gd")
 const DUEL_PATH := "res://scenes/duel/duel.tscn"
@@ -33,6 +34,10 @@ func _ready() -> void:
 	for d in 3:
 		_plan.append(["windup-end-high-%s" % DIR_NAMES[d], DT.PlayerState.WINDUP, d, DT.Height.HIGH, 1.0, false, false])
 	_plan.append(["bind-warning-centre-guard", DT.PlayerState.GUARD, DT.Direction.CENTER, DT.Height.MID, 1.0, false, true])
+	# 계획 032b의 시안과 짝이 되는 장 둘(막기, 회수의 처음)과 이동.
+	_plan.append(["guard-centre", DT.PlayerState.GUARD, DT.Direction.CENTER, DT.Height.MID, 1.0, false, false])
+	_plan.append(["recover-centre", DT.PlayerState.RECOVER, DT.Direction.CENTER, DT.Height.MID, 0.0, false, false])
+	_plan.append(["stepping-centre", DT.PlayerState.STEPPING, DT.Direction.CENTER, DT.Height.MID, 1.0, false, false])
 	_duel = (load(DUEL_PATH) as PackedScene).instantiate()
 	_duel.set("commission", load(COMMISSION_PATH))
 	_duel.set("mouse_aim_enabled", false)
@@ -90,8 +95,18 @@ func _capture() -> void:
 	var box := Rect2(xf * art.offset, Vector2.ZERO)
 	for c: Vector2 in [Vector2(size.x, 0), Vector2(0, size.y), size]:
 		box = box.expand(xf * (art.offset + c))
+	var image := get_viewport().get_texture().get_image()
 	if _shots_dir != "":
-		get_viewport().get_texture().get_image().save_png(_shots_dir.path_join(String(p[0]) + ".png"))
+		image.save_png(_shots_dir.path_join(String(p[0]) + ".png"))
+	print("size,%s,%dx%d" % [p[0], image.get_width(), image.get_height()])
+	var sword_art := view.get_node("Sword/Art") as Sprite2D
+	if sword_art.visible:
+		var sword_size := sword_art.texture.get_size()
+		var sword_xf := sword_art.get_global_transform()
+		var sword_box := Rect2(sword_xf * sword_art.offset, Vector2.ZERO)
+		for c: Vector2 in [Vector2(sword_size.x, 0), Vector2(0, sword_size.y), sword_size]:
+			sword_box = sword_box.expand(sword_xf * (sword_art.offset + c))
+		print("sword,%s,%d,%d,%d,%d" % [p[0], sword_box.position.x, sword_box.position.y, sword_box.end.x, sword_box.end.y])
 	print("hand,%s,%d,%d,%d,%d" % [p[0], box.position.x, box.position.y, box.end.x, box.end.y])
 	print("bind,%s,%s" % [p[0], str((view.get_node("Sword/BindWarning") as CanvasItem).visible)])
 	_next()
