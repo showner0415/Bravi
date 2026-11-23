@@ -45,8 +45,10 @@ var _clock := 0.0
 const TINT_SHADER := preload("res://scenes/duel/opponent_part.gdshader")
 ## 칼에는 남길 고유 색이 없어 상태 색을 다 얹는다(상대는 80%).
 const TINT_AMOUNT := 1.0
-## 그림이 테두리 위에 그려져 바깥 절반 3.5만 보인다(결정 330).
-const BIND_ART_WIDTH := 7.0
+## 칼 둘레에 한 겹 더 두르는 짙은 테(바깥으로 보이는 폭). 상대가 내 칼과 같은 색일 때도 칼날의 윤곽이 남는다(판 P2-2).
+const RIM_WIDTH := 2.5
+## 엉킴 테두리는 그 테 바깥으로 3.5가 보인다(결정 330): (2.5 + 3.5) × 2.
+const BIND_ART_WIDTH := 12.0
 const GUARD_WIDTH := 1.8
 ## 막기 때 그림 뒤에 보이는 넓은 색 면의 불투명도(사용자가 고른 시안의 값, 결정 329).
 const GUARD_PLATE_ALPHA := 0.784
@@ -102,6 +104,17 @@ func _apply_sword_art() -> bool:
 	_sword_material.shader = TINT_SHADER
 	_sword_material.set_shader_parameter(&"tint_amount", TINT_AMOUNT)
 	art.material = _sword_material
+	# 그림의 자식이라 막기에서도 늘지 않고 그림을 따라간다. 좌표는 텍스처 화소다.
+	var rim := Line2D.new()
+	rim.name = "Rim"
+	for point in sword_art.outline:
+		rim.add_point(point - sword_art.joint)
+	rim.closed = true
+	rim.width = 2.0 * RIM_WIDTH / sword_art.units_per_px.x
+	rim.default_color = OUTLINE_COLOR
+	rim.joint_mode = Line2D.LINE_JOINT_ROUND
+	rim.show_behind_parent = true
+	art.add_child(rim)
 	return true
 
 

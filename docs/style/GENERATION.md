@@ -575,3 +575,15 @@
 - 재기(계획 032 v4 작업 5, `%TEMP%\bravi-style\032\measure-H1h.txt`): A-1a 바탕 `#D1D1D0`·`borderSpreadR` 2, A-1b 덩이 1, H5 신호 구역 0, A-2 K1 65,39,21 PASS · K2′ PASS(가운데 17화소, k 5.694에서 3.0단위) · K3′ PASS, 자루 윗끝 y 374(관절 x 392.5), 주먹 폭 F 410, 바깥 선 t 17, 소매 기울기 s 0.329화소/행. S-4: 자루 `#604635`(Y 0.29), 둥근 끝 `#90877B`(Y 0.53).
 - 후보 셋(`cand.txt`): 가 k 5.694·g 13·N 1108 → 1125×2262, 바깥 선 4.9/5.1/5.3단위 / 나 k 5.694·g 0·N 1116, 바깥 선 2.6~3.0 / 다 k 3.269·g 0·N 208, 주먹 125단위. 셋 모두 `-Verify` diff 0, 덩이 1, 높은 예비 동작 끝의 아래 모서리 y ≥ 728.
 - 판 M1(`%TEMP%\bravi-style\032\board-M1-hand-v4.png`)의 답: M1-1 "가", M1-2 "이대로". 가를 `assets/art/player/hand.png`로 올렸다.
+### 계획 032b (2026-11-23, 내 칼. 몫: 최대 8장 — 사용자 답 Q2. 쓴 장 2)
+
+| 장 | 프롬프트 | 넣은 그림 | 모델·추론·샌드박스 | 호출 | F11 | 결과 | 걸린 시간 | thread |
+|---|---|---|---|---|---|---|---|---|
+| W1a(막힘) | `prompts/032b-W1a-player-sword.txt`(명세 "계획 032b의 블록") | `generated/in/032b-in-sword.png`, `basis/player-hand.png`, `basis/bartolo-arms2.png` | `gpt-6.2-sol` · `high` · read-only | 호출 1 | 셋 모두 있음 | 그림 없음: 그림 도구가 입력 단계에서 막았다(`moderation_blocked`, violence) | 43초 | `01a20846-644d-7870-ad59-a73121ae9fe8` |
+| W1a | 같은 프롬프트(`-Try 2`, 결정 333의 "한 번만 더") | 같음 | 같음 | 호출 1 | 셋 모두 있음 | `032b-W1a-player-sword-t2.png` 1024×1536, 1,079,657B | 45초 | `01a20847-1268-7601-aacc-2901f0bf4952` |
+| W1b | `prompts/032b-W1b-player-sword.txt`(칼날을 길게, 거의 나란한 날이 조금씩 가늘어지고 끝은 작고 둥글게) | `generated/in/032b-in-sword2.png`, `generated/032b-W1a-player-sword-t2.png`, `basis/player-hand.png`, `reference/rapier.png`(칼날의 느낌만. 사용자 지시, 결정 186의 둘째 예외) | 같음 | 호출 1 | 셋 모두 있음 | `032b-W1b-player-sword.png` 1024×1536, 1,085,553B | 55초 | `01a2084f-a376-77c2-9902-ce051a43c78e` |
+
+- 막는 장치: 세 호출 모두 저장소·설정 해시·이전 그림 수가 같고, 부른 도구는 그림 도구 하나다.
+- 재기(W1b, `%TEMP%\bravi-style\032b\cut2.ps1`): 바탕 한 색, 덩이 1, 기울기 0.0016, 좌우 47.5 / 47.3단위, 컵 윗끝 −33.8, 선 13화소 = 2.63단위, 실루엣 38점.
+- 판 P1(W1a) "고친다" → 판 P1b(W1b) "맞다 — 올린다". `basis/player-sword.png`와 `assets/art/player/sword.png`로 올렸다.
+- 배운 것: 칼 한 자루만 그리는 프롬프트는 안전 필터에 걸릴 수 있고, 같은 프롬프트의 다음 호출은 지나갔다.

@@ -161,6 +161,9 @@ func t76_sword() -> String:
 	var right := (art.offset.x + size.x) * upp.x
 	if absf(top + 280.0) > 3.0 or absf(bottom - 4.0) > 2.0 or right - left > 104.0 or absf(right + left) > 4.0:
 		errs.append("칼 그림의 틀: 위 %.1f 아래 %.1f 왼 %.1f 오른 %.1f" % [top, bottom, left, right])
+	var rim := art.get_node_or_null("Rim") as Line2D
+	if rim == null or absf(rim.width * upp.x - 2.0 * PlayerSwordView.RIM_WIDTH) > 0.01 or rim.points.size() != sword.polygon.size():
+		errs.append("칼 둘레의 짙은 테(Sword/Art/Rim)가 없거나 폭·점이 다름")
 	if (sword.get_node("BindWarning") as Line2D).points != sword.polygon:
 		errs.append("엉킴 테두리의 점이 판의 다각형과 다름")
 	if Geometry2D.triangulate_polygon(sword.polygon).is_empty():
