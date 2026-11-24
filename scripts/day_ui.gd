@@ -26,6 +26,14 @@ const COUNTER_Y := 540.0
 const CLIENT_SIZE := Vector2(220, 390)
 ## 카운터와 정산이 같은 자리를 써야 화면이 바뀔 때 의뢰인이 튀지 않는다.
 const CLIENT_POS := Vector2(120, 164)
+## 의뢰인 그림과 그 위 이름 글의 자리(CLIENT_POS 기준). 화면 (80, 120) 300×450은 사용자가 맞다고 한 견본의 자리다(결정 346).
+const CLIENT_ART_RECT := Rect2(-40, -44, 300, 450)
+const CLIENT_ART_NAME_RECT := Rect2(-40, -76, 300, 28)
+## 카운터 배경 그림 둘(결정 352). 파일이 없으면 코드 그림(들보, 나무 띠)으로 돌아간다.
+const COUNTER_ROOM_PATH := "res://assets/art/counter/room.png"
+const COUNTER_FRONT_PATH := "res://assets/art/counter/front.png"
+## front.png가 시작하는 y: 1920 그림의 F행(810) ÷ 1.5. F는 윗변 짙은 선 안이라 의뢰인 위에 벽 줄이 얹히지 않는다(결정 352).
+const COUNTER_FRONT_Y := 540.0
 ## 화면이 열린 뒤 누름을 받지 않는 시간(밀리초). 앞 화면에서 빠르게 두 번 누른 것(더블클릭, Space 두 번)의
 ## 두 번째가 새 화면의 같은 자리 버튼이나 포커스 버튼을 누르지 않게 한다. 임시 값이다(계획 018).
 const ARRIVAL_GUARD_MSEC := 400
@@ -212,12 +220,21 @@ static func client_color(client_name: String) -> Color:
 	return Color.from_hsv(hue, 0.45, 0.72)
 
 
-## 의뢰인 도형: 몸과 머리 사각형, 이름 글자. 크기는 CLIENT_SIZE다.
-static func make_client(client_name: String) -> Control:
+## 의뢰인: 그림(portrait)이 있으면 그림과 그 위 이름 글, 없으면 몸과 머리 사각형과 이름 글자. 루트의 크기는 CLIENT_SIZE다.
+static func make_client(client_name: String, portrait: Texture2D = null) -> Control:
 	var root := Control.new()
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.custom_minimum_size = CLIENT_SIZE
 	root.size = CLIENT_SIZE
+	if portrait != null:
+		var art := _add_art(root, portrait, CLIENT_ART_RECT, TextureRect.STRETCH_KEEP_ASPECT_CENTERED)
+		art.name = "Portrait"
+		var name_label := add_label(root, client_name, 20)
+		name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		name_label.position = CLIENT_ART_NAME_RECT.position
+		name_label.size = CLIENT_ART_NAME_RECT.size
+		return root
 	var color := client_color(client_name)
 
 	var body := ColorRect.new()
@@ -242,6 +259,39 @@ static func make_client(client_name: String) -> Control:
 	label.position = Vector2(-90, 6)
 	label.size = Vector2(400, 30)
 	return root
+
+
+## 그림 한 장을 rect에 놓는다. 텍스처 크기를 최소 크기로 삼지 않게 한다(1920 그림이 1280 화면을 넘지 않게).
+static func _add_art(parent: Control, texture: Texture2D, rect: Rect2, stretch: TextureRect.StretchMode) -> TextureRect:
+	var art := TextureRect.new()
+	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	art.texture = texture
+	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	art.stretch_mode = stretch
+	art.position = rect.position
+	art.size = rect.size
+	parent.add_child(art)
+	return art
+
+
+## 카운터 방 그림(벽·들보·칼 선반·카운터, 결정 352). 그림 파일이 없으면 들보의 빗금이다. 벽(add_background) 바로 위에 붙인다.
+static func add_room(parent: Control) -> void:
+	if not ResourceLoader.exists(COUNTER_ROOM_PATH):
+		add_beams(parent)
+		return
+	var room := _add_art(parent, load(COUNTER_ROOM_PATH) as Texture2D, Rect2(0, 0, 1280, 720), TextureRect.STRETCH_SCALE)
+	room.name = "Room"
+
+
+## 카운터 앞 띠: 방 그림의 F행 아래를 의뢰인 위에 얹는다(결정 352). 그림 파일이 없으면 코드의 나무 띠다.
+## 의뢰인을 먼저 붙이고 이것을 나중에 붙인다.
+static func add_counter_front(parent: Control) -> void:
+	if not ResourceLoader.exists(COUNTER_FRONT_PATH):
+		add_counter_band(parent)
+		return
+	var front := _add_art(parent, load(COUNTER_FRONT_PATH) as Texture2D,
+		Rect2(0, COUNTER_FRONT_Y, 1280, 720 - COUNTER_FRONT_Y), TextureRect.STRETCH_SCALE)
+	front.name = "CounterFront"
 
 
 ## 카운터(가로 띠). 의뢰인을 먼저 붙이고 이것을 나중에 붙이면 의뢰인이 카운터 뒤에 선다.

@@ -1,0 +1,24 @@
+Task: call your image generation tool exactly once to create exactly one image. You may use the code tool only to make that one call. Pass the attached guide image to the image generation tool as a referenced image by its path: {WORKDIR}\in-1.png. Give the image generation tool the text from the line that starts with Image: to the end of this message, word for word, as its prompt. Do not run shell commands. Do not read, create, change or delete any file. Do not use a browser, web search, computer use, apps or any other tool. Do not retry. When the image is done, reply with one line: done.
+
+Image: Landscape, 1920x1080 pixels. Background for a shop counter scene in a 2D game, seen from behind the counter.
+
+Subject: the customer side of a small office in a Renaissance-era Italian town where hired duelists take commissions, seen from behind its counter. A plain parchment colored plaster wall with eight narrow upright posts, a small wooden rack with a few practice swords leaning on it at the far left, and the long wooden counter across the bottom. No people, no animals.
+
+Composition:
+- Follow the attached layout sketch for the composition only.
+- The top edge of the counter is one perfectly straight horizontal line across the whole width at 75 percent of the image height. The counter is seen straight from the front: no perspective, no visible counter top going back, no tilt. Below that edge only the front face of the counter shows.
+- Above the counter the wall is seen straight from the front. Eight narrow upright posts stand evenly from the top of the image down to the counter, the first at the left edge, one every eighth of the width.
+- The sword rack stays inside the left 8 percent of the width, between 7 and 67 percent of the height: four short shelves, each with three swords leaning upright on it.
+- Two calm areas. Behind the customer, from 8 to 30 percent of the width and from 15 percent of the height down to the counter, there is only the plain wall and two posts, no other object and no linework. The front face of the counter has only four long, faint horizontal wood grain lines, no object, no knot, no panel.
+- The rest of the wall to the right is plain too, because a large text panel will cover it. Nothing large near the right edge.
+- No sign, no text, no windows, no doors, no other shelves, no candles, no lamps, no curtains, no arches, no stage, no people.
+
+Style (the attached image is our own drawing. It is the layout and the style reference: use its composition, its simple flat shapes and its colors. Draw a new, original illustration of this background that stays this simple):
+- A finished cartoon background illustration for a game, in the drawing style of the attached image: large calm flat planes of color and simple shapes with clean edges. Keep it as simple as the attached image. Improve only the craft: clean construction and parts that join properly. Add only a little detail on the sword rack and the counter, such as the hilts and cross guards of the swords, the shelf brackets and the edge of the counter top. The background is as simple as the cartoon characters that will stand in front of it.
+- Outlines: very dark warm brown, hex 3B2A1E, one even line weight, smooth clean edges. The top edge of the counter has one bold dark outline along its whole length.
+- The light parchment wall is calm: one flat light tone with only a faint even paper grain. The posts are narrow bands of simple parallel diagonal hatching on the wall, not solid beams.
+- Fills are flat, with at most one flat shadow tone per color and hard shadow edges. The front face of the counter is a dark, even wood brown.
+- Do not add: an engraving or etching look, cross-hatching, dense linework, brick or stone texture, wood grain covering the wall, plaster cracks, gradients, haze, light rays, glow.
+No text, no signature.
+
+Colors: The wall parchment E9D8B4 with a slightly darker parchment D2B98C, the hatching of the posts 6B5440, the counter front wood brown 7A5232, the counter top edge ochre brown A8895E, the shelves wood brown 7A5232, the sword blades pale steel CFC8BA, outlines 3B2A1E. Avoid bright saturated yellow, orange, red, blue, purple or green, and pure white.

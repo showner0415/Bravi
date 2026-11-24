@@ -11,6 +11,8 @@ extends Resource
 @export var opponent_wears_hat := false
 ## 결투의 무대(결정 295). 비면 결투 씬의 기본 무대다. 표시만 하고 판정에 넘기지 않는다.
 @export var stage: StageData
+## 카운터와 정산에 서는 의뢰인 그림(결정 347). 비면 색 도형이다.
+@export var client_portrait: Texture2D
 @export var conditions: Array[CommissionCondition] = []
 @export var base_reward := 0
 @export var tip_max := 0

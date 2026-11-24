@@ -1,10 +1,11 @@
-[gd_resource type="Resource" script_class="Commission" load_steps=7 format=3]
+[gd_resource type="Resource" script_class="Commission" load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/commission/commission.gd" id="1_commission"]
 [ext_resource type="Script" path="res://scripts/commission/commission_condition.gd" id="2_condition"]
 [ext_resource type="Script" path="res://scripts/commission/target_part_condition.gd" id="3_target_part"]
 [ext_resource type="Resource" path="res://data/opponents/opponent_01.tres" id="4_opponent"]
 [ext_resource type="Resource" path="res://data/stages/alley.tres" id="5_stage"]
+[ext_resource type="Texture2D" path="res://assets/art/clients/clara.png" id="6_portrait"]
 
 [sub_resource type="Resource" id="condition_feather"]
 script = ExtResource("3_target_part")
@@ -19,6 +20,7 @@ dialogue = "바르톨로가 쓰고 다니는 그 모자, 값도 안 치르고 �
 opponent = ExtResource("4_opponent")
 opponent_wears_hat = true
 stage = ExtResource("5_stage")
+client_portrait = ExtResource("6_portrait")
 conditions = Array[ExtResource("2_condition")]([SubResource("condition_feather")])
 base_reward = 45
 tip_max = 25

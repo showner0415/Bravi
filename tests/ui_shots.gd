@@ -82,7 +82,7 @@ func _screen(path: String, day: DayState) -> void:
 	add_child(_node)
 
 
-## 고정 점수의 의뢰에 실제 의뢰의 이름·한마디·평판·무대를 입힌다(결투를 돌리지 않고 견본의 점수를 낸다).
+## 고정 점수의 의뢰에 실제 의뢰의 이름·한마디·평판·무대·그림을 입힌다(결투를 돌리지 않고 견본의 점수를 낸다).
 func _scored(real_path: String, base_reward: int, tip_max: int, score: int) -> Commission:
 	var real := load(real_path) as Commission
 	var commission: Commission = _d._fixed_commission(real.client_name, base_reward, tip_max, score)
@@ -91,6 +91,7 @@ func _scored(real_path: String, base_reward: int, tip_max: int, score: int) -> C
 	commission.fail_line = real.fail_line
 	commission.reputation_effect = real.reputation_effect
 	commission.opponent = real.opponent
+	commission.client_portrait = real.client_portrait
 	return commission
 
 

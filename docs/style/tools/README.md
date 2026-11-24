@@ -18,6 +18,7 @@
 | `check027.ps1` | 바이블에 옮긴 값이 원문과 같은지 대조한다 | 바이블 1절 | `-Target -Sources -Only` |
 | `cutstage.ps1` | 무대 기준 그림을 줄이지 않고 16:9로 잘라만 둔다(`assets/art/stages/`, 계획 031 결정 296). `-Verify`는 잘린 장과 원본 상자를 화소마다 견준다 | — | `-Sheet -X -Y -W -H -Out`, `-Verify` |
 | `upstage.ps1` | 결투 무대를 기준 그림에서 잘라 1920×1080으로 키우고 경계를 다시 세운다(계획 031b 결정 339). `-Verify -Old`는 새 장을 옛 크기로 되줄여 화소 차를 낸다(결정 344) | 무대 그림 | `-Sheet -X -Y -W -H -Amount 1.0 -Out`, `-Verify -Out -Old` |
+| `fitclient.ps1` | 바탕을 지운 의뢰인 그림(1024×1536)을 미리 곱한 알파로 줄여 게임 크기(450×675)로 둔다. 지운 가장자리에 회색 테가 남지 않는다(계획 034 결정 346) | — | `-Src -Out -W 450 -H 675` |
 | `cuthand.ps1` | 내 손 그림을 자른다(계획 032 v4): 바탕 지우기(허용 차 28) → 바깥 선을 화소로 두껍게(`-Grow`, 결정 310) → 비스듬한 소매를 한 행을 되풀이하며 기울기대로 늘이기(`-Extend` 화소, `-Slope` 화소/행, 결정 305) → 알파 상자 + 2로 자르기. 관절(자루 윗끝 가운데, 결정 303)을 낸다. `-Verify`는 손질하지 않은 화소가 원본의 옮긴 자리와 같은지 센다 | — | `-Sheet -Out -Grow -Extend -Slope -K`, `-Verify` |
 | `cutparts.ps1` | 기준 시트에서 파츠를 잘라 `assets/art/opponents/<상대>/`에 둔다. `-Sheet`·`-Out`은 고르기 전의 시트를 저장소 밖에 자를 때(계획 030b 결정 281) | — | `-Grow 'name=l,t,r,b;…'`, `-Sheet -Out` |
 | `cutarms.ps1` | 팔 시트에서 따로 그린 팔을 자르고(주먹을 소매에서 가른다) 다시 맞춘다(계획 030). `-Layout`은 팔마다의 값(`Kind` up·forward, 행, 날밑 타원과 기울기, 칼날 상자, 고를 때만 `Cuts`·`BladeLine`)을 담은 `.psd1`이고, 없으면 `bartolo-arms.png`의 두 팔 일곱 장이다(계획 030c 결정 292). 지금 게임의 열한 장은 `cutarms-030c.psd1`(`bartolo-arms2.png`, 값의 까닭은 `basis/README.md`) | — | `-Sheet -Rows 'upgrip=<y>;upcuff=<y>;thrustcuff=<y>'`, `-Layout <.psd1>`, `-Out` |

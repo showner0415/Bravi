@@ -70,6 +70,8 @@
   | 어지러움 | 비뚤어짐 | X | 물결 |
   | 화남 | 안으로 내려옴 | 점 | 이를 드러낸 네모 |
   | 집중 | 곧은 막대 | 한 눈 감음 | 곧은 선 |
+  | 언짢음(계획 034) | 안쪽이 내려옴 | 점 | 아래로 굽은 짧은 선 |
+  | 근심(계획 034) | 안쪽이 들림 | 점 | 작은 곧은 선 |
 
 - 홍조, 땀방울, 눈물, 눈 하이라이트, 속눈썹, 입술 색, 볼의 빗금은 없다.
 
@@ -113,6 +115,11 @@
 | `--vi-fur` / `-sh` | `#A8895E` / `#8C7050` | S44 V66 / S43 V55 | 0.55 / 0.45 | 비토리오 털깃 |
 | `--vi-gold` | `#C08A3E` | S68 V75 | 0.56 | 금 사슬·반지 |
 | `--vi-purse` | `#7A5232` | S59 V48 | 0.35 | 돈주머니 |
+| `--em-vest` / `-sh` | `#8A7357` / `#6F5D46` | S37 V54 / S37 V44 | 0.46 / 0.37 | 에밀리오 조끼, 토마소의 기운 자국(계획 034) |
+| `--ga-vest` / `-sh` | `#5E5A6E` / `#524E60` | S18 V43 / S19 V38 | 0.36 / 0.31 | 가스파로 조끼(계획 034) |
+| `--or-bodice` / `-sh` | `#8A5A6E` / `#6F4859` | S35 V54 / S35 V44 | 0.40 / 0.32 | 오르솔라 윗옷(계획 034) |
+| `--or-shawl-sh` | `#B89E74` | S37 V72 | 0.63 | 오르솔라 숄 그림자(숄은 `#D2B98C`, 계획 034) |
+| `--to-shirt` / `-sh` | `#B8A88A` / `#9C8D71` | S25 V72 / S28 V61 | 0.66 / 0.56 | 토마소 셔츠(계획 034) |
 | `--st-shade` | `#3A3027` | S33 V23 | 0.19 | 무대 가운데 그늘 |
 | `--st-sky` | `#3E4A55` | S27 V33 | 0.28 | 밤하늘 |
 | `--st-ground` | `#4E4336` | S31 V31 | 0.27 | 땅 |
@@ -928,3 +935,98 @@ Colors:
 
 Background: one plain flat light grey color, about #D8D8D8, everywhere around the rapier. No floor, no cast shadow, no scenery, no frame, no text, no letters, no signature, no watermark.
 ```
+
+# 계획 034의 블록 (카운터 방과 의뢰인 다섯. 결정 348~351)
+
+영어, ASCII만, 큰따옴표 없이(결정 187). 있는 블록은 고치지 않고 아래만 더한다(결정 195: 명세가 먼저, 프롬프트가 옮겨 적는다). 지시 블록은 "길 가·무대"의 한 장 블록 그대로다(카운터 방은 `guide image`, 의뢰인은 `024-V1a-client-vittorio.txt`의 `reference image`).
+
+## P-CTR (카운터 방의 `Image:`·`Subject:`·`Composition:`. 넣는 그림은 `034-in-counter`, 1920×1080)
+
+자리는 결정 350의 값을 폭·높이의 비로 옮겼다(선반 x 102 = 8%, 의뢰인 뒤 x 104~380 = 8~30%, 윗변 y 540 = 75%).
+
+```
+Image: Landscape, 1920x1080 pixels. Background for a shop counter scene in a 2D game, seen from behind the counter.
+
+Subject: the customer side of a small office in a Renaissance-era Italian town where hired duelists take commissions, seen from behind its counter. A plain parchment colored plaster wall with eight narrow upright posts, a small wooden rack with a few practice swords leaning on it at the far left, and the long wooden counter across the bottom. No people, no animals.
+
+Composition:
+- Follow the attached layout sketch for the composition only.
+- The top edge of the counter is one perfectly straight horizontal line across the whole width at 75 percent of the image height. The counter is seen straight from the front: no perspective, no visible counter top going back, no tilt. Below that edge only the front face of the counter shows.
+- Above the counter the wall is seen straight from the front. Eight narrow upright posts stand evenly from the top of the image down to the counter, the first at the left edge, one every eighth of the width.
+- The sword rack stays inside the left 8 percent of the width, between 7 and 67 percent of the height: four short shelves, each with three swords leaning upright on it.
+- Two calm areas. Behind the customer, from 8 to 30 percent of the width and from 15 percent of the height down to the counter, there is only the plain wall and two posts, no other object and no linework. The front face of the counter has only four long, faint horizontal wood grain lines, no object, no knot, no panel.
+- The rest of the wall to the right is plain too, because a large text panel will cover it. Nothing large near the right edge.
+- No sign, no text, no windows, no doors, no other shelves, no candles, no lamps, no curtains, no arches, no stage, no people.
+```
+
+## S-CTR (카운터 방의 화풍. S-ST3에서 짙은 가운데를 밝은 양피지 벽으로 바꿨다)
+
+```
+Style (the attached image is our own drawing. It is the layout and the style reference: use its composition, its simple flat shapes and its colors. Draw a new, original illustration of this background that stays this simple):
+- A finished cartoon background illustration for a game, in the drawing style of the attached image: large calm flat planes of color and simple shapes with clean edges. Keep it as simple as the attached image. Improve only the craft: clean construction and parts that join properly. Add only a little detail on the sword rack and the counter, such as the hilts and cross guards of the swords, the shelf brackets and the edge of the counter top. The background is as simple as the cartoon characters that will stand in front of it.
+- Outlines: very dark warm brown, hex 3B2A1E, one even line weight, smooth clean edges. The top edge of the counter has one bold dark outline along its whole length.
+- The light parchment wall is calm: one flat light tone with only a faint even paper grain. The posts are narrow bands of simple parallel diagonal hatching on the wall, not solid beams.
+- Fills are flat, with at most one flat shadow tone per color and hard shadow edges. The front face of the counter is a dark, even wood brown.
+- Do not add: an engraving or etching look, cross-hatching, dense linework, brick or stone texture, wood grain covering the wall, plaster cracks, gradients, haze, light rays, glow.
+No text, no signature.
+```
+
+## C-CTR (카운터 방의 색)
+
+```
+Colors: The wall parchment E9D8B4 with a slightly darker parchment D2B98C, the hatching of the posts 6B5440, the counter front wood brown 7A5232, the counter top edge ochre brown A8895E, the shelves wood brown 7A5232, the sword blades pale steel CFC8BA, outlines 3B2A1E. Avoid bright saturated yellow, orange, red, blue, purple or green, and pure white.
+```
+
+## 의뢰인 다섯의 줄 (E·I·G·O·T. 넣는 그림은 `034-in-client-<이름>`)
+
+`024-V1a-client-vittorio.txt`의 차례와 줄 그대로이고 아래만 바꾼다(결정 349): `Subject:`, 구도의 첫째·둘째 항목, S-FIG2의 둘째 항목 끝(표정 문장), 셋째 항목, 다섯째 항목, 색 블록. 둘째 구도 항목은 대명사와 손의 자리 때문에 바꾼다(가스파로는 손 하나를 든다). 첫 장이 기준 그림 둘과 다른 화풍으로 나오면 그 사람의 다음 장에 `basis/client-vittorio.png`를 둘째 그림으로 더하고 지시 블록을 "지시 블록 (두 장)"으로 한다.
+
+구도의 첫째 항목(다섯 공통):
+
+```
+- The attached image is our own sketch of this character. It is the style reference: use its drawing style, its soft rounded shapes, its face type, its colors, its framing and its big head. Do not trace it: draw the character again as a new, better, finished illustration.
+```
+
+구도의 둘째 항목: `- Front view or a slight three-quarter view, head straight, both hands visible above waist level (he stands behind a shop counter that is not drawn).` — 이네스·오르솔라는 `she`, 가스파로는 `both hands visible above waist level`을 `one hand at waist level and the other raised beside the shoulder`로 바꾼다.
+
+**포목상 에밀리오 (E)**
+
+- Subject: `Emilio, a cloth merchant from a Renaissance-era Italian town, a sturdy middle-aged man with a short full beard. A vain duelist shamed his name in the middle of the market; he wants only a drop of blood and the face left untouched, because they will meet again on the next market day. He wears a plain shirt with rolled-up sleeves under a buttoned brown vest, and a tailor's measuring tape hangs around his neck. Under one arm he carries a rolled bolt of red cloth.`
+- 표정 문장(언짢음): `His eyes are small solid dots under eyebrows that slant down toward the middle. His mouth is a short line curved downward. His character shows in the expression: displeased and stubborn.`
+- 셋째 항목: `- Keep it nearly as simple as the reference image: the same small number of shapes. Improve the craft: clean construction, good proportions, parts that join properly and a hand with fingers that really holds the bolt of cloth. Add only a little detail inside the shapes: the tick marks on the measuring tape, three vest buttons, the rolled cuffs of the sleeves, the spiral end of the cloth bolt, one or two short fold lines on the shirt. Nothing else is added. No fabric patterns, no curls, no extra wrinkles.`
+- 다섯째 항목: `- Fills: flat solid colors, muted and faded. His hair and beard are a very dark brown 4A3A2C.`
+- 색: `- Main fills and their shadow tones: muted brown 8A7357 with shadow 6F5D46 for the vest, pale parchment E2D3B4 with shadow D2B98C for the shirt, faded brick red A5533F with shadow 84422F for the bolt of cloth, ochre C08A3E for the measuring tape, very dark brown 4A3A2C for the hair and beard, skin EBC49F.`
+
+**바르톨로의 누이 이네스 (I)**
+
+- Subject: `Ines, the younger sister of a vain duelist, a young woman from a Renaissance-era Italian town with dark hair parted in the middle and tied low at the nape. Her brother will stop his reckless duels once he wins one, so she asks the hired duelist to lose to him without it showing. She wears a plain dark brown dress and a grey-blue shawl over her shoulders. With both hands in front of her chest she holds a small handkerchief.`
+- 표정 문장(근심): `Her eyes are small solid dots under eyebrows raised in the middle. Her mouth is a small straight line. Her character shows in the expression: worried and earnest.`
+- 셋째 항목: `- Keep it nearly as simple as the reference image: the same small number of shapes. Improve the craft: clean construction, good proportions, parts that join properly and hands with fingers that really hold the handkerchief. Add only a little detail inside the shapes: the soft fold of the shawl over the shoulders, a simple low knot of hair, the corners of the handkerchief, one or two short fold lines on the dress. Nothing else is added. No fringe, no lace, no curls, no extra wrinkles.`
+- 다섯째 항목: `- Fills: flat solid colors, muted and faded. Her hair is filled with the same very dark brown as the outlines.`
+- 색: `- Main fills and their shadow tones: grey-blue 5C6F7E with shadow 4A5A67 for the shawl, dark brown 6B5440 with shadow 57442F for the dress, parchment E9D8B4 for the handkerchief, very dark brown 3B2A1E for the hair, skin EBC49F.`
+
+**노름꾼 가스파로 (G)**
+
+- Subject: `Gasparo, a gambler from a Renaissance-era Italian town, a thin, tall man with slicked dark hair, a thin mustache and a small pointed goatee. He has bet heavily on a vain duelist and wants the hired duelist to lose without it looking staged. He wears a shirt with an open collar, a dark grey-violet vest and a faded red neckerchief. One hand is raised beside his shoulder and shows two dice between his fingers.`
+- 표정 문장(거만함, 얼굴 표의 줄): `His eyebrows are flat. His eyes are half closed, drawn as short lines curved downward. His mouth is a short slanted line. His character shows in the expression: smug and arrogant.`
+- 셋째 항목: `- Keep it nearly as simple as the reference image: the same small number of shapes. Improve the craft: clean construction, good proportions, parts that join properly and a raised hand with fingers that really hold the two dice. Add only a little detail inside the shapes: the pips on the dice, two vest buttons, the knot of the neckerchief, the open shirt collar, one or two short fold lines on the shirt. Nothing else is added. No jewelry, no curls, no extra wrinkles.`
+- 다섯째 항목: `- Fills: flat solid colors, muted and faded. His hair, mustache and goatee are filled with the same very dark brown as the outlines.`
+- 색: `- Main fills and their shadow tones: dark grey-violet 5E5A6E with shadow 524E60 for the vest, pale parchment E2D3B4 for the shirt, faded brick red A5533F with shadow 84422F for the neckerchief, parchment E9D8B4 for the dice, very dark brown 3B2A1E for the hair, skin EBC49F.`
+
+**무용 교사 오르솔라 (O)**
+
+- Subject: `Orsola, a dance teacher from a Renaissance-era Italian town, an upright, tall woman with her hair pinned up in a high bun. A vain duelist stepped on her pupil's foot at her ball and laughed; she wants one cut on his leg and nothing else. She wears a fitted dusty plum bodice and a light shawl over her shoulders. One hand holds a closed folding fan across her chest.`
+- 표정 문장(언짢음, 턱을 든다): `Her eyes are small solid dots under eyebrows that slant down toward the middle. Her mouth is a short line curved downward and her chin is lifted. Her character shows in the expression: displeased and proud.`
+- 셋째 항목: `- Keep it nearly as simple as the reference image: the same small number of shapes. Improve the craft: clean construction, good proportions, parts that join properly and a hand with fingers that really holds the closed fan. Add only a little detail inside the shapes: the ribs of the closed fan, the neckline of the bodice, a seam down the front of the bodice, the soft edge of the shawl, a simple high bun. Nothing else is added. No jewelry, no lace, no curls, no extra wrinkles.`
+- 다섯째 항목: `- Fills: flat solid colors, muted and faded.`
+- 색: `- Main fills and their shadow tones: dusty plum 8A5A6E with shadow 6F4859 for the bodice, light parchment D2B98C with shadow B89E74 for the shawl, wood brown 7A5232 for the fan, dark brown 6B5440 for the hair, skin EBC49F.`
+
+**품팔이 토마소 (T)**
+
+- Subject: `Tomaso, a day laborer from a Renaissance-era Italian town, a thin, small young man with short messy hair. A vain duelist cheated him of three months of wages and called him a thief; the little money he brings is all he has. He wears a loose, worn shirt with one square patch sewn on and a rope belt. With both hands in front of his chest he holds a flat cloth cap.`
+- 표정 문장(근심): `His eyes are small solid dots under eyebrows raised in the middle. His mouth is a small straight line. His character shows in the expression: worried and humble.`
+- 셋째 항목: `- Keep it nearly as simple as the reference image: the same small number of shapes. Improve the craft: clean construction, good proportions, parts that join properly and hands with fingers that really hold the cap. Add only a little detail inside the shapes: the stitches around the patch, the twist of the rope belt, the brim of the cap, a few spiky locks of hair, one or two short fold lines on the shirt. Nothing else is added. No holes, no dirt, no stains, no extra wrinkles.`
+- 다섯째 항목: `- Fills: flat solid colors, muted and faded.`
+- 색: `- Main fills and their shadow tones: worn pale grey-brown B8A88A with shadow 9C8D71 for the shirt, muted brown 8A7357 for the patch, ochre brown A8895E for the rope belt, dark brown 6B5440 for the cap, wood brown 7A5232 for the hair, skin EBC49F.`
+
+색 블록의 둘째 줄은 비토리오와 같다: `- Avoid bright saturated yellow, orange, red, blue, purple or green, and pure white. Large areas are greyish and low in saturation.`

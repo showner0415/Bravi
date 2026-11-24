@@ -49,12 +49,12 @@ func _input(event: InputEvent) -> void:
 
 
 func _build(summary: Dictionary) -> void:
-	Ui.add_beams(self)
+	Ui.add_room(self)
 	Ui.add_header_rule(self)
 	var header := Ui.add_title(self, "%d일차 — 가게를 닫는다" % day.day_number, 28)
 	header.name = "Header"
 	header.position = Vector2(32, 14)
-	Ui.add_counter_band(self)
+	Ui.add_counter_front(self)
 	# 마지막 손님을 돌려보내서 폐점에 왔으면 그 손님의 한마디.
 	Ui.add_declined_line(self, day.last_declined, Rect2(420, 30, 828, 22))
 

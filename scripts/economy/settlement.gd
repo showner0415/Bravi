@@ -67,18 +67,20 @@ func _input(event: InputEvent) -> void:
 
 func _build(result: Dictionary) -> void:
 	var rules := day.effective_rules()
-	Ui.add_beams(self)
+	Ui.add_room(self)
 	Ui.add_header_rule(self)
 	var header := Ui.add_title(self, "%d일차 · 오늘의 결투 %d/%d 정산" % [
 		day.day_number, day.results.size(), rules.duels_per_day], 28)
 	header.name = "Header"
 	header.position = Vector2(32, 14)
 
-	var client := Ui.make_client(result["client_name"])
+	var portrait_path: String = result.get("client_portrait", "")
+	var portrait: Texture2D = load(portrait_path) as Texture2D if portrait_path != "" else null
+	var client := Ui.make_client(result["client_name"], portrait)
 	client.name = "Client"
 	client.position = Ui.CLIENT_POS
 	add_child(client)
-	Ui.add_counter_band(self)
+	Ui.add_counter_front(self)
 
 	var bubble := Ui.add_panel(self, Rect2(410, 70, 830, 96))
 	# 그 구간의 의뢰인의 한마디가 있으면 공통 문구 대신 그것을 보여 준다.

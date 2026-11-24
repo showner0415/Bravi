@@ -1,10 +1,11 @@
-[gd_resource type="Resource" script_class="Commission" load_steps=7 format=3]
+[gd_resource type="Resource" script_class="Commission" load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/commission/commission.gd" id="1_commission"]
 [ext_resource type="Script" path="res://scripts/commission/commission_condition.gd" id="2_condition"]
 [ext_resource type="Script" path="res://scripts/commission/first_blood_condition.gd" id="3_first_blood"]
 [ext_resource type="Resource" path="res://data/opponents/opponent_01.tres" id="4_opponent"]
 [ext_resource type="Resource" path="res://data/stages/piazza.tres" id="5_stage"]
+[ext_resource type="Texture2D" path="res://assets/art/clients/vittorio.png" id="6_portrait"]
 
 [sub_resource type="Resource" id="condition_first_blood"]
 script = ExtResource("3_first_blood")
@@ -16,6 +17,7 @@ dialogue = "바르톨로가 사람들 앞에서 나를 사기꾼이라 했소. �
 듣자니 그자는 공격이 자꾸 막히면 성질을 못 이기고 크게 휘두른다더군."
 opponent = ExtResource("4_opponent")
 stage = ExtResource("5_stage")
+client_portrait = ExtResource("6_portrait")
 conditions = Array[ExtResource("2_condition")]([SubResource("condition_first_blood")])
 base_reward = 55
 tip_max = 20

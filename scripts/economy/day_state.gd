@@ -135,6 +135,8 @@ static func settle(commission: Commission, record: DuelRecord, p_rules: EconomyR
 	var injured := record.end_reason == DuelTypes.EndReason.PLAYER_DEFEATED
 	return {
 		"client_name": commission.client_name,
+		# 그림은 경로 글로 넘긴다(사전은 숫자와 글뿐이다. 결정 347).
+		"client_portrait": commission.client_portrait.resource_path if commission.client_portrait != null else "",
 		"score": score,
 		"base": int(pay["base"]),
 		"base_max": boosted_base_max(commission.base_reward, p_rules),

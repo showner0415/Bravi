@@ -86,7 +86,7 @@ func _input(event: InputEvent) -> void:
 
 
 func _build(commission: Commission) -> void:
-	Ui.add_beams(self)
+	Ui.add_room(self)
 	Ui.add_header_rule(self)
 	shown_waiting = day.waiting_count()
 	shown_duels_left = day.duels_left()
@@ -121,14 +121,16 @@ func _build(commission: Commission) -> void:
 			guests.position = Vector2(32, 42)
 
 	# 의뢰인은 카운터 뒤에 선다(카운터를 나중에 붙인다). 옆에서 한 번 미끄러져 들어온다.
-	var client := Ui.make_client(commission.client_name)
+	var client := Ui.make_client(commission.client_name, commission.client_portrait)
 	client.name = "Client"
-	client.position = Vector2(-Ui.CLIENT_SIZE.x, Ui.CLIENT_POS.y)
+	# 그림은 루트보다 오른쪽으로 넓으니 그림의 오른쪽 끝이 화면 왼쪽 끝에 오는 데서 시작한다(결정 346).
+	var start_x: float = -Ui.CLIENT_ART_RECT.end.x if commission.client_portrait != null else -Ui.CLIENT_SIZE.x
+	client.position = Vector2(start_x, Ui.CLIENT_POS.y)
 	add_child(client)
 	var tween := create_tween()
 	tween.tween_property(client, "position", Ui.CLIENT_POS, SLIDE_TIME) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	Ui.add_counter_band(self)
+	Ui.add_counter_front(self)
 
 	# 말풍선: 사연 전문, 조건, 상대, 보수.
 	var bubble := Ui.add_panel(self, Rect2(410, 70, 830, 440), 12)

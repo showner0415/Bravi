@@ -1,10 +1,11 @@
-[gd_resource type="Resource" script_class="Commission" load_steps=7 format=3]
+[gd_resource type="Resource" script_class="Commission" load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/commission/commission.gd" id="1_commission"]
 [ext_resource type="Script" path="res://scripts/commission/commission_condition.gd" id="2_condition"]
 [ext_resource type="Script" path="res://scripts/commission/first_blood_condition.gd" id="3_first_blood"]
 [ext_resource type="Resource" path="res://data/opponents/opponent_01.tres" id="4_opponent"]
 [ext_resource type="Resource" path="res://data/stages/alley.tres" id="5_stage"]
+[ext_resource type="Texture2D" path="res://assets/art/clients/tomaso.png" id="6_portrait"]
 
 [sub_resource type="Resource" id="condition_first_blood"]
 script = ExtResource("3_first_blood")
@@ -16,6 +17,7 @@ dialogue = "바르톨로 나리가 석 달 치 품삯을 떼먹고는, 달라고
 그 댁에서 일하며 봤는데, 나리는 베고 나면 한참 허우적댑니다."
 opponent = ExtResource("4_opponent")
 stage = ExtResource("5_stage")
+client_portrait = ExtResource("6_portrait")
 conditions = Array[ExtResource("2_condition")]([SubResource("condition_first_blood")])
 base_reward = 12
 tip_max = 6
