@@ -29,7 +29,7 @@ sword_deg = -120.0
 
 [sub_resource type="Resource" id="pose_cut_right_tell"]
 script = ExtResource("4_pose")
-arm_deg = -88.0
+arm_deg = -80.0
 sword_deg = 45.0
 
 [sub_resource type="Resource" id="pose_cut_right_strike"]
@@ -102,7 +102,7 @@ recovery_time = 0.55
 weight = 1.0
 is_big = false
 tell_pose = SubResource("pose_cut_right_tell")
-hold_arm_deg = -96.0
+hold_arm_deg = -88.0
 strike_pose = SubResource("pose_cut_right_strike")
 recover_arm_deg = -41.9
 pose_color = Color(1, 0.75, 0.2, 1)
