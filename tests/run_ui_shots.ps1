@@ -9,6 +9,8 @@
 #
 # Godot path: -Godot argument, else the GODOT environment variable, else the candidates in tests/godot_path.ps1.
 param(
+	# verify.ps1 imports once and passes this.
+	[switch]$SkipImport,
 	[string]$Godot,
 	[string]$Shots,
 	[string]$Resolution = ''
@@ -27,9 +29,13 @@ $errorPattern = '^\s*(USER |)(SCRIPT |SHADER |)ERROR'
 $count = 15
 
 # The first import may log errors while the project theme reads fonts that are not imported yet: import twice, judge the second.
-cmd /c "`"$Godot`" --headless --path `"$project`" --import 2>&1" | Out-Null
-$import = cmd /c "`"$Godot`" --headless --path `"$project`" --import 2>&1"
-$importExit = $LASTEXITCODE
+if (-not $SkipImport) { cmd /c "`"$Godot`" --headless --path `"$project`" --import 2>&1" | Out-Null }
+$import = @()
+$importExit = 0
+if (-not $SkipImport) {
+	$import = cmd /c "`"$Godot`" --headless --path `"$project`" --import 2>&1"
+	$importExit = $LASTEXITCODE
+}
 $importErrors = @($import | Where-Object { $_ -match $errorPattern })
 if ($importExit -ne 0 -or $importErrors.Count -gt 0) {
 	$importErrors | ForEach-Object { Write-Output $_ }

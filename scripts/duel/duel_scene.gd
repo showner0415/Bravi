@@ -3,6 +3,7 @@ extends Node2D
 ## 결투 씬. 입력을 DuelCore에 전달하고 표시를 갱신한다. 규칙은 전부 DuelCore에 있다.
 
 const DT := preload("res://scripts/duel/duel_types.gd")
+const EventLog := preload("res://scripts/duel/event_log.gd")
 
 const RULES_PATH := "res://data/duel_rules.tres"
 const WEAPON_PATH := "res://data/weapons/rapier.tres"
@@ -197,6 +198,7 @@ func _update_views(delta: float) -> void:
 
 func _on_core_event(ev: Dictionary) -> void:
 	CurveCheck.on_event(ev, core)
+	EventLog.on_event(ev, core, "하루" if _day_mode else ("의뢰 연습" if commission != null else "자유 결투"))
 	_opponent_view.on_event(ev)
 	_sword_view.on_event(ev)
 	_hud.on_event(ev)

@@ -175,10 +175,10 @@ res://
   data/          commissions/ (변형 의뢰는 commissions/variants/), opponents/ (상대의 그림 데이터 `*_art.tres`도), stages/ (결투 무대), player/ (내 손 그림 데이터), weapons/, days/, upgrades/
                  duel_rules.tres, economy_rules.tres, reputation_rules.tres, upgrade_catalog.tres, day_schedule.tres (data/ 바로 아래)
   assets/        art/, audio/, fonts/ (글꼴 원본과 라이선스 글), ui/ (프로젝트 테마와 글꼴 변형), MANIFEST.md
-  tests/         헤드리스 테스트 (tests/run_tests.ps1로 실행)
+  tests/         헤드리스 테스트와 확인 도구 (tests/verify.ps1 하나로 전부 돈다)
 play.ps1         게임 실행 (클래스 캐시 갱신 뒤 켠다)
 docs/            STYLE_BIBLE.md, DECISIONS.md, BACKLOG.md, plans/, style/ (samples/, prompts/, STYLE_SPEC.md, GENERATION.md, REFERENCES.md, basis/, tools/, 로컬만인 reference/·generated/)
-.claude/agents/  planner.md, design-reviewer.md, tech-reviewer.md
+.claude/agents/  planner.md, design-reviewer.md, tech-reviewer.md, verifier.md, playtester.md
 ```
 
 ## 9. 개발 단계
@@ -223,10 +223,23 @@ docs/            STYLE_BIBLE.md, DECISIONS.md, BACKLOG.md, plans/, style/ (sampl
 | planner | 계획 작성·수정, 다음 활동 결정 | `docs/plans/`만 |
 | design-reviewer | 재미·설계 원칙 관점 검토 | 안 함 |
 | tech-reviewer | Godot 구현·실행 가능성 관점 검토 | 안 함 |
-| playtester | 요청한 기능을 게임 창에서 직접 플레이하고 결과를 보고 | 안 함 |
+| verifier | 자동 확인을 한 명령(`tests/verify.ps1`)으로 돌리고 짧은 결과만 전한다 (Haiku, 싸다) | 안 함 |
+| playtester | 눈과 손이 있어야만 알 수 있는 것을 게임 창에서 확인 (Opus, 비싸다) | 안 함 |
 | 메인 에이전트 | 오케스트레이션, 승인된 계획 실행, 보고 | 전부 |
 
 실행 확인을 요청받으면 메인은 `playtester`에게 확인할 기능과 기대 결과를 전달한다. 예를 들어 “playtester로 첫 피 의뢰를 맡아 결투 후 평판이 정산에 반영되는지 확인해 줘”라고 요청할 수 있다. 계획 승인 판정은 두 검토자가 맡는다.
+
+**실행 확인은 싼 길부터 쓴다(사용자 지시 2026-11-25: 토큰과 시간을 줄인다).** 확인할 것을 둘로 나눠 맡긴다.
+
+| 확인할 것 | 맡길 곳 | 도구 |
+|---|---|---|
+| 규칙, 씬 진행, 가져오기 오류, 화면의 크기 | verifier | `tests/verify.ps1` (테스트·스모크·찍기 셋을 한 번에) |
+| 판 길이, 맞은 까닭별 수, 빈틈의 끝, 패턴이 나온 길 | verifier | `tests/verify.ps1 -Stats` 또는 `tests/run_duel_stats.ps1` (봇이 수십 판) |
+| 고리의 자리, HUD와의 겹침, 한 순간의 화면 | verifier (+ 메인이 필요한 장만 읽는다) | `tests/run_pattern_shots.ps1`, `-Shots <폴더>` |
+| 실제 입력의 흐름, 화면 넘김, 움직임이 어색한지 | playtester | 게임 창. 판의 수는 `BRAVI_EVENT_LOG` 파일로 읽는다 |
+| 손맛, 템포, 재미 | 사용자 | 직접 플레이 |
+
+playtester에게는 창에서 볼 항목만 적어 보낸다(자동 확인을 함께 맡기지 않는다). 새로 세거나 재야 할 것이 생기면 playtester가 창에서 세게 하지 말고 위 도구에 줄을 더한다.
 
 `playtester`는 `claude-opus-5-5`와 `high` effort로만 호출한다. 호출 인자의 모델과 effort는 생략해 에이전트 정의를 적용한다. 환경 설정이 다른 값을 강제하거나 지정 모델을 사용할 수 없으면 테스트를 중단하고 이유를 보고한다.
 

@@ -10,6 +10,8 @@
 # Godot path: -Godot argument, else the GODOT environment variable, else the candidates in
 # tests/godot_path.ps1.
 param(
+	# verify.ps1 imports once and passes this.
+	[switch]$SkipImport,
 	[string]$Godot
 )
 
@@ -26,8 +28,12 @@ $project = Split-Path -Parent $PSScriptRoot
 $errorPattern = '^\s*(USER |)(SCRIPT |)ERROR:'
 
 # cmd merges stderr into stdout (PowerShell 5.1 would wrap stderr lines as error records).
-$import = cmd /c "`"$Godot`" --headless --path `"$project`" --import 2>&1"
-$importExit = $LASTEXITCODE
+$import = @()
+$importExit = 0
+if (-not $SkipImport) {
+	$import = cmd /c "`"$Godot`" --headless --path `"$project`" --import 2>&1"
+	$importExit = $LASTEXITCODE
+}
 $importErrors = @($import | Where-Object { $_ -match $errorPattern })
 if ($importExit -ne 0 -or $importErrors.Count -gt 0) {
 	$importErrors | ForEach-Object { Write-Output $_ }

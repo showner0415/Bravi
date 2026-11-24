@@ -66,10 +66,13 @@ func _process(_delta: float) -> void:
 		return
 	_frames += 1
 	if _frames >= 3 and Time.get_ticks_msec() - _since >= SETTLE_MSEC:
-		var image := get_viewport().get_texture().get_image()
+		# 헤드리스에는 그림이 없다: 크기는 뷰포트에서 읽는다(verify.ps1이 창 없이 돈다).
+		var shot_size := Vector2i(get_viewport().get_visible_rect().size)
 		if _shots_dir != "":
+			var image := get_viewport().get_texture().get_image()
 			image.save_png(_shots_dir.path_join(String(_plan[_i][0]) + ".png"))
-		print("size,%s,%dx%d" % [_plan[_i][0], image.get_width(), image.get_height()])
+			shot_size = image.get_size()
+		print("size,%s,%dx%d" % [_plan[_i][0], shot_size.x, shot_size.y])
 		_next()
 
 
