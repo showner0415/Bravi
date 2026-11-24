@@ -15,7 +15,8 @@ param(
 	[string]$Godot,
 	[string]$Shots,
 	[switch]$Sil,
-	[switch]$Stages
+	[switch]$Stages,
+	[string]$Opponent
 )
 
 . "$PSScriptRoot\godot_path.ps1"
@@ -46,6 +47,8 @@ if ($Sil -and $Stages) {
 }
 # -Stages: the opponent on the three duel stages, 21 shots (plan 031 decision 300).
 $silArg = if ($Sil) { '--sil' } elseif ($Stages) { '--stages' } else { '' }
+# Plan 035 decision 364: -Opponent res://data/opponents/opponent_02.tres shoots that opponent (empty = Bartolo).
+if ($Opponent) { $silArg = "$silArg --opponent=$Opponent" }
 $expected = if ($Sil) { 28 } elseif ($Stages) { 21 } else { 57 }
 if ($Shots) {
 	New-Item -ItemType Directory -Force -Path $Shots | Out-Null

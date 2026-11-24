@@ -19,11 +19,11 @@ const SETTLED_AGO := 1.0
 const FRESH_AGO := 0.1
 
 
-static func make_core(has_hat := false) -> DuelCore:
+static func make_core(has_hat := false, opponent_path := OPPONENT_PATH) -> DuelCore:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 1
 	var core := DuelCore.new()
-	core.setup(load(RULES_PATH), load(WEAPON_PATH), load(OPPONENT_PATH), rng, [], has_hat)
+	core.setup(load(RULES_PATH), load(WEAPON_PATH), load(opponent_path), rng, [], has_hat)
 	return core
 
 

@@ -51,6 +51,7 @@
 | [`client-vittorio.png`](style/basis/client-vittorio.png) | 의뢰인 비토리오(1024×1536) | 다른 몸집·다른 성격의 의뢰인도 같은 화풍으로 | 2026-11-22 "맞다 — 올린다" |
 | [`client-emilio.png`](style/basis/client-emilio.png) · [`client-ines.png`](style/basis/client-ines.png) · [`client-gasparo.png`](style/basis/client-gasparo.png) · [`client-orsola.png`](style/basis/client-orsola.png) · [`client-tomaso.png`](style/basis/client-tomaso.png) | 의뢰인 다섯(1024×1536, 계획 034) | 남은 의뢰인 다섯. 그 사람의 섞은 SVG 스케치를 넣어 같은 화풍으로(13.3 "의뢰인") | 2026-11-24 판 X1 다섯 모두 "맞다 — 올린다" |
 | [`counter-room.png`](style/basis/counter-room.png) | 카운터 방(1717×916, 계획 034) | 카운터·정산·폐점의 배경: 양피지 벽, 빗금 들보, 왼쪽 칼 선반, 곧은 윗변의 나무 카운터, 의뢰인 뒤와 나무 앞면의 조용한 곳 | 2026-11-24 판 X1 "맞다 — 올린다" |
+| [`bruno-front.png`](style/basis/bruno-front.png) · [`bruno-parts.png`](style/basis/bruno-parts.png) · [`bruno-arms.png`](style/basis/bruno-arms.png) | 상대 둘째 브루노: 전신(1024×1536), 파츠 시트, 따로 그린 팔 셋(각 1536×1024). 계획 035 | 바르톨로와 다른 몸집·성격의 상대도 같은 화풍·같은 파츠 이름으로 | 2026-11-24 판 Y0 "나 · 브루노", 판 Y1·Y2 "맞다 — 올린다", 판 Y3 "고친다" → A1c "맞다 — 올린다" |
 | [`player-sword.png`](style/basis/player-sword.png) | 내 칼(1024×1536, 계획 032b) | 결투 화면의 내 칼: 길고 가는 칼날이 조금씩 가늘어져 작은 둥근 끝으로, 낮은 컵 날밑과 가로대. 자루·손은 그리지 않는다(손 그림의 것). 칠에 상태 색이 얹힌다 | 2026-11-23 판 P1b "맞다 — 올린다", 판 P2 "맞다"(계획 032b) |
 | [`player-hand.png`](style/basis/player-hand.png) | 내 손(1024×1536, 계획 032) | 결투 화면 아래의 내 손: 장갑 낀 오른손이 짧은 칼자루를 손등이 보이게 감아쥐고(손가락 넷이 자루 왼쪽), 자루 아래 둥근 끝, 소맷부리, 오른쪽 아래로 비스듬한 소매. 날밑·칼날은 그리지 않는다(게임의 신호 다각형이 덮는다) | 2026-11-23 "H1h로 확정"(계획 032). 판 M1에서 크기와 선 "가"(견본 크기, 바깥 선을 화소로 두껍게) |
 | `docs/style/samples/022-mix.html` | 섞은 SVG 견본 | 꼴과 디테일의 양(새 그림은 이만큼 단순하게), 결투 화면의 내 손·칼 | 2026-11-21 사용자 답 "섞기"(결정 194) |
@@ -124,13 +125,13 @@
 
 **내 손·칼**: 기준 그림은 `player-hand`(계획 032)와 `player-sword`(계획 032b)다. 손은 장갑 낀 손이 칼자루를 감아쥔 한 장이고(손 모양은 사진을 따랐다), 칼은 그린 레이피어다: 길고 조금씩 가늘어지는 칼날, 낮은 컵 날밑, 가로대(칼끝 −280, 선 약 2.6단위). 칼의 칠 전체에 내 상태 색이 100% 얹히고 짙은 선은 남는다(상대의 셰이더, 결정 327). 막기에서는 그림을 늘이지 않고 뒤에 1.8배의 색 면이 조금 비치게 깔린다(결정 329). 칼 둘레에 짙은 테를 한 겹 더 둘러(2.5) 상대가 같은 색일 때도 윤곽이 남는다(판 P2-2). 그림이 없을 때의 꼴은 전의 신호 다각형과 선 2.9다(결정 301·306·328, 8절). 손이 칼 뒤에 그려져 날밑이 그림의 자루 윗끝을 덮는다(결정 303). 그림의 자루·둥근 끝은 고정 색이고 신호가 아니다(결정 311). 크기는 견본 장갑과 같은 주먹 폭(72단위)이고, 바깥 선은 화소로 두껍게 해 5.2단위로 맞췄다(결정 304·310).
 
-**새 사람을 그릴 때**는 13.3의 "새 사람의 전신"과 "의뢰인" 줄을 따른다. 그 사람의 섞은 SVG 스케치를 먼저 그려 넣는 것이 시험된 길이다.
+**새 사람을 그릴 때**는 13.3의 "새 사람의 전신"과 "의뢰인" 줄을 따른다. 그 사람의 섞은 SVG 스케치를 먼저 그려 넣는 것이 시험된 길이다. 상대 둘째 브루노(계획 035)가 이 길로 그려졌다: 우람한 퇴역 군인(몸통 폭 바르톨로의 1.28), 가죽 조끼, 대머리와 큰 콧수염, 언짢음, 낮은 군모. 판정 값은 바르톨로와 같다(결정 357).
 
 ## 5. 파츠 분리
 
 **이름·계층·원점**(결정 12. 바꾸면 리깅이 깨진다): `Legs` / `Torso` > `Head` > `Hat` / `Torso` > `Arm` > `Hand` > `Sword`, 원점은 관절 위치. 칼 팔은 보는 쪽 왼쪽이다.
 
-**기준 시트의 파츠 이름**(견본과 `basis/README.md`의 손질 값이 쓰는 이름): Head · HeadOops · HeadDizzy, Hat, Feather, Torso, Legs, Arm, Hand, Sword(`bartolo-parts`), ArmUp · ArmUpSword, ArmThrust · ArmThrustSword · ArmThrustBlade(`bartolo-arms`). 게임에서는 주먹을 소매에서 갈라 ArmUpFist · ArmThrustFist를 더한다(칼 든 손이 따로 조준·번쩍임을 받게, 결정 267). 계획 030c부터 따로 그린 팔은 `bartolo-arms2`에서 자르고 대기의 겨누는 팔 ArmAim · ArmAimFist · ArmAimSword · ArmAimBlade를 더한다(결정 283·288).
+**기준 시트의 파츠 이름**(견본과 `basis/README.md`의 손질 값이 쓰는 이름): Head · HeadOops · HeadDizzy, Hat, Feather, Torso, Legs, Arm, Hand, Sword(`bartolo-parts`), ArmUp · ArmUpSword, ArmThrust · ArmThrustSword · ArmThrustBlade(`bartolo-arms`). 게임에서는 주먹을 소매에서 갈라 ArmUpFist · ArmThrustFist를 더한다(칼 든 손이 따로 조준·번쩍임을 받게, 결정 267). 계획 030c부터 따로 그린 팔은 `bartolo-arms2`에서 자르고 대기의 겨누는 팔 ArmAim · ArmAimFist · ArmAimSword · ArmAimBlade를 더한다(결정 283·288). 브루노(`bruno-parts`·`bruno-arms`, 계획 035)도 같은 이름이다.
 
 **단위와 맞추기**(결정 188·214):
 
@@ -469,7 +470,7 @@
 | 새 사람의 전신(상대) | 그 사람의 섞은 SVG 스케치를 구운 것(시험된 길. 024의 비토리오도 자기 스케치를 넣었다) | `docs/style/prompts/023-R1i-bartolo-front.txt` | `Task:` → `Image:` → `Subject:` → `Pose and layout:` → `Style (` → `Colors:` → `Background:` | 지시 블록 / P-FIG / S-FIG2 / C-FIG2 / 사람마다 바꾸는 줄 | `Subject:`, S-FIG2 둘째 항목 끝의 표정 문장(4절 표정 표에서), 셋째 항목(디테일), 다섯째 항목의 짙은 덩이 문장, 색 블록(사람의 hex와 큰 면의 그림자 hex) |
 | 고른 전신에 디테일만 | 고른 그림 하나 | `docs/style/prompts/023-R1i-bartolo-front.txt` | `Task:` → `Image:` → `Subject:` → `Pose and layout:` → `Style (` → `Colors:` → `Background:` | 지시 블록 / P-KEEP · S-KEEP / S-FIG2 / C-FIG2 | S-KEEP 둘째 항목의 디테일 목록 |
 | 파츠 시트 | 고른 전신 + 섞은 SVG 배치도(두 장) | `docs/style/prompts/024-P1a-bartolo-parts.txt` | `Task:` → `Image:` → `Subject:` → `Pose and layout:` → `Style (` → `Colors:` → `Background:` | 지시 블록 / P1의 `Image:`·`Subject:`·`Background:` / P-PARTS / S-PARTS / S-FIG2 / C-FIG2 | `Subject:`, P-PARTS의 파츠 열, S-PARTS의 머리 셋 문장, 색 |
-| 팔 시트(따로 그린 팔) | 파츠 시트 + 자세 안내도(1536×1024) | `docs/style/prompts/026-A1c-bartolo-arms.txt` | `Task:` → `Image:` → `Subject:` → `Pose and layout:` → `Style (` → `Colors:` → `Background:` | 지시 블록 / `Image:`·`Subject:` / P-ARMS / S-PARTS / S-ARMS / S-FIG2 / C-FIG2 / P1의 `Image:`·`Subject:`·`Background:` | P-ARMS의 `- Part N:` 줄 |
+| 팔 시트(따로 그린 팔) | 파츠 시트 + 자세 안내도(1536×1024) | `docs/style/prompts/026-A1c-bartolo-arms.txt`, `docs/style/prompts/030c-A2a-bartolo-arms.txt` | `Task:` → `Image:` → `Subject:` → `Pose and layout:` → `Style (` → `Colors:` → `Background:` | 지시 블록 / `Image:`·`Subject:` / P-ARMS / S-PARTS / S-ARMS / S-FIG2 / C-FIG2 / P1의 `Image:`·`Subject:`·`Background:` | P-ARMS의 `- Part N:` 줄 |
 | 시트·사람 고치기 | 직전 그림 하나 | `docs/style/prompts/026-A1e-bartolo-arms.txt` | `Task:` → `Image:` → `Subject:` → `Pose and layout:` → `Change:` → `Style (` → `Colors:` → `Background:` | 지시 블록 / P-KEEP-SHEET / 팔 시트를 고칠 때 / P-KEEP · S-KEEP / S-FIG2 / C-FIG2 | `Change:` 한 줄(사용자가 짚은 한 가지) |
 | 무대 | 섞은 SVG 무대를 구운 것(띠 없이) | `docs/style/prompts/023-R2-stage-alley.txt`, `docs/style/prompts/024-S1a-stage-court.txt` | `Task:` → `Image:` → `Subject:` → `Composition:` → `Style (` → `Colors:` | 지시 블록 / S-ST3 / C-ST2 / S-ST3에서 곳마다 바꾸는 구절 | `Subject:`, S-ST3 첫째 항목의 디테일 구절, C-ST2의 가장자리 색 문장 |
 | 의뢰인 | 그 사람의 섞은 SVG 스케치 | `docs/style/prompts/023-R3-client-clara.txt`, `docs/style/prompts/024-V1a-client-vittorio.txt` | `Task:` → `Image:` → `Subject:` → `Pose and layout:` → `Style (` → `Colors:` → `Background:` | 지시 블록 / 클라라 / 비토리오의 줄 / S-FIG2 / 사람마다 바꾸는 줄 | 구도의 첫 항목, S-FIG2 둘째·셋째·다섯째 항목, 색 |
@@ -559,6 +560,8 @@
 - 그림 도구는 `Image:`에 1920×1080을 적으면 1536보다 큰 1717×916을 냈다(16:9가 아니다). 큰 그림은 윗변 같은 기준선을 재어 16:9 상자를 잘라 키운다(`GENERATION.md` "계획 034").
 - 의뢰인의 사연에 상처를 말하는 글이 있으면 그림 도구가 `violence`로 막을 수 있다. 같은 프롬프트의 두 번째에 통했다(같은 곳).
 - 생성이 도는 동안 저장소를 고치면 막는 장치의 전후 대조(`git_same`)가 거짓이 된다. 생성 중에는 저장소를 고치지 않는다(같은 곳).
+- 상대의 팔 시트는 사람 그림의 색 줄에서 맨 앞의 색(조끼)을 소매에 칠할 수 있고, 바르톨로 것과 같은 크기로 그려진다는 보장이 없다. 소매의 색을 눈으로 보고, 배율은 `.psd1`의 `K`로 맞춘다(`GENERATION.md` "계획 035").
+- 손가락의 방향(칼자루를 가로지르게)은 `Change:` 한 줄로 따랐다(같은 곳).
 
 ## 14. `assets/MANIFEST.md`의 꼴
 
@@ -649,7 +652,7 @@ CLAUDE.md 7장: 필요한 애셋은 생길 때마다 `assets/MANIFEST.md`에 기
 | SVG·UI의 색을 그림 옆에 놓을 때 | 명세 1부 "어두운 옷의 밝기" | 8절의 잰 값에 맞춘다 |
 | 그림 도구의 `transparent_background` | `GENERATION.md` "4단계 후보" | 컷아웃 파츠를 만들 때 시험할 만하다(지금은 한 색 바탕과 테두리 채우기) |
 | 시트의 팔이 틀보다 길게 나온다 | `GENERATION.md` "배운 것 (계획 024)" | 다음 사람의 시트에 "팔은 짧다"를 세게 적거나 세로로 줄여 맞춘다 |
-| 기준 그림이 없는 것 | 2절, 4절 | 카운터 배경과 의뢰인 일곱은 계획 034가 그렸다(`counter-room`, `client-*`). 남은 것: 상대 둘째·셋째(4단계 완료 기준의 "상대 2~3명"). 새 사람은 13.3의 시험된 길(그 사람의 섞은 SVG 스케치를 먼저) |
+| 기준 그림이 없는 것 | 2절, 4절 | 카운터 배경과 의뢰인 일곱은 계획 034가 그렸다(`counter-room`, `client-*`). 상대 둘째는 계획 035가 그렸다(`bruno-*`). 남은 것: 상대 셋째(4단계 완료 기준의 "상대 2~3명"). 새 사람은 13.3의 시험된 길(그 사람의 섞은 SVG 스케치를 먼저) |
 | 판정 도구가 로컬에만 있다 | 1절, HANDOFF 1번 | 올렸다(계획 028, 결정 249·250): `docs/style/tools/`. 022~024의 옛 도구 일곱은 로컬에 남는다 |
 | playtester에게 맡길 확인 | 024 보고서 2번 | `docs/style/basis/`를 Godot이 가져오지 않는지, 테스트 65/65 |
 | 6단계의 것 | 024 보고서 4번 3 | 바르톨로의 대사와 얼굴 |

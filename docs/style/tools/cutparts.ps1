@@ -1,4 +1,4 @@
-﻿param([string]$Grow = '', [string]$Sheet = '', [string]$Out = '')
+﻿param([string]$Grow = '', [string]$Sheet = '', [string]$Out = '', [string]$Layout = '')
 # 계획 028 작업 5: 기준 시트 basis/bartolo-parts.png에서 파츠 열 장을 잘라 assets/art/opponents/bartolo/에 둔다.
 # 바탕은 measure.ps1로 지우고(허용 차 28), 화소를 늘리거나 줄이지 않는다(결정 251). 상자·관절·배율은 basis/README.md "손질 값".
 # -Grow "head=0,0,0,2;feather=0,1,0,3": 파츠마다 왼·위·오른·아래로 넓힐 화소(가장자리에 불투명 화소가 걸릴 때. 작업 6의 4).
@@ -57,6 +57,8 @@ $parts = @(
   @('Legs', 'legs', 452, 513, 738, 850, 594, 524, 1, 1), @('Arm', 'arm', 840, 519, 936, 793, 888, 559, 0.75, 0.777),
   @('Hand', 'hand', 1061, 585, 1160, 693, 1110, 597, 0.76, 0.76), @('Sword', 'sword', 1263, 469, 1409, 867, 1336, 812, 1, 1))
 $k = 0.5935
+# 결정 361: -Layout(.psd1)이 파츠 열·배율 k·시트·출력(저장소 머리부터의 경로)을 덮는다. 없으면 위의 바르톨로 값 그대로다.
+if ($Layout) { $L = Import-PowerShellDataFile $Layout; $parts = $L.Parts; $k = $L.K; if (-not $Sheet) { $Sheet = Join-Path $BraviRepo $L.Sheet }; if (-not $Out) { $Out = Join-Path $BraviRepo $L.Out } }
 $growMap = @{}
 foreach ($e in ($Grow.Split(';') | Where-Object { $_ })) { $kv = $e.Split('='); $growMap[$kv[0]] = @($kv[1].Split(',') | ForEach-Object { [int]$_ }) }
 # -Sheet·-Out: 판 H처럼 고르기 전의 시트는 저장소 밖에 자른다(계획 030b 결정 281)

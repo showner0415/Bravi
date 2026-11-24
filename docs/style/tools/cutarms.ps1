@@ -96,6 +96,8 @@ $k = 0.5333 * 0.5935
 $arms = if ($Layout) { (Import-PowerShellDataFile $Layout).Arms } else { @(
   @{ Kind = 'up'; Name = 'ArmUp'; File = 'arm_up'; Joint = @(455, 923); Grip = $row.upgrip; Cuff = $row.upcuff; Sword = @(372, 14, 534); Sleeve = @(390, 532, 982); Fist = @(384, 532); Box = @(372, 14, 534, 982) },
   @{ Kind = 'forward'; Name = 'ArmThrust'; File = 'arm_thrust'; Joint = @(1098, 250); Cuff = $row.thrustcuff; Sleeve = @(985, 188, 1215); Guard = @(1098, 500, 112, 58); Split = @(480, 440); Blade = @(1068, 540, 1132, 814); Box = @(985, 188, 1215, 814) }) }
+# 계획 035 결정 360: 팔 시트가 바르톨로와 다른 크기로 그려졌으면 -Layout의 K(파츠 단위/화소)가 배율을 덮는다. 없으면 위의 값이다.
+if ($Layout) { $lk = (Import-PowerShellDataFile $Layout).K; if ($lk) { $k = [double]$lk } }
 $work = Join-Path $BraviWork '030-cut'; New-Item -ItemType Directory -Force -Path $work | Out-Null
 $sheetCut = Join-Path $work 'sheet-cut.png'
 if (Test-Path $sheetCut) { Remove-Item $sheetCut }

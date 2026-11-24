@@ -54,6 +54,8 @@ var _wait := 0
 var _sil := false
 ## --stages: 결투 무대 셋 위의 상대 21장(계획 031 결정 300). 장마다 "ext,"로 보이는 그림의 화면 상자를 낸다.
 var _stages := false
+## --opponent=<res 경로>: 찍을 상대(계획 035 결정 364). 없으면 바르톨로다.
+var _opponent_path := States.OPPONENT_PATH
 var _stage_tex: Array[Texture2D] = []
 var _stage_rect: TextureRect
 
@@ -68,14 +70,16 @@ func _ready() -> void:
 			_sil = true
 		elif arg == "--stages":
 			_stages = true
+		elif arg.begins_with("--opponent="):
+			_opponent_path = arg.trim_prefix("--opponent=")
 	if _shots_dir != "" and DisplayServer.get_name() != "headless":
 		DirAccess.make_dir_recursive_absolute(_shots_dir)
 		_wait = 30
 	else:
 		_shots_dir = ""
-	_opp = load(States.OPPONENT_PATH)
+	_opp = load(_opponent_path)
 	_weapon = load(States.WEAPON_PATH)
-	_core = States.make_core(false)
+	_core = States.make_core(false, _opponent_path)
 	for atk in _opp.attacks:
 		_atks[_key_of(atk)] = atk
 	for habit in _opp.habits:

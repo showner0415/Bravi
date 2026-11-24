@@ -1030,3 +1030,41 @@ Colors: The wall parchment E9D8B4 with a slightly darker parchment D2B98C, the h
 - 색: `- Main fills and their shadow tones: worn pale grey-brown B8A88A with shadow 9C8D71 for the shirt, muted brown 8A7357 for the patch, ochre brown A8895E for the rope belt, dark brown 6B5440 for the cap, wood brown 7A5232 for the hair, skin EBC49F.`
 
 색 블록의 둘째 줄은 비토리오와 같다: `- Avoid bright saturated yellow, orange, red, blue, purple or green, and pure white. Large areas are greyish and low in saturation.`
+
+# 계획 035의 줄 (상대 둘째 브루노. 결정 357~367)
+
+영어, ASCII만, 큰따옴표 없이(결정 187). 판 Y0의 답 "나 · 브루노"(2026-11-24). 넣는 그림은 견본 `samples/035-second-opponent.html`에서 구운 `generated/in/035-in-front.png`(전신)·`035-in-parts.png`(파츠 배치)다.
+
+## 브루노 전신 F1a (바이블 13.3 "새 사람의 전신(상대)")
+
+차례: 지시 블록(한 장, `reference image`) → `Image:`(R1i 그대로) → 아래 `Subject:` → P-FIG(그대로) → S-FIG2(둘째 항목 끝·셋째·다섯째 항목만 아래로) → 아래 색 → R1i의 `Background:`.
+
+- Subject: `Subject: Bruno, a gruff retired soldier and duelist from a Renaissance-era Italian town. A big, broad, square-built man with a bald head and a big bushy mustache. A plain shirt with an open collar under a leather vest, breeches, stockings, simple shoes, a low brimless soldier's cap with one small feather. He holds a rapier.`
+- S-FIG2 둘째 항목 끝(표정 언짢음): `His eyes are small solid dark dots under thick eyebrows that slant down toward the middle. His mouth is a short line curved downward under the mustache. His character shows in the expression: gruff, displeased and stubborn.`
+- 셋째 항목: `- Keep it as simple as the reference image: the same small number of shapes and the same few inner lines. Do not add details that the reference does not have. A plain open shirt collar. A plain leather vest with straight edges. Plain simple shoes without buckles. Plain cuffs. A simple fist with a few short finger lines. A plain low brimless cap with a band and one small feather. No extra seams, folds or wrinkles. Improve only the craft: clean construction, good proportions, parts that join properly and a hand that clearly holds the sword.`
+- 다섯째 항목: `- Fills: flat solid colors, muted and faded. The mustache, the eyebrows, the belt and the shoes are filled with the same very dark brown as the outlines. His head is bald, with no hair on top.`
+- 색: `- Main fills and their shadow tones: ochre brown A8895E with shadow 8C7050 for the leather vest, parchment E9D8B4 with shadow D2B98C for the shirt and the sleeve, muted olive green 6F7F4F with shadow 59663F for the breeches, parchment E9D8B4 for the stockings and the feather, skin EBC49F, dark brown 6B5440 for the cap, pale warm grey CFC8BA for the blade and guard.` 둘째 줄은 C-FIG2 그대로.
+- 큰 면의 잰 기준(바이블 8절): 조끼 Y 0.55 · 그림자 0.45, 셔츠 0.85 · 0.73, 바지 0.47 · 0.38(칠 ≥ 0.42, 그림자 ≥ 0.30). 바르톨로 저고리 `#5C6F7E`와 색조 차 171°.
+
+## 브루노 파츠 시트 P1a (바이블 13.3 "파츠 시트")
+
+본보기 `prompts/024-P1a-bartolo-parts.txt`의 차례와 줄 그대로이고 아래 줄만 바꾼다. 넣는 그림 둘: `basis/bruno-front.png`(사람), `generated/in/035-in-parts.png`(배치). "팔은 짧다"를 세게 적는다(바이블 16절).
+
+- Subject: `Subject: Bruno, a gruff retired soldier and duelist from a Renaissance-era Italian town, the same character as in the first referenced image. A big, broad, square-built man with a bald head and a big bushy mustache. A plain shirt with an open collar under a leather vest, breeches, stockings, simple shoes, a low brimless soldier's cap with one small feather. A rapier.`
+- 파츠 1: `  1. the head three times, without the cap, each with a short neck stub and with the bald top of the head drawn complete. The three heads are the same size;`
+- 파츠 2: `  2. the cap alone, without the feather;`
+- 파츠 4: `  4. the torso alone, without arms, legs or head: the shirt with its open collar, the leather vest and the belt, with the shoulders and the base of the neck drawn complete. No arm is attached on either side;`
+- 파츠 5: `  5. the sword arm alone, from the shoulder to the wrist, as one straight shirt sleeve with a rounded top and the cuff at the lower end. It hangs straight down and it is short, as in the layout sketch: no longer than the torso from the shoulder to the belt;`
+- 첫 머리 문장(S-PARTS 둘째 항목의 첫 머리): `The first head is gruff and displeased, exactly the face of the first referenced image: eyes drawn as small solid dark dots under thick eyebrows that slant down toward the middle, and a short line curved downward under the big mustache.`
+- 셋째 항목: `- Keep exactly the amount of detail of the first referenced image: the same open shirt collar, the straight edges of the leather vest, the belt and its buckle, the plain cuffs, the fingers on the fist and the band and the small feather of the cap. Nothing else is added. No puffy sleeves, no ballooning breeches, no curls, no extra wrinkles.`
+- 다섯째 항목: `- Fills: flat solid colors, muted and faded. The mustache, the eyebrows, the belt and the shoes are filled with the same very dark brown as the outlines. The head is bald, with no hair on top.`
+- 색: 전신 F1a의 색 줄 그대로.
+
+## 브루노 팔 시트 A1a (바이블 13.3 "팔 시트", 본보기 `030c-A2a`)
+
+본보기 `prompts/030c-A2a-bartolo-arms.txt`의 줄 그대로이고 `Subject:`의 이름과 색 블록의 첫 줄만 바꾼다. 넣는 그림 둘: `basis/bruno-parts.png`(사람), `generated/in/030c-in-arms.png`(자세 안내도, 바르톨로와 같은 장). 소매 폭은 바르톨로의 1.12배(게임 단위 47.7 대 42.7)라 0.85~1.15 안이어서 안내도를 다시 굽지 않는다(결정 359).
+
+- Subject: `Subject: Bruno, the same character as in the first referenced image. Only his sword arm, his sword hand and his rapier, in a few different poses.`
+- 색: 전신 F1a의 색 줄 그대로.
+- A1b(고치기, "팔 시트를 고칠 때"의 꼴. 넣는 그림은 직전 시트 A1a 하나): A1a는 세 팔의 소매를 조끼 색(갈색)으로 그려 파츠 시트의 셔츠 소매와 어긋났다(굳은 확인에 걸림). `Change:` 줄: `Change: every sleeve is the plain shirt sleeve of this character, filled with parchment E9D8B4 with shadow D2B98C instead of ochre brown; the fists, the cuffs, the rapiers, the guards and the shapes and places of all three parts stay exactly as they are.`
+- A1c(고치기, 넣는 그림은 직전 시트 A1b 하나. 판 Y3의 답 "칼자루를 가로지르는 손가락으로"): `Change: on all three fists, the four fingers wrap around the grip: draw them as four short rounded finger bands lying side by side across the grip, stacked one above the other, with a thin line between the fingers, like the hand of someone firmly holding a stick; the thumb lies along the grip; the sleeves, the cuffs, the rapiers, the guards and the shapes and places of all three parts stay exactly as they are, and the shadow of each fist stays on its right side.`
