@@ -5,8 +5,8 @@ const DUEL_PATH := "res://scenes/duel/duel.tscn"
 const STAGE_DIR := "res://data/stages/"
 const DEFAULT_STAGE := "alley.tres"
 const DAY1_PATH := "res://data/days/day_01.tres"
-## 결정 296의 자른 크기.
-const STAGE_SIZES := {"alley.tres": Vector2i(1536, 864), "court.tres": Vector2i(1524, 857), "piazza.tres": Vector2i(1524, 857)}
+## 결정 338: 셋 모두 1920×1080(1920 창에서 1:1).
+const STAGE_SIZES := {"alley.tres": Vector2i(1920, 1080), "court.tres": Vector2i(1920, 1080), "piazza.tres": Vector2i(1920, 1080)}
 ## 결정 295의 표: 의뢰 파일 -> 무대 파일.
 const ASSIGNED := {
 	"first_blood.tres": "piazza.tres", "feather_cut.tres": "alley.tres", "throw_match.tres": "court.tres",
