@@ -47,6 +47,12 @@ const RING_POSITION: Array[Vector2] = [Vector2(-270, -150), Vector2(0, -140), Ve
 const MARK_REPEAT_SHIFT := 36.0
 const MARK_RADIUS := 26.0
 const MARK_FONT_SIZE := 24
+## 높이를 가진 타격의 고리 줄(상대 기준 y, 상·중·하). 화면의 윗줄·가운뎃줄·아랫줄 안에 온다(결정 388).
+const RING_ROW_Y: Array[float] = [-300.0, -150.0, 80.0]
+## 예비 동작 동안 높이에 따라 어깨를 옮기는 폭(표시만).
+const HEIGHT_SHOULDER_SHIFT: Array[float] = [-16.0, 0.0, 12.0]
+## 휩쓸기의 따라가는 점은 두 점 사이 간격의 이만큼에서 다음 점에 먼저 가 기다린다(결정 389).
+const SWEEP_DOT_ARRIVE := 0.6
 ## 상태 글자(공격 이름, 빈틈, 무너짐)의 화면 세로 위치. 자세 칸 바로 아래.
 const STATE_LABEL_Y := 62.0
 
@@ -99,6 +105,7 @@ var _ring_remaining := 0.0
 ## 패턴의 번호 고리와 휩쓸기의 길(pattern_marks의 결과). 단발이면 비어 있다.
 var _marks: Array[Dictionary] = []
 var _ring_sweep := false
+var _height_shift := 0.0
 ## 다음 갱신에서 크기와 위치를 보간 없이 맞춘다(시작, 다시 하기).
 var _snap := true
 
@@ -255,15 +262,18 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 				# 패턴은 뿌리의 이름과 몇째 타격인지를 보인다(결정 374).
 				var root := brain.pattern_root
 				text = "%s (%d/%d)%s" % [root.attack_name, brain.step_index + 1, brain.pattern_count(), "!!" if root.is_big else ""]
-				if _ring_sweep:
-					text += "
-쥐고 끌어라"
+			# 높이를 가진 타격은 막을 칸의 이름을 붙인다(결정 388).
+			var tell_height := brain.current_height()
+			if tell_height >= 0:
+				text += " · %s %s" % [DT.GUARD_NAMES[atk.direction], DT.HEIGHT_NAMES[tell_height]]
+			if _ring_sweep:
+				text += "\n쥐고 끌어라"
 			# 표시된 공격은 예비 동작 내내, 지금의 막기가 버티기만 되는지 받아내는지 알려 준다.
 			if brain.step_index == 0 and atk.needs_raised_guard and core.player_state == DT.PlayerState.GUARD:
 				text += "\n" + ("막기를 뗐다 다시 올려라" if core.would_brace_now() else "받아낼 준비")
 			_ring_active = true
 			_ring_remaining = maxf(brain.state_end - display_time, 0.0)
-			_ring.position = _now_mark_position(atk) * inverse
+			_ring.position = _now_mark_position(atk, brain) * inverse
 		DT.OpponentState.RECOVERY:
 			tint = COLOR_RECOVERY
 			text = "빈틈"
@@ -286,6 +296,8 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 	_pose = _pose_for(core, display_time, complacent)
 	# 피하기의 고개는 지금처럼 부드럽게 젖혔다 돌아온다(포즈의 고개 위에 얹는다).
 	_dodge_k = lerpf(_dodge_k, 1.0 if _clock < _dodge_until else 0.0, smooth)
+	var shift_height := brain.current_height() if brain.state == DT.OpponentState.TELL else -1
+	_height_shift = lerpf(_height_shift, HEIGHT_SHOULDER_SHIFT[shift_height] if shift_height >= 0 else 0.0, smooth)
 	_apply_pose(_pose, _dodge_k)
 	_show_arm_art(_art_key)
 	if _art != null:
@@ -379,7 +391,7 @@ func _show_arm_art(key: StringName) -> void:
 
 func _apply_pose(pose: PoseData, dodge_k: float) -> void:
 	_torso.rotation_degrees = pose.lean_deg
-	_arm.position = _shoulder_base + pose.shoulder
+	_arm.position = _shoulder_base + pose.shoulder + Vector2(0, _height_shift)
 	_arm.rotation_degrees = pose.arm_deg
 	# 칼은 Arm > Hand의 자식이라 지역 각 = 화면 각 - 팔 각 - 몸 기울기(견본 026 rotParams).
 	_sword.rotation_degrees = pose.sword_deg - pose.arm_deg - pose.lean_deg
@@ -506,9 +518,12 @@ static func pattern_marks(brain: OpponentBrain, display_time: float) -> Array[Di
 	var points := PackedVector2Array()
 	for i in times.size():
 		var atk: AttackData = root if i == 0 else (root.chain[i - 1] as AttackData)
-		var repeats := int(seen.get(atk.direction, 0))
-		seen[atk.direction] = repeats + 1
-		var pos: Vector2 = RING_POSITION[atk.direction] + Vector2(0, MARK_REPEAT_SHIFT * repeats)
+		var height := brain.strike_heights[i] if i < brain.strike_heights.size() else -1
+		# 같은 칸(방향과 높이)이 되풀이될 때만 아래로 비킨다. 높이가 없으면 방향으로 센다.
+		var cell := Vector2i(atk.direction, height)
+		var repeats := int(seen.get(cell, 0))
+		seen[cell] = repeats + 1
+		var pos: Vector2 = ring_position(atk.direction, height) + Vector2(0, MARK_REPEAT_SHIFT * repeats)
 		points.append(pos)
 		if i < brain.step_index:
 			continue
@@ -519,18 +534,25 @@ static func pattern_marks(brain: OpponentBrain, display_time: float) -> Array[Di
 		var dot := points[0]
 		for i in range(1, times.size()):
 			if display_time >= times[i - 1]:
-				var k := clampf((display_time - times[i - 1]) / maxf(times[i] - times[i - 1], 0.001), 0.0, 1.0)
+				var k := clampf((display_time - times[i - 1]) / maxf((times[i] - times[i - 1]) * SWEEP_DOT_ARRIVE, 0.001), 0.0, 1.0)
 				dot = points[i - 1].lerp(points[i], k)
 		marks.append({"role": &"path", "points": points, "dot": dot})
 	return marks
 
 
 ## 지금 타격의 고리 자리. 패턴이면 번호 고리의 자리(되풀이 방향의 비킴 포함)다.
-func _now_mark_position(atk: AttackData) -> Vector2:
+func _now_mark_position(atk: AttackData, brain: OpponentBrain) -> Vector2:
 	for mark in _marks:
 		if mark["role"] == &"now":
 			return mark["pos"]
-	return RING_POSITION[atk.direction]
+	return ring_position(atk.direction, brain.current_height())
+
+
+## 고리의 자리(상대 기준). 높이가 없으면(-1) 지금의 세 자리, 있으면 그 줄이다(결정 388).
+static func ring_position(direction: int, height: int) -> Vector2:
+	if height < 0 or height >= RING_ROW_Y.size():
+		return RING_POSITION[direction]
+	return Vector2(RING_POSITION[direction].x, RING_ROW_Y[height])
 
 
 ## 번호 고리와 휩쓸기의 길. 고리 노드의 원점이 지금 타격의 자리라 그 차로 그린다.
@@ -558,6 +580,8 @@ func _draw_marks() -> void:
 		var label := str(mark["number"])
 		var width := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, MARK_FONT_SIZE).x
 		var base := at + Vector2(-width * 0.5, -MARK_RADIUS - 8.0)
+		# 번호가 내 칼이나 상대의 몸에 묻히지 않게 어두운 바탕을 깐다(결정 389).
+		_ring.draw_circle(at + Vector2(0, -MARK_RADIUS - 16.0), 15.0, Color(0.12, 0.1, 0.08, 0.75 * alpha))
 		_ring.draw_string_outline(font, base, label, HORIZONTAL_ALIGNMENT_LEFT, -1, MARK_FONT_SIZE, 6, Color(0, 0, 0, alpha))
 		_ring.draw_string(font, base, label, HORIZONTAL_ALIGNMENT_LEFT, -1, MARK_FONT_SIZE, Color(1, 1, 1, alpha))
 

@@ -19,6 +19,7 @@ const HELP_BIND := " · 밀착은 엉킴이 차면 밀려난다 — 차기 전�
 ## 패턴의 막는 법(결정 377). 연습 화면도 같은 글을 쓴다.
 const HELP_CHAIN := " · 이어 베기는 번호 차례대로 막기를 옮긴다(누른 채 옮기면 막고, 박자마다 새로 누르면 패리)"
 const HELP_SWEEP := " · 휩쓸기는 막기를 쥔 채 점을 따라 끈다(떼면 뚫리고 패리는 없다)"
+const HELP_HEIGHT := " · 고리가 뜬 칸(방향과 높이)에 마우스를 두고 막는다"
 ## 엉킴 게이지가 이 값 이상이고 간격이 밀착이면 경고를 낸다(게이지의 색, 가운데 글자, 내 칼의 경고 표시).
 const BIND_WARN_RATIO := 0.8
 const BIND_WARN_TEXT := "칼이 엉킨다!"
@@ -35,6 +36,28 @@ const HELP_TEXT := "좌클릭 공격 · 우클릭 막기 (떼고 있다가 고�
 ## 조작 안내 전체. 둘째 줄의 뒷부분과 셋째 줄은 상대 데이터에서 조립한다(장치를 끈 상대에게 틀린 안내를 하지 않게).
 ## has_hat: 상대가 모자를 쓴 판인가(그 판에서는 칼 든 손을 노릴 수 없고, 모자 없는 판에서는 모자가 없다).
 ## weapon: 내 무기. 엉킴이 있는 무기면 둘째 줄에 엉킴 안내가 붙는다.
+## 이 상대에 높이를 가진 타격이 있는가(공격·걸음·변주·버릇 반응. 결정 391).
+static func uses_heights(opponent: OpponentData) -> bool:
+	if opponent == null or not opponent.use_heights:
+		return false
+	var roots: Array[AttackData] = []
+	roots.append_array(opponent.attacks)
+	for habit in opponent.habits:
+		if habit.response != null:
+			roots.append(habit.response)
+	for root in roots:
+		var lines: Array[AttackData] = [root]
+		for variant: AttackData in root.variants:
+			lines.append(variant)
+		for line in lines:
+			if not line.heights.is_empty():
+				return true
+			for step: AttackData in line.chain:
+				if not step.heights.is_empty():
+					return true
+	return false
+
+
 static func help_text(opponent: OpponentData, p_day_mode := false, has_hat := false,
 		weapon: WeaponData = null) -> String:
 	var text := HELP_TEXT
@@ -63,6 +86,8 @@ static func help_text(opponent: OpponentData, p_day_mode := false, has_hat := fa
 		text += HELP_CHAIN
 	if has_sweep:
 		text += HELP_SWEEP
+	if uses_heights(opponent):
+		text += HELP_HEIGHT
 	if opponent.close_hit_posture_loss > 1:
 		text += " · 밀착에서 맞으면 자세 %d칸" % opponent.close_hit_posture_loss
 	if weapon != null and weapon.close_bind_time > 0.0:
@@ -494,10 +519,25 @@ static func lunge_aim_note(core: DuelCore) -> String:
 	return LUNGE_AIM_REACH
 
 
+## 맞은 까닭의 글. 막고 있었고 방향도 맞았으면 무엇이 틀렸는지 적는다(결정 392).
+static func _hit_reason(ev: Dictionary) -> String:
+	match ev.get("guard_miss", &""):
+		&"height":
+			return "높이가 틀린 막기"
+		&"regrip":
+			return "떼었다 다시 누른 막기"
+	return DT.SITUATION_NAMES[ev["situation"]]
+
+
 func _describe(ev: Dictionary) -> String:
 	match ev["type"]:
 		DuelRecord.PATTERN_STEP:
-			return "이어서 %s (%d/%d)" % [(ev["attack"] as AttackData).attack_name, int(ev["index"]) + 1, int(ev["count"])]
+			var step_atk := ev["attack"] as AttackData
+			var step_height := int(ev.get("height", -1))
+			var where := ""
+			if step_height >= 0:
+				where = " · %s %s" % [DT.GUARD_NAMES[step_atk.direction], DT.HEIGHT_NAMES[step_height]]
+			return "이어서 %s (%d/%d)%s" % [step_atk.attack_name, int(ev["index"]) + 1, int(ev["count"]), where]
 		DuelRecord.STRIKE:
 			match ev["result"]:
 				DT.StrikeResult.BLOCKED:
@@ -513,9 +553,9 @@ func _describe(ev: Dictionary) -> String:
 				DT.StrikeResult.GRAZE:
 					var loss: int = ev["posture_loss"]
 					return "스침당함 — 내 자세 -%d%s (%s)" % [
-						loss, " (밀착)" if loss >= 2 else "", DT.SITUATION_NAMES[ev["situation"]]]
+						loss, " (밀착)" if loss >= 2 else "", _hit_reason(ev)]
 				DT.StrikeResult.HIT:
-					return "유효타를 맞음! (%s)" % DT.SITUATION_NAMES[ev["situation"]]
+					return "유효타를 맞음! (%s)" % _hit_reason(ev)
 		DuelRecord.ATTACK:
 			var part: String = DT.PART_NAMES[ev["part"]]
 			match ev["result"]:

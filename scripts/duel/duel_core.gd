@@ -332,6 +332,8 @@ func _on_opponent_state_end() -> void:
 				_emit(DuelRecord.TELL_START, {
 					"attack": brain.current_attack, "strike_time": brain.state_end,
 					"duration": brain.tell_duration, "is_habit": brain.current_is_habit,
+					# heights는 사본이다: 기록이 이벤트를 그대로 들고 있어 뇌의 배열을 실으면 뒤에 값이 바뀐다(결정 392).
+					"height": brain.current_height(), "heights": brain.strike_heights.duplicate(),
 				})
 		OpS.TELL:
 			_resolve_strike()
@@ -347,13 +349,17 @@ func _on_opponent_state_end() -> void:
 ## 순서: ① 멀리면 헛침 ② GUARD이고 방향이 맞으면 막힘/패리 ③ 그 밖에는 닿음.
 func _resolve_strike() -> void:
 	var atk := brain.current_attack
+	# 걸음이 넘어가기 전에 이 타격의 높이를 잡아 둔다. -1이면 높이가 없어 방향만 본다(결정 386).
+	var height := brain.current_height()
+	var height_ok := height < 0 or aim_height == height
+	var guard_miss := &""
 	var result: int
 	var situation := -1
 	var braced := false
 	var posture_loss := 0
 	if distance == Dist.FAR:
 		result = SR.WHIFF
-	elif player_state == PlS.GUARD and aim_direction == atk.direction and _holds_sweep():
+	elif player_state == PlS.GUARD and aim_direction == atk.direction and height_ok and _holds_sweep():
 		var in_window := guard_enter_time >= time - weapon.parry_window
 		# 휩쓸기에는 패리가 없다: 새로 누른 막기도 막힘이다(결정 372).
 		result = SR.PARRIED if (guard_fresh and in_window and not brain.is_sweep()) else SR.BLOCKED
@@ -363,6 +369,9 @@ func _resolve_strike() -> void:
 		match player_state:
 			PlS.GUARD:
 				situation = Sit.WRONG_GUARD
+				# 방향은 맞았는데 맞은 까닭(결정 392).
+				if aim_direction == atk.direction:
+					guard_miss = &"height" if not height_ok else &"regrip"
 			PlS.WINDUP, PlS.RECOVER:
 				situation = Sit.IN_ATTACK
 			_:
@@ -385,11 +394,13 @@ func _resolve_strike() -> void:
 		"recovery": recovery, "recovery_end": time + recovery,
 		"player_posture": player_posture, "braced": braced, "posture_loss": posture_loss,
 		"next_strike": brain.state_end if chained else -1.0,
+		"height": height, "guard_miss": guard_miss,
 	})
 	if chained:
 		_emit(DuelRecord.PATTERN_STEP, {
 			"attack": brain.current_attack, "root": brain.pattern_root, "index": brain.step_index,
 			"count": brain.pattern_count(), "strike_time": brain.state_end, "duration": brain.tell_duration,
+			"height": brain.current_height(),
 		})
 	if result == SR.HIT:
 		_end(End.PLAYER_DEFEATED, "유효타를 맞음")

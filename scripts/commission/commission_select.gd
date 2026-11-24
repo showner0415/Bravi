@@ -136,6 +136,8 @@ func _add_trials(column: VBoxContainer) -> void:
 	for i in trials.size():
 		var opponent := trials[i]
 		_add_trial_button(free_row, opponent.display_name, "TrialDuel%d" % i, opponent)
+		# 같은 상대를 높이 없이: 9칸과 가로만을 바로 견줘 본다(결정 391).
+		_add_trial_button(free_row, "%s (가로만)" % opponent.display_name, "TrialFlat%d" % i, opponent.flat())
 		for atk in opponent.attacks:
 			if atk.chain.is_empty():
 				continue
@@ -144,7 +146,8 @@ func _add_trials(column: VBoxContainer) -> void:
 			drills += 1
 	var how := Label.new()
 	how.name = "PatternHelp"
-	how.text = "%s\n%s" % [DuelHud.HELP_CHAIN.trim_prefix(" · "), DuelHud.HELP_SWEEP.trim_prefix(" · ")]
+	how.text = "%s\n%s\n%s" % [DuelHud.HELP_CHAIN.trim_prefix(" · "), DuelHud.HELP_SWEEP.trim_prefix(" · "),
+			DuelHud.HELP_HEIGHT.trim_prefix(" · ")]
 	how.add_theme_font_size_override("font_size", 16)
 	how.add_theme_color_override("font_color", Ui.DIM)
 	column.add_child(how)

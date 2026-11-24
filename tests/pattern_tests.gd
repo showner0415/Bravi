@@ -296,7 +296,8 @@ func t81_trial() -> String:
 		var patterns: Array[AttackData] = []
 		for i in trial.attacks.size():
 			if i < base.attacks.size():
-				_compare(base.attacks[i], trial.attacks[i], "%s.attacks[%d]" % [label, i], [], errs)
+				# 시험용 단발에는 높이의 묶음을 적는다(계획 036b 결정 393). 그 칸만 건너뛴다.
+				_compare(base.attacks[i], trial.attacks[i], "%s.attacks[%d]" % [label, i], ["heights"], errs)
 				if not trial.attacks[i].chain.is_empty():
 					errs.append("%s: 단발 자리에 패턴이 있음" % label)
 			elif trial.attacks[i].chain.is_empty():

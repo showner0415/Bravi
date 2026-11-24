@@ -59,6 +59,8 @@ extends Resource
 @export var attack_bag_sets := 0
 ## 버릇 목록.
 @export var habits: Array[HabitData] = []
+## 거짓이면 이 상대의 모든 타격이 높이 없이 나온다(견줘 보는 길과 되돌림. 결정 391).
+@export var use_heights := true
 
 @export_group("그림과 포즈")
 ## 비어 있으면 그림 없이 돈다(테스트가 만든 상대가 씬에 들어가도 깨지지 않게. 결정 256).
@@ -113,4 +115,11 @@ func drill(pattern: AttackData) -> OpponentData:
 	copy.attacks = only
 	copy.habits = none
 	copy.attack_bag_sets = 0
+	return copy
+
+
+## 높이 막기만 끈 사본(결정 391). 이 자원은 고치지 않는다.
+func flat() -> OpponentData:
+	var copy := duplicate() as OpponentData
+	copy.use_heights = false
 	return copy

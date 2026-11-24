@@ -223,6 +223,14 @@ func _draw() -> void:
 		var rect := Rect2(Vector2(cell.x * core.aim_direction, cell.y * core.aim_height), cell)
 		draw_rect(rect, Color(1, 1, 1, 0.05))
 		draw_rect(rect, Color(1, 1, 1, 0.25), false, 2.0)
+		# 높이를 가진 타격이 오는 칸: 예비 색 테두리, 내 막기가 그 칸에 있으면 초록(결정 388).
+		var strike_height := core.brain.current_height()
+		if core.brain.state == DuelTypes.OpponentState.TELL and strike_height >= 0:
+			var strike_dir: int = core.brain.current_attack.direction
+			var guarded := core.player_state == DuelTypes.PlayerState.GUARD and core.aim_direction == strike_dir \
+					and core.aim_height == strike_height
+			var target := Rect2(Vector2(cell.x * strike_dir, cell.y * strike_height), cell).grow(-4.0)
+			draw_rect(target, Color(0.3, 1.0, 0.5, 0.75) if guarded else Color(1.0, 0.9, 0.25, 0.5), false, 4.0)
 
 
 ## 하루 모드: 끝난 결투의 기록을 day에 넘기고 정산 화면으로 간다. 한 번만 넘긴다.

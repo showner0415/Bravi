@@ -25,6 +25,9 @@ var pattern_root: AttackData = null
 var step_index := 0
 ## 패턴의 첫 타격의 예정 시각. 휩쓸기의 "쥐고 끌기"가 이 시각을 기준으로 삼는다(결정 372).
 var first_strike_time := 0.0
+## 지금 패턴의 타격마다 뽑힌 높이(-1은 높이 없음). 예비 동작이 시작될 때 한 번에 정해진다(결정 385).
+## 지난 이벤트가 든 값이 바뀌지 않게 늘 새 배열을 넣는다.
+var strike_heights: Array[int] = []
 ## 지금 예비 동작의 길이(밀착 배율 적용 후).
 var tell_duration := 0.0
 ## 가장 최근 빈틈(RECOVERY·STAGGER)이 끝난 시각.
@@ -59,6 +62,7 @@ func start_idle(now: float) -> void:
 	current_is_habit = false
 	pattern_root = null
 	step_index = 0
+	strike_heights = []
 
 
 ## 멀리라서 예비 동작을 시작하지 못하고 기다린다.
@@ -69,6 +73,11 @@ func hold_idle() -> void:
 ## 다음 공격을 고르고 예비 동작을 시작한다.
 func start_tell(now: float, is_close: bool) -> void:
 	_choose_attack()
+	# 변주: 바탕(0)과 변주들 가운데 하나. 변주가 없으면 난수를 부르지 않는다(하루 데이터의 난수 차례가 그대로다. 결정 383).
+	if not current_attack.variants.is_empty():
+		var pick := rng.randi_range(0, current_attack.variants.size())
+		if pick > 0:
+			current_attack = current_attack.variants[pick - 1] as AttackData
 	tell_duration = current_attack.tell_time
 	if is_close:
 		tell_duration *= data.close_tell_multiplier
@@ -78,6 +87,10 @@ func start_tell(now: float, is_close: bool) -> void:
 	pattern_root = current_attack
 	step_index = 0
 	first_strike_time = state_end
+	var drawn: Array[int] = [_draw_height(current_attack)]
+	for step: AttackData in current_attack.chain:
+		drawn.append(_draw_height(step))
+	strike_heights = drawn
 
 
 ## 타격 결과를 받아 회수(또는 대기)로 넘어간다. 회수 시간을 돌려준다.
@@ -119,6 +132,22 @@ func resolve_strike(now: float, result: int, braced := false) -> float:
 	return recovery
 
 
+## 지금 타격의 높이. 높이가 없거나 공격 중이 아니면 -1이다.
+func current_height() -> int:
+	if pattern_root == null or step_index < 0 or step_index >= strike_heights.size():
+		return -1
+	return strike_heights[step_index]
+
+
+## 한 타격의 높이를 뽑는다. 뽑을 것이 둘 이상일 때만 난수를 부른다(결정 383·385).
+func _draw_height(atk: AttackData) -> int:
+	if not data.use_heights or atk.heights.is_empty():
+		return -1
+	if atk.heights.size() == 1:
+		return atk.heights[0]
+	return atk.heights[rng.randi_range(0, atk.heights.size() - 1)]
+
+
 ## 지금 패턴의 타격 수. 단발이거나 공격 중이 아니면 1이다.
 func pattern_count() -> int:
 	return 1 + pattern_root.chain.size() if pattern_root != null else 1
@@ -155,6 +184,7 @@ func on_grazed(now: float, cells := 1) -> bool:
 		current_is_habit = false
 		pattern_root = null
 		step_index = 0
+		strike_heights = []
 		return true
 	# 버릇 식히기: 닿으면 연속 막힘을 처음부터 다시 센다(그 버릇이 켜 둔 경우에만).
 	for habit in data.habits:

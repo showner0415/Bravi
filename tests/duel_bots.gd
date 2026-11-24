@@ -10,6 +10,8 @@ extends RefCounted
 ##   guard_fn(attack: AttackData, index: int) -> StringName
 ##       &"hold" 막기 유지 / &"keep" 누르고만 있기 / &"parry" 패리 / &"wrong" 틀린 방향 막기
 ##       / &"none" 무방비 / &"retreat" 후퇴
+##       / &"wrong_height" 방향은 맞고 높이가 다른 막기(높이 없는 타격에서는 &"hold"와 같다)
+##       막는 높이는 이벤트의 height를 따른다(없거나 -1이면 중단. 계획 036b).
 ##       &"hold"는 표시된 공격(needs_raised_guard)의 예비 동작이 보이면 막기를 뗐다가 곧바로 다시 누른다
 ##       (쿨다운 뒤 막기로 돌아온다 = 올린 막기). &"keep"은 떼지 않는다(들고만 있던 막기).
 ##       index는 1부터 세는 상대 공격 순번. 없으면 항상 &"hold".
@@ -167,25 +169,29 @@ func _on_event(ev: Dictionary) -> void:
 func _on_tell(ev: Dictionary) -> void:
 	tells_seen += 1
 	var atk: AttackData = ev["attack"]
+	var height := _guard_height(ev)
 	var mode: StringName = &"hold"
 	if cfg.has("guard_fn"):
 		mode = cfg["guard_fn"].call(atk, tells_seen)
 	_mode = mode
 	match mode:
 		&"hold":
-			core.set_aim(atk.direction, DT.Height.MID)
+			core.set_aim(atk.direction, height)
 			if atk.needs_raised_guard:
 				core.set_guard(false)
 			core.set_guard(true)
+		&"wrong_height":
+			core.set_aim(atk.direction, _other_height(ev))
+			core.set_guard(true)
 		&"keep":
-			core.set_aim(atk.direction, DT.Height.MID)
+			core.set_aim(atk.direction, height)
 			core.set_guard(true)
 		&"wrong":
-			core.set_aim((atk.direction + 1) % 3, DT.Height.MID)
+			core.set_aim((atk.direction + 1) % 3, height)
 			core.set_guard(true)
 		&"parry":
 			core.set_guard(false)
-			core.set_aim(atk.direction, DT.Height.MID)
+			core.set_aim(atk.direction, height)
 			_parry_press_at = float(ev["strike_time"]) - PARRY_LEAD
 		&"retreat":
 			core.set_guard(false)
@@ -207,18 +213,33 @@ func _on_tell(ev: Dictionary) -> void:
 ## 패턴의 다음 타격: 같은 모드로 그 방향을 따른다. 무방비·후퇴는 아무것도 하지 않는다.
 func _on_step(ev: Dictionary) -> void:
 	var atk: AttackData = ev["attack"]
+	var height := _guard_height(ev)
 	var mode := _mode
 	if cfg.has("step_fn"):
 		mode = cfg["step_fn"].call(atk, int(ev["index"]))
 	match mode:
 		&"hold", &"keep":
-			core.set_aim(atk.direction, DT.Height.MID)
+			core.set_aim(atk.direction, height)
+		&"wrong_height":
+			core.set_aim(atk.direction, _other_height(ev))
 		&"wrong":
-			core.set_aim((atk.direction + 1) % 3, DT.Height.MID)
+			core.set_aim((atk.direction + 1) % 3, height)
 		&"parry":
 			core.set_guard(false)
-			core.set_aim(atk.direction, DT.Height.MID)
+			core.set_aim(atk.direction, height)
 			_parry_press_at = float(ev["strike_time"]) - PARRY_LEAD
+
+
+## 막을 높이: 이벤트의 타격 높이, 없으면 중단.
+func _guard_height(ev: Dictionary) -> int:
+	var height := int(ev.get("height", -1))
+	return height if height >= 0 else DT.Height.MID
+
+
+## 일부러 틀리는 높이. 높이 없는 타격이면 중단이다(어느 높이든 막힌다).
+func _other_height(ev: Dictionary) -> int:
+	var height := int(ev.get("height", -1))
+	return (height + 1) % 3 if height >= 0 else DT.Height.MID
 
 
 func _on_strike(ev: Dictionary) -> void:
