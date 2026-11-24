@@ -103,3 +103,14 @@ func graze_cells(part: int) -> int:
 		DuelTypes.Part.LEGS:
 			cells = graze_legs
 	return maxi(cells, 1)
+
+
+## 패턴 하나만 되풀이하는 연습용 상대(결정 377). 이 자원은 고치지 않고 새 배열을 넣은 사본을 돌려준다.
+func drill(pattern: AttackData) -> OpponentData:
+	var copy := duplicate() as OpponentData
+	var only: Array[AttackData] = [pattern]
+	var none: Array[HabitData] = []
+	copy.attacks = only
+	copy.habits = none
+	copy.attack_bag_sets = 0
+	return copy

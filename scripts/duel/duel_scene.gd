@@ -16,6 +16,8 @@ const DAY_FOOTER := "Space / Enter: 의뢰소로 돌아간다"
 
 ## 의뢰. 비어 있으면 /root/GameSession에서 받고, 그것도 없으면 자유 결투다.
 @export var commission: Commission
+## 연습에서 의뢰 없이 만나는 상대(결정 377). 비어 있으면 세션의 것을 받는다. 하루의 결투에서는 쓰지 않는다.
+var practice_opponent: OpponentData
 
 ## 하루 플레이의 상태. 비어 있으면 /root/GameSession의 것을 본다.
 ## 있고 그 단계가 결투면 하루 모드다: 의뢰는 day의 지금 의뢰이고, 결투는 한 번뿐이다.
@@ -56,9 +58,12 @@ func _ready() -> void:
 		commission = day.current_commission()
 		_hud.day_mode = true
 		_result_panel.footer_text = DAY_FOOTER
-	elif commission == null:
-		if session != null and session.get("commission") is Commission:
+		practice_opponent = null
+	elif commission == null and practice_opponent == null and session != null:
+		if session.get("commission") is Commission:
 			commission = session.get("commission")
+		elif session.get("practice_opponent") is OpponentData:
+			practice_opponent = session.get("practice_opponent")
 	get_viewport().size_changed.connect(_layout)
 	_layout()
 	start_duel()
@@ -69,6 +74,8 @@ func start_duel() -> void:
 	var opponent: OpponentData = load(DEFAULT_OPPONENT_PATH)
 	if commission != null and commission.opponent != null:
 		opponent = commission.opponent
+	elif commission == null and practice_opponent != null:
+		opponent = practice_opponent
 	# 반응 싸움 확인(계획 030): 켜져 있으면 표시의 곡선만 다른 사본을 코어와 뷰에 준다. 꺼져 있으면 그대로다.
 	opponent = CurveCheck.prepare(opponent)
 	var weapon: WeaponData = test_weapon if test_weapon != null else load(WEAPON_PATH)

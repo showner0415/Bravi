@@ -38,6 +38,8 @@ extends RefCounted
 ##       막은 타격에 빈틈이 없었던 순간, 또는 내 공격의 판정이 끝난 순간. 그때 막기를 풀고 이동한다.
 ##       다음 예비 동작이 시작되면 guard_fn대로 다시 막는다. follow_up과 함께 쓰지 않는다
 ##       (밀려남으로 사라진 공격에는 판정 이벤트가 오지 않는다).
+##   step_fn(attack: AttackData, index: int) -> StringName — 패턴의 걸음(index는 1부터)에서 쓸 모드.
+##       없으면 그 패턴의 예비 동작에서 고른 모드를 그대로 쓴다. 걸음은 tells_seen을 올리지 않는다(결정 379).
 
 const DT := preload("res://scripts/duel/duel_types.gd")
 
@@ -63,6 +65,8 @@ var _pending_attack: Variant = null
 ## 선공 쓰기: 물러나는 중인가(멀리에 닿으면 런지를 누른다), 물러나기 전에 막기를 누르고 있었는가.
 var _lunge_armed := false
 var _lunge_regrip := false
+## 지금 패턴의 예비 동작에서 고른 모드. 걸음이 이어받는다.
+var _mode: StringName = &"hold"
 
 
 ## 첫 피를 내는 봇의 설정: 막고, 빈틈이 생기는 공격 뒤에 중단 찌르기, 무너지면 중단 찌르기.
@@ -141,6 +145,8 @@ func _on_event(ev: Dictionary) -> void:
 			_on_tell(ev)
 		DuelRecord.STRIKE:
 			_on_strike(ev)
+		DuelRecord.PATTERN_STEP:
+			_on_step(ev)
 		DuelRecord.ATTACK:
 			if ev.get("lunge", false) and _lunge_regrip:
 				# 물러나기 전에 누르고 있던 막기를 다시 누른다(회수가 끝나면 들고만 있던 막기로 돌아온다).
@@ -164,6 +170,7 @@ func _on_tell(ev: Dictionary) -> void:
 	var mode: StringName = &"hold"
 	if cfg.has("guard_fn"):
 		mode = cfg["guard_fn"].call(atk, tells_seen)
+	_mode = mode
 	match mode:
 		&"hold":
 			core.set_aim(atk.direction, DT.Height.MID)
@@ -197,8 +204,28 @@ func _on_tell(ev: Dictionary) -> void:
 			_regrip_at = float(ev["strike_time"]) - float(regrip_cfg["lead"])
 
 
+## 패턴의 다음 타격: 같은 모드로 그 방향을 따른다. 무방비·후퇴는 아무것도 하지 않는다.
+func _on_step(ev: Dictionary) -> void:
+	var atk: AttackData = ev["attack"]
+	var mode := _mode
+	if cfg.has("step_fn"):
+		mode = cfg["step_fn"].call(atk, int(ev["index"]))
+	match mode:
+		&"hold", &"keep":
+			core.set_aim(atk.direction, DT.Height.MID)
+		&"wrong":
+			core.set_aim((atk.direction + 1) % 3, DT.Height.MID)
+		&"parry":
+			core.set_guard(false)
+			core.set_aim(atk.direction, DT.Height.MID)
+			_parry_press_at = float(ev["strike_time"]) - PARRY_LEAD
+
+
 func _on_strike(ev: Dictionary) -> void:
 	var result: int = ev["result"]
+	# 패턴이 이어지는 중에는 받아치지도 움직이지도 않는다(다음 타격이 온다. 결정 379).
+	if float(ev.get("next_strike", -1.0)) >= 0.0:
+		return
 	if result == DT.StrikeResult.BLOCKED or result == DT.StrikeResult.PARRIED:
 		# 빈틈이 없는 타격을 막았다: 상대는 대기로 돌아갔다. 들어가거나 나올 기회다.
 		if is_zero_approx(float(ev["recovery"])):

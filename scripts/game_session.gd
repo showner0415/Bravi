@@ -21,6 +21,8 @@ const SAVE_ENV := "BRAVI_SAVE_PATH"
 
 ## 연습(의뢰 선택 화면)에서 고른 의뢰. 없으면 결투 씬은 자유 결투가 된다.
 var commission: Commission
+## 연습의 "자유 결투"·"패턴만"이 고른 상대(결정 377). 의뢰 없이 결투할 때만 쓴다.
+var practice_opponent: OpponentData
 ## 하루 플레이의 상태. 연습 중이거나 처음 화면이면 null이다.
 var day: DayState
 ## 저장 파일의 경로. 비어 있으면 저장이 꺼져 있다(읽지도 쓰지도 않는다).
@@ -63,6 +65,7 @@ func _new_day() -> DayState:
 ## 그 아침을 적는다(옛 저장을 덮어쓴다).
 func start_day_play() -> void:
 	commission = null
+	practice_opponent = null
 	day = _new_day()
 	save_game()
 
@@ -83,6 +86,7 @@ func continue_day_play() -> bool:
 	if loaded == null:
 		return false
 	commission = null
+	practice_opponent = null
 	day = loaded
 	return true
 

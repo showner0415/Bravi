@@ -79,3 +79,8 @@ static func ease_in_out(k: float) -> float:
 # 포즈가 없는 데이터(테스트가 만든 공격)도 깨지지 않게 0 포즈로 본다.
 static func _or_rest(pose: PoseData) -> PoseData:
 	return pose if pose != null else PoseData.new()
+
+
+## 휩쓸기의 걸음: 앞 점의 타격 포즈에서 이 점의 타격 포즈로 곧게 간다(결정 374). 받은 포즈는 고치지 않는다.
+static func sweep_pose(prev: AttackData, atk: AttackData, p: float) -> PoseData:
+	return blend(_or_rest(prev.strike_pose), _or_rest(atk.strike_pose), clampf(p, 0.0, 1.0))

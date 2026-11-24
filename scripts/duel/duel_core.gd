@@ -183,7 +183,8 @@ func lunge_head_dodged_now() -> bool:
 func would_brace_now() -> bool:
 	if brain.state != OpS.TELL or brain.current_attack == null:
 		return false
-	if not brain.current_attack.needs_raised_guard:
+	# 올려 막기는 패턴의 첫 타격에만 쓴다(결정 371).
+	if brain.step_index > 0 or not brain.current_attack.needs_raised_guard:
 		return false
 	return player_state == PlS.GUARD and guard_enter_time < brain.state_start
 
@@ -352,9 +353,10 @@ func _resolve_strike() -> void:
 	var posture_loss := 0
 	if distance == Dist.FAR:
 		result = SR.WHIFF
-	elif player_state == PlS.GUARD and aim_direction == atk.direction:
+	elif player_state == PlS.GUARD and aim_direction == atk.direction and _holds_sweep():
 		var in_window := guard_enter_time >= time - weapon.parry_window
-		result = SR.PARRIED if (guard_fresh and in_window) else SR.BLOCKED
+		# 휩쓸기에는 패리가 없다: 새로 누른 막기도 막힘이다(결정 372).
+		result = SR.PARRIED if (guard_fresh and in_window and not brain.is_sweep()) else SR.BLOCKED
 		# 표시된 공격을 들고만 있던 막기로 받으면 막히기는 하지만 빈틈이 없다. 상대는 아직 TELL이다.
 		braced = result == SR.BLOCKED and would_brace_now()
 	else:
@@ -376,13 +378,29 @@ func _resolve_strike() -> void:
 		else:
 			result = SR.HIT
 	var recovery := brain.resolve_strike(time, result, braced)
+	# 걸음이 남아 상대가 TELL에 머물면 패턴이 이어진다(결정 371·376).
+	var chained := brain.state == OpS.TELL
 	_emit(DuelRecord.STRIKE, {
 		"attack": atk, "result": result, "situation": situation,
 		"recovery": recovery, "recovery_end": time + recovery,
 		"player_posture": player_posture, "braced": braced, "posture_loss": posture_loss,
+		"next_strike": brain.state_end if chained else -1.0,
 	})
+	if chained:
+		_emit(DuelRecord.PATTERN_STEP, {
+			"attack": brain.current_attack, "root": brain.pattern_root, "index": brain.step_index,
+			"count": brain.pattern_count(), "strike_time": brain.state_end, "duration": brain.tell_duration,
+		})
 	if result == SR.HIT:
 		_end(End.PLAYER_DEFEATED, "유효타를 맞음")
+
+
+## 휩쓸기의 둘째 점부터는 첫 점 이전부터 쥐고 있던 막기만 받아낸다(떼었다 다시 누르면 뚫린다. 결정 372).
+## 휩쓸기가 아니거나 첫 점이면 늘 참이다.
+func _holds_sweep() -> bool:
+	if not brain.is_sweep() or brain.step_index == 0:
+		return true
+	return guard_enter_time <= brain.first_strike_time
 
 
 func _refresh_approach(now: float) -> void:

@@ -137,7 +137,11 @@ func t22_flow() -> String:
 	# 의뢰 선택 화면: 의뢰 수만큼 시작 버튼이 생긴다.
 	var select: Node = (load(SELECT_PATH) as PackedScene).instantiate()
 	_tree.root.add_child(select)
-	var buttons := select.find_children("*", "Button", true, false)
-	_expect(errs, buttons.size() == commissions.size(), "의뢰 선택 화면의 버튼 %d개 (기대 %d)" % [buttons.size(), commissions.size()])
+	# 카드의 시작 버튼만 센다(카드 아래에 시험용 상대의 버튼이 더 있다. 계획 036).
+	var buttons: Array[Node] = []
+	for button in select.find_children("*", "Button", true, false):
+		if (button as Button).text == "이 의뢰를 맡는다":
+			buttons.append(button)
+	_expect(errs, buttons.size() == commissions.size(), "의뢰 선택 화면의 시작 버튼 %d개 (기대 %d)" % [buttons.size(), commissions.size()])
 	select.free()
 	return _result(errs)

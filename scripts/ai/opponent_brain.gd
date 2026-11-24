@@ -19,6 +19,12 @@ var blocked_streak := 0
 var current_attack: AttackData = null
 ## 지금 공격이 버릇 반응으로 나온 것인가.
 var current_is_habit := false
+## 지금 패턴의 뿌리(가방에서 꺼낸 공격). 단발이면 current_attack과 같고, 공격 중이 아니면 null이다(결정 370).
+var pattern_root: AttackData = null
+## 지금이 패턴의 몇째 타격인가. 0이 뿌리의 타격이다.
+var step_index := 0
+## 패턴의 첫 타격의 예정 시각. 휩쓸기의 "쥐고 끌기"가 이 시각을 기준으로 삼는다(결정 372).
+var first_strike_time := 0.0
 ## 지금 예비 동작의 길이(밀착 배율 적용 후).
 var tell_duration := 0.0
 ## 가장 최근 빈틈(RECOVERY·STAGGER)이 끝난 시각.
@@ -51,6 +57,8 @@ func start_idle(now: float) -> void:
 	state_end = now + rng.randf_range(data.idle_time_min, data.idle_time_max)
 	current_attack = null
 	current_is_habit = false
+	pattern_root = null
+	step_index = 0
 
 
 ## 멀리라서 예비 동작을 시작하지 못하고 기다린다.
@@ -67,20 +75,34 @@ func start_tell(now: float, is_close: bool) -> void:
 	state = S.TELL
 	state_start = now
 	state_end = now + tell_duration
+	pattern_root = current_attack
+	step_index = 0
+	first_strike_time = state_end
 
 
 ## 타격 결과를 받아 회수(또는 대기)로 넘어간다. 회수 시간을 돌려준다.
 ## braced: 막혔지만 버티기였다(표시된 공격을 들고만 있던 막기로 받음). 막힘으로 세되 빈틈이 없다.
 func resolve_strike(now: float, result: int, braced := false) -> float:
+	# 단발이면 뿌리가 곧 지금 공격이라 아래 셈이 전과 같다.
+	var root := pattern_root if pattern_root != null else current_attack
+	# 막힌 타격 뒤에 걸음이 남았으면 빈틈 없이 다음 타격으로 간다. 패리도 중간에서는 패턴을 끊지 않는다(결정 371).
+	# 버틴 첫 타격은 단발처럼 패턴을 끝낸다(버티기의 대가가 사라지지 않게).
+	if (result == R.BLOCKED or result == R.PARRIED) and not braced and step_index < root.chain.size():
+		current_attack = root.chain[step_index] as AttackData
+		step_index += 1
+		tell_duration = current_attack.tell_time
+		state_start = now
+		state_end = now + tell_duration
+		return 0.0
 	var recovery := 0.0
 	match result:
 		R.WHIFF:
-			recovery = current_attack.recovery_time * data.whiff_recovery_multiplier
+			recovery = root.recovery_time * data.whiff_recovery_multiplier
 		R.BLOCKED:
-			recovery = 0.0 if braced else current_attack.recovery_time
+			recovery = 0.0 if braced else root.recovery_time
 			_count_blocked()
 		R.PARRIED:
-			recovery = current_attack.recovery_time + data.parried_recovery_bonus
+			recovery = root.recovery_time + data.parried_recovery_bonus
 			_count_blocked()
 		_:
 			# 플레이어에게 닿은 공격 뒤에는 빈틈이 없고, 연속 막힘도 끊긴다.
@@ -88,13 +110,36 @@ func resolve_strike(now: float, result: int, braced := false) -> float:
 			blocked_streak = 0
 	if recovery > 0.0:
 		# 칼을 쳐내졌거나(패리) 온몸을 실은 큰 공격을 쓴 뒤에는 크게 열린다(헛친 큰 공격도 그렇다).
-		wide_open = result == R.PARRIED or current_attack.is_big
+		wide_open = result == R.PARRIED or root.is_big
 		state = S.RECOVERY
 		state_start = now
 		state_end = now + recovery
 	else:
 		start_idle(now)
 	return recovery
+
+
+## 지금 패턴의 타격 수. 단발이거나 공격 중이 아니면 1이다.
+func pattern_count() -> int:
+	return 1 + pattern_root.chain.size() if pattern_root != null else 1
+
+
+## 지금 패턴이 휩쓸기인가.
+func is_sweep() -> bool:
+	return pattern_root != null and pattern_root.sweep and not pattern_root.chain.is_empty()
+
+
+## 지금 패턴의 타격 시각들(첫 타격부터 걸음의 간격을 더해 간다). 공격 중이 아니면 빈 배열이다.
+func pattern_strike_times() -> Array[float]:
+	var times: Array[float] = []
+	if pattern_root == null:
+		return times
+	var at := first_strike_time
+	times.append(at)
+	for step: AttackData in pattern_root.chain:
+		at += step.tell_time
+		times.append(at)
+	return times
 
 
 ## 회수 중에 스침당했다. cells는 그 부위가 깎는 자세 칸 수다. 무너지면 true.
@@ -108,6 +153,8 @@ func on_grazed(now: float, cells := 1) -> bool:
 		blocked_streak = 0
 		current_attack = null
 		current_is_habit = false
+		pattern_root = null
+		step_index = 0
 		return true
 	# 버릇 식히기: 닿으면 연속 막힘을 처음부터 다시 센다(그 버릇이 켜 둔 경우에만).
 	for habit in data.habits:

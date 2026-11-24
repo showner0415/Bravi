@@ -9,8 +9,12 @@ const TELL_START := &"tell_start"
 ## 상대 타격 판정. attack, result(StrikeResult), situation(Situation 또는 -1),
 ## recovery(초), recovery_end, player_posture,
 ## braced(들고만 있던 막기로 표시된 공격을 버텼는가. 버티기면 recovery는 0),
-## posture_loss(이 타격으로 실제로 깎인 내 자세 칸 수. 닿지 않았거나 유효타면 0)
+## posture_loss(이 타격으로 실제로 깎인 내 자세 칸 수. 닿지 않았거나 유효타면 0),
+## next_strike(패턴이 이어지면 다음 타격 시각, 아니면 -1.0)
 const STRIKE := &"strike"
+## 패턴의 다음 타격(걸음)이 시작됨. attack(걸음), root(뿌리), index(1부터), count(패턴의 타격 수), strike_time, duration.
+## TELL_START는 뿌리에만 낸다(가방을 TELL_START로 세는 테스트가 있다. 결정 376).
+const PATTERN_STEP := &"pattern_step"
 ## 플레이어 공격 시작. direction, height, part, judge_time, rash(섣부른 공격인가), lunge(런지인가)
 const ATTACK_START := &"attack_start"
 ## 플레이어 공격 판정. result(AttackResult), direction, height, part, distance(판정 시각의 간격),

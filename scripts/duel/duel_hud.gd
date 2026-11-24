@@ -16,6 +16,9 @@ const LUNGE_AIM_REACH := "(런지: 닿는다)"
 const LUNGE_AIM_WAIT := "(런지: 예비 동작 중 — 헛칠 때까지 기다린다)"
 const LUNGE_AIM_DODGE := "(런지: 머리는 피한다)"
 const HELP_BIND := " · 밀착은 엉킴이 차면 밀려난다 — 차기 전에 S로 먼저 물러난다"
+## 패턴의 막는 법(결정 377). 연습 화면도 같은 글을 쓴다.
+const HELP_CHAIN := " · 이어 베기는 번호 차례대로 막기를 옮긴다(누른 채 옮기면 막고, 박자마다 새로 누르면 패리)"
+const HELP_SWEEP := " · 휩쓸기는 막기를 쥔 채 점을 따라 끈다(떼면 뚫리고 패리는 없다)"
 ## 엉킴 게이지가 이 값 이상이고 간격이 밀착이면 경고를 낸다(게이지의 색, 가운데 글자, 내 칼의 경고 표시).
 const BIND_WARN_RATIO := 0.8
 const BIND_WARN_TEXT := "칼이 엉킨다!"
@@ -49,6 +52,17 @@ static func help_text(opponent: OpponentData, p_day_mode := false, has_hat := fa
 			marked = habit.response
 	if marked != null:
 		text += " · %s는 막기를 뗐다 다시 올려야 받아낸다" % marked.attack_name
+	# 패턴이 있는 상대만 막는 법을 덧붙인다(결정 377). 지금 하루의 상대에는 패턴이 없다.
+	var has_chain := false
+	var has_sweep := false
+	for atk in opponent.attacks:
+		if not atk.chain.is_empty():
+			has_sweep = has_sweep or atk.sweep
+			has_chain = has_chain or not atk.sweep
+	if has_chain:
+		text += HELP_CHAIN
+	if has_sweep:
+		text += HELP_SWEEP
 	if opponent.close_hit_posture_loss > 1:
 		text += " · 밀착에서 맞으면 자세 %d칸" % opponent.close_hit_posture_loss
 	if weapon != null and weapon.close_bind_time > 0.0:
@@ -482,6 +496,8 @@ static func lunge_aim_note(core: DuelCore) -> String:
 
 func _describe(ev: Dictionary) -> String:
 	match ev["type"]:
+		DuelRecord.PATTERN_STEP:
+			return "이어서 %s (%d/%d)" % [(ev["attack"] as AttackData).attack_name, int(ev["index"]) + 1, int(ev["count"])]
 		DuelRecord.STRIKE:
 			match ev["result"]:
 				DT.StrikeResult.BLOCKED:

@@ -28,3 +28,12 @@ extends Resource
 @export var recover_arm_deg := 0.0
 ## 예비 동작 동안의 색.
 @export var pose_color := Color(1.0, 0.85, 0.2)
+
+@export_group("이어 치기 (계획 036)")
+## 이 공격 뒤에 한 예비 동작으로 이어지는 타격(걸음). 비면 단발이다. 이 공격(뿌리)이 첫 타격이고
+## 이름·예비·끝의 회수·큰 공격·가중치를 정한다(결정 370).
+## 걸음에서 읽는 칸은 direction, tell_time(앞 타격부터의 간격), attack_name, 포즈, pose_color뿐이다.
+# 자기 클래스를 원소 타입으로 쓰면 스크립트가 자신을 붙잡아 끝날 때 누수 오류가 난다(계획 036 E1). 원소는 모두 AttackData다.
+@export var chain: Array[Resource] = []
+## 참이면 휩쓸기: 이 공격과 chain이 한 번의 긴 베기가 닿는 점들이다. 패리가 없고 막기를 쥔 채 끌어야 한다(결정 372).
+@export var sweep := false

@@ -37,6 +37,8 @@ func on_event(ev: Dictionary) -> void:
 	match ev["type"]:
 		DuelRecord.TELL_START:
 			_play(&"tell")
+		DuelRecord.PATTERN_STEP:
+			_play(&"tell")
 		DuelRecord.STRIKE:
 			match ev["result"]:
 				DuelTypes.StrikeResult.BLOCKED:

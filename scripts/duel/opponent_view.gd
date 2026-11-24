@@ -43,6 +43,10 @@ const DISTANCE_SHIFT: Array[float] = [-40.0, 0.0, 30.0]
 ## 위치는 상대 기준 화면 좌표(간격에 따라 커지거나 움직이지 않는다).
 const RING_SPEED := 240.0
 const RING_POSITION: Array[Vector2] = [Vector2(-270, -150), Vector2(0, -140), Vector2(270, -150)]
+## 패턴의 번호 고리: 같은 방향이 되풀이되면 아래로 비키는 폭, 고리의 반지름, 번호의 글자 크기(결정 374).
+const MARK_REPEAT_SHIFT := 36.0
+const MARK_RADIUS := 26.0
+const MARK_FONT_SIZE := 24
 ## 상태 글자(공격 이름, 빈틈, 무너짐)의 화면 세로 위치. 자세 칸 바로 아래.
 const STATE_LABEL_Y := 62.0
 
@@ -92,6 +96,9 @@ var _dodge_until := -INF
 
 var _ring_active := false
 var _ring_remaining := 0.0
+## 패턴의 번호 고리와 휩쓸기의 길(pattern_marks의 결과). 단발이면 비어 있다.
+var _marks: Array[Dictionary] = []
+var _ring_sweep := false
 ## 다음 갱신에서 크기와 위치를 보간 없이 맞춘다(시작, 다시 하기).
 var _snap := true
 
@@ -228,6 +235,8 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 	var tint: Variant = null
 	var text := ""
 	_ring_active = false
+	_marks = []
+	_ring_sweep = false
 	# 머리를 지키는 상대의 머리는 크게 열린 회수에서만 빈틈 색으로 물든다("파랗게 물든 부위가 열린 부위").
 	var head_closed := false
 	var head_art: PartArt = _art.head if _art != null else null
@@ -240,12 +249,21 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 			var atk := brain.current_attack
 			tint = atk.pose_color
 			text = atk.attack_name + ("!!" if atk.is_big else "")
+			_marks = pattern_marks(brain, display_time)
+			_ring_sweep = brain.is_sweep()
+			if brain.pattern_count() > 1:
+				# 패턴은 뿌리의 이름과 몇째 타격인지를 보인다(결정 374).
+				var root := brain.pattern_root
+				text = "%s (%d/%d)%s" % [root.attack_name, brain.step_index + 1, brain.pattern_count(), "!!" if root.is_big else ""]
+				if _ring_sweep:
+					text += "
+쥐고 끌어라"
 			# 표시된 공격은 예비 동작 내내, 지금의 막기가 버티기만 되는지 받아내는지 알려 준다.
-			if atk.needs_raised_guard and core.player_state == DT.PlayerState.GUARD:
+			if brain.step_index == 0 and atk.needs_raised_guard and core.player_state == DT.PlayerState.GUARD:
 				text += "\n" + ("막기를 뗐다 다시 올려라" if core.would_brace_now() else "받아낼 준비")
 			_ring_active = true
 			_ring_remaining = maxf(brain.state_end - display_time, 0.0)
-			_ring.position = RING_POSITION[atk.direction] * inverse
+			_ring.position = _now_mark_position(atk) * inverse
 		DT.OpponentState.RECOVERY:
 			tint = COLOR_RECOVERY
 			text = "빈틈"
@@ -320,8 +338,14 @@ func _pose_for(core: DuelCore, display_time: float, complacent: bool) -> PoseDat
 	_last_state_end = brain.state_end
 	var atk := brain.current_attack
 	if brain.state == DT.OpponentState.TELL and atk != null:
-		_art_key = OpponentArmArt.art_of(atk.tell_pose)
 		var p := (display_time - start) / maxf(brain.tell_duration, 0.001)
+		if brain.is_sweep() and brain.step_index > 0:
+			# 휩쓸기의 걸음은 멈칫 없이 앞 점에서 이 점으로 곧게 간다(결정 374).
+			var root := brain.pattern_root
+			var prev: AttackData = root if brain.step_index == 1 else (root.chain[brain.step_index - 2] as AttackData)
+			_art_key = OpponentArmArt.art_of(atk.strike_pose)
+			return OpponentMotion.sweep_pose(prev, atk, p)
+		_art_key = OpponentArmArt.art_of(atk.tell_pose)
 		return OpponentMotion.tell_pose(atk, _blend_from, p, brain.tell_duration, _parry_window, opp)
 	if brain.state == DT.OpponentState.RECOVERY and atk != null:
 		_art_key = OpponentArmArt.art_of(atk.strike_pose)
@@ -469,13 +493,84 @@ func _new_material() -> ShaderMaterial:
 	return mat
 
 
+## 패턴의 표시 목록(결정 374). 타격마다 {"role": &"now"·&"next"·&"later", "number", "pos", "time"}이고,
+## 휩쓸기면 끝에 {"role": &"path", "points", "dot"}가 붙는다. 자리는 RING_POSITION의 좌표다(같은 방향이 되풀이되면 아래로 비킨다).
+## 지난 타격은 넣지 않는다. 패턴이 아니거나 예비 동작 중이 아니면 빈 배열이다.
+static func pattern_marks(brain: OpponentBrain, display_time: float) -> Array[Dictionary]:
+	var marks: Array[Dictionary] = []
+	if brain.state != DT.OpponentState.TELL or brain.pattern_root == null or brain.pattern_count() < 2:
+		return marks
+	var root := brain.pattern_root
+	var times := brain.pattern_strike_times()
+	var seen := {}
+	var points := PackedVector2Array()
+	for i in times.size():
+		var atk: AttackData = root if i == 0 else (root.chain[i - 1] as AttackData)
+		var repeats := int(seen.get(atk.direction, 0))
+		seen[atk.direction] = repeats + 1
+		var pos: Vector2 = RING_POSITION[atk.direction] + Vector2(0, MARK_REPEAT_SHIFT * repeats)
+		points.append(pos)
+		if i < brain.step_index:
+			continue
+		var role := &"now" if i == brain.step_index else (&"next" if i == brain.step_index + 1 else &"later")
+		marks.append({"role": role, "number": i + 1, "pos": pos, "time": times[i]})
+	if brain.is_sweep():
+		# 따라가는 점: 첫 점의 시각까지 첫 자리에서 기다리고, 그 뒤 닿는 시각마다 그 점에 오도록 고르게 간다.
+		var dot := points[0]
+		for i in range(1, times.size()):
+			if display_time >= times[i - 1]:
+				var k := clampf((display_time - times[i - 1]) / maxf(times[i] - times[i - 1], 0.001), 0.0, 1.0)
+				dot = points[i - 1].lerp(points[i], k)
+		marks.append({"role": &"path", "points": points, "dot": dot})
+	return marks
+
+
+## 지금 타격의 고리 자리. 패턴이면 번호 고리의 자리(되풀이 방향의 비킴 포함)다.
+func _now_mark_position(atk: AttackData) -> Vector2:
+	for mark in _marks:
+		if mark["role"] == &"now":
+			return mark["pos"]
+	return RING_POSITION[atk.direction]
+
+
+## 번호 고리와 휩쓸기의 길. 고리 노드의 원점이 지금 타격의 자리라 그 차로 그린다.
+func _draw_marks() -> void:
+	var origin := Vector2.ZERO
+	for mark in _marks:
+		if mark["role"] == &"now":
+			origin = mark["pos"]
+	var font := ThemeDB.fallback_font
+	for mark in _marks:
+		if mark["role"] == &"path":
+			var line := PackedVector2Array()
+			for point: Vector2 in mark["points"]:
+				line.append(point - origin)
+			_ring.draw_polyline(line, Color(1.0, 1.0, 1.0, 0.55), 10.0, true)
+			var dot: Vector2 = mark["dot"]
+			_ring.draw_circle(dot - origin, 13.0, Color(0.3, 1.0, 0.5, 0.95))
+			_ring.draw_arc(dot - origin, 13.0, 0.0, TAU, 32, Color(1.0, 1.0, 1.0, 0.95), 3.0)
+			continue
+		var at: Vector2 = mark["pos"] - origin
+		var alpha := 0.95 if mark["role"] == &"now" else (0.8 if mark["role"] == &"next" else 0.4)
+		if mark["role"] != &"now":
+			_ring.draw_circle(at, MARK_RADIUS, Color(0.12, 0.1, 0.08, 0.55 * alpha))
+			_ring.draw_arc(at, MARK_RADIUS, 0.0, TAU, 40, Color(1.0, 1.0, 1.0, alpha), 3.0)
+		var label := str(mark["number"])
+		var width := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, MARK_FONT_SIZE).x
+		var base := at + Vector2(-width * 0.5, -MARK_RADIUS - 8.0)
+		_ring.draw_string_outline(font, base, label, HORIZONTAL_ALIGNMENT_LEFT, -1, MARK_FONT_SIZE, 6, Color(0, 0, 0, alpha))
+		_ring.draw_string(font, base, label, HORIZONTAL_ALIGNMENT_LEFT, -1, MARK_FONT_SIZE, Color(1, 1, 1, alpha))
+
+
 func _draw_ring() -> void:
 	if not _ring_active:
 		return
+	_draw_marks()
 	var band := RING_SPEED * _parry_window
-	# 고정 띠(목표 고리): 줄어드는 고리가 이 안에 들어와 있을 때 새로 누르면 패리다.
-	_ring.draw_circle(Vector2.ZERO, band, Color(0.3, 1.0, 0.5, 0.22))
-	_ring.draw_arc(Vector2.ZERO, band, 0.0, TAU, 48, Color(0.3, 1.0, 0.5, 0.95), 3.0)
+	# 고정 띠(목표 고리): 줄어드는 고리가 이 안에 들어와 있을 때 새로 누르면 패리다. 휩쓸기에는 패리가 없어 그리지 않는다.
+	if not _ring_sweep:
+		_ring.draw_circle(Vector2.ZERO, band, Color(0.3, 1.0, 0.5, 0.22))
+		_ring.draw_arc(Vector2.ZERO, band, 0.0, TAU, 48, Color(0.3, 1.0, 0.5, 0.95), 3.0)
 	# 줄어드는 고리: 0이 되는 순간이 타격.
 	var radius := _ring_remaining * RING_SPEED
 	if radius > 1.0:
