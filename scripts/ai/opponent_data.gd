@@ -62,6 +62,12 @@ extends Resource
 ## 거짓이면 이 상대의 모든 타격이 높이 없이 나온다(견줘 보는 길과 되돌림. 결정 391).
 @export var use_heights := true
 
+@export_group("빈틈의 확률 (계획 036c)")
+## 막힘·패리가 빈틈이 될 확률의 바탕(1일차, 업그레이드 없음). 1.0 이상이면 이 규칙이 꺼진 상대다: 날에 깎이지 않고 난수도 부르지 않는다(결정 396).
+@export var opening_chance := 1.0
+## 연속으로 안 열릴 수 있는 횟수. 그만큼 안 열렸으면 다음은 반드시 열린다. 0이면 상한이 없다(결정 401).
+@export var opening_miss_limit := 2
+
 @export_group("그림과 포즈")
 ## 비어 있으면 그림 없이 돈다(테스트가 만든 상대가 씬에 들어가도 깨지지 않게. 결정 256).
 @export var art: OpponentArt
@@ -122,4 +128,11 @@ func drill(pattern: AttackData) -> OpponentData:
 func flat() -> OpponentData:
 	var copy := duplicate() as OpponentData
 	copy.use_heights = false
+	return copy
+
+
+## 빈틈의 확률만 바꾼 사본(연습의 날 고르기와 통계. 결정 407). 이 자원은 고치지 않는다.
+func with_opening(chance: float) -> OpponentData:
+	var copy := duplicate() as OpponentData
+	copy.opening_chance = chance
 	return copy

@@ -292,7 +292,8 @@ func t81_trial() -> String:
 		if trial == null:
 			errs.append("%s: 로드되지 않음" % label)
 			continue
-		_compare(base, trial, label, ["attacks"], errs)
+		# 시험용 상대에는 빈틈의 확률을 적는다(계획 036c 결정 409).
+		_compare(base, trial, label, ["attacks", "opening_chance"], errs)
 		var patterns: Array[AttackData] = []
 		for i in trial.attacks.size():
 			if i < base.attacks.size():

@@ -81,6 +81,8 @@ var shoved := false
 
 # --- 엉킴 (무기의 close_bind_time이 0 이하면 전부 쓰이지 않는다) ---
 # 게이지(0~1)는 값과 그 값을 잰 시각으로 가진다. 매 tick 더하지 않는다(delta에 따라 달라지지 않게).
+## 안 열린 막기 뒤 섣부른 공격으로 치지 않는 끝 시각(결정 402). 안 열린 타격이 없으면 -INF라 is_rash_now가 전과 같다.
+var _closed_until := -INF
 var _bind_value := 0.0
 var _bind_since := 0.0
 var _bind_mode: int = _Bind.HOLD
@@ -106,6 +108,8 @@ func setup(p_rules: DuelRules, p_weapon: WeaponData, p_opponent: OpponentData,
 	opponent_has_hat = p_has_hat
 	record = DuelRecord.new()
 	brain = OpponentBrain.new(opponent_data, rng)
+	brain.opening_chance = rules.opening_chance_for(opponent_data.opening_chance, rules.stage_day)
+	brain.parry_opening_bonus = rules.parry_opening_bonus
 	player_posture = rules.player_posture_max
 	distance = Dist.FAR
 	brain.start_idle(0.0)
@@ -151,7 +155,7 @@ func is_shoved() -> bool:
 func is_rash_now() -> bool:
 	if is_lunge_now():
 		return brain.state == OpS.TELL
-	return distance != Dist.FAR and not brain.in_opening(time, rules.opening_grace)
+	return distance != Dist.FAR and not brain.in_opening(time, rules.opening_grace) and time >= _closed_until
 
 
 ## 이 판에 선공이 있는가: 무기에 런지가 있고 상대가 방심하는 상대다.
@@ -389,12 +393,15 @@ func _resolve_strike() -> void:
 	var recovery := brain.resolve_strike(time, result, braced)
 	# 걸음이 남아 상대가 TELL에 머물면 패턴이 이어진다(결정 371·376).
 	var chained := brain.state == OpS.TELL
+	if brain.last_closed:
+		_closed_until = time + rules.closed_counter_grace
 	_emit(DuelRecord.STRIKE, {
 		"attack": atk, "result": result, "situation": situation,
 		"recovery": recovery, "recovery_end": time + recovery,
 		"player_posture": player_posture, "braced": braced, "posture_loss": posture_loss,
 		"next_strike": brain.state_end if chained else -1.0,
 		"height": height, "guard_miss": guard_miss,
+		"closed": brain.last_closed, "closed_streak": brain.closed_streak, "miss_limit": opponent_data.opening_miss_limit,
 	})
 	if chained:
 		_emit(DuelRecord.PATTERN_STEP, {

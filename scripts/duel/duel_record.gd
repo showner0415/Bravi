@@ -12,6 +12,7 @@ const TELL_START := &"tell_start"
 ## braced(들고만 있던 막기로 표시된 공격을 버텼는가. 버티기면 recovery는 0),
 ## posture_loss(이 타격으로 실제로 깎인 내 자세 칸 수. 닿지 않았거나 유효타면 0),
 ## next_strike(패턴이 이어지면 다음 타격 시각, 아니면 -1.0),
+## closed(막혔는데 빈틈을 주지 않았는가. 그러면 recovery는 0), closed_streak(이 타격 뒤 연속으로 안 열린 수), miss_limit(상대의 상한. 결정 399),
 ## height(이 타격의 높이, 없으면 -1), guard_miss(막고 있었고 방향도 맞았는데 맞은 까닭: &"height" 높이가 틀림, &"regrip" 휩쓸기에서 떼었다 누름, 아니면 &"")
 const STRIKE := &"strike"
 ## 패턴의 다음 타격(걸음)이 시작됨. attack(걸음), root(뿌리), index(1부터), count(패턴의 타격 수), strike_time, duration, height.

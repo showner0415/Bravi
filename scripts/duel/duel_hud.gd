@@ -19,6 +19,8 @@ const HELP_BIND := " · 밀착은 엉킴이 차면 밀려난다 — 차기 전�
 ## 패턴의 막는 법(결정 377). 연습 화면도 같은 글을 쓴다.
 const HELP_CHAIN := " · 이어 베기는 번호 차례대로 막기를 옮긴다(누른 채 옮기면 막고, 박자마다 새로 누르면 패리)"
 const HELP_SWEEP := " · 휩쓸기는 막기를 쥔 채 점을 따라 끈다(떼면 뚫리고 패리는 없다)"
+## 빈틈의 확률이 있는 상대에만 붙는다(결정 404). %s는 상한의 글.
+const HELP_OPENING := " · 막아도 틈을 안 줄 때가 있다(낮은 소리)%s"
 const HELP_HEIGHT := " · 고리가 뜬 칸(방향과 높이)에 마우스를 두고 막는다"
 ## 엉킴 게이지가 이 값 이상이고 간격이 밀착이면 경고를 낸다(게이지의 색, 가운데 글자, 내 칼의 경고 표시).
 const BIND_WARN_RATIO := 0.8
@@ -36,6 +38,12 @@ const HELP_TEXT := "좌클릭 공격 · 우클릭 막기 (떼고 있다가 고�
 ## 조작 안내 전체. 둘째 줄의 뒷부분과 셋째 줄은 상대 데이터에서 조립한다(장치를 끈 상대에게 틀린 안내를 하지 않게).
 ## has_hat: 상대가 모자를 쓴 판인가(그 판에서는 칼 든 손을 노릴 수 없고, 모자 없는 판에서는 모자가 없다).
 ## weapon: 내 무기. 엉킴이 있는 무기면 둘째 줄에 엉킴 안내가 붙는다.
+## 빈틈의 확률을 알리는 한 줄. 상한이 0이면 뒤 문장을 뺀다.
+static func opening_help(opponent: OpponentData) -> String:
+	var limit := opponent.opening_miss_limit
+	return HELP_OPENING % (". %s 안 주면 다음은 반드시 열린다" % ("두 번" if limit == 2 else "%d번" % limit) if limit > 0 else "")
+
+
 ## 이 상대에 높이를 가진 타격이 있는가(공격·걸음·변주·버릇 반응. 결정 391).
 static func uses_heights(opponent: OpponentData) -> bool:
 	if opponent == null or not opponent.use_heights:
@@ -88,6 +96,8 @@ static func help_text(opponent: OpponentData, p_day_mode := false, has_hat := fa
 		text += HELP_SWEEP
 	if uses_heights(opponent):
 		text += HELP_HEIGHT
+	if opponent.opening_chance < 1.0:
+		text += opening_help(opponent)
 	if opponent.close_hit_posture_loss > 1:
 		text += " · 밀착에서 맞으면 자세 %d칸" % opponent.close_hit_posture_loss
 	if weapon != null and weapon.close_bind_time > 0.0:
@@ -488,7 +498,7 @@ func refresh(core: DuelCore) -> void:
 		var brain := core.brain
 		var remain := brain.state_end - core.time
 		var bag := brain.bag_remaining()
-		_debug_label.text = "[디버그]\n상대 상태: %s\n남은 시간: %s\n연속 막힘: %d\n공격: %s\n내 상태 남은 시간: %s\n막기 쿨다운: %.2f\n지금 누르면 섣부른 공격: %s\n지금 타격이 오면 버티기: %s\n가방에 남은 장 수: %s\n방심 게이지: %.2f (찔린 횟수 %d)\n지금 좌클릭이 런지: %s" % [
+		_debug_label.text = "[디버그]\n상대 상태: %s\n남은 시간: %s\n연속 막힘: %d\n공격: %s\n내 상태 남은 시간: %s\n막기 쿨다운: %.2f\n지금 누르면 섣부른 공격: %s\n지금 타격이 오면 버티기: %s\n가방에 남은 장 수: %s\n방심 게이지: %.2f (찔린 횟수 %d)\n지금 좌클릭이 런지: %s\n빈틈 확률: %.2f (연속 안 열림 %d)" % [
 			DT.OPPONENT_STATE_NAMES[brain.state],
 			("%.2f" % remain) if is_finite(remain) else "-",
 			brain.blocked_streak,
@@ -500,6 +510,7 @@ func refresh(core: DuelCore) -> void:
 			str(bag) if bag >= 0 else "-",
 			core.complacency(), brain.lunge_touches,
 			"예" if core.is_lunge_now() else "아니오",
+			brain.opening_chance, brain.closed_streak,
 		]
 
 
@@ -539,6 +550,9 @@ func _describe(ev: Dictionary) -> String:
 				where = " · %s %s" % [DT.GUARD_NAMES[step_atk.direction], DT.HEIGHT_NAMES[step_height]]
 			return "이어서 %s (%d/%d)%s" % [step_atk.attack_name, int(ev["index"]) + 1, int(ev["count"]), where]
 		DuelRecord.STRIKE:
+			if ev.get("closed", false):
+				return "%s — 틈을 안 줬다%s" % ["패리" if ev["result"] == DT.StrikeResult.PARRIED else "막음",
+					" (다음은 열린다)" if OpponentView._limit_reached(ev) else ""]
 			match ev["result"]:
 				DT.StrikeResult.BLOCKED:
 					if ev["braced"]:

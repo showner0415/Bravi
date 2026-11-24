@@ -13,6 +13,8 @@ const TONES := {
 	&"tell": [330.0, 0.07],
 	&"block": [520.0, 0.06],
 	&"parry": [880.0, 0.12],
+	## 막았는데 빈틈을 주지 않았다: 막힘보다 한 옥타브 낮고 길다(결정 404).
+	&"closed": [260.0, 0.10],
 	&"graze": [660.0, 0.09],
 	&"stagger": [220.0, 0.30],
 	&"hit": [990.0, 0.35],
@@ -40,6 +42,9 @@ func on_event(ev: Dictionary) -> void:
 		DuelRecord.PATTERN_STEP:
 			_play(&"tell")
 		DuelRecord.STRIKE:
+			if ev.get("closed", false):
+				_play(&"closed")
+				return
 			match ev["result"]:
 				DuelTypes.StrikeResult.BLOCKED:
 					_play(&"block")

@@ -10,13 +10,14 @@ const HEIGHT_LETTERS := ["상", "중", "하"]
 
 
 ## 열쇠: length, end, tells, patterns{이름: 수}, routes{길: 수}, strikes{막음·패리·스침·유효타·헛침},
-## hits{까닭: 수}, openings{닿음·머리 피함·늦음·안 침}, finishers{닿음·놓침}, rash(섣부른 공격 수).
+## hits{까닭: 수}, guards{열림·안 열림 — 막힘·패리로 빈틈이 걸린 타격. 결정 408}, openings{닿음·머리 피함·늦음·안 침}, finishers{닿음·놓침}, rash(섣부른 공격 수).
 static func summarize(record: DuelRecord) -> Dictionary:
 	var out := {
 		"length": snappedf(record.elapsed, 0.1), "end": END_NAMES[record.end_reason], "tells": 0,
 		"patterns": {}, "routes": {},
 		"strikes": {"막음": 0, "패리": 0, "스침": 0, "유효타": 0, "헛침": 0},
 		"hits": {},
+		"guards": {"열림": 0, "안 열림": 0},
 		"openings": {"닿음": 0, "머리 피함": 0, "늦음": 0, "안 침": 0},
 		"finishers": {"닿음": 0, "놓침": 0},
 		"rash": 0,
@@ -38,6 +39,11 @@ static func summarize(record: DuelRecord) -> Dictionary:
 					_bump(out["routes"], "%s %s" % [atk.attack_name, _route(atk, ev.get("heights", []))])
 			DuelRecord.STRIKE:
 				out["strikes"][strike_keys[ev["result"]]] += 1
+				if ev.get("closed", false):
+					out["guards"]["안 열림"] += 1
+				elif (ev["result"] == DT.StrikeResult.BLOCKED or ev["result"] == DT.StrikeResult.PARRIED) \
+						and float(ev.get("recovery", 0.0)) > 0.0 and float(ev.get("next_strike", -1.0)) < 0.0:
+					out["guards"]["열림"] += 1
 				if ev["result"] == DT.StrikeResult.GRAZE or ev["result"] == DT.StrikeResult.HIT:
 					_bump(out["hits"], _reason(ev))
 				elif float(ev.get("recovery", 0.0)) > 0.0 and float(ev.get("next_strike", -1.0)) < 0.0:

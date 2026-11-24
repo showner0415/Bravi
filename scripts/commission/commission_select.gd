@@ -9,6 +9,14 @@ const DUEL_PATH := "res://scenes/duel/duel.tscn"
 const TITLE_PATH := "res://scenes/ui/title.tscn"
 ## 패턴을 시험하는 상대(결정 369·377). 이 폴더의 상대마다 "자유 결투" 버튼, 그 패턴마다 "패턴만" 버튼이 생긴다.
 const TRIAL_DIR := "res://data/opponents/trial"
+const RULES_PATH := "res://data/duel_rules.tres"
+## 빈틈 줄의 버튼(결정 407). 0은 늘 열린다, 1~3은 그 날의 확률.
+const OPENING_DAYS := [[0, "늘 열린다"], [1, "1일차"], [2, "2일차"], [3, "3일차부터"]]
+
+## 시험 줄의 버튼이 탈 날. 버튼이 묶어 둔 상대는 그대로 두고 넘기기 직전에 사본을 만든다.
+## static: 결투에서 돌아와도 고른 날이 남는다(2026-11-25 playtester).
+static var _opening_day := 1
+var _head: HBoxContainer
 
 
 func _ready() -> void:
@@ -28,7 +36,12 @@ func _ready() -> void:
 	title.text = "연습 — 의뢰를 골라 결투  (Esc: 처음 화면)"
 	title.add_theme_font_size_override("font_size", 28)
 	title.theme_type_variation = &"TitleLabel"
-	column.add_child(title)
+	# 빈틈 버튼은 제목 줄의 오른쪽에 둔다: 줄을 하나 더 쌓으면 막는 법이 720 밖으로 나간다(2026-11-25 playtester).
+	_head = HBoxContainer.new()
+	_head.add_theme_constant_override("separation", 12)
+	column.add_child(_head)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_head.add_child(title)
 
 	var cards := HBoxContainer.new()
 	cards.add_theme_constant_override("separation", 20)
@@ -130,6 +143,7 @@ func _add_trials(column: VBoxContainer) -> void:
 	var trials := load_trials()
 	if trials.is_empty():
 		return
+	_add_opening_row(_head)
 	var free_row := _add_row(column, "자유 결투")
 	var drill_row := _add_row(column, "패턴만")
 	var drills := 0
@@ -146,8 +160,8 @@ func _add_trials(column: VBoxContainer) -> void:
 			drills += 1
 	var how := Label.new()
 	how.name = "PatternHelp"
-	how.text = "%s\n%s\n%s" % [DuelHud.HELP_CHAIN.trim_prefix(" · "), DuelHud.HELP_SWEEP.trim_prefix(" · "),
-			DuelHud.HELP_HEIGHT.trim_prefix(" · ")]
+	how.text = "%s\n%s\n%s\n%s" % [DuelHud.HELP_CHAIN.trim_prefix(" · "), DuelHud.HELP_SWEEP.trim_prefix(" · "),
+			DuelHud.HELP_HEIGHT.trim_prefix(" · "), DuelHud.opening_help(trials[0]).trim_prefix(" · ")]
 	how.add_theme_font_size_override("font_size", 16)
 	how.add_theme_color_override("font_color", Ui.DIM)
 	column.add_child(how)
@@ -157,6 +171,10 @@ func _add_row(column: VBoxContainer, caption: String) -> HBoxContainer:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
 	column.add_child(row)
+	return _caption(row, caption)
+
+
+func _caption(row: HBoxContainer, caption: String) -> HBoxContainer:
 	var label := Label.new()
 	label.text = caption
 	label.custom_minimum_size = Vector2(110, 0)
@@ -174,10 +192,29 @@ func _add_trial_button(row: HBoxContainer, text: String, node_name: String, oppo
 	row.add_child(button)
 
 
-## 의뢰 없이 그 상대와 결투한다.
+## 의뢰 없이 그 상대와 결투한다. 고른 날의 빈틈 확률을 실은 사본을 넘긴다(결정 407).
 func _start_opponent(opponent: OpponentData) -> void:
+	var chance := 1.0
+	if _opening_day > 0:
+		chance = (load(RULES_PATH) as DuelRules).opening_chance_for(opponent.opening_chance, _opening_day)
 	var session := get_node_or_null(^"/root/GameSession")
 	if session != null:
 		session.set("commission", null)
-		session.set("practice_opponent", opponent)
+		session.set("practice_opponent", opponent.with_opening(chance))
 	get_tree().change_scene_to_file(DUEL_PATH)
+
+
+## 빈틈 줄: 버튼 넷 가운데 하나만 눌린다(결정 407).
+func _add_opening_row(row: HBoxContainer) -> void:
+	_caption(row, "빈틈").get_child(-1).custom_minimum_size = Vector2.ZERO
+	var group := ButtonGroup.new()
+	for entry: Array in OPENING_DAYS:
+		var button := Button.new()
+		button.name = "OpeningDay%d" % entry[0]
+		button.text = entry[1]
+		button.toggle_mode = true
+		button.button_group = group
+		button.button_pressed = entry[0] == _opening_day
+		button.add_theme_font_size_override("font_size", 18)
+		button.pressed.connect(func() -> void: _opening_day = entry[0])
+		row.add_child(button)

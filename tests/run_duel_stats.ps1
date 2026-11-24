@@ -3,10 +3,12 @@
 #   powershell -ExecutionPolicy Bypass -File tests/run_duel_stats.ps1
 #   powershell -ExecutionPolicy Bypass -File tests/run_duel_stats.ps1 -Runs 50 -Delay 0.3 -Counter mid,same,thrust -Miss 0.1
 #   powershell -ExecutionPolicy Bypass -File tests/run_duel_stats.ps1 -Opponent res://data/opponents/opponent_01.tres
+#   powershell -ExecutionPolicy Bypass -File tests/run_duel_stats.ps1 -Runs 30 -Opening off,1,2,3
 #
 # Runs tests/duel_stats.gd: a bot plays whole duels and prints one "stat," line per setting
 # (length, endings, hits by reason, how openings ended) and one "routes," line (pattern routes seen).
 # -Delay: seconds the bot waits before countering. -Miss: chance to guard the wrong height.
+# -Opening: opening chance settings (base = as the data says, off = always opens, 1/2/3 = that day). Default base.
 # -Counter: where the counter is aimed (same = the guarded cell, mid = same side mid row, thrust = centre mid).
 # Without -Opponent it plays every opponent in data/opponents/trial, 9-cell and flat.
 # Judges the run: exit code 0, one "DUEL STATS OK <n>" line, no ERROR lines. The numbers are not judged.
@@ -17,7 +19,8 @@ param(
 	[double]$Delay = 0.25,
 	[double]$Miss = 0.0,
 	[string]$Counter = 'mid',
-	[string[]]$Opponent = @()
+	[string[]]$Opponent = @(),
+	[string]$Opening = 'base'
 )
 
 . "$PSScriptRoot\godot_path.ps1"
@@ -43,7 +46,7 @@ if (-not $SkipImport) {
 }
 
 $inv = [System.Globalization.CultureInfo]::InvariantCulture
-$userArgs = "--runs=$Runs --delay=$($Delay.ToString($inv)) --miss=$($Miss.ToString($inv)) --counter=$Counter"
+$userArgs = "--runs=$Runs --delay=$($Delay.ToString($inv)) --miss=$($Miss.ToString($inv)) --counter=$Counter --opening=$Opening"
 foreach ($path in $Opponent) { $userArgs += " --opponent=$path" }
 $out = cmd /c "`"$Godot`" --headless --path `"$project`" --script res://tests/duel_stats.gd -- $userArgs 2>&1"
 $runExit = $LASTEXITCODE

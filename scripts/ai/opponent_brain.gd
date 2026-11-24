@@ -39,6 +39,15 @@ var wide_open := false
 var alert_since := 0.0
 ## 이 판에서 런지에 찔린(스침·유효타) 횟수.
 var lunge_touches := 0
+## 이 판에서 막힘·패리가 빈틈이 될 확률과 패리의 덤. 코어가 setup에서 넣는다(1.0이면 꺼짐. 결정 398).
+var opening_chance := 1.0
+var parry_opening_bonus := 0.0
+## 예비 동작이 시작될 때 굴린 값. 막은 순간에 드러난다(결정 398).
+var opening_roll := 0.0
+## 연속으로 안 열린 수. 열리면 0으로 돌아간다(결정 401).
+var closed_streak := 0
+## 바로 앞 resolve_strike가 막혔는데 빈틈을 주지 않았는가.
+var last_closed := false
 ## 공격 가방(data.attack_bag_sets가 1 이상일 때만 쓴다). 판마다 새로 만든다.
 var _bag: Array[AttackData] = []
 
@@ -91,11 +100,15 @@ func start_tell(now: float, is_close: bool) -> void:
 	for step: AttackData in current_attack.chain:
 		drawn.append(_draw_height(step))
 	strike_heights = drawn
+	# 확률이 1.0이면 부르지 않는다: 하루 데이터의 난수 차례가 그대로다(결정 396).
+	if opening_chance < 1.0:
+		opening_roll = rng.randf()
 
 
 ## 타격 결과를 받아 회수(또는 대기)로 넘어간다. 회수 시간을 돌려준다.
 ## braced: 막혔지만 버티기였다(표시된 공격을 들고만 있던 막기로 받음). 막힘으로 세되 빈틈이 없다.
 func resolve_strike(now: float, result: int, braced := false) -> float:
+	last_closed = false
 	# 단발이면 뿌리가 곧 지금 공격이라 아래 셈이 전과 같다.
 	var root := pattern_root if pattern_root != null else current_attack
 	# 막힌 타격 뒤에 걸음이 남았으면 빈틈 없이 다음 타격으로 간다. 패리도 중간에서는 패턴을 끊지 않는다(결정 371).
@@ -121,6 +134,13 @@ func resolve_strike(now: float, result: int, braced := false) -> float:
 			# 플레이어에게 닿은 공격 뒤에는 빈틈이 없고, 연속 막힘도 끊긴다.
 			recovery = 0.0
 			blocked_streak = 0
+	if recovery > 0.0 and (result == R.BLOCKED or result == R.PARRIED):
+		if _opens(result == R.PARRIED):
+			closed_streak = 0
+		else:
+			recovery = 0.0
+			last_closed = true
+			closed_streak += 1
 	if recovery > 0.0:
 		# 칼을 쳐내졌거나(패리) 온몸을 실은 큰 공격을 쓴 뒤에는 크게 열린다(헛친 큰 공격도 그렇다).
 		wide_open = result == R.PARRIED or root.is_big
@@ -130,6 +150,15 @@ func resolve_strike(now: float, result: int, braced := false) -> float:
 	else:
 		start_idle(now)
 	return recovery
+
+
+## 막힘·패리가 빈틈이 되는가(결정 399~401).
+func _opens(parried: bool) -> bool:
+	if opening_chance >= 1.0:
+		return true
+	if data.opening_miss_limit > 0 and closed_streak >= data.opening_miss_limit:
+		return true
+	return opening_roll < opening_chance + (parry_opening_bonus if parried else 0.0)
 
 
 ## 지금 타격의 높이. 높이가 없거나 공격 중이 아니면 -1이다.

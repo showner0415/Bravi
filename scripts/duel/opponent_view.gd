@@ -205,6 +205,10 @@ func on_event(ev: Dictionary) -> void:
 				# 들고만 있던 막기로 표시된 공격을 버텼다: 빈틈이 없다는 것을 상태 글자 자리에 잠깐 띄운다.
 				_deflect_text = "밀어붙임"
 				_deflect_until = _clock + DEFLECT_TEXT_TIME
+			elif ev.get("closed", false):
+				# 막았는데 빈틈을 주지 않았다(결정 404). 상한에 닿았으면 다음은 열린다고 알린다.
+				_deflect_text = "틈을 안 준다" + (" — 다음은 열린다" if _limit_reached(ev) else "")
+				_deflect_until = _clock + DEFLECT_TEXT_TIME
 		DuelRecord.ATTACK:
 			var result: int = ev["result"]
 			if result == DT.AttackResult.GRAZE or result == DT.AttackResult.HIT:
@@ -600,3 +604,8 @@ func _draw_ring() -> void:
 	if radius > 1.0:
 		_ring.draw_arc(Vector2.ZERO, radius, 0.0, TAU, 64, Color(1.0, 1.0, 1.0, 0.95), 5.0)
 	_ring.draw_circle(Vector2.ZERO, 4.0, Color(1.0, 1.0, 1.0, 0.9))
+
+
+## 안 열린 타격으로 연속 상한에 닿았는가(다음 막기는 반드시 열린다. 결정 401).
+static func _limit_reached(ev: Dictionary) -> bool:
+	return int(ev.get("miss_limit", 0)) > 0 and int(ev.get("closed_streak", 0)) >= int(ev.get("miss_limit", 0))

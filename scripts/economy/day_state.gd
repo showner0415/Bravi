@@ -360,7 +360,11 @@ func haggle_roll() -> int:
 
 ## 기본 결투 규칙을 받아, 가진 업그레이드가 적용된 사본을 돌려준다.
 func effective_duel_rules(base: DuelRules) -> DuelRules:
-	return UpgradeData.applied(base, UpgradeData.Target.DUEL, owned_upgrades()) as DuelRules
+	var rules := UpgradeData.applied(base, UpgradeData.Target.DUEL, owned_upgrades()) as DuelRules
+	# 이 판의 날을 사본에 싣는다: 빈틈의 확률이 날에 따라 깎인다(결정 406). 받은 base는 고치지 않는다.
+	if rules != null:
+		rules.stage_day = day_number
+	return rules
 
 
 # ---------------------------------------------------------------- 저장
