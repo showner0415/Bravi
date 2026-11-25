@@ -83,7 +83,7 @@ static func help_text(opponent: OpponentData, p_day_mode := false, has_hat := fa
 			marked = habit.response
 	if marked != null:
 		text += " · %s는 막기를 뗐다 다시 올려야 받아낸다" % marked.attack_name
-	# 패턴이 있는 상대만 막는 법을 덧붙인다(결정 377). 지금 하루의 상대에는 패턴이 없다.
+	# 패턴이 있는 상대만 막는 법을 덧붙인다(결정 377).
 	var has_chain := false
 	var has_sweep := false
 	for atk in opponent.attacks:

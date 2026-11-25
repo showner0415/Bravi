@@ -40,7 +40,11 @@ static func write(path: String, content: Dictionary) -> bool:
 		if DirAccess.rename_absolute(temp, path) == OK:
 			return true
 		push_warning("저장: 임시 파일을 바꿔 끼우지 못해 바로 적는다: %s" % path)
-		_remove(temp)
+		# Windows는 바꿔 끼우다 원래 파일을 먼저 지우고 실패할 수 있어, 바로 적기가 성공한 뒤에만 임시 파일을 지운다.
+		if _write_text(path, text) == WRITTEN:
+			_remove(temp)
+			return true
+		return false
 	else:
 		push_warning("저장: 임시 파일을 열지 못해 바로 적는다: %s" % path)
 	return _write_text(path, text) == WRITTEN

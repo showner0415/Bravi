@@ -15,8 +15,8 @@ extends CommissionCondition
 
 func describe() -> String:
 	if graze_penalty <= 0:
-		return "%s로 끝내기 — 유효타만 본다. %s에 유효타 한 번. 스침은 어디든 괜찮고, 다른 곳의 유효타는 감점." % [
-			_target_name(), _target_name()]
+		return "%s%s 끝내기 — 유효타만 본다. %s에 유효타 한 번. 스침은 어디든 괜찮고, 다른 곳의 유효타는 감점." % [
+			_target_name(), _ro(_target_name()), _target_name()]
 	return "%s만 — 스침도 본다. %s에 유효타 한 번. 다른 곳은 스치기만 해도 감점." % [_target_name(), _target_name()]
 
 
@@ -51,6 +51,16 @@ func explain(record: DuelRecord) -> Array[String]:
 
 func _target_name() -> String:
 	return DuelTypes.PART_NAMES[target_part]
+
+
+static func _ro(word: String) -> String:
+	if word == "":
+		return "로"
+	var code := word.unicode_at(word.length() - 1) - 0xAC00
+	if code < 0 or code > 11171:
+		return "로"
+	var tail := code % 28
+	return "으로" if tail != 0 and tail != 8 else "로"
 
 
 ## 결과가 result이고, 부위가 지정 부위인(on_target) 또는 아닌 공격 판정의 수.
