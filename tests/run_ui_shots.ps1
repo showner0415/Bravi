@@ -66,9 +66,22 @@ if ($ok.Count -ne 1) { $reasons += "no `"UI SHOTS OK $count`" line" }
 if ($errors.Count -gt 0) { $reasons += "error lines $($errors.Count)" }
 if ($sizes.Count -ne $count -or $badSize.Count -gt 0) { $reasons += "size lines $($sizes.Count), not $wantSize $($badSize.Count)" }
 
+# Plan 037 task 0b: the practice grid must fit 1280x720 (right edge <= 1248, help text bottom <= 720). Not judged with -Resolution.
+$fit = @($out | Where-Object { $_ -match '^fit,select,' })
+$fitNote = 'fit none'
+if ($fit.Count -eq 1) {
+	$fitParts = $fit[0] -split ','
+	$fitX = [int]$fitParts[2]
+	$fitY = [int]$fitParts[3]
+	$fitNote = "fit select ${fitX}x${fitY}"
+	if (-not $Resolution -and ($fitX -gt 1248 -or $fitY -gt 720)) { $reasons += "fit select ${fitX}x${fitY} (limit 1248x720)" }
+} elseif (-not $Resolution) {
+	$reasons += "fit,select lines $($fit.Count), not 1"
+}
+
 Write-Output ''
 if ($reasons.Count -eq 0) {
-	Write-Output "RESULT: OK ($($ok[0]), $wantSize, error lines 0, warning lines $($warnings.Count))"
+	Write-Output "RESULT: OK ($($ok[0]), $wantSize, $fitNote, error lines 0, warning lines $($warnings.Count))"
 	exit 0
 }
 Write-Output "RESULT: FAIL ($($reasons -join ', '))"

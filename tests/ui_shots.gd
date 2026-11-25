@@ -73,6 +73,10 @@ func _process(_delta: float) -> void:
 			image.save_png(_shots_dir.path_join(String(_plan[_i][0]) + ".png"))
 			shot_size = image.get_size()
 		print("size,%s,%dx%d" % [_plan[_i][0], shot_size.x, shot_size.y])
+		var grid := _node.find_child("TrialGrid", true, false) as Control
+		var help := _node.find_child("PatternHelp", true, false) as Control
+		if grid != null and help != null:
+			print("fit,%s,%d,%d" % [_plan[_i][0], int(grid.get_global_rect().end.x), int(help.get_global_rect().end.y)])
 		_next()
 
 

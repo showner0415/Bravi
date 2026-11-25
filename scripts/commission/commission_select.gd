@@ -17,6 +17,9 @@ const OPENING_DAYS := [[0, "늘 열린다"], [1, "1일차"], [2, "2일차"], [3,
 ## static: 결투에서 돌아와도 고른 날이 남는다(2026-11-25 playtester).
 static var _opening_day := 1
 var _head: HBoxContainer
+var _trial_grid: HBoxContainer
+var _trial_count := 0
+var _drill_count := 0
 
 
 func _ready() -> void:
@@ -144,18 +147,24 @@ func _add_trials(column: VBoxContainer) -> void:
 	if trials.is_empty():
 		return
 	_add_opening_row(_head)
-	var free_row := _add_row(column, "자유 결투")
-	var drill_row := _add_row(column, "패턴만")
-	var drills := 0
-	for i in trials.size():
-		var opponent := trials[i]
-		_add_trial_button(free_row, opponent.display_name, "TrialDuel%d" % i, opponent)
-		for atk in opponent.attacks:
-			if atk.chain.is_empty():
-				continue
-			_add_trial_button(drill_row, "%s · %s" % [opponent.display_name, atk.attack_name],
-				"PatternDrill%d" % drills, opponent.drill(atk))
-			drills += 1
+	# 상대별 칸으로 묶는다: 상대가 셋이 되어도 1280 안에 들고 줄 수는 둘이다(결정 448).
+	_trial_grid = HBoxContainer.new()
+	_trial_grid.name = "TrialGrid"
+	_trial_grid.add_theme_constant_override("separation", 24)
+	column.add_child(_trial_grid)
+	var captions := VBoxContainer.new()
+	captions.add_theme_constant_override("separation", 20)
+	captions.custom_minimum_size = Vector2(110, 0)
+	_trial_grid.add_child(captions)
+	for caption in ["자유 결투", "패턴만"]:
+		var label := Label.new()
+		label.text = caption
+		label.add_theme_font_size_override("font_size", 18)
+		label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		captions.add_child(label)
+	for opponent in trials:
+		_add_trial_column(opponent)
 	var how := Label.new()
 	how.name = "PatternHelp"
 	how.text = "%s\n%s\n%s\n%s" % [DuelHud.HELP_CHAIN.trim_prefix(" · "), DuelHud.HELP_SWEEP.trim_prefix(" · "),
@@ -165,11 +174,21 @@ func _add_trials(column: VBoxContainer) -> void:
 	column.add_child(how)
 
 
-func _add_row(column: VBoxContainer, caption: String) -> HBoxContainer:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 12)
-	column.add_child(row)
-	return _caption(row, caption)
+func _add_trial_column(opponent: OpponentData) -> void:
+	var cell := VBoxContainer.new()
+	cell.add_theme_constant_override("separation", 20)
+	_trial_grid.add_child(cell)
+	var free_button := _add_trial_button(cell, opponent.display_name, "TrialDuel%d" % _trial_count, opponent)
+	free_button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	_trial_count += 1
+	var drills := HBoxContainer.new()
+	drills.add_theme_constant_override("separation", 12)
+	cell.add_child(drills)
+	for atk in opponent.attacks:
+		if atk.chain.is_empty():
+			continue
+		_add_trial_button(drills, atk.attack_name, "PatternDrill%d" % _drill_count, opponent.drill(atk))
+		_drill_count += 1
 
 
 func _caption(row: HBoxContainer, caption: String) -> HBoxContainer:
@@ -181,13 +200,14 @@ func _caption(row: HBoxContainer, caption: String) -> HBoxContainer:
 	return row
 
 
-func _add_trial_button(row: HBoxContainer, text: String, node_name: String, opponent: OpponentData) -> void:
+func _add_trial_button(row: Container, text: String, node_name: String, opponent: OpponentData) -> Button:
 	var button := Button.new()
 	button.name = node_name
 	button.text = text
 	button.add_theme_font_size_override("font_size", 18)
 	button.pressed.connect(_start_opponent.bind(opponent))
 	row.add_child(button)
+	return button
 
 
 ## 의뢰 없이 그 상대와 결투한다. 고른 날의 빈틈 확률을 실은 사본을 넘긴다(결정 407).
