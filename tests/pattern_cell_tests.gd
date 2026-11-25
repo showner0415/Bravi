@@ -14,6 +14,7 @@ const DAY_PATHS: Array[String] = [
 	"res://data/opponents/opponent_01.tres",
 	"res://data/opponents/opponent_02.tres",
 ]
+const LORENZO_PATH := "res://data/opponents/opponent_03.tres"
 const BARTOLO_PATH := "res://data/opponents/opponent_01.tres"
 const RULES_PATH := "res://data/duel_rules.tres"
 const CATALOG_PATH := "res://data/upgrade_catalog.tres"
@@ -450,9 +451,9 @@ func t91_day_patterns() -> String:
 		errs.append("도움말 화면에 이어 베기나 높이의 글이 없음")
 	if not (load(LEGS_ONLY_PATH) as Commission).dialogue.contains("휩쓸"):
 		errs.append("오르솔라의 사연에 휩쓸기의 귀띔이 없음")
-	# 6. 연습의 줄: 하루의 상대 둘, 그림 데이터는 섞이지 않는다.
+	# 6. 연습의 줄: 상대 셋(하루의 둘과 셋째), 그림 데이터는 섞이지 않는다.
 	var trials := Select.load_trials()
-	if trials.size() != 2 or trials[0].resource_path != DAY_PATHS[0] or trials[1].resource_path != DAY_PATHS[1]:
+	if trials.size() != 3 or trials[0].resource_path != DAY_PATHS[0] or trials[1].resource_path != DAY_PATHS[1] or trials[2].resource_path != LORENZO_PATH:
 		errs.append("연습의 상대 %d명" % trials.size())
 	var select: Node = (load(Session.SELECT_PATH) as PackedScene).instantiate()
 	_tree.root.add_child(select)
@@ -462,8 +463,8 @@ func t91_day_patterns() -> String:
 		select.find_children("TrialFlat*", "Button", true, false).size(),
 		select.find_children("OpeningDay*", "Button", true, false).size(),
 	]
-	if counts != [2, 4, 0, 4]:
-		errs.append("연습 화면의 버튼 (자유 결투·패턴만·가로만·빈틈) %s (기대 [2, 4, 0, 4])" % str(counts))
+	if counts != [3, 6, 0, 4]:
+		errs.append("연습 화면의 버튼 (자유 결투·패턴만·가로만·빈틈) %s (기대 [3, 6, 0, 4])" % str(counts))
 	# 7. 연습 화면의 배치(결정 448): 상대가 셋보다 적으면 사본으로 채워 셋의 폭을 잰다.
 	while select.find_children("TrialDuel*", "Button", true, false).size() < 3:
 		var filler := (load(BARTOLO_PATH) as OpponentData).duplicate() as OpponentData

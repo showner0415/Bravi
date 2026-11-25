@@ -26,6 +26,9 @@
 | `bruno-front.png` | 결투 상대 둘째 브루노 전신(우람한 퇴역 군인, 가죽 조끼, 대머리·큰 콧수염, 언짢음, 낮은 군모). 계획 035 | 1024×1536 | `prompts/035-F1a-bruno-front.txt`(둘째 호출. 첫 호출은 그림 도구가 막았다) | `in/035-in-front`(그 사람의 섞은 SVG 스케치, 견본 `samples/035-second-opponent.html`) | `01a20d46-d9c6-76e3-a818-fdd3a932c359` | 2026-11-24 판 Y0 "나 · 브루노", 판 Y1 "맞다 — 올린다" |
 | `bruno-parts.png` | 브루노 파츠 시트(머리 셋, 군모, 깃털, 몸통, 팔, 주먹, 칼, 다리) | 1536×1024 | `prompts/035-P1a-bruno-parts.txt` | `bruno-front`(사람), `in/035-in-parts`(배치) | `01a20d52-6d5f-7281-9e75-dac5b7c74f23` | 2026-11-24 판 Y2 "맞다 — 올린다" |
 | `bruno-arms.png` | 브루노의 따로 그린 칼 팔 셋(큰 베기의 든 팔, 찌르기의 펜싱 런지, 대기의 펜싱 겨누기). 칼자루를 가로지르는 손가락 | 1536×1024 | `prompts/035-A1c-bruno-arms.txt`(A1a → A1b 소매를 셔츠 소매로 → A1c 손가락) | `generated/035-A1b-bruno-arms.png`(직전 시트). A1a는 `bruno-parts`와 `in/030c-in-arms` | `01a20d67-5fd7-7133-8844-d90b432566bc` | 2026-11-24 판 Y3 "고친다 — 칼자루를 가로지르는 손가락으로" → A1c "맞다 — 올린다" |
+| `lorenzo-front.png` | 결투 상대 셋째 로렌초 전신. 계획 037 | 1024×1536 | `prompts/037-F1a-lorenzo-front.txt` | `in/037-in-front`(그 사람의 섞은 SVG 스케치, 견본 `samples/037-third-opponent.html`) | `01a212cd-de6a-7221-8858-04a9023c90fb` | 2026-11-25 판 Y1 "맞다" |
+| `lorenzo-parts.png` | 로렌초 파츠 시트(머리 셋, 모자, 깃털, 몸통, 팔, 주먹, 칼, 다리) | 1536×1024 | `prompts/037-P1a-lorenzo-parts.txt` | `lorenzo-front`(사람), `in/037-in-parts`(배치) | `01a212d4-9f97-7bc1-9840-1d8ece20829a` | 2026-11-25 판 Y2 "맞다" |
+| `lorenzo-arms.png` | 로렌초의 따로 그린 칼 팔 셋(큰 베기의 든 팔, 찌르기의 펜싱 런지, 대기의 펜싱 겨누기) | 1536×1024 | `prompts/037-A1a-lorenzo-arms.txt` | `lorenzo-parts`, `in/030c-in-arms` | `01a212e0-f578-7783-ba9b-e15bf2c62fdd` | 2026-11-25 판 Y3 "맞다" |
 
 ## 손질 값 (견본 `samples/024-widen.html`에서 쓴 것)
 
@@ -98,3 +101,9 @@
 - **`bruno-parts`** → `assets/art/opponents/bruno/` 열 장(`docs/style/tools/cutparts.ps1 -Layout docs/style/tools/cutparts-bruno.psd1`): k 0.7042(몸통의 목 531, 골반 815). 머리 셋은 배율 1(상자 y 165~370, 관절 y 343 = 목. 머리털 꼭대기가 목 위 123 = 117의 1.05배), 군모·깃털 0.95(군모 52.2 ≤ 53, 깃털 밑동이 모자 좌표 (30, −30)), 팔 0.892(어깨에서 소맷부리까지 108 = 105의 1.03배), 손 0.96(주먹 폭 50.0 = 소매 47.7의 1.05배, 바르톨로와 같은 비), 몸통·다리·칼 1. 몸통 폭 195단위 = 바르톨로 152의 1.28배.
 - **관절 자리**(`data/opponents/bruno_art.tres`): `shoulder` (−83, −180) = 바르톨로 −65 × 몸통 반폭의 비 1.28. `neck`·`hat_at`·`hand_at`은 기본값, `sword_at` (0, 19)은 바르톨로와 같다.
 - **`bruno-arms`** → 열하나(`docs/style/tools/cutarms.ps1 -Sheet docs/style/basis/bruno-arms.png -Layout docs/style/tools/cutarms-bruno.psd1`): 팔 시트가 바르톨로 것보다 작게 그려져 박힌 배율 0.3165로는 주먹이 파츠 손의 0.68이라 `K` 0.3937로 덮었다(주먹 127화소 × 0.3937 = 50.0 = 파츠 손, 소매 109화소 × 0.3937 = 42.9 = 파츠 팔의 0.90). 날밑 타원은 칠의 2차 모멘트에 13화소(선과 고르지 않은 테)를 더했다. 관절은 바르톨로와 같은 규칙(든 팔은 소매 끝에서 47화소 위, 앞을 향한 팔은 소매 위 끝에서 60화소 아래). 재조립 다름 0, 덮이지 않은 곳 0.
+
+## 손질 값 (계획 037, 로렌초)
+
+- **`lorenzo-parts`** → `assets/art/opponents/lorenzo/` 열 장(`docs/style/tools/cutparts.ps1 -Layout docs/style/tools/cutparts-lorenzo.psd1`): k 0.6061. 머리 셋·몸통·다리·칼은 배율 1, 팔 0.8, 손 0.84, 모자·깃털 0.85.
+- **관절 자리**(`data/opponents/lorenzo_art.tres`): `shoulder` (−51.7, −180) = 바르톨로 −65 × 몸통 폭의 비. `hat_at` (0, −108) — 머리 배율 1.0이라 머리털 꼭대기가 기본 자리(−104)의 모자 꼭대기보다 약 4단위 높아 4만큼 올렸다. `neck`·`hand_at`은 기본값, `sword_at` (0, 19)은 바르톨로와 같다.
+- **`lorenzo-arms`** → 열하나(`docs/style/tools/cutarms.ps1 -Sheet docs/style/basis/lorenzo-arms.png -Layout docs/style/tools/cutarms-lorenzo.psd1`): `K` 0.418로 덮었다(주먹이 소매에 비해 크게 그려져 어느 K로도 둘이 1.00이 되지 않아 둘 다 0.85~1.15 안에 두는 값).

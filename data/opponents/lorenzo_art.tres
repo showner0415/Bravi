@@ -1,0 +1,201 @@
+[gd_resource type="Resource" script_class="OpponentArt" load_steps=50 format=3]
+
+[ext_resource type="Script" path="res://scripts/duel/part_art.gd" id="1_part"]
+[ext_resource type="Script" path="res://scripts/duel/opponent_art.gd" id="2_art"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/lorenzo/legs.png" id="3_legs"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/lorenzo/torso.png" id="4_torso"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/lorenzo/head.png" id="5_head"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/lorenzo/head_oops.png" id="6_head_oops"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/lorenzo/head_dizzy.png" id="7_head_dizzy"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/lorenzo/hat.png" id="8_hat"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/lorenzo/feather.png" id="9_feather"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/lorenzo/arm.png" id="10_arm"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/lorenzo/hand.png" id="11_hand"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/lorenzo/sword.png" id="12_sword"]
+[ext_resource type="Script" path="res://scripts/duel/arm_layer.gd" id="13_layer"]
+[ext_resource type="Script" path="res://scripts/duel/arm_art.gd" id="14_arm_art"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/lorenzo/arm_up_sword.png" id="15_up_sword"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/lorenzo/arm_up.png" id="16_up"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/lorenzo/arm_up_fist.png" id="17_up_fist"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/lorenzo/arm_thrust.png" id="18_thrust"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/lorenzo/arm_thrust_fist.png" id="19_thrust_fist"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/lorenzo/arm_thrust_sword.png" id="20_thrust_sword"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/lorenzo/arm_thrust_blade.png" id="21_thrust_blade"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/lorenzo/arm_aim.png" id="22_aim"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/lorenzo/arm_aim_fist.png" id="23_aim_fist"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/lorenzo/arm_aim_sword.png" id="24_aim_sword"]
+[ext_resource type="Texture2D" path="res://assets/art/opponents/lorenzo/arm_aim_blade.png" id="25_aim_blade"]
+
+[sub_resource type="Resource" id="part_legs"]
+script = ExtResource("1_part")
+texture = ExtResource("3_legs")
+joint = Vector2(119, 12)
+units_per_px = Vector2(0.6061, 0.6061)
+
+[sub_resource type="Resource" id="part_torso"]
+script = ExtResource("1_part")
+texture = ExtResource("4_torso")
+joint = Vector2(102.5, 355)
+units_per_px = Vector2(0.6061, 0.6061)
+
+[sub_resource type="Resource" id="part_head"]
+script = ExtResource("1_part")
+texture = ExtResource("5_head")
+joint = Vector2(117, 237)
+units_per_px = Vector2(0.6061, 0.6061)
+
+[sub_resource type="Resource" id="part_head_oops"]
+script = ExtResource("1_part")
+texture = ExtResource("6_head_oops")
+joint = Vector2(117, 237)
+units_per_px = Vector2(0.6061, 0.6061)
+
+[sub_resource type="Resource" id="part_head_dizzy"]
+script = ExtResource("1_part")
+texture = ExtResource("7_head_dizzy")
+joint = Vector2(116.5, 237)
+units_per_px = Vector2(0.6061, 0.6061)
+
+[sub_resource type="Resource" id="part_hat"]
+script = ExtResource("1_part")
+texture = ExtResource("8_hat")
+joint = Vector2(173.5, 69)
+units_per_px = Vector2(0.5152, 0.5152)
+
+[sub_resource type="Resource" id="part_feather"]
+script = ExtResource("1_part")
+texture = ExtResource("9_feather")
+joint = Vector2(-22, 62)
+units_per_px = Vector2(0.5152, 0.5152)
+
+[sub_resource type="Resource" id="part_arm"]
+script = ExtResource("1_part")
+texture = ExtResource("10_arm")
+joint = Vector2(44.5, 35)
+units_per_px = Vector2(0.4849, 0.4849)
+
+[sub_resource type="Resource" id="part_hand"]
+script = ExtResource("1_part")
+texture = ExtResource("11_hand")
+joint = Vector2(44.5, 11)
+units_per_px = Vector2(0.5091, 0.5091)
+outline = PackedVector2Array(23, 3, 70, 3, 83, 7, 86, 16, 87, 49, 84, 65, 78, 72, 57, 78, 32, 78, 16, 74, 7, 68, 3, 54, 4, 15, 8, 6)
+
+[sub_resource type="Resource" id="part_sword"]
+script = ExtResource("1_part")
+texture = ExtResource("12_sword")
+joint = Vector2(66, 333)
+units_per_px = Vector2(0.6061, 0.6061)
+
+[sub_resource type="Resource" id="layer_up_sword"]
+script = ExtResource("13_layer")
+texture = ExtResource("15_up_sword")
+joint = Vector2(76, 910)
+units_per_px = Vector2(0.418, 0.418)
+part = -1
+
+[sub_resource type="Resource" id="layer_up"]
+script = ExtResource("13_layer")
+texture = ExtResource("16_up")
+joint = Vector2(52, 219)
+units_per_px = Vector2(0.418, 0.418)
+part = 3
+
+[sub_resource type="Resource" id="layer_up_fist"]
+script = ExtResource("13_layer")
+texture = ExtResource("17_up_fist")
+joint = Vector2(64, 356)
+units_per_px = Vector2(0.418, 0.418)
+outline = PackedVector2Array(3, 0, 128, 0, 113, 3, 123, 14, 128, 29, 128, 58, 125, 73, 121, 81, 116, 86, 111, 87, 108, 92, 108, 131, 111, 133, 113, 140, 15, 140, 16, 134, 20, 131, 20, 108, 12, 101, 7, 91, 7, 79, 4, 74, 5, 56, 3, 52, 3, 42, 6, 35, 6, 17, 14, 3)
+part = 4
+
+[sub_resource type="Resource" id="layer_thrust"]
+script = ExtResource("13_layer")
+texture = ExtResource("18_thrust")
+joint = Vector2(132, 54)
+units_per_px = Vector2(0.418, 0.418)
+part = 3
+
+[sub_resource type="Resource" id="layer_thrust_fist"]
+script = ExtResource("13_layer")
+texture = ExtResource("19_thrust_fist")
+joint = Vector2(132, -79)
+units_per_px = Vector2(0.418, 0.418)
+outline = PackedVector2Array(78, 0, 186, 0, 186, 8, 197, 17, 204, 31, 206, 67, 200, 95, 191, 106, 185, 109, 182, 118, 164, 111, 164, 118, 146, 113, 116, 112, 96, 115, 78, 122, 75, 122, 72, 117, 66, 120, 63, 119, 60, 109, 61, 96, 58, 90, 58, 75, 60, 71, 58, 56, 61, 48, 59, 34, 66, 13)
+part = 4
+
+[sub_resource type="Resource" id="layer_thrust_sword"]
+script = ExtResource("13_layer")
+texture = ExtResource("20_thrust_sword")
+joint = Vector2(135, -184)
+units_per_px = Vector2(0.418, 0.418)
+part = -1
+
+[sub_resource type="Resource" id="layer_thrust_blade"]
+script = ExtResource("13_layer")
+texture = ExtResource("21_thrust_blade")
+joint = Vector2(-115, -274)
+units_per_px = Vector2(0.418, 0.418)
+part = -1
+
+[sub_resource type="Resource" id="layer_aim"]
+script = ExtResource("13_layer")
+texture = ExtResource("22_aim")
+joint = Vector2(94, 49)
+units_per_px = Vector2(0.418, 0.418)
+part = 3
+
+[sub_resource type="Resource" id="layer_aim_fist"]
+script = ExtResource("13_layer")
+texture = ExtResource("23_aim_fist")
+joint = Vector2(94, -164)
+units_per_px = Vector2(0.418, 0.418)
+outline = PackedVector2Array(41, 0, 147, 0, 146, 9, 156, 18, 162, 32, 163, 63, 157, 88, 150, 96, 143, 100, 144, 115, 135, 126, 127, 119, 120, 122, 102, 109, 91, 105, 91, 97, 87, 95, 39, 96, 37, 89, 28, 92, 28, 69, 26, 65, 26, 50, 29, 45, 28, 30, 35, 12, 41, 6)
+part = 4
+
+[sub_resource type="Resource" id="layer_aim_sword"]
+script = ExtResource("13_layer")
+texture = ExtResource("24_aim_sword")
+joint = Vector2(97.5, -251.2)
+units_per_px = Vector2(0.418, 0.418)
+part = -1
+
+[sub_resource type="Resource" id="layer_aim_blade"]
+script = ExtResource("13_layer")
+texture = ExtResource("25_aim_blade")
+joint = Vector2(-40, -203)
+units_per_px = Vector2(0.418, 0.418)
+part = -1
+
+[sub_resource type="Resource" id="arm_up"]
+script = ExtResource("14_arm_art")
+key = &"armUp"
+rotation_deg = 180.0
+layers = Array[ExtResource("13_layer")]([SubResource("layer_up_sword"), SubResource("layer_up"), SubResource("layer_up_fist")])
+
+[sub_resource type="Resource" id="arm_thrust"]
+script = ExtResource("14_arm_art")
+key = &"armThrust"
+layers = Array[ExtResource("13_layer")]([SubResource("layer_thrust"), SubResource("layer_thrust_fist"), SubResource("layer_thrust_sword"), SubResource("layer_thrust_blade")])
+
+[sub_resource type="Resource" id="arm_aim"]
+script = ExtResource("14_arm_art")
+key = &"armAim"
+layers = Array[ExtResource("13_layer")]([SubResource("layer_aim"), SubResource("layer_aim_fist"), SubResource("layer_aim_sword"), SubResource("layer_aim_blade")])
+
+[resource]
+script = ExtResource("2_art")
+legs = SubResource("part_legs")
+torso = SubResource("part_torso")
+head = SubResource("part_head")
+head_oops = SubResource("part_head_oops")
+head_dizzy = SubResource("part_head_dizzy")
+hat = SubResource("part_hat")
+feather = SubResource("part_feather")
+arm = SubResource("part_arm")
+hand = SubResource("part_hand")
+sword = SubResource("part_sword")
+arm_arts = Array[ExtResource("14_arm_art")]([SubResource("arm_up"), SubResource("arm_thrust"), SubResource("arm_aim")])
+hat_at = Vector2(0, -108)
+shoulder = Vector2(-51.7, -180)
+sword_at = Vector2(0, 19)

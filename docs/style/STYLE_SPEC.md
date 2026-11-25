@@ -1068,3 +1068,37 @@ Colors: The wall parchment E9D8B4 with a slightly darker parchment D2B98C, the h
 - 색: 전신 F1a의 색 줄 그대로.
 - A1b(고치기, "팔 시트를 고칠 때"의 꼴. 넣는 그림은 직전 시트 A1a 하나): A1a는 세 팔의 소매를 조끼 색(갈색)으로 그려 파츠 시트의 셔츠 소매와 어긋났다(굳은 확인에 걸림). `Change:` 줄: `Change: every sleeve is the plain shirt sleeve of this character, filled with parchment E9D8B4 with shadow D2B98C instead of ochre brown; the fists, the cuffs, the rapiers, the guards and the shapes and places of all three parts stay exactly as they are.`
 - A1c(고치기, 넣는 그림은 직전 시트 A1b 하나. 판 Y3의 답 "칼자루를 가로지르는 손가락으로"): `Change: on all three fists, the four fingers wrap around the grip: draw them as four short rounded finger bands lying side by side across the grip, stacked one above the other, with a thin line between the fingers, like the hand of someone firmly holding a stick; the thumb lies along the grip; the sleeves, the cuffs, the rapiers, the guards and the shapes and places of all three parts stay exactly as they are, and the shadow of each fist stays on its right side.`
+
+# 계획 037의 줄 (상대 셋째 로렌초. 결정 437~448)
+
+영어, ASCII만, 큰따옴표 없이(결정 187). 사용자의 답 "로렌초"와 판 Y0의 답 "가 — 035의 색 그대로"(2026-11-25). 넣는 그림은 견본 `samples/037-third-opponent.html`에서 구운 `generated/in/037-in-front.png`(전신)·`037-in-parts.png`(파츠 배치)다.
+
+## 로렌초 전신 F1a (바이블 13.3 "새 사람의 전신(상대)")
+
+차례는 브루노 F1a와 같다(계획 035의 줄). 아래 줄만 바꾼다.
+
+- Subject: `Subject: Lorenzo, a vain young nobleman and duelist from a Renaissance-era Italian town. A slim, narrow-built dandy with short dark hair and a small pointed chin beard, without a mustache. A fitted doublet with a plain high collar and one plain diagonal sash across the chest, breeches, stockings, simple shoes, a wide flat-brimmed hat with a low crown and one small feather. He holds a rapier.`
+- S-FIG2 둘째 항목 끝(표정 거만함 — 3절 표의 평평한 눈썹 · 아래로 휜 반달 선 · 비스듬한 선): `His eyes are closed, drawn as two short curved lines that bend downward, under flat, level eyebrows. His mouth is a short slanted line. His character shows in the expression: haughty, vain and scornful.`
+- 셋째 항목: `- Keep it as simple as the reference image: the same small number of shapes and the same few inner lines. Do not add details that the reference does not have. A plain high collar. A plain fitted doublet with straight edges and one plain diagonal sash, placed as in the reference image. Plain simple shoes without buckles. Plain cuffs. A simple fist with a few short finger lines. A plain wide flat-brimmed hat with a low crown, a band and one small feather. No extra seams, folds or wrinkles. Improve only the craft: clean construction, good proportions, parts that join properly and a hand that clearly holds the sword.`
+- 다섯째 항목: `- Fills: flat solid colors, muted and faded. The hair, the pointed chin beard, the eyebrows, the belt and the shoes are filled with the same very dark brown as the outlines. He has no mustache.`
+- 색: `- Main fills and their shadow tones: muted olive green 6F7F4F with shadow 59663F for the doublet and the sleeve, faded brick red A5533F with shadow 84422F for the sash, ochre brown A8895E with shadow 8C7050 for the breeches, parchment E9D8B4 with shadow D2B98C for the collar, the cuffs, the stockings and the feather, skin EBC49F, dark brown 5E4C39 with shadow 4A3F34 for the hat, pale warm grey CFC8BA for the blade and guard.` 둘째 줄은 C-FIG2 그대로.
+- 색의 겹침(판 Y0에서 알리고 받은 답): 바지 `#A8895E`는 브루노의 조끼와, 저고리 `#6F7F4F`는 브루노의 바지와 같은 색이다. 갈림은 몸통 폭(바르톨로의 0.81, 브루노의 0.64)과 챙 넓은 모자, 붉은 띠가 맡는다. 게임에 넣은 뒤 판 Y4-3에서 다시 본다.
+
+## 로렌초 파츠 시트 P1a (바이블 13.3 "파츠 시트")
+
+본보기와 차례는 브루노 P1a와 같다. 넣는 그림 둘: `basis/lorenzo-front.png`(사람), `generated/in/037-in-parts.png`(배치). "팔은 짧다"를 세게 적는다(바이블 16절). 바꾸는 줄:
+
+- Subject: 전신의 `Subject:`에서 첫 문장 뒤에 `, the same character as in the first referenced image`를 붙이고 끝의 `He holds a rapier.`를 `A rapier.`로.
+- 파츠 1: 머리 셋은 모자 없이, 짧은 목과 함께, 머리털의 윗부분을 다 그린다(`with the top of the hair drawn complete`).
+- 파츠 2: `  2. the hat alone, without the feather;`
+- 파츠 4: 몸통은 높은 목깃·저고리·비스듬한 띠·허리띠, 양쪽에 팔 없음.
+- 파츠 5: 칼 든 팔은 저고리의 소매 하나(`one straight doublet sleeve`), 곧게 내려오고 짧다(어깨에서 허리띠까지보다 길지 않다).
+- 첫 머리 문장: 전신의 표정 문장을 "exactly the face of the first referenced image"와 함께.
+- 색: 전신 F1a의 색 줄 그대로.
+
+## 로렌초 팔 시트 A1a (바이블 13.3 "팔 시트", 본보기 `030c-A2a`)
+
+본보기의 줄 그대로이고 `Subject:`의 이름과 색 블록의 첫 줄만 바꾼다. 넣는 그림 둘: `basis/lorenzo-parts.png`(사람), `generated/in/030c-in-arms.png`(자세 안내도). 035에서 몫을 쓰게 한 둘을 첫 프롬프트에 미리 넣는다(결정 440):
+
+- 소매의 색: `Every sleeve is the doublet sleeve of this character, filled with muted olive green 6F7F4F with shadow 59663F, the same as the arm in the first referenced image.`
+- 칼자루를 가로지르는 손가락: `On all three fists, the four fingers wrap around the grip: draw them as four short rounded finger bands lying side by side across the grip, stacked one above the other, with a thin line between the fingers; the thumb lies along the grip.`
