@@ -512,7 +512,12 @@ class Driver extends Node:
 		if core.rules.player_posture_max != want:
 			_fail("2일차 결투의 내 자세 %d (기대 %d, 기본 %d)" % [core.rules.player_posture_max, want, base.player_posture_max])
 			return false
+		var chance_want := (UpgradeData.applied(base, UpgradeData.Target.DUEL, _upgrades) as DuelRules).opening_chance_for(core.opponent_data.opening_chance, 2)
+		if core.rules.stage_day != 2 or not is_equal_approx(core.brain.opening_chance, chance_want):
+			_fail("2일차 결투의 날 %d · 빈틈의 확률 %.2f (기대 2 · %.2f)" % [core.rules.stage_day, core.brain.opening_chance, chance_want])
+			return false
 		print("DAY SMOKE 2일차 결투: 내 자세 %d (기본 %d)" % [core.rules.player_posture_max, base.player_posture_max])
+		print("DAY SMOKE 2일차 결투: 빈틈의 확률 %.2f" % core.brain.opening_chance)
 		_shot("duel_day2_hud")
 		return true
 

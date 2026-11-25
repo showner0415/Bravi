@@ -612,7 +612,8 @@ func t50_balance() -> String:
 	print("  INFO 조건 4: 방심 시간보다 짧게 끝난 판 %d/%d (패리·팔 봇, 선공을 붙여도 길이가 같다)" % [short_games, seeds])
 
 	# ---- INFO (통과 조건 아님): 로드한 상대와 무기. 봇마다 선공을 붙이지 않은 것과 붙인 것을 나란히.
-	var real := (load(OPPONENT_PATH) as OpponentData).duplicate() as OpponentData
+	# 다른 규칙을 보는 테스트다: 빈틈의 확률은 끈다(결정 416). 하루의 판 길이는 T90.
+	var real := (load(OPPONENT_PATH) as OpponentData).with_opening(1.0)
 	var real_weapon := load(WEAPON_PATH) as WeaponData
 	print("  INFO [로드한 값] 자세 %d · 방심 %.1f초 · 한 판에 %d번 · 런지 %.2f / %.2f초 · 엉킴 %.1f초" % [
 		real.posture_max, real.complacent_time, real.complacent_limit, real_weapon.lunge_windup, real_weapon.lunge_recover, real_weapon.close_bind_time])

@@ -133,6 +133,7 @@ description = "공격이 연속 3회 막히면 성질을 못 이기고 크게 �
 [resource]
 script = ExtResource("3_opponent")
 display_name = "브루노"
+opening_chance = 0.8
 sword_side = 0
 posture_max = 9
 graze_head = 2

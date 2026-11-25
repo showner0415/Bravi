@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/economy/upgrade_data.gd" id="1_upgrade"]
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"fencing_manual"
+display_name = "검술 교본"
+description = "막아 낸 뒤 상대가 틈을 더 자주 보인다"
+branch = 1
+price = 120
+target = 1
+property = &"opening_chance_bonus"
+amount = 0.15

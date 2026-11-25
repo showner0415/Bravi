@@ -8,6 +8,7 @@ const Bot := preload("res://tests/duel_bots.gd")
 const DT := preload("res://scripts/duel/duel_types.gd")
 const Summary := preload("res://scripts/duel/duel_summary.gd")
 const Session := preload("res://scripts/game_session.gd")
+const Title := preload("res://scripts/title.gd")
 
 const RULES_PATH := "res://data/duel_rules.tres"
 const WEAPON_PATH := "res://data/weapons/rapier.tres"
@@ -29,6 +30,7 @@ func list(tree: SceneTree) -> Array:
 		{"id": "T86", "name": "빈틈의 확률 판정: 상한, 패리 덤, 걸리지 않는 것, 패턴은 끝에서, 봐주기, 버릇", "fn": t86_rules},
 		{"id": "T87", "name": "빈틈의 확률 굴림·셈: 날의 배율과 바닥, 예비 동작마다 한 번, 1.0이면 난수 불변, 몫", "fn": t87_rolls},
 		{"id": "T88", "name": "빈틈의 확률의 길: 하루의 날, 업그레이드 칸, 하루 데이터 그대로, 연습의 날 버튼, 글, 요약", "fn": t88_paths},
+		{"id": "T89", "name": "빈틈의 확률을 하루에: 하루의 상대 값, 규칙의 값, 물건, 날과 물건이 뇌까지, 글", "fn": t89_day_values},
 	]
 
 
@@ -287,14 +289,7 @@ func t88_paths() -> String:
 	var upgraded := UpgradeData.applied(base, UpgradeData.Target.DUEL, upgrades) as DuelRules
 	if not is_equal_approx(upgraded.opening_chance_bonus, 0.15) or not is_equal_approx(upgraded.opening_chance_for(0.8, 3), 0.79):
 		errs.append("업그레이드의 덤: %.2f · %.3f" % [upgraded.opening_chance_bonus, upgraded.opening_chance_for(0.8, 3)])
-	# 3. 하루는 그대로: 하루의 상대는 꺼짐이고 카탈로그에 이 칸을 올리는 물건이 없다.
-	for path in DAY_OPPONENTS:
-		if (load(path) as OpponentData).opening_chance != 1.0:
-			errs.append("%s의 확률이 1.0이 아님" % path.get_file())
-	for item in (load(CATALOG_PATH) as UpgradeCatalog).upgrades:
-		if item.property == &"opening_chance_bonus":
-			errs.append("카탈로그에 빈틈 물건이 있음: %s" % item.id)
-	# 4. 시험용 상대: 바닥과 1.0 사이, 사본은 원본을 고치지 않고 값을 물려받는다.
+	# 3. 시험용 상대: 바닥과 1.0 사이, 사본은 원본을 고치지 않고 값을 물려받는다.
 	for path in TRIAL_PATHS:
 		var trial := load(path) as OpponentData
 		var chance := trial.opening_chance
@@ -307,9 +302,7 @@ func t88_paths() -> String:
 			errs.append("%s의 flat·drill이 확률을 물려받지 않음" % path.get_file())
 		if not DuelHud.help_text(trial).contains("틈을 안 줄 때가 있다"):
 			errs.append("%s의 막는 법에 빈틈의 글이 없음" % path.get_file())
-	if DuelHud.help_text(load(DAY_OPPONENTS[0])).contains("틈을 안 줄 때가 있다"):
-		errs.append("하루의 바르톨로에 빈틈의 글이 붙음")
-	# 5. 연습 화면: 날 버튼 넷, 처음에는 1일차만 눌려 있다(넘침은 창에서 본다).
+	# 4. 연습 화면: 날 버튼 넷, 처음에는 1일차만 눌려 있다(넘침은 창에서 본다).
 	var select: Node = (load(Session.SELECT_PATH) as PackedScene).instantiate()
 	_tree.root.add_child(select)
 	for d in 4:
@@ -319,7 +312,7 @@ func t88_paths() -> String:
 		elif button.button_pressed != (d == 1):
 			errs.append("OpeningDay%d의 눌림 %s" % [d, button.button_pressed])
 	select.free()
-	# 6. 기록의 글: 안 열림과 상한.
+	# 5. 기록의 글: 안 열림과 상한.
 	var hud := DuelHud.new()
 	var ev := {"type": DuelRecord.STRIKE, "result": DT.StrikeResult.BLOCKED, "closed": true, "closed_streak": 1, "miss_limit": 2,
 		"braced": false, "attack": _cut(), "situation": -1}
@@ -330,10 +323,96 @@ func t88_paths() -> String:
 	hud.free()
 	if not first.contains("틈을 안 줬다") or first.contains("다음은 열린다") or not second.begins_with("패리") or not second.contains("다음은 열린다"):
 		errs.append("기록의 글: \"%s\" / \"%s\"" % [first, second])
-	# 7. 요약: T86의 1의 판이면 열림 2 · 안 열림 4.
+	# 6. 요약: T86의 1의 판이면 열림 2 · 안 열림 4.
 	var core := _run(_opp(_cut(), 0.0, 2), _rules(), {}, 15.5)
 	var guards: Dictionary = Summary.summarize(core.record)["guards"]
 	var closed := core.record.count_where(DuelRecord.STRIKE, "closed", true)
 	if int(guards["안 열림"]) != closed or int(guards["열림"]) + closed != _strikes(core).size() or closed < 2:
 		errs.append("요약의 guards %s (타격 %d · 닫힘 %d)" % [str(guards), _strikes(core).size(), closed])
+	return "OK" if errs.is_empty() else ", ".join(errs)
+
+
+## 하루의 상대에 실은 확률이 날과 물건을 거쳐 뇌까지 닿았을 때의 값.
+func _brain_chance(day: DayState, base: DuelRules, opp: OpponentData) -> float:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 1
+	var core := DuelCore.new()
+	var none: Array[CommissionCondition] = []
+	core.setup(day.effective_duel_rules(base), load(WEAPON_PATH) as WeaponData, opp, rng, none, false)
+	return core.brain.opening_chance
+
+
+func t89_day_values() -> String:
+	var errs: Array[String] = []
+	var rules := load(RULES_PATH) as DuelRules
+	# 1. 하루의 상대 둘: 0.80, 바닥과 1.0 사이, 연속 상한 없음(결정 413).
+	for path in DAY_OPPONENTS:
+		var day_opp := load(path) as OpponentData
+		if not is_equal_approx(day_opp.opening_chance, 0.8) or day_opp.opening_chance <= rules.opening_chance_floor \
+				or day_opp.opening_chance >= 1.0 or day_opp.opening_miss_limit != 0:
+			errs.append("%s: 확률 %.2f · 상한 %d (기대 0.80 · 0)" % [path.get_file(), day_opp.opening_chance, day_opp.opening_miss_limit])
+	# 2. 규칙의 값이 .tres에 적혀 있다(결정 414). 기본값에 기대지 않고 글에서도 본다.
+	var scale := rules.opening_day_scale
+	if scale.size() != 3 or not is_equal_approx(scale[0], 1.0) or not is_equal_approx(scale[1], 0.9) or not is_equal_approx(scale[2], 0.8):
+		errs.append("배율 %s (기대 [1.0, 0.9, 0.8])" % str(scale))
+	if not is_equal_approx(rules.opening_chance_floor, 0.4) or not is_equal_approx(rules.parry_opening_bonus, 0.25) \
+			or not is_equal_approx(rules.closed_counter_grace, 0.6):
+		errs.append("바닥 %.2f · 패리 덤 %.2f · 봐주는 시간 %.2f (기대 0.40 · 0.25 · 0.60)" % [
+			rules.opening_chance_floor, rules.parry_opening_bonus, rules.closed_counter_grace])
+	if not is_zero_approx(rules.opening_chance_bonus) or rules.stage_day != 0:
+		errs.append("덤 %.2f · 날 %d (기대 0 · 0)" % [rules.opening_chance_bonus, rules.stage_day])
+	var rules_text := FileAccess.get_file_as_string(RULES_PATH)
+	for key in ["opening_day_scale", "opening_chance_floor", "parry_opening_bonus", "closed_counter_grace"]:
+		if not rules_text.contains(key):
+			errs.append("duel_rules.tres에 %s가 적혀 있지 않음" % key)
+	# 3. 물건: 빈틈을 올리는 물건은 하나이고 목록의 끝이다(결정 415).
+	var catalog := load(CATALOG_PATH) as UpgradeCatalog
+	var found: Array[UpgradeData] = []
+	for item in catalog.upgrades:
+		if item.property == &"opening_chance_bonus":
+			found.append(item)
+	var manual: UpgradeData = found[0] if found.size() == 1 else null
+	if manual == null or catalog.upgrades.back() != manual:
+		errs.append("빈틈을 올리는 물건 %d개 · 끝에 있는가 %s (기대 1개 · 끝)" % [found.size(), str(manual != null and catalog.upgrades.back() == manual)])
+	else:
+		var digits := RegEx.new()
+		digits.compile("[0-9]")
+		if manual.id != &"fencing_manual" or manual.target != UpgradeData.Target.DUEL or manual.branch != UpgradeData.Branch.TRAINING \
+				or not is_equal_approx(manual.amount, 0.15) or manual.price != 120:
+			errs.append("물건: %s · 대상 %d · 갈래 %d · 양 %.2f · 값 %d" % [manual.id, manual.target, manual.branch, manual.amount, manual.price])
+		if digits.search(manual.description) != null:
+			errs.append("물건의 설명에 숫자가 있음(결정 404): %s" % manual.description)
+	# 4. 길(날): 상대 0.80 × 배율. 받은 규칙은 그대로다.
+	var opp := load(DAY_OPPONENTS[0]) as OpponentData
+	var shop_day := DayState.new(EconomyRules.new(), DayData.new(), catalog)
+	var by_day := {1: 0.8, 2: 0.72, 3: 0.64, 5: 0.64}
+	for d: int in by_day:
+		shop_day.day_number = d
+		var got := _brain_chance(shop_day, rules, opp)
+		if not is_equal_approx(got, by_day[d]):
+			errs.append("%d일차의 뇌 확률 %.3f (기대 %.2f)" % [d, got, by_day[d]])
+	if rules.stage_day != 0:
+		errs.append("읽은 규칙의 날이 %d로 바뀜" % rules.stage_day)
+	# 5. 길(물건): 가진 날은 덤이 든다. 3일차 0.8 × 0.8 + 0.15, 1일차 0.8 + 0.15.
+	if manual != null:
+		var owner := DayState.new(EconomyRules.new(), DayData.new(), catalog)
+		owner.owned.append(manual.id)
+		for row: Array in [[3, 0.79], [1, 0.95]]:
+			owner.day_number = row[0]
+			var got := _brain_chance(owner, rules, opp)
+			if not is_equal_approx(got, row[1]):
+				errs.append("물건을 가진 %d일차의 뇌 확률 %.3f (기대 %.2f)" % [row[0], got, row[1]])
+	# 6. 글과 판: 도움말에 안내가 있고(상한 0이라 "반드시"는 없다), 3일차의 확률로는 안 열린 막기가 나온다.
+	var help := DuelHud.help_text(opp)
+	var screen := "\n".join(PackedStringArray(Title.help_groups()))
+	if not help.contains("틈을 안 줄 때가 있다") or help.contains("반드시 열린다"):
+		errs.append("하루의 바르톨로의 막는 법 글: \"%s\"" % help)
+	if not screen.contains("틈을 안 줄 때가 있다"):
+		errs.append("도움말 화면에 빈틈의 글이 없음")
+	shop_day.day_number = 3
+	var third := shop_day.effective_duel_rules(rules)
+	var live := _run(opp, third, {}, 60.0).record.count_where(DuelRecord.STRIKE, "closed", true)
+	var pinned := _run(opp.with_opening(1.0), third, {}, 60.0).record.count_where(DuelRecord.STRIKE, "closed", true)
+	if live < 1 or pinned != 0:
+		errs.append("3일차 60초의 안 열린 막기 %d개 · 끈 사본 %d개 (기대 1개 이상 · 0개)" % [live, pinned])
 	return "OK" if errs.is_empty() else ", ".join(errs)

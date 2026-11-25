@@ -112,7 +112,8 @@ func _play(commission: Commission, cfg: Variant = null, seed_value := 1) -> Duel
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_value
 	var core := DuelCore.new()
-	core.setup(load(DUEL_RULES_PATH), load(WEAPON_PATH), commission.opponent, rng, commission.conditions)
+	# 다른 규칙을 보는 테스트다: 빈틈의 확률은 끈다(결정 416). 하루의 판 길이는 T90.
+	core.setup(load(DUEL_RULES_PATH), load(WEAPON_PATH), commission.opponent.with_opening(1.0), rng, commission.conditions)
 	var bot: RefCounted = null
 	if cfg != null:
 		bot = Bot.new(core, cfg)
@@ -416,6 +417,15 @@ func t32_duel_day_mode() -> String:
 	var errs: Array[String] = []
 	var P := DayState.Phase
 	var day := _real_day_in_duel()
+	# 다른 규칙을 보는 테스트다: 빈틈의 확률은 끈다(결정 416). 하루의 판 길이는 T90. 씬이 _ready에서 의뢰를 쥐므로 add_child 앞에서 바꾼다.
+	var pinned_data := day.data.duplicate() as DayData
+	var pinned: Array[Commission] = []
+	for source in day.data.commissions:
+		var copy := source.duplicate() as Commission
+		copy.opponent = source.opponent.with_opening(1.0)
+		pinned.append(copy)
+	pinned_data.commissions = pinned
+	day.data = pinned_data
 	var start_money := day.money
 	var duel: Node = (load(DUEL_PATH) as PackedScene).instantiate()
 	duel.set("day", day)
@@ -587,7 +597,7 @@ func t34_upgrade_data() -> String:
 	if catalog == null:
 		errs.append("%s 가 UpgradeCatalog로 로드되지 않음" % CATALOG_PATH)
 		return _result(errs)
-	_expect(errs, catalog.upgrades.size() == 3, "목록의 업그레이드 %d개 (기대 3)" % catalog.upgrades.size())
+	_expect(errs, catalog.upgrades.size() == 4, "목록의 업그레이드 %d개 (기대 4)" % catalog.upgrades.size())
 
 	var ids: Array[StringName] = []
 	for upgrade in catalog.upgrades:

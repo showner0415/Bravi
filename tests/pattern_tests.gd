@@ -49,6 +49,8 @@ func _atk(direction: int, tell: float, recovery := 0.0) -> AttackData:
 ## 대기 1.0초 고정, 버릇·가방 없음, 공격은 pattern 하나인 상대. 로드한 자원은 고치지 않는다.
 func _opp(pattern: AttackData) -> OpponentData:
 	var o := (load(BARTOLO_PATH) as OpponentData).drill(pattern)
+	# 다른 규칙을 보는 테스트다: 빈틈의 확률은 끈다(결정 416). 하루의 판 길이는 T90.
+	o.opening_chance = 1.0
 	o.idle_time_min = 1.0
 	o.idle_time_max = 1.0
 	return o

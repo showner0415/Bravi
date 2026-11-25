@@ -41,6 +41,8 @@ func t14_scene() -> String:
 	view.free()
 
 	var duel: Node = (load(DUEL_PATH) as PackedScene).instantiate()
+	# 다른 규칙을 보는 테스트다: 빈틈의 확률은 끈다(결정 416). 하루의 판 길이는 T90.
+	duel.set("practice_opponent", (load(DuelScene.DEFAULT_OPPONENT_PATH) as OpponentData).with_opening(1.0))
 	duel.set("mouse_aim_enabled", false)
 	duel.set("rng_seed", 1)
 	_tree.root.add_child(duel)
@@ -190,6 +192,7 @@ func _advance(duel: Node, seconds: float) -> void:
 func t24_real_input() -> String:
 	var errs: Array[String] = []
 	var duel: Node = (load(DUEL_PATH) as PackedScene).instantiate()
+	duel.set("practice_opponent", (load(DuelScene.DEFAULT_OPPONENT_PATH) as OpponentData).with_opening(1.0))
 	duel.set("rng_seed", 1)  # mouse_aim_enabled는 기본값(켜짐) 그대로 둔다
 	_tree.root.add_child(duel)
 	var core: DuelCore = duel.get("core")
@@ -269,7 +272,11 @@ const HAT_PATH := ^"OpponentView/Torso/Head/Hat"
 func _spawn_duel(commission: Commission) -> Node:
 	var duel: Node = (load(DUEL_PATH) as PackedScene).instantiate()
 	if commission != null:
-		duel.set("commission", commission)
+		var pinned := commission.duplicate() as Commission
+		pinned.opponent = commission.opponent.with_opening(1.0)
+		duel.set("commission", pinned)
+	else:
+		duel.set("practice_opponent", (load(DuelScene.DEFAULT_OPPONENT_PATH) as OpponentData).with_opening(1.0))
 	duel.set("mouse_aim_enabled", false)
 	duel.set("rng_seed", 1)
 	_tree.root.add_child(duel)

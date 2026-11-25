@@ -21,6 +21,9 @@ const BIG_OPENING := 1.0
 const THROW_FIGHT_TELLS := 20
 ## T18: 제대로 싸우다 진 판과 가만히 맞은 판의 점수 차 하한.
 const THROW_SCORE_GAP := 40
+## T90 시간 초과 한도(%): 1·2일차는 T13·T20의 기준, 3일차는 사용자가 시험용 바르톨로에서 받아들인 수(결정 417).
+const DAY_TIMEOUT_EARLY := 10
+const DAY_TIMEOUT_LATE := 20
 
 var _h: RefCounted = Core.new()
 
@@ -33,6 +36,7 @@ func list(_tree: SceneTree) -> Array:
 		{"id": "T18", "name": "지기: 의심도와 게이지", "fn": t18_throw},
 		{"id": "T19", "name": "같은 봇이 세 의뢰에서 다른 결과", "fn": t19_same_bot},
 		{"id": "T20", "name": "의뢰별 판 길이 (시드 %d개)" % Core.SIM_SEEDS, "fn": t20_lengths},
+		{"id": "T90", "name": "하루의 판 길이: 날마다의 확률 (시드 %d개)" % Core.SIM_SEEDS, "fn": t90_day_lengths},
 		{"id": "T41", "name": "첫 피: 손은 피, 머리 스침 감점은 꺼져 있다", "fn": t41_first_blood_parts},
 		{"id": "T44", "name": "유효타만 보는 조건과 일정의 비중", "fn": t44_hit_only},
 	]
@@ -469,7 +473,8 @@ func _throw_duel(cond: ThrowUndetectedCondition, opp: OpponentData, cfg: Diction
 func t18_throw() -> String:
 	var errs: Array[String] = []
 	var cond := ThrowUndetectedCondition.new()
-	var real: OpponentData = load(OPPONENT_PATH)
+	# 다른 규칙을 보는 테스트다: 빈틈의 확률은 끈다(결정 416). 하루의 판 길이는 T90.
+	var real: OpponentData = (load(OPPONENT_PATH) as OpponentData).with_opening(1.0)
 
 	# (a) 아무것도 안 하고 네 번 맞음 → 낮은 점수
 	var none := func(_a: AttackData, _i: int) -> StringName: return &"none"
@@ -508,7 +513,7 @@ func t18_throw() -> String:
 
 func t19_same_bot() -> String:
 	var errs: Array[String] = []
-	var real: OpponentData = load(OPPONENT_PATH)
+	var real: OpponentData = (load(OPPONENT_PATH) as OpponentData).with_opening(1.0)
 	# 막고, 베기 뒤 중단 찌르기, 무너지면 중단 찌르기.
 	var cfg_fn := func() -> Dictionary: return _cfg_counter(AIM_MID_THRUST, {"finisher": AIM_MID_THRUST})
 
@@ -535,7 +540,7 @@ func t19_same_bot() -> String:
 
 func t20_lengths() -> String:
 	var errs: Array[String] = []
-	var real: OpponentData = load(OPPONENT_PATH)
+	var real: OpponentData = (load(OPPONENT_PATH) as OpponentData).with_opening(1.0)
 	var limit: float = (load(Core.RULES_PATH) as DuelRules).time_limit
 	var feather := _conditions(FEATHER_PATH)
 	var throw_match := _conditions(THROW_PATH)
@@ -577,4 +582,39 @@ func t20_lengths() -> String:
 	]:
 		var st: Dictionary = _h.call("_simulate", cooled, row[1], feather)
 		print(str(_h.call("_stat_line", row[0], st)) + ", 큰 베기 %.1f회/판" % st["big"])
+	return _result(errs)
+
+
+## T90: 하루의 상대를 날마다의 확률로 돌린 판 길이. 기준은 재 보기 전에 정했다(결정 417).
+func t90_day_lengths() -> String:
+	var errs: Array[String] = []
+	var real := load(OPPONENT_PATH) as OpponentData
+	var rules := load(Core.RULES_PATH) as DuelRules
+	var boosted := rules.duplicate() as DuelRules
+	boosted.opening_chance_bonus = 0.15
+	var limit: float = rules.time_limit
+	var feather := _conditions(FEATHER_PATH)
+	var throw_match := _conditions(THROW_PATH)
+	var none: Array[CommissionCondition] = []
+	var guard_only := Callable(_h, "_cfg_guard_only")
+	# [이름, 설정, 조건, 날, 규칙(덤), 통과 조건 한도(%), 0이면 참고]
+	var rows := [
+		["막기 봇 · 1일차", guard_only, none, 1, rules, DAY_TIMEOUT_EARLY],
+		["막기 봇 · 2일차", guard_only, none, 2, rules, DAY_TIMEOUT_EARLY],
+		["막기 봇 · 3일차", guard_only, none, 3, rules, DAY_TIMEOUT_LATE],
+		["깃털 · 교전에서 베기를 패리 · 3일차", _cfg_feather_parry, feather, 3, rules, DAY_TIMEOUT_LATE],
+		["지기 · 싸우다 짐 · 3일차", _cfg_throw_fight, throw_match, 3, rules, DAY_TIMEOUT_LATE],
+		["(참고) 막기 봇 · 3일차 + 검술 교본", guard_only, none, 3, boosted, 0],
+		["(참고) 깃털 · 밀착에서 막기만 · 3일차", _cfg_feather_close, feather, 3, rules, 0],
+	]
+	for row in rows:
+		var day_rules: DuelRules = row[4]
+		var chance := day_rules.opening_chance_for(real.opening_chance, row[3])
+		var st: Dictionary = _h.call("_simulate", real.with_opening(chance), row[1], row[2])
+		print(str(_h.call("_stat_line", row[0], st)) + ", 확률 %.2f" % chance)
+		var max_pct: int = row[5]
+		if max_pct == 0:
+			continue
+		_expect(errs, st["mean"] >= 30.0 and st["mean"] <= limit, "%s 평균 %.1f초가 30~%.0f초 밖" % [row[0], st["mean"], limit])
+		_expect(errs, st["timeouts"] * 100 <= max_pct * Core.SIM_SEEDS, "%s 시간 초과 %d판 (%d%% 초과)" % [row[0], st["timeouts"], max_pct])
 	return _result(errs)

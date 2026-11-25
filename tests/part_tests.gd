@@ -419,7 +419,8 @@ func t43_lengths() -> String:
 	_expect(errs, open_head["mean"] < two_torso["mean"], "[6] 머리 지키기를 껐는데 막기·머리 봇 평균 %.1f초가 몸통 봇 평균 %.1f초보다 짧지 않음" % [open_head["mean"], two_torso["mean"]])
 
 	# 7. 로드한 값의 사본은 칸 수와 머리 지키기를 잃지 않는다(INFO의 측정이 이 사본으로 잰다).
-	var real := load(OPPONENT_PATH) as OpponentData
+	# 다른 규칙을 보는 테스트다: 빈틈의 확률은 끈다(결정 416). 하루의 판 길이는 T90.
+	var real := (load(OPPONENT_PATH) as OpponentData).with_opening(1.0)
 	var copy := real.duplicate() as OpponentData
 	var stats := {}
 	for name: String in bots:
@@ -523,7 +524,7 @@ func t46_parry_window() -> String:
 	_expect(errs, _same(fast_before, fast_after), "늦지 않는 패리·몸통 봇의 판 길이가 덧붙임에 따라 다름 (%.1f초, %.1f초)" % [fast_before["mean"], fast_after["mean"]])
 
 	# ---- INFO (통과 조건 아님): 로드한 값의 사본과, 같은 사본에서 패리 덧붙임만 되돌린 것
-	var real := load(OPPONENT_PATH) as OpponentData
+	var real := (load(OPPONENT_PATH) as OpponentData).with_opening(1.0)
 	var loaded := real.duplicate() as OpponentData
 	var reverted := real.duplicate() as OpponentData
 	reverted.parried_recovery_bonus = BONUS_BEFORE

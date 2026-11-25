@@ -34,6 +34,7 @@ const AIM_MID_THRUST := [DT.Direction.CENTER, DT.Height.MID]
 const AIM_HIGH_CUT := [DT.Direction.RIGHT, DT.Height.HIGH]
 
 var _scenarios: Array[Dictionary] = []
+var _pinned_opponent: OpponentData
 
 
 class Run:
@@ -69,12 +70,16 @@ func list(_tree: SceneTree) -> Array:
 ## 러너가 끝날 때 부른다. 시나리오의 람다가 self를 붙잡고 있어 순환 참조가 생기므로 끊는다.
 func cleanup() -> void:
 	_scenarios.clear()
+	_pinned_opponent = null
 
 
 # ================================================================ 도우미
 
 func _base_opponent() -> OpponentData:
-	return load(OPPONENT_PATH)
+	if _pinned_opponent == null:
+		# 다른 규칙을 보는 테스트다: 빈틈의 확률은 끈다(결정 416). 하루의 판 길이는 T90.
+		_pinned_opponent = (load(OPPONENT_PATH) as OpponentData).with_opening(1.0)
+	return _pinned_opponent
 
 
 ## 실제 상대 데이터를 베껴 새 OpponentData를 만든다. 캐시된 원본은 건드리지 않는다.

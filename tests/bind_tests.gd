@@ -504,7 +504,8 @@ func _measure_line(label: String, st: Dictionary) -> String:
 
 func t48_lengths_and_display() -> String:
 	var errs: Array[String] = []
-	var real := load(OPPONENT_PATH) as OpponentData
+	# 다른 규칙을 보는 테스트다: 빈틈의 확률은 끈다(결정 416). 하루의 판 길이는 T90.
+	var real := (load(OPPONENT_PATH) as OpponentData).with_opening(1.0)
 	var loaded_weapon := load(WEAPON_PATH) as WeaponData
 
 	# ---- INFO (통과 조건 아님): 로드한 무기와 로드한 상대의 사본. 팔을 노리는 봇 넷을 0.20초 늦는 손으로.
@@ -546,6 +547,8 @@ func t48_lengths_and_display() -> String:
 ## 결투 씬을 붙인다(마우스 조준 끔, 시드 1, 의뢰 없음).
 func _spawn_duel() -> Node:
 	var duel: Node = (load(DUEL_PATH) as PackedScene).instantiate()
+	# 다른 규칙을 보는 테스트다: 빈틈의 확률은 끈다(결정 416). 하루의 판 길이는 T90.
+	duel.set("practice_opponent", (load(OPPONENT_PATH) as OpponentData).with_opening(1.0))
 	duel.set("mouse_aim_enabled", false)
 	duel.set("rng_seed", 1)
 	_tree.root.add_child(duel)

@@ -79,7 +79,10 @@ func _clear_temp() -> void:
 ## 결투 씬을 의뢰와 함께 붙인다. 호출한 쪽이 free()한다.
 func _spawn_duel(commission: Commission) -> Node:
 	var duel: Node = (load(DUEL_PATH) as PackedScene).instantiate()
-	duel.set("commission", commission)
+	# 다른 규칙을 보는 테스트다: 빈틈의 확률은 끈다(결정 416). 하루의 판 길이는 T90.
+	var pinned := commission.duplicate() as Commission
+	pinned.opponent = commission.opponent.with_opening(1.0)
+	duel.set("commission", pinned)
 	duel.set("mouse_aim_enabled", false)
 	duel.set("rng_seed", 1)
 	_tree.root.add_child(duel)

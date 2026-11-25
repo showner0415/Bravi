@@ -1,7 +1,7 @@
 extends SceneTree
 ## 봇이 결투를 여러 판 치르고 수를 낸다(창 없이). 게임 창에서 판을 끝까지 하며 세던 것을 대신한다.
-## 실행: tests/run_duel_stats.ps1 [-Runs 20] [-Delay 0.25] [-Counter mid,same,thrust] [-Miss 0.1] [-Opponent res://...tres] [-Opening base,off,1,2,3]
-## 빈틈(opening): base 상대 그대로 / off 늘 열린다 / 1·2·3 그 날의 확률(결정 408).
+## 실행: tests/run_duel_stats.ps1 [-Runs 20] [-Delay 0.25] [-Counter mid,same,thrust] [-Miss 0.1] [-Opponent res://...tres] [-Opening base,off,1,2,3] [-Bonus 0.15]
+## 빈틈(opening): base 상대 그대로 / off 늘 열린다 / 1·2·3 그 날의 확률(결정 408). bonus는 1·2·3에만 든다(결정 420).
 ## 봇: 고리의 칸을 막고(miss의 확률로 높이를 틀린다), 빈틈이 열리면 delay초 뒤에 받아치고, 무너지면 가운데 중단을 찌른다.
 ## 받아치는 조준(counter): same 막은 칸 그대로 / mid 같은 방향 중단 / thrust 가운데 중단.
 ## 줄: "stat,<상대>,<9칸|가로만>,<counter>,..." 하나가 설정 하나. 판정이 아니라 견줄 수다(통과 기준은 줄이 다 나오는 것뿐).
@@ -25,6 +25,7 @@ func _initialize() -> void:
 	var counters: PackedStringArray = ["mid"]
 	var paths: PackedStringArray = []
 	var openings: PackedStringArray = ["base"]
+	var bonus := 0.0
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--runs="):
 			runs = int(arg.trim_prefix("--runs="))
@@ -36,6 +37,8 @@ func _initialize() -> void:
 			counters = arg.trim_prefix("--counter=").split(",", false)
 		elif arg.begins_with("--opening="):
 			openings = arg.trim_prefix("--opening=").split(",", false)
+		elif arg.begins_with("--bonus="):
+			bonus = float(arg.trim_prefix("--bonus="))
 		elif arg.begins_with("--opponent="):
 			paths.append(arg.trim_prefix("--opponent="))
 	if paths.is_empty():
@@ -44,6 +47,9 @@ func _initialize() -> void:
 		for file: String in files:
 			if file.trim_suffix(".remap").ends_with(".tres"):
 				paths.append(TRIAL_DIR.path_join(file.trim_suffix(".remap")))
+	# 덤은 날 숫자 갈래에서만 든다: _chance와 _play는 덤 없는 규칙이라 확률을 두 번 세지 않는다(결정 420).
+	var bonus_rules := (load(RULES_PATH) as DuelRules).duplicate() as DuelRules
+	bonus_rules.opening_chance_bonus = bonus
 	var lines := 0
 	for path in paths:
 		var opponent := load(path) as OpponentData
@@ -54,7 +60,7 @@ func _initialize() -> void:
 		variants.append(["가로만", opponent.flat()])
 		for variant: Array in variants:
 			for opening in openings:
-				var played := _with_opening(variant[1], opening)
+				var played := _with_opening(variant[1], opening, bonus_rules)
 				var label := "%s(%.3f)" % [opening, _chance(played)]
 				for counter in counters:
 					var summaries: Array = []
@@ -99,11 +105,11 @@ func _play(opponent: OpponentData, seed_value: int, delay: float, miss: float, c
 
 
 ## 빈틈 설정의 사본. base는 그대로, off는 늘 열린다, 숫자는 그 날의 확률(연습의 날 고르기와 같은 셈).
-func _with_opening(opponent: OpponentData, opening: String) -> OpponentData:
+func _with_opening(opponent: OpponentData, opening: String, rules: DuelRules) -> OpponentData:
 	if opening == "off":
 		return opponent.with_opening(1.0)
 	if opening.is_valid_int() and int(opening) > 0:
-		return opponent.with_opening((load(RULES_PATH) as DuelRules).opening_chance_for(opponent.opening_chance, int(opening)))
+		return opponent.with_opening(rules.opening_chance_for(opponent.opening_chance, int(opening)))
 	return opponent
 
 
