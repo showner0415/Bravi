@@ -4,6 +4,7 @@ extends RefCounted
 ## T37~T39: 접수의 선택 — 일정과 의뢰의 데이터, 돌려보내기와 결투 수, 접수의 화면.
 ## 화면과 결투 씬에는 day를 직접 넣는다(GameSession 오토로드에 의존하지 않는다).
 
+const Plain := preload("res://tests/plain_opponent.gd")
 const Bot := preload("res://tests/duel_bots.gd")
 const DT := preload("res://scripts/duel/duel_types.gd")
 
@@ -112,8 +113,8 @@ func _play(commission: Commission, cfg: Variant = null, seed_value := 1) -> Duel
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_value
 	var core := DuelCore.new()
-	# 다른 규칙을 보는 테스트다: 빈틈의 확률은 끈다(결정 416). 하루의 판 길이는 T90.
-	core.setup(load(DUEL_RULES_PATH), load(WEAPON_PATH), commission.opponent.with_opening(1.0), rng, commission.conditions)
+	# 다른 규칙을 보는 테스트다: 패턴·높이·확률을 끈 옛 규칙 사본이다(결정 416·426). 하루의 판 길이는 T90.
+	core.setup(load(DUEL_RULES_PATH), load(WEAPON_PATH), Plain.of(commission.opponent), rng, commission.conditions)
 	var bot: RefCounted = null
 	if cfg != null:
 		bot = Bot.new(core, cfg)
@@ -417,12 +418,12 @@ func t32_duel_day_mode() -> String:
 	var errs: Array[String] = []
 	var P := DayState.Phase
 	var day := _real_day_in_duel()
-	# 다른 규칙을 보는 테스트다: 빈틈의 확률은 끈다(결정 416). 하루의 판 길이는 T90. 씬이 _ready에서 의뢰를 쥐므로 add_child 앞에서 바꾼다.
+	# 다른 규칙을 보는 테스트다: 패턴·높이·확률을 끈 옛 규칙 사본이다(결정 416·426). 하루의 판 길이는 T90. 씬이 _ready에서 의뢰를 쥐므로 add_child 앞에서 바꾼다.
 	var pinned_data := day.data.duplicate() as DayData
 	var pinned: Array[Commission] = []
 	for source in day.data.commissions:
 		var copy := source.duplicate() as Commission
-		copy.opponent = source.opponent.with_opening(1.0)
+		copy.opponent = Plain.of(source.opponent)
 		pinned.append(copy)
 	pinned_data.commissions = pinned
 	day.data = pinned_data

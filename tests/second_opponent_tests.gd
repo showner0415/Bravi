@@ -1,5 +1,5 @@
 extends RefCounted
-## T78: 둘째 상대 브루노(계획 035). 판정 값이 바르톨로와 같다(결정 357), 그림 데이터가 온전하다(결정 362), 오르솔라의 의뢰가 건다(결정 363).
+## T78: 둘째 상대 브루노(계획 035). 공격 밖의 판정 값이 바르톨로와 같다(결정 357), 그림 데이터가 온전하다(결정 362), 오르솔라의 의뢰가 건다(결정 363).
 
 const BARTOLO_PATH := "res://data/opponents/opponent_01.tres"
 const BRUNO_PATH := "res://data/opponents/opponent_02.tres"
@@ -8,6 +8,8 @@ const LEGS_ONLY_PATH := "res://data/commissions/variants/legs_only.tres"
 ## 다를 수 있는 칸: 이름·그림·포즈(표시만이고 판정에 쓰지 않는다. 결정 291·357).
 const FREE_FIELDS := ["display_name", "art", "idle_pose", "stagger_pose", "complacent_pose",
 	"tell_pose", "hold_arm_deg", "strike_pose", "recover_arm_deg"]
+## 공격 목록은 상대마다 다르다(바르톨로는 이어 베기, 브루노는 휩쓸기. 결정 425). 그 밖의 판정 값만 견준다.
+const ATTACK_FIELDS := ["attacks"]
 const PARTS := ["legs", "torso", "head", "head_oops", "head_dizzy", "hat", "feather", "arm", "hand", "sword"]
 ## 자른 그림의 크기(작업 6의 출력).
 const SIZES := {
@@ -25,7 +27,7 @@ var _tree: SceneTree
 func list(tree: SceneTree) -> Array:
 	_tree = tree
 	return [
-		{"id": "T78", "name": "둘째 상대: 판정 값이 바르톨로와 같다, 그림 데이터가 온전하다, 오르솔라의 의뢰가 건다", "fn": t78_second_opponent},
+		{"id": "T78", "name": "둘째 상대: 공격 밖의 판정 값이 바르톨로와 같다, 그림 데이터가 온전하다, 오르솔라의 의뢰가 건다", "fn": t78_second_opponent},
 	]
 
 
@@ -40,7 +42,7 @@ func _compare(a: Variant, b: Variant, path: String, errs: Array[String]) -> void
 			if not (int(prop["usage"]) & PROPERTY_USAGE_SCRIPT_VARIABLE):
 				continue
 			var field: String = prop["name"]
-			if FREE_FIELDS.has(field):
+			if FREE_FIELDS.has(field) or ATTACK_FIELDS.has(field):
 				continue
 			_compare((a as Resource).get(field), (b as Resource).get(field), path + "." + field, errs)
 	elif a is Array and b is Array:

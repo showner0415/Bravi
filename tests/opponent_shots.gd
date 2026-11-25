@@ -81,7 +81,9 @@ func _ready() -> void:
 	_weapon = load(States.WEAPON_PATH)
 	_core = States.make_core(false, _opponent_path)
 	for atk in _opp.attacks:
-		_atks[_key_of(atk)] = atk
+		# 패턴의 뿌리가 단발의 칸(cutl·cutr)을 덮지 않게 단발만 담는다(결정 426).
+		if atk.chain.is_empty():
+			_atks[_key_of(atk)] = atk
 	for habit in _opp.habits:
 		if habit.response != null:
 			_atks[_key_of(habit.response)] = habit.response

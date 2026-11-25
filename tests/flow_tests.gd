@@ -2,6 +2,7 @@ extends RefCounted
 ## T21~T22: 의뢰 목록 로드와 "의뢰 → 결투 → 결과 패널" 흐름.
 ## 결투 씬은 commission 속성을 직접 넣어 붙인다(GameSession 오토로드에 의존하지 않는다).
 
+const Plain := preload("res://tests/plain_opponent.gd")
 const Bot := preload("res://tests/duel_bots.gd")
 const DT := preload("res://scripts/duel/duel_types.gd")
 
@@ -79,9 +80,9 @@ func _clear_temp() -> void:
 ## 결투 씬을 의뢰와 함께 붙인다. 호출한 쪽이 free()한다.
 func _spawn_duel(commission: Commission) -> Node:
 	var duel: Node = (load(DUEL_PATH) as PackedScene).instantiate()
-	# 다른 규칙을 보는 테스트다: 빈틈의 확률은 끈다(결정 416). 하루의 판 길이는 T90.
+	# 다른 규칙을 보는 테스트다: 패턴·높이·확률을 끈 옛 규칙 사본이다(결정 416·426). 하루의 판 길이는 T90.
 	var pinned := commission.duplicate() as Commission
-	pinned.opponent = commission.opponent.with_opening(1.0)
+	pinned.opponent = Plain.of(commission.opponent)
 	duel.set("commission", pinned)
 	duel.set("mouse_aim_enabled", false)
 	duel.set("rng_seed", 1)

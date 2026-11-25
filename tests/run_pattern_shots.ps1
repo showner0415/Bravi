@@ -2,14 +2,16 @@
 #
 #   powershell -ExecutionPolicy Bypass -File tests/run_pattern_shots.ps1                     (headless: overlap lines only)
 #   powershell -ExecutionPolicy Bypass -File tests/run_pattern_shots.ps1 -Shots "$env:TEMP\bravi-pattern"
+#   powershell -ExecutionPolicy Bypass -File tests/run_pattern_shots.ps1 -Commission res://data/commissions/feather_cut.tres  (that commission's HUD and hat)
 #
-# Runs tests/pattern_shots.tscn: every trial pattern, every route (base and variants), three distances.
+# Runs tests/pattern_shots.tscn: every day-opponent pattern, every route (base and variants), three distances.
 # Prints "shot," lines (what was posed) and "overlap," lines (a numbered ring over a HUD panel or label).
 # Judges the run: exit code 0, one "PATTERN SHOTS OK <n>" line, no ERROR lines. Overlaps are reported, not judged.
 param(
 	[switch]$SkipImport,
 	[string]$Godot,
-	[string]$Shots
+	[string]$Shots,
+	[string]$Commission = ""
 )
 
 . "$PSScriptRoot\godot_path.ps1"
@@ -35,11 +37,14 @@ if (-not $SkipImport) {
 	}
 }
 
+$commissionArg = ""
+$headlessArgs = ""
+if ($Commission) { $commissionArg = " `"--commission=$Commission`""; $headlessArgs = " --$commissionArg" }
 if ($Shots) {
 	New-Item -ItemType Directory -Force -Path $Shots | Out-Null
-	$out = cmd /c "`"$Godot`" --path `"$project`" res://tests/pattern_shots.tscn --quit-after 20000 -- `"--shots=$Shots`" 2>&1"
+	$out = cmd /c "`"$Godot`" --path `"$project`" res://tests/pattern_shots.tscn --quit-after 20000 -- `"--shots=$Shots`"$commissionArg 2>&1"
 } else {
-	$out = cmd /c "`"$Godot`" --headless --path `"$project`" res://tests/pattern_shots.tscn --quit-after 20000 2>&1"
+	$out = cmd /c "`"$Godot`" --headless --path `"$project`" res://tests/pattern_shots.tscn --quit-after 20000$headlessArgs 2>&1"
 }
 $runExit = $LASTEXITCODE
 $out | ForEach-Object { Write-Output $_ }

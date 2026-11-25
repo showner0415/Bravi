@@ -189,7 +189,8 @@ func _duel(commission_path: String) -> DuelCore:
 
 func _big_attack(opponent: OpponentData) -> AttackData:
 	for atk in opponent.attacks:
-		if atk.is_big:
+		# 패턴의 뿌리(세 번 베기)는 큰 공격이지만 버릇의 큰 베기가 아니다(결정 426).
+		if atk.is_big and atk.chain.is_empty():
 			return atk
 	for habit in opponent.habits:
 		if habit.response != null and habit.response.is_big:

@@ -7,8 +7,8 @@ const Ui := preload("res://scripts/day_ui.gd")
 const COMMISSION_DIR := "res://data/commissions"
 const DUEL_PATH := "res://scenes/duel/duel.tscn"
 const TITLE_PATH := "res://scenes/ui/title.tscn"
-## 패턴을 시험하는 상대(결정 369·377). 이 폴더의 상대마다 "자유 결투" 버튼, 그 패턴마다 "패턴만" 버튼이 생긴다.
-const TRIAL_DIR := "res://data/opponents/trial"
+## 연습의 줄을 만드는 상대들(결정 428). 이 폴더의 상대마다 "자유 결투" 버튼, 그 패턴마다 "패턴만" 버튼이 생긴다.
+const PRACTICE_DIR := "res://data/opponents"
 const RULES_PATH := "res://data/duel_rules.tres"
 ## 빈틈 줄의 버튼(결정 407). 0은 늘 열린다, 1~3은 그 날의 확률.
 const OPENING_DAYS := [[0, "늘 열린다"], [1, "1일차"], [2, "2일차"], [3, "3일차부터"]]
@@ -126,13 +126,13 @@ func _unhandled_input(event: InputEvent) -> void:
 ## 시험용 상대를 읽는다(파일 이름 차례). 폴더가 없거나 비면 빈 배열이다.
 static func load_trials() -> Array[OpponentData]:
 	var out: Array[OpponentData] = []
-	if not DirAccess.dir_exists_absolute(TRIAL_DIR):
+	if not DirAccess.dir_exists_absolute(PRACTICE_DIR):
 		return out
-	var files := Array(DirAccess.get_files_at(TRIAL_DIR))
+	var files := Array(DirAccess.get_files_at(PRACTICE_DIR))
 	files.sort()
 	for file: String in files:
 		# 내보낸 빌드에서는 .tres가 .remap으로 보인다.
-		var path := TRIAL_DIR.path_join(file.trim_suffix(".remap"))
+		var path := PRACTICE_DIR.path_join(file.trim_suffix(".remap"))
 		if path.ends_with(".tres") and load(path) is OpponentData:
 			out.append(load(path) as OpponentData)
 	return out
@@ -150,8 +150,6 @@ func _add_trials(column: VBoxContainer) -> void:
 	for i in trials.size():
 		var opponent := trials[i]
 		_add_trial_button(free_row, opponent.display_name, "TrialDuel%d" % i, opponent)
-		# 같은 상대를 높이 없이: 9칸과 가로만을 바로 견줘 본다(결정 391).
-		_add_trial_button(free_row, "%s (가로만)" % opponent.display_name, "TrialFlat%d" % i, opponent.flat())
 		for atk in opponent.attacks:
 			if atk.chain.is_empty():
 				continue

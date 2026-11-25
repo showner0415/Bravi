@@ -11,7 +11,7 @@
 # -Opening: opening chance settings (base = as the data says, off = always opens, 1/2/3 = that day). Default base.
 # -Bonus: adds to the chance of the day settings 1/2/3 only (the upgrade), e.g. -Opening 3 -Bonus 0.15. Default 0.
 # -Counter: where the counter is aimed (same = the guarded cell, mid = same side mid row, thrust = centre mid).
-# Without -Opponent it plays every opponent in data/opponents/trial, 9-cell and flat.
+# Without -Opponent it plays every opponent in data/opponents, 9-cell and flat.
 # Judges the run: exit code 0, one "DUEL STATS OK <n>" line, no ERROR lines. The numbers are not judged.
 param(
 	[switch]$SkipImport,

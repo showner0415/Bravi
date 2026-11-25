@@ -1,16 +1,23 @@
 extends RefCounted
-## T83~T85: 공격의 칸과 변주(계획 036b). 높이 막기, 뽑기와 변주·난수 불변, 시험용 데이터와 표시의 자리.
+## T83~T85: 공격의 칸과 변주(계획 036b). 높이 막기, 뽑기와 변주·난수 불변, 하루의 상대의 데이터와 표시의 자리.
 ## 판 돌리기와 상대 만들기는 pattern_tests.gd의 것을 그대로 쓴다(대기 1.0초, 0초에 전진. 타격 시각의 손 셈도 같다).
 
 const Patterns := preload("res://tests/pattern_tests.gd")
 const DT := preload("res://scripts/duel/duel_types.gd")
 const Session := preload("res://scripts/game_session.gd")
+const Plain := preload("res://tests/plain_opponent.gd")
+const Bot := preload("res://tests/duel_bots.gd")
+const Select := preload("res://scripts/commission/commission_select.gd")
+const Title := preload("res://scripts/title.gd")
 
-const TRIAL_PATHS: Array[String] = [
-	"res://data/opponents/trial/bartolo_patterns.tres",
-	"res://data/opponents/trial/bruno_patterns.tres",
+const DAY_PATHS: Array[String] = [
+	"res://data/opponents/opponent_01.tres",
+	"res://data/opponents/opponent_02.tres",
 ]
 const BARTOLO_PATH := "res://data/opponents/opponent_01.tres"
+const RULES_PATH := "res://data/duel_rules.tres"
+const CATALOG_PATH := "res://data/upgrade_catalog.tres"
+const LEGS_ONLY_PATH := "res://data/commissions/variants/legs_only.tres"
 const WEAPON_PATH := "res://data/weapons/rapier.tres"
 const DELTAS: Array[float] = [1.0 / 30.0, 1.0 / 60.0, 1.0 / 144.0]
 const EPS := 1e-6
@@ -24,7 +31,8 @@ func list(tree: SceneTree) -> Array:
 	return [
 		{"id": "T83", "name": "높이 막기: 칸이 맞아야 막힘·패리, 틀린 높이의 까닭, 높이 없는 타격의 회귀, 패턴의 걸음", "fn": t83_height_guard},
 		{"id": "T84", "name": "뽑기와 변주: 예비 동작에서 한 번에, 시드로 재현, 높이 없는 데이터의 난수 불변, 가방 한 장", "fn": t84_draws},
-		{"id": "T85", "name": "시험용 데이터의 칸과 변주, 고리의 줄, 따라가는 점, 막는 법의 글, 가로만 버튼", "fn": t85_trial_cells},
+		{"id": "T85", "name": "하루의 상대의 칸과 변주, 고리의 줄, 따라가는 점, 막는 법의 글, 가로만 버튼이 없음", "fn": t85_trial_cells},
+		{"id": "T91", "name": "하루의 상대의 패턴: 데이터·옛 규칙 사본·안내·연습의 줄", "fn": t91_day_patterns},
 	]
 
 
@@ -271,8 +279,8 @@ func t85_trial_cells() -> String:
 	var errs: Array[String] = []
 	var weapon := load(WEAPON_PATH) as WeaponData
 	var cell_sets: Array = []
-	# 1·2. 시험용 상대의 칸과 변주.
-	for path in TRIAL_PATHS:
+	# 1·2. 하루의 상대의 칸과 변주.
+	for path in DAY_PATHS:
 		var opp := load(path) as OpponentData
 		var label := path.get_file()
 		var cells := {}
@@ -301,8 +309,6 @@ func t85_trial_cells() -> String:
 			errs.append("%s: HELP_HEIGHT가 9칸에 없거나 가로만에 있음" % label)
 	if cell_sets.size() == 2 and cell_sets[0] == cell_sets[1]:
 		errs.append("두 상대가 쓰는 칸의 모음이 같음")
-	if DuelHud.help_text(load(BARTOLO_PATH) as OpponentData).contains(DuelHud.HELP_HEIGHT):
-		errs.append("하루의 바르톨로에 HELP_HEIGHT가 붙음")
 	# 3. 고리의 줄.
 	var ring := OpponentView.RING_POSITION
 	for d in 3:
@@ -334,11 +340,129 @@ func t85_trial_cells() -> String:
 	var points: PackedVector2Array = early["points"]
 	if not (early["dot"] as Vector2).is_equal_approx(points[0]) or not (arrived["dot"] as Vector2).is_equal_approx(points[1]):
 		errs.append("따라가는 점: 처음 %s, 60%% 뒤 %s (점들 %s)" % [early["dot"], arrived["dot"], points])
-	# 6. 연습 화면: 가로만 버튼이 시험용 상대 수만큼.
+	# 6. 연습 화면: 가로만 버튼은 없다(결정 428).
 	var select: Node = (load(Session.SELECT_PATH) as PackedScene).instantiate()
 	_tree.root.add_child(select)
 	var flat_buttons := select.find_children("TrialFlat*", "Button", true, false).size()
-	if flat_buttons != TRIAL_PATHS.size():
-		errs.append("연습 화면의 가로만 버튼 %d개 (기대 %d)" % [flat_buttons, TRIAL_PATHS.size()])
+	if flat_buttons != 0:
+		errs.append("연습 화면의 가로만 버튼 %d개 (기대 0)" % flat_buttons)
+	select.free()
+	return "OK" if errs.is_empty() else ", ".join(errs)
+
+
+## 하루의 규칙(그 날의 확률)으로 코어를 만든다. 시드 1, 모자 없음.
+func _day_core(opp: OpponentData, day_number: int) -> DuelCore:
+	var day := DayState.new(EconomyRules.new(), DayData.new(), load(CATALOG_PATH) as UpgradeCatalog)
+	day.day_number = day_number
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 1
+	var weapon := (load(WEAPON_PATH) as WeaponData).duplicate() as WeaponData
+	weapon.close_bind_time = 0.0
+	var core := DuelCore.new()
+	var none: Array[CommissionCondition] = []
+	core.setup(day.effective_duel_rules(load(RULES_PATH) as DuelRules), weapon, opp, rng, none, false)
+	return core
+
+
+## 들고 막는 봇으로 seconds초까지 돌린다.
+func _day_run(opp: OpponentData, seconds: float) -> DuelCore:
+	var core := _day_core(opp, 1)
+	var bot := Bot.new(core, {})
+	core.step(1)
+	while not core.ended and core.time < seconds:
+		core.tick(1.0 / 60.0)
+		bot.update()
+	return core
+
+
+func t91_day_patterns() -> String:
+	var errs: Array[String] = []
+	# 1. 데이터: 단발 셋 + 패턴 둘, 바르톨로는 이어 베기·브루노는 휩쓸기, 높이와 변주, 확률 0.8.
+	for row: Array in [[DAY_PATHS[0], false], [DAY_PATHS[1], true]]:
+		var opp := load(row[0]) as OpponentData
+		var label: String = String(row[0]).get_file()
+		var singles := 0
+		var patterns := 0
+		var sweeps := 0
+		var variants := 0
+		for atk in opp.attacks:
+			variants += atk.variants.size()
+			if atk.chain.is_empty():
+				singles += 1
+			else:
+				patterns += 1
+				sweeps += 1 if atk.sweep else 0
+		if opp.attacks.size() != 5 or singles != 3 or patterns != 2 or sweeps != (2 if row[1] else 0):
+			errs.append("%s: 공격 %d · 단발 %d · 패턴 %d · 휩쓸기 %d" % [label, opp.attacks.size(), singles, patterns, sweeps])
+		if not DuelHud.uses_heights(opp) or variants < 1:
+			errs.append("%s: 높이 %s · 변주 %d" % [label, str(DuelHud.uses_heights(opp)), variants])
+		if not is_equal_approx(opp.opening_chance, 0.8):
+			errs.append("%s: 빈틈의 확률 %.2f (기대 0.80)" % [label, opp.opening_chance])
+	if DirAccess.dir_exists_absolute("res://data/opponents/trial"):
+		errs.append("시험용 폴더가 남아 있음")
+	# 2. 가방: 한 벌 7장(3 + 1 + 1 + 1 + 1), 첫 예비 동작에서 한 장을 꺼내면 6.
+	var bag_core := _day_core(load(BARTOLO_PATH) as OpponentData, 1)
+	bag_core.distance = DT.Distance.ENGAGE
+	var guard := 0
+	while guard < 3000 and bag_core.brain.state != DT.OpponentState.TELL:
+		bag_core.tick(1.0 / 60.0)
+		guard += 1
+	if bag_core.brain.bag_remaining() != 6:
+		errs.append("가방에 남은 장 %d (기대 6)" % bag_core.brain.bag_remaining())
+	# 3. 하루의 판에 패턴과 높이가 나온다.
+	var real := load(BARTOLO_PATH) as OpponentData
+	var live := _day_run(real, 60.0)
+	var tall := 0
+	for ev in live.record.of_type(DuelRecord.TELL_START):
+		if int(ev["height"]) >= 0:
+			tall += 1
+	if live.record.of_type(DuelRecord.PATTERN_STEP).is_empty() or tall < 1:
+		errs.append("하루의 판: 패턴 걸음 %d · 높이가 있는 예비 동작 %d" % [live.record.of_type(DuelRecord.PATTERN_STEP).size(), tall])
+	# 4. 옛 규칙 사본: 단발 셋, 높이·패턴·확률 없음. 원본은 그대로.
+	var plain := Plain.of(real)
+	var all_single := true
+	for atk in plain.attacks:
+		all_single = all_single and atk.chain.is_empty()
+	if plain.attacks.size() != 3 or not all_single or plain.use_heights or not is_equal_approx(plain.opening_chance, 1.0) \
+			or plain.habits.size() != 1:
+		errs.append("옛 규칙 사본: 공격 %d · 높이 %s · 확률 %.2f · 버릇 %d" % [plain.attacks.size(), str(plain.use_heights), plain.opening_chance, plain.habits.size()])
+	if real.attacks.size() != 5 or not real.use_heights or not is_equal_approx(real.opening_chance, 0.8):
+		errs.append("사본을 만든 뒤 원본이 바뀜: 공격 %d · 높이 %s · 확률 %.2f" % [real.attacks.size(), str(real.use_heights), real.opening_chance])
+	var old := _day_run(plain, 60.0)
+	var raised := 0
+	for ev in old.record.of_type(DuelRecord.TELL_START):
+		if int(ev["height"]) != -1:
+			raised += 1
+	if not old.record.of_type(DuelRecord.PATTERN_STEP).is_empty() or raised != 0 or old.record.count_where(DuelRecord.STRIKE, "closed", true) != 0:
+		errs.append("옛 규칙 사본의 판: 패턴 걸음 %d · 높이가 있는 예비 동작 %d · 안 열린 타격 %d" % [
+			old.record.of_type(DuelRecord.PATTERN_STEP).size(), raised, old.record.count_where(DuelRecord.STRIKE, "closed", true)])
+	if Plain.of(load(DAY_PATHS[1]) as OpponentData).attacks.size() != 3:
+		errs.append("브루노의 옛 규칙 사본 공격 수가 3이 아님")
+	# 5. 안내: 바르톨로는 이어 베기와 높이, 브루노는 휩쓸기와 높이. 도움말 화면과 오르솔라의 사연.
+	var help := DuelHud.help_text(real)
+	if not help.contains(DuelHud.HELP_CHAIN) or not help.contains(DuelHud.HELP_HEIGHT) or help.contains(DuelHud.HELP_SWEEP):
+		errs.append("바르톨로의 막는 법 글: \"%s\"" % help)
+	var bruno_help := DuelHud.help_text(load(DAY_PATHS[1]) as OpponentData)
+	if not bruno_help.contains(DuelHud.HELP_SWEEP) or not bruno_help.contains(DuelHud.HELP_HEIGHT):
+		errs.append("브루노의 막는 법 글: \"%s\"" % bruno_help)
+	var screen := "\n".join(PackedStringArray(Title.help_groups()))
+	if not screen.contains("번호 차례대로") or not screen.contains("고리가 뜬 칸"):
+		errs.append("도움말 화면에 이어 베기나 높이의 글이 없음")
+	if not (load(LEGS_ONLY_PATH) as Commission).dialogue.contains("휩쓸"):
+		errs.append("오르솔라의 사연에 휩쓸기의 귀띔이 없음")
+	# 6. 연습의 줄: 하루의 상대 둘, 그림 데이터는 섞이지 않는다.
+	var trials := Select.load_trials()
+	if trials.size() != 2 or trials[0].resource_path != DAY_PATHS[0] or trials[1].resource_path != DAY_PATHS[1]:
+		errs.append("연습의 상대 %d명" % trials.size())
+	var select: Node = (load(Session.SELECT_PATH) as PackedScene).instantiate()
+	_tree.root.add_child(select)
+	var counts := [
+		select.find_children("TrialDuel*", "Button", true, false).size(),
+		select.find_children("PatternDrill*", "Button", true, false).size(),
+		select.find_children("TrialFlat*", "Button", true, false).size(),
+		select.find_children("OpeningDay*", "Button", true, false).size(),
+	]
+	if counts != [2, 4, 0, 4]:
+		errs.append("연습 화면의 버튼 (자유 결투·패턴만·가로만·빈틈) %s (기대 [2, 4, 0, 4])" % str(counts))
 	select.free()
 	return "OK" if errs.is_empty() else ", ".join(errs)

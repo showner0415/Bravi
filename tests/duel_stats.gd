@@ -12,7 +12,7 @@ const Summary := preload("res://scripts/duel/duel_summary.gd")
 
 const RULES_PATH := "res://data/duel_rules.tres"
 const WEAPON_PATH := "res://data/weapons/rapier.tres"
-const TRIAL_DIR := "res://data/opponents/trial"
+const OPPONENT_DIR := "res://data/opponents"
 const DELTA := 1.0 / 60.0
 ## 제한 시간이 끝내지 못한 판을 끊는다.
 const HARD_STOP := 400.0
@@ -42,11 +42,13 @@ func _initialize() -> void:
 		elif arg.begins_with("--opponent="):
 			paths.append(arg.trim_prefix("--opponent="))
 	if paths.is_empty():
-		var files := Array(DirAccess.get_files_at(TRIAL_DIR))
+		var files := Array(DirAccess.get_files_at(OPPONENT_DIR))
 		files.sort()
 		for file: String in files:
-			if file.trim_suffix(".remap").ends_with(".tres"):
-				paths.append(TRIAL_DIR.path_join(file.trim_suffix(".remap")))
+			var found := OPPONENT_DIR.path_join(file.trim_suffix(".remap"))
+			# 폴더에는 상대의 그림 데이터(*_art.tres)도 있어 OpponentData만 담는다.
+			if found.ends_with(".tres") and load(found) is OpponentData:
+				paths.append(found)
 	# 덤은 날 숫자 갈래에서만 든다: _chance와 _play는 덤 없는 규칙이라 확률을 두 번 세지 않는다(결정 420).
 	var bonus_rules := (load(RULES_PATH) as DuelRules).duplicate() as DuelRules
 	bonus_rules.opening_chance_bonus = bonus

@@ -2,6 +2,7 @@ extends RefCounted
 ## T15~T20: 의뢰 데이터와 조건 3종(첫 피, 깃털, 티 안 나게 지기).
 ## 결투는 core_tests.gd의 도우미로 돌린다(봇이 코어 이벤트에 반응해 입력).
 
+const Plain := preload("res://tests/plain_opponent.gd")
 const Core := preload("res://tests/core_tests.gd")
 const Bot := preload("res://tests/duel_bots.gd")
 const DT := preload("res://scripts/duel/duel_types.gd")
@@ -37,6 +38,7 @@ func list(_tree: SceneTree) -> Array:
 		{"id": "T19", "name": "같은 봇이 세 의뢰에서 다른 결과", "fn": t19_same_bot},
 		{"id": "T20", "name": "의뢰별 판 길이 (시드 %d개)" % Core.SIM_SEEDS, "fn": t20_lengths},
 		{"id": "T90", "name": "하루의 판 길이: 날마다의 확률 (시드 %d개)" % Core.SIM_SEEDS, "fn": t90_day_lengths},
+		{"id": "T92", "name": "패턴과 지기의 셈: 타격마다 막아낸 횟수, 높이가 틀린 막기", "fn": t92_throw_with_patterns},
 		{"id": "T41", "name": "첫 피: 손은 피, 머리 스침 감점은 꺼져 있다", "fn": t41_first_blood_parts},
 		{"id": "T44", "name": "유효타만 보는 조건과 일정의 비중", "fn": t44_hit_only},
 	]
@@ -158,7 +160,7 @@ func t15_data() -> String:
 	if feather != null and feather.conditions.size() == 1 and feather.conditions[0] is TargetPartCondition:
 		_expect(errs, (feather.conditions[0] as TargetPartCondition).target_part == DT.Part.HAT, "깃털 의뢰의 지정 부위가 모자가 아님")
 
-	_expect(errs, opponent.attacks.size() == 3, "상대 공격 수 %d (기대 3)" % opponent.attacks.size())
+	_expect(errs, opponent.attacks.size() == 5, "상대 공격 수 %d (기대 5)" % opponent.attacks.size())
 	for atk in opponent.attacks:
 		_expect(errs, atk is AttackData, "공격 배열에 AttackData가 아닌 원소")
 	_expect(errs, opponent.habits.size() == 1, "상대 버릇 수 %d (기대 1)" % opponent.habits.size())
@@ -473,8 +475,8 @@ func _throw_duel(cond: ThrowUndetectedCondition, opp: OpponentData, cfg: Diction
 func t18_throw() -> String:
 	var errs: Array[String] = []
 	var cond := ThrowUndetectedCondition.new()
-	# 다른 규칙을 보는 테스트다: 빈틈의 확률은 끈다(결정 416). 하루의 판 길이는 T90.
-	var real: OpponentData = (load(OPPONENT_PATH) as OpponentData).with_opening(1.0)
+	# 다른 규칙을 보는 테스트다: 패턴·높이·확률을 끈 옛 규칙 사본이다(결정 416·426). 하루의 판 길이는 T90.
+	var real: OpponentData = Plain.of(load(OPPONENT_PATH) as OpponentData)
 
 	# (a) 아무것도 안 하고 네 번 맞음 → 낮은 점수
 	var none := func(_a: AttackData, _i: int) -> StringName: return &"none"
@@ -513,7 +515,7 @@ func t18_throw() -> String:
 
 func t19_same_bot() -> String:
 	var errs: Array[String] = []
-	var real: OpponentData = (load(OPPONENT_PATH) as OpponentData).with_opening(1.0)
+	var real: OpponentData = Plain.of(load(OPPONENT_PATH) as OpponentData)
 	# 막고, 베기 뒤 중단 찌르기, 무너지면 중단 찌르기.
 	var cfg_fn := func() -> Dictionary: return _cfg_counter(AIM_MID_THRUST, {"finisher": AIM_MID_THRUST})
 
@@ -540,7 +542,7 @@ func t19_same_bot() -> String:
 
 func t20_lengths() -> String:
 	var errs: Array[String] = []
-	var real: OpponentData = (load(OPPONENT_PATH) as OpponentData).with_opening(1.0)
+	var real: OpponentData = Plain.of(load(OPPONENT_PATH) as OpponentData)
 	var limit: float = (load(Core.RULES_PATH) as DuelRules).time_limit
 	var feather := _conditions(FEATHER_PATH)
 	var throw_match := _conditions(THROW_PATH)
@@ -617,4 +619,49 @@ func t90_day_lengths() -> String:
 			continue
 		_expect(errs, st["mean"] >= 30.0 and st["mean"] <= limit, "%s 평균 %.1f초가 30~%.0f초 밖" % [row[0], st["mean"], limit])
 		_expect(errs, st["timeouts"] * 100 <= max_pct * Core.SIM_SEEDS, "%s 시간 초과 %d판 (%d%% 초과)" % [row[0], st["timeouts"], max_pct])
+	return _result(errs)
+
+
+## 세 번 베기 하나만 되풀이하는 상대(확률 1.0, 대기 1.0초 고정). 로드한 자원은 고치지 않는다.
+func _three_strike_opponent() -> OpponentData:
+	var real := load(OPPONENT_PATH) as OpponentData
+	var root: AttackData = null
+	for atk in real.attacks:
+		if atk.attack_name == "세 번 베기":
+			root = atk
+	if root == null:
+		return null
+	var drill := real.drill(root)
+	drill.opening_chance = 1.0
+	drill.idle_time_min = 1.0
+	drill.idle_time_max = 1.0
+	return drill
+
+
+## T92: 패턴의 막음은 타격마다 "막아낸 횟수"에 든다(결정 430). 높이만 틀린 막기도 지기의 "틀린 막기"다.
+func t92_throw_with_patterns() -> String:
+	var errs: Array[String] = []
+	var opp := _three_strike_opponent()
+	if opp == null:
+		return "세 번 베기를 찾지 못함"
+	var conditions := _conditions(THROW_PATH)
+	# 1. 들고 막는 봇이 세 번 베기 하나를 다 막으면 막힘·패리인 타격이 3이다.
+	var stop_third: Callable = _h.call("_stop_at", DuelRecord.STRIKE, 3)
+	var held: Variant = _h.call("_run", opp, {}, stop_third, Core.BASE_DELTA, 40.0, 1, conditions, false)
+	var blocks := 0
+	var strikes: Array[Dictionary] = held.core.record.of_type(DuelRecord.STRIKE)
+	for ev in strikes.slice(0, 3):
+		if ev["result"] == DT.StrikeResult.BLOCKED or ev["result"] == DT.StrikeResult.PARRIED:
+			blocks += 1
+	if strikes.size() < 3 or blocks != 3:
+		errs.append("세 번 베기를 다 막았을 때 막힘·패리 %d (기대 3, 타격 %d번)" % [blocks, strikes.size()])
+	# 2. 첫 타격을 높이만 틀리게 막으면 틀린 막기이고 까닭이 높이다.
+	var wrong: Callable = func(_a: AttackData, _i: int) -> StringName: return &"wrong_height"
+	var stop_first: Callable = _h.call("_stop_at", DuelRecord.STRIKE, 1)
+	var missed: Variant = _h.call("_run", opp, {"guard_fn": wrong}, stop_first, Core.BASE_DELTA, 40.0, 1, conditions, false)
+	var first: Array[Dictionary] = missed.core.record.of_type(DuelRecord.STRIKE)
+	if first.is_empty():
+		errs.append("높이를 틀린 판에 타격이 없음")
+	elif first[0]["situation"] != DT.Situation.WRONG_GUARD or first[0]["guard_miss"] != &"height":
+		errs.append("높이를 틀린 첫 타격: 상황 %s · 까닭 %s (기대 틀린 막기 · height)" % [str(first[0]["situation"]), str(first[0]["guard_miss"])])
 	return _result(errs)

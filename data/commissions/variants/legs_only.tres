@@ -15,7 +15,7 @@ target_part = 5
 script = ExtResource("1_commission")
 client_name = "무용 교사 오르솔라"
 dialogue = "브루노가 제 무도회에서 제자의 발을 일부러 밟고는 춤도 못 추는 것들이라며 웃었어요. 그 잘난 다리에 한 줄만 그어 주세요. 다른 곳은 건드리지 마시고요.
-칼끝을 낮게 두셔야 할 거예요."
+칼끝을 낮게 두셔야 할 거예요. 그 사람은 칼을 크게 휩쓸어요. 막은 칼을 떼지 말고 끝까지 따라가세요."
 opponent = ExtResource("4_opponent")
 stage = ExtResource("5_stage")
 client_portrait = ExtResource("6_portrait")

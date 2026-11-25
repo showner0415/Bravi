@@ -14,10 +14,6 @@ const RULES_PATH := "res://data/duel_rules.tres"
 const WEAPON_PATH := "res://data/weapons/rapier.tres"
 const CATALOG_PATH := "res://data/upgrade_catalog.tres"
 const DAY_OPPONENTS: Array[String] = ["res://data/opponents/opponent_01.tres", "res://data/opponents/opponent_02.tres"]
-const TRIAL_PATHS: Array[String] = [
-	"res://data/opponents/trial/bartolo_patterns.tres",
-	"res://data/opponents/trial/bruno_patterns.tres",
-]
 const DELTA := 1.0 / 60.0
 
 var _tree: SceneTree
@@ -29,7 +25,7 @@ func list(tree: SceneTree) -> Array:
 	return [
 		{"id": "T86", "name": "빈틈의 확률 판정: 상한, 패리 덤, 걸리지 않는 것, 패턴은 끝에서, 봐주기, 버릇", "fn": t86_rules},
 		{"id": "T87", "name": "빈틈의 확률 굴림·셈: 날의 배율과 바닥, 예비 동작마다 한 번, 1.0이면 난수 불변, 몫", "fn": t87_rolls},
-		{"id": "T88", "name": "빈틈의 확률의 길: 하루의 날, 업그레이드 칸, 시험용 상대, 연습의 날 버튼, 글, 요약", "fn": t88_paths},
+		{"id": "T88", "name": "빈틈의 확률의 길: 하루의 날, 업그레이드 칸, 하루의 상대, 연습의 날 버튼, 글, 요약", "fn": t88_paths},
 		{"id": "T89", "name": "빈틈의 확률을 하루에: 하루의 상대 값, 규칙의 값, 물건, 날과 물건이 뇌까지, 글", "fn": t89_day_values},
 	]
 
@@ -289,8 +285,8 @@ func t88_paths() -> String:
 	var upgraded := UpgradeData.applied(base, UpgradeData.Target.DUEL, upgrades) as DuelRules
 	if not is_equal_approx(upgraded.opening_chance_bonus, 0.15) or not is_equal_approx(upgraded.opening_chance_for(0.8, 3), 0.79):
 		errs.append("업그레이드의 덤: %.2f · %.3f" % [upgraded.opening_chance_bonus, upgraded.opening_chance_for(0.8, 3)])
-	# 3. 시험용 상대: 바닥과 1.0 사이, 사본은 원본을 고치지 않고 값을 물려받는다.
-	for path in TRIAL_PATHS:
+	# 3. 하루의 상대: 바닥과 1.0 사이, 사본은 원본을 고치지 않고 값을 물려받는다.
+	for path in DAY_OPPONENTS:
 		var trial := load(path) as OpponentData
 		var chance := trial.opening_chance
 		if chance <= base.opening_chance_floor or chance >= 1.0:

@@ -1,7 +1,8 @@
 extends Node
-## 패턴의 고리 찍기: 시험용 상대의 패턴마다, 길(바탕·변주)마다, 간격 셋에서 예비 동작의 한 순간을 놓는다.
+## 패턴의 고리 찍기: 하루의 상대의 패턴마다, 길(바탕·변주)마다, 간격 셋에서 예비 동작의 한 순간을 놓는다.
 ## 게임 창에서 그 순간을 기다려 잡던 것을 대신한다. 실행: tests/run_pattern_shots.ps1 (-Shots <폴더>면 창을 열어 PNG도 남긴다).
 ## 장마다 "shot,<이름>,<놓은 것>"을 내고, 고리가 HUD의 판과 겹치면 "overlap,<이름>,<번호>,<노드>,<겹친 넓이>"를 낸다.
+## --commission=<의뢰 경로>를 주면 그 의뢰의 HUD와 모자로 찍는다(없으면 연습의 자유 결투).
 ## 겹침은 알릴 뿐 판정하지 않는다. 판은 실제 코어를 돌려 놓는다(예비 동작의 이벤트가 뷰에 그대로 간다).
 
 const DT := preload("res://scripts/duel/duel_types.gd")
@@ -16,6 +17,7 @@ const PROGRESS := 0.35
 const SETTLE_MSEC := 250
 
 var _shots_dir := ""
+var _commission_path := ""
 var _plan: Array = []
 var _i := -1
 var _node: Node
@@ -28,6 +30,8 @@ func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--shots="):
 			_shots_dir = arg.trim_prefix("--shots=")
+		elif arg.begins_with("--commission="):
+			_commission_path = arg.trim_prefix("--commission=")
 	if _shots_dir != "" and DisplayServer.get_name() != "headless":
 		DirAccess.make_dir_recursive_absolute(_shots_dir)
 	else:
@@ -90,7 +94,14 @@ func _pose(item: Dictionary) -> String:
 	var weapon := (load(WEAPON_PATH) as WeaponData).duplicate() as WeaponData
 	weapon.close_bind_time = 0.0
 	_node = (load(Session.DUEL_PATH) as PackedScene).instantiate()
-	_node.set("practice_opponent", (item["opponent"] as OpponentData).drill(solo))
+	var drilled := (item["opponent"] as OpponentData).drill(solo)
+	if _commission_path != "":
+		# 의뢰의 HUD와 모자가 뜬 채 찍는다. 읽어 온 의뢰는 고치지 않고 사본에 상대만 바꾼다(결정 433).
+		var copy := (load(_commission_path) as Commission).duplicate() as Commission
+		copy.opponent = drilled
+		_node.set("commission", copy)
+	else:
+		_node.set("practice_opponent", drilled)
 	_node.set("test_weapon", weapon)
 	_node.set("mouse_aim_enabled", false)
 	_node.set("rng_seed", 1)

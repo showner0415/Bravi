@@ -4,6 +4,7 @@ extends RefCounted
 const OPPONENT_VIEW_PATH := "res://scenes/duel/opponent_view.tscn"
 const DUEL_PATH := "res://scenes/duel/duel.tscn"
 const WEAPON_PATH := "res://data/weapons/rapier.tres"
+const Plain := preload("res://tests/plain_opponent.gd")
 const Bot := preload("res://tests/duel_bots.gd")
 
 ## 이후 아트와 리깅의 기준이 되는 파츠 경로 7개.
@@ -41,8 +42,8 @@ func t14_scene() -> String:
 	view.free()
 
 	var duel: Node = (load(DUEL_PATH) as PackedScene).instantiate()
-	# 다른 규칙을 보는 테스트다: 빈틈의 확률은 끈다(결정 416). 하루의 판 길이는 T90.
-	duel.set("practice_opponent", (load(DuelScene.DEFAULT_OPPONENT_PATH) as OpponentData).with_opening(1.0))
+	# 다른 규칙을 보는 테스트다: 패턴·높이·확률을 끈 옛 규칙 사본이다(결정 416·426). 하루의 판 길이는 T90.
+	duel.set("practice_opponent", Plain.of(load(DuelScene.DEFAULT_OPPONENT_PATH) as OpponentData))
 	duel.set("mouse_aim_enabled", false)
 	duel.set("rng_seed", 1)
 	_tree.root.add_child(duel)
@@ -192,7 +193,7 @@ func _advance(duel: Node, seconds: float) -> void:
 func t24_real_input() -> String:
 	var errs: Array[String] = []
 	var duel: Node = (load(DUEL_PATH) as PackedScene).instantiate()
-	duel.set("practice_opponent", (load(DuelScene.DEFAULT_OPPONENT_PATH) as OpponentData).with_opening(1.0))
+	duel.set("practice_opponent", Plain.of(load(DuelScene.DEFAULT_OPPONENT_PATH) as OpponentData))
 	duel.set("rng_seed", 1)  # mouse_aim_enabled는 기본값(켜짐) 그대로 둔다
 	_tree.root.add_child(duel)
 	var core: DuelCore = duel.get("core")
@@ -273,10 +274,10 @@ func _spawn_duel(commission: Commission) -> Node:
 	var duel: Node = (load(DUEL_PATH) as PackedScene).instantiate()
 	if commission != null:
 		var pinned := commission.duplicate() as Commission
-		pinned.opponent = commission.opponent.with_opening(1.0)
+		pinned.opponent = Plain.of(commission.opponent)
 		duel.set("commission", pinned)
 	else:
-		duel.set("practice_opponent", (load(DuelScene.DEFAULT_OPPONENT_PATH) as OpponentData).with_opening(1.0))
+		duel.set("practice_opponent", Plain.of(load(DuelScene.DEFAULT_OPPONENT_PATH) as OpponentData))
 	duel.set("mouse_aim_enabled", false)
 	duel.set("rng_seed", 1)
 	_tree.root.add_child(duel)

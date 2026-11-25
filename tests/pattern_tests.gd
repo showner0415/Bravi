@@ -1,5 +1,5 @@
 extends RefCounted
-## T79~T81: 공격 패턴(계획 036). 이어 베기, 휩쓸기, 시험용 상대와 연습의 길.
+## T79~T81: 공격 패턴(계획 036). 이어 베기, 휩쓸기, 하루의 상대의 패턴과 연습의 길.
 ## 손 셈(멀리에서 0초에 전진): 교전 0.3 → 대기 1.0 → 예비 시작 1.3. 이어 베기 0.9 → 0.75 → 0.65, 휩쓸기 1.0 → 0.6 → 0.6.
 
 const Bot := preload("res://tests/duel_bots.gd")
@@ -10,10 +10,7 @@ const RULES_PATH := "res://data/duel_rules.tres"
 const WEAPON_PATH := "res://data/weapons/rapier.tres"
 const BARTOLO_PATH := "res://data/opponents/opponent_01.tres"
 const BRUNO_PATH := "res://data/opponents/opponent_02.tres"
-const TRIALS := {
-	"res://data/opponents/trial/bartolo_patterns.tres": BARTOLO_PATH,
-	"res://data/opponents/trial/bruno_patterns.tres": BRUNO_PATH,
-}
+const DAY_OPPONENTS: Array[String] = [BARTOLO_PATH, BRUNO_PATH]
 const DUEL_PATH := "res://scenes/duel/duel.tscn"
 const DELTAS: Array[float] = [1.0 / 30.0, 1.0 / 60.0, 1.0 / 144.0]
 const EPS := 1e-6
@@ -29,7 +26,7 @@ func list(tree: SceneTree) -> Array:
 	return [
 		{"id": "T79", "name": "이어 베기: 걸음의 시각·막힘·끊김·패리·큰 공격·버티기·단발 회귀", "fn": t79_chain},
 		{"id": "T80", "name": "휩쓸기: 쥐고 끌면 막힘, 패리 없음, 떼면 뚫림", "fn": t80_sweep},
-		{"id": "T81", "name": "시험용 상대·패턴만 상대·번호 고리의 자리·연습의 길", "fn": t81_trial},
+		{"id": "T81", "name": "하루의 상대의 패턴·패턴만 상대·번호 고리의 자리·연습의 길", "fn": t81_trial},
 	]
 
 
@@ -226,26 +223,6 @@ func t80_sweep() -> String:
 	return "OK" if errs.is_empty() else ", ".join(errs)
 
 
-## 스크립트 칸을 하나씩 견준다(skip의 칸은 뺀다). 자원은 들어가 견주고 배열은 원소마다 견준다.
-func _compare(a: Variant, b: Variant, path: String, skip: Array, errs: Array[String]) -> void:
-	if a is Resource and b is Resource:
-		for prop in (a as Resource).get_property_list():
-			if not (int(prop["usage"]) & PROPERTY_USAGE_SCRIPT_VARIABLE):
-				continue
-			var field: String = prop["name"]
-			if skip.has(field):
-				continue
-			_compare((a as Resource).get(field), (b as Resource).get(field), path + "." + field, skip, errs)
-	elif a is Array and b is Array:
-		if (a as Array).size() != (b as Array).size():
-			errs.append("%s: 원소 %d개 (원본 %d개)" % [path, (b as Array).size(), (a as Array).size()])
-			return
-		for i in (a as Array).size():
-			_compare(a[i], b[i], "%s[%d]" % [path, i], skip, errs)
-	elif typeof(a) != typeof(b) or a != b:
-		errs.append("%s: %s (원본 %s)" % [path, str(b), str(a)])
-
-
 func _arm_keys(opp: OpponentData) -> Array[StringName]:
 	var keys: Array[StringName] = [&"Arm"]
 	for arm_art in opp.art.arm_arts:
@@ -286,27 +263,24 @@ func t81_trial() -> String:
 	var errs: Array[String] = []
 	var weapon := load(WEAPON_PATH) as WeaponData
 	var pattern_total := 0
-	# 1·2·3. 시험용 상대: 원본과 같고 패턴만 더했다. 패턴은 하한 안이다. 패턴만 상대는 원본을 고치지 않는다.
-	for trial_path: String in TRIALS:
+	# 1·2·3. 하루의 상대: 단발 셋이 앞에, 패턴이 뒤에. 패턴은 하한 안이다. 패턴만 상대는 원본을 고치지 않는다.
+	for trial_path: String in DAY_OPPONENTS:
 		var trial := load(trial_path) as OpponentData
-		var base := load(String(TRIALS[trial_path])) as OpponentData
 		var label := trial_path.get_file()
 		if trial == null:
 			errs.append("%s: 로드되지 않음" % label)
 			continue
-		# 시험용 상대에는 빈틈의 확률을 적는다(계획 036c 결정 409).
-		_compare(base, trial, label, ["attacks", "opening_chance"], errs)
 		var patterns: Array[AttackData] = []
+		var seen_pattern := false
 		for i in trial.attacks.size():
-			if i < base.attacks.size():
-				# 시험용 단발에는 높이의 묶음을 적는다(계획 036b 결정 393). 그 칸만 건너뛴다.
-				_compare(base.attacks[i], trial.attacks[i], "%s.attacks[%d]" % [label, i], ["heights"], errs)
-				if not trial.attacks[i].chain.is_empty():
-					errs.append("%s: 단발 자리에 패턴이 있음" % label)
-			elif trial.attacks[i].chain.is_empty():
-				errs.append("%s: 더한 공격 %d가 패턴이 아님" % [label, i])
+			if trial.attacks[i].chain.is_empty():
+				if seen_pattern:
+					errs.append("%s: 단발 %d가 패턴 뒤에 있음" % [label, i])
 			else:
+				seen_pattern = true
 				patterns.append(trial.attacks[i])
+		if trial.attacks.size() - patterns.size() != 3:
+			errs.append("%s: 단발 %d개 (기대 3)" % [label, trial.attacks.size() - patterns.size()])
 		if patterns.is_empty():
 			errs.append("%s: 패턴이 없음" % label)
 		for root in patterns:
@@ -346,7 +320,7 @@ func t81_trial() -> String:
 	if not OpponentView.pattern_marks(after.brain, 99.0).size() == 2:
 		errs.append("번호 고리가 표시 시각에 따라 수가 바뀜")
 	# 5. 결투 씬: 연습의 상대는 의뢰가 없을 때만 쓴다.
-	var trial_opp := load("res://data/opponents/trial/bruno_patterns.tres") as OpponentData
+	var trial_opp := load(BRUNO_PATH) as OpponentData
 	for with_commission: bool in [false, true]:
 		var duel: Node = (load(DUEL_PATH) as PackedScene).instantiate()
 		var commission := load("res://data/commissions/first_blood.tres") as Commission
@@ -370,7 +344,7 @@ func t81_trial() -> String:
 	for button: Button in select.find_children("*", "Button", true, false):
 		if button.text == "이 의뢰를 맡는다":
 			cards += 1
-	if free_buttons != TRIALS.size() or drill_buttons != pattern_total or cards != 3:
+	if free_buttons != DAY_OPPONENTS.size() or drill_buttons != pattern_total or cards != 3:
 		errs.append("연습 화면: 자유 결투 %d · 패턴만 %d(기대 %d) · 의뢰 카드 %d" % [free_buttons, drill_buttons, pattern_total, cards])
 	select.free()
 	return "OK" if errs.is_empty() else ", ".join(errs)

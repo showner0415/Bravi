@@ -3,6 +3,7 @@ extends RefCounted
 ## 시나리오는 봇이 코어 이벤트에 반응해 입력하는 방식으로 돌린다(절대 시각 입력 없음).
 ## 상대의 공격 순서는 공격이 하나뿐인 테스트용 OpponentData로 고정한다.
 
+const Plain := preload("res://tests/plain_opponent.gd")
 const Bot := preload("res://tests/duel_bots.gd")
 const DT := preload("res://scripts/duel/duel_types.gd")
 
@@ -77,8 +78,8 @@ func cleanup() -> void:
 
 func _base_opponent() -> OpponentData:
 	if _pinned_opponent == null:
-		# 다른 규칙을 보는 테스트다: 빈틈의 확률은 끈다(결정 416). 하루의 판 길이는 T90.
-		_pinned_opponent = (load(OPPONENT_PATH) as OpponentData).with_opening(1.0)
+		# 다른 규칙을 보는 테스트다: 패턴·높이·확률을 끈 옛 규칙 사본이다(결정 416·426). 하루의 판 길이는 T90.
+		_pinned_opponent = Plain.of(load(OPPONENT_PATH) as OpponentData)
 	return _pinned_opponent
 
 
@@ -100,6 +101,8 @@ func _copy_opponent() -> OpponentData:
 	o.whiff_recovery_multiplier = base.whiff_recovery_multiplier
 	o.close_tell_multiplier = base.close_tell_multiplier
 	o.attack_bag_sets = base.attack_bag_sets
+	# 칸을 골라 베끼므로 use_heights를 물려받지 않는다. 하루의 공격에 heights가 적혀 있어도 옛 규칙으로 돌린다(결정 426).
+	o.use_heights = false
 	# 그림과 포즈(계획 029): 이 상대가 씬에 들어가도 그림 없는 상대가 되지 않게 한다.
 	o.art = base.art
 	o.idle_pose = base.idle_pose
