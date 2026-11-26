@@ -7,6 +7,7 @@ const DT := preload("res://scripts/duel/duel_types.gd")
 const Day := preload("res://tests/day_tests.gd")
 const States := preload("res://tests/opponent_states.gd")
 const Session := preload("res://scripts/game_session.gd")
+const WornEdge := preload("res://scripts/ui/worn_edge.gd")
 
 const FEATHER_PATH := "res://data/commissions/feather_cut.tres"
 const USURER_PATH := "res://data/commissions/variants/first_blood_usurer.tres"
@@ -77,7 +78,26 @@ func _process(_delta: float) -> void:
 		var help := _node.find_child("PatternHelp", true, false) as Control
 		if grid != null and help != null:
 			print("fit,%s,%d,%d" % [_plan[_i][0], int(grid.get_global_rect().end.x), int(help.get_global_rect().end.y)])
+		_wear_lines(_node, String(_plan[_i][0]))
 		_next()
+
+
+# 헤진 판의 자름(계획 033b 작업 4b): wear,<장>,<전역 x,y,w,h>,<꼴>@<x>,<y>,<w>,<h>;… (판 안의 좌표, 자름이 없으면 -).
+func _wear_lines(node: Node, shot: String) -> void:
+	if node is PanelContainer and (node as Control).is_visible_in_tree():
+		var pc := node as PanelContainer
+		var sb := pc.get_theme_stylebox("panel")
+		if sb != null and "wear" in sb and int(sb.get("wear")) > 0:
+			var rect := pc.get_global_rect()
+			var parts: PackedStringArray = []
+			if sb.get("paper") != null and sb.get("frame") != null and minf(pc.size.x, pc.size.y) >= float(sb.get("wear_min_side")):
+				for cut in WornEdge.cuts(pc.size, pc.get_index(), int(sb.get("wear")), int(sb.get("wear_seed"))):
+					var b: Rect2 = cut["box"]
+					parts.append("%s@%d,%d,%d,%d" % [cut["kind"], b.position.x, b.position.y, b.size.x, b.size.y])
+			print("wear,%s,%d,%d,%d,%d,%s" % [shot, rect.position.x, rect.position.y, rect.size.x, rect.size.y,
+				";".join(parts) if not parts.is_empty() else "-"])
+	for child in node.get_children():
+		_wear_lines(child, shot)
 
 
 # ---------------------------------------------------------------- 하루 화면

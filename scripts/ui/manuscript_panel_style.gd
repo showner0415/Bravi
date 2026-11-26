@@ -4,6 +4,8 @@ extends StyleBox
 
 const PaperGrain := preload("res://scripts/ui/paper_grain.gd")
 const PaintedPatch := preload("res://scripts/ui/painted_patch.gd")
+const WornEdge := preload("res://scripts/ui/worn_edge.gd")
+const WEAR_LINE_WIDTH := 1.5
 
 @export var fill_color := Color("E9D8B4")
 ## 견본과 나란히 대어 맞춘 세기(판 N). 1.0이면 견본보다 짙다.
@@ -26,6 +28,13 @@ const PaintedPatch := preload("res://scripts/ui/painted_patch.gd")
 @export var density := 1.5
 ## 테두리 가장자리의 늘이기 방식, 두 축에 같이(R5의 값 하나).
 @export var frame_axis := RenderingServer.NINE_PATCH_TILE_FIT
+@export_group("헤진 가장자리 (계획 033b, 결정 498)")
+## 0이면 깎지 않는다(033·그림 길 그대로). 1 적게 · 2 보통 · 3 많이.
+@export var wear := 0
+## 짧은 변이 이보다 짧은 판은 깎지 않는다.
+@export var wear_min_side := 160.0
+@export var wear_seed := 0
+@export var wear_edge_color := Color("8C7354", 0.7)
 
 
 func _draw(to_canvas_item: RID, rect: Rect2) -> void:
@@ -49,6 +58,9 @@ func _draw(to_canvas_item: RID, rect: Rect2) -> void:
 
 # 종이와 테두리는 따로 비울 수 있다(결정 489). 한쪽만 그림이면 다른 쪽은 033의 코드 그리기를 그대로 쓴다.
 func _draw_painted(item: RID, rect: Rect2) -> void:
+	if wear > 0 and paper != null and frame != null and minf(rect.size.x, rect.size.y) >= wear_min_side:
+		_draw_worn(item, rect)
+		return
 	if paper != null:
 		PaintedPatch.draw_paper(item, rect, paper, paper.get_width() / 1280.0, Color.WHITE)
 	else:
@@ -70,6 +82,19 @@ func _draw_painted(item: RID, rect: Rect2) -> void:
 			for corner in [inner.position, Vector2(inner.end.x, inner.position.y),
 					Vector2(inner.position.x, inner.end.y), inner.end]:
 				_draw_diamond(item, corner)
+
+
+# 씨앗은 크기·형제 순서·단계·wear_seed뿐이다: 화면 위치를 쓰면 판이 움직일 때 찢김이 떨린다(결정 498).
+func _draw_worn(item: RID, rect: Rect2) -> void:
+	var drawn := get_current_item_drawn()
+	var index := drawn.get_index() if drawn != null else 0
+	var outline := WornEdge.outline(rect.size, index, wear, wear_seed)
+	PaintedPatch.draw_paper_clipped(item, rect, paper, paper.get_width() / 1280.0, Color.WHITE, outline)
+	var m := frame_margin * density
+	PaintedPatch.draw_nine_patch_clipped(item, rect, frame, Vector4(m, m, m, m), density,
+		frame_axis, frame_axis, Color.WHITE, outline)
+	for cut in WornEdge.cuts(rect.size, index, wear, wear_seed):
+		PaintedPatch.draw_edge_line(item, rect.position, cut["points"], wear_edge_color, WEAR_LINE_WIDTH)
 
 
 # 텍스처 반복 설정에 기대지 않고 타일을 손으로 나눠 깐다(끝 타일은 같은 비로 잘라서).

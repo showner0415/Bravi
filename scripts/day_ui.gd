@@ -90,9 +90,14 @@ static func add_beams(parent: Control) -> void:
 		parent.add_child(beam)
 
 
-## 화면 위쪽 머리 띠: 결 없는 양피지와 그 아래 잉크 선(견본 counterBg).
+## 화면 위쪽 머리 띠: 벽과 같은 종이와 그 아래 잉크 선(견본 counterBg, 결정 489의 예외).
 static func add_header_rule(parent: Control) -> void:
-	_add_rect(parent, Rect2(0, 0, 1280, HEADER_HEIGHT), PARCHMENT)
+	var band := Panel.new()
+	band.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	band.add_theme_stylebox_override("panel", WALL_STYLE)
+	band.position = Vector2.ZERO
+	band.size = Vector2(1280, HEADER_HEIGHT)
+	parent.add_child(band)
 	_add_rect(parent, Rect2(0, HEADER_HEIGHT - RULE_WIDTH / 2.0, 1280, RULE_WIDTH), INK)
 
 
