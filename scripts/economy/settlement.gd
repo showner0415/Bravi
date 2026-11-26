@@ -70,7 +70,8 @@ func _build(result: Dictionary) -> void:
 	Ui.add_room(self)
 	Ui.add_header_rule(self)
 	var header := Ui.add_title(self, "%d일차 · 오늘의 결투 %d/%d 정산" % [
-		day.day_number, day.results.size(), rules.duels_per_day], 28)
+		day.day_number, day.results.size(),
+		mini(rules.duels_per_day, day.results.size() + day.waiting_count())], 28)
 	header.name = "Header"
 	header.position = Vector2(32, 14)
 

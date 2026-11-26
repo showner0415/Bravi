@@ -23,7 +23,7 @@ func list(tree: SceneTree) -> Array:
 	return [
 		{"id": "T60", "name": "겹친 누름: 처음 화면의 두 번째 누름, 화면이 열린 직후의 누름", "fn": t60_double_press},
 		{"id": "T61", "name": "저장의 쓰기: 임시 파일에 적고 바꿔 끼운다", "fn": t61_atomic_write},
-		{"id": "T62", "name": "헷갈리던 표기: 카운터의 남은 결투, 폐점의 0", "fn": t62_labels},
+		{"id": "T62", "name": "헷갈리던 표기: 카운터의 남은 결투, 폐점의 0, 폐점의 소지금, 정산의 분모", "fn": t62_labels},
 	]
 
 
@@ -194,6 +194,8 @@ func t62_labels() -> String:
 		and _ledger(closing, "Rent", "Value") == "-60",
 		"[다] 다치지 않은 날의 폐점 장부: 치료비 '%s' '%s', 임대료 '%s' (기대 (0회)·0·-60)" % [
 			_ledger(closing, "Medical", "Name"), _ledger(closing, "Medical", "Value"), _ledger(closing, "Rent", "Value")])
+	_expect(errs, _ledger(closing, "Money", "Value") == "250 → 342" and _ledger(closing, "Profit", "Value") == "+92",
+		"[다] 폐점의 소지금 '%s', 손익 '%s' (기대 250 → 342, +92)" % [_ledger(closing, "Money", "Value"), _ledger(closing, "Profit", "Value")])
 	closing.free()
 
 	# 라. 다친 날의 폐점: 전과 같은 글이다.
@@ -202,5 +204,62 @@ func t62_labels() -> String:
 	closing = _d._spawn_screen(Session.CLOSING_PATH, hurt)
 	_expect(errs, _ledger(closing, "Medical", "Name").contains("(1회)") and _ledger(closing, "Medical", "Value") == "-20",
 		"[라] 다친 날의 폐점 장부의 치료비 줄: '%s' '%s' (기대 (1회)·-20)" % [_ledger(closing, "Medical", "Name"), _ledger(closing, "Medical", "Value")])
+	_expect(errs, _ledger(closing, "Money", "Value") == "250 → 322",
+		"[라] 다친 날의 폐점의 소지금 '%s' (기대 250 → 322)" % _ledger(closing, "Money", "Value"))
 	closing.free()
+
+	# 마. 의뢰가 없는 날의 폐점: 왼쪽은 그날 아침의 소지금이다(결정 483).
+	var empty := DayState.new(_d._rules(70, 60, 20, 250), DayData.new())
+	closing = _d._spawn_screen(Session.CLOSING_PATH, empty)
+	_expect(errs, _ledger(closing, "Money", "Value") == "250 → 190" and _ledger(closing, "Profit", "Value") == "-60",
+		"[마] 의뢰 0건의 폐점의 소지금 '%s', 손익 '%s' (기대 250 → 190, -60)" % [_ledger(closing, "Money", "Value"), _ledger(closing, "Profit", "Value")])
+	closing.free()
+
+	# 바. 정산 머리 줄의 분모는 치를 수 있는 결투 수다(결정 484).
+	var won := DT.EndReason.CONDITION
+	# (ㄱ) 첫째를 돌려보내면 1/2 → 2/2, 마지막 버튼은 폐점으로.
+	var sent := DayState.new(_d._duel_rules(3), _d._three_fixed())
+	sent.decline()
+	_d._fight(sent, won)
+	var settle: Node = _d._spawn_screen(Session.SETTLEMENT_PATH, sent)
+	_expect(errs, _d._label_text(settle, "Header").contains("오늘의 결투 1/2"), "[바ㄱ] 첫 정산 '%s' (기대 1/2)" % _d._label_text(settle, "Header"))
+	settle.free()
+	sent.proceed()
+	_d._fight(sent, won)
+	settle = _d._spawn_screen(Session.SETTLEMENT_PATH, sent)
+	var proceed_button := settle.find_child("Proceed", true, false) as Button
+	_expect(errs, _d._label_text(settle, "Header").contains("오늘의 결투 2/2")
+		and proceed_button != null and proceed_button.text == "가게를 닫는다",
+		"[바ㄱ] 마지막 정산 '%s' (기대 2/2, 가게를 닫는다)" % _d._label_text(settle, "Header"))
+	settle.free()
+	# (ㄴ) 돌려보내지 않은 날은 새 하루로 1/3 · 2/3 · 3/3.
+	var full := DayState.new(_d._duel_rules(3), _d._three_fixed())
+	for n in [1, 2, 3]:
+		_d._fight(full, won)
+		settle = _d._spawn_screen(Session.SETTLEMENT_PATH, full)
+		_expect(errs, _d._label_text(settle, "Header").contains("오늘의 결투 %d/3" % n),
+			"[바ㄴ] %d번째 정산 '%s' (기대 %d/3)" % [n, _d._label_text(settle, "Header"), n])
+		settle.free()
+		full.proceed()
+	# (ㄷ) 손님이 결투 자리보다 많은 날도 분모가 자리를 넘지 않는다.
+	var crowded := DayState.new(_d._duel_rules(2), _d._three_fixed())
+	for n in [1, 2]:
+		_d._fight(crowded, won)
+		settle = _d._spawn_screen(Session.SETTLEMENT_PATH, crowded)
+		_expect(errs, _d._label_text(settle, "Header").contains("오늘의 결투 %d/2" % n),
+			"[바ㄷ] %d번째 정산 '%s' (기대 %d/2)" % [n, _d._label_text(settle, "Header"), n])
+		settle.free()
+		crowded.proceed()
+	# (ㄹ) 첫째를 치르고 둘째를 돌려보내면 1/3에서 2/2로 간다.
+	var mid := DayState.new(_d._duel_rules(3), _d._three_fixed())
+	_d._fight(mid, won)
+	settle = _d._spawn_screen(Session.SETTLEMENT_PATH, mid)
+	_expect(errs, _d._label_text(settle, "Header").contains("오늘의 결투 1/3"), "[바ㄹ] 첫 정산 '%s' (기대 1/3)" % _d._label_text(settle, "Header"))
+	settle.free()
+	mid.proceed()
+	mid.decline()
+	_d._fight(mid, won)
+	settle = _d._spawn_screen(Session.SETTLEMENT_PATH, mid)
+	_expect(errs, _d._label_text(settle, "Header").contains("오늘의 결투 2/2"), "[바ㄹ] 둘째 정산 '%s' (기대 2/2)" % _d._label_text(settle, "Header"))
+	settle.free()
 	return _result(errs)

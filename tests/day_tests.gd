@@ -357,6 +357,8 @@ func t31_day_state() -> String:
 	_expect(errs, summary.get("injuries") == 1 and summary.get("expenses") == 80 and summary.get("profit") == 72,
 		"폐점 요약의 부상·지출·손익이 다름: %s" % str(summary))
 	_expect(errs, summary.get("money_before") == 152 and summary.get("money_after") == 72, "폐점 요약의 소지금 전후가 다름")
+	_expect(errs, summary.get("money_start") == 0 and summary.get("money_after") - summary.get("money_start") == summary.get("profit"),
+		"폐점 요약의 아침 소지금이 다름: %s" % str(summary))
 	_expect(errs, day.current_commission() == null, "폐점인데 지금 의뢰가 있음")
 
 	# 폐점에서 틀린 요청(다음을 다시 불러도 지출이 두 번 빠지지 않는다)

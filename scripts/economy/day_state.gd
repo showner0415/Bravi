@@ -244,7 +244,7 @@ func last_result() -> Dictionary:
 
 
 ## 폐점 요약. 폐점 단계에서만 채워져 있다.
-## income, rent, injuries, medical, expenses, profit, money_before, money_after,
+## income, rent, injuries, medical, expenses, profit, money_start(그날 아침의 소지금), money_before, money_after,
 ## duels(오늘의 결투 수), declined(돌려보낸 손님의 이름들), missed(만나지 못한 손님 수)
 func closing_summary() -> Dictionary:
 	return _summary
@@ -569,6 +569,7 @@ func _enter_closing() -> void:
 		"medical": medical,
 		"expenses": expenses,
 		"profit": income - expenses,
+		"money_start": before - income,
 		"money_before": before,
 		"money_after": money,
 		"duels": results.size(),

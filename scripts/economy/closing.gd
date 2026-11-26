@@ -91,7 +91,7 @@ func _build(summary: Dictionary) -> void:
 	var profit_value := "%s%d" % ["+" if shown_profit >= 0 else "", shown_profit]
 	Ui.add_ledger_row(book, "Profit", "오늘의 손익", profit_value, 34, true,
 		Color.WHITE if shown_profit >= 0 else Ui.ACCENT, true)
-	Ui.add_ledger_row(book, "Money", "소지금", "%d → %d" % [summary["money_before"], summary["money_after"]], 24)
+	Ui.add_ledger_row(book, "Money", "소지금", "%d → %d" % [summary["money_start"], summary["money_after"]], 24)
 
 	# 평판과 내일의 손님: 장부 패널 아래(나무 띠 위). 평판이 없는 하루면 만들지 않는다.
 	if day.has_reputation() and summary.has("reputation"):
