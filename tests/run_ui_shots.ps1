@@ -3,8 +3,8 @@
 #   powershell -ExecutionPolicy Bypass -File tests/run_ui_shots.ps1 -Shots "$env:TEMP\bravi-033-ui"
 #   powershell -ExecutionPolicy Bypass -File tests/run_ui_shots.ps1 -Shots "$env:TEMP\bravi-033-ui-1600" -Resolution 1600x900
 #
-# Runs tests/ui_shots.tscn: five shots that pair with the 025 sample (pair-*) and eleven more (16 shots).
-# Judges the run: exit code 0, one "UI SHOTS OK 16" line, no ERROR lines, sixteen "size," lines all equal to the
+# Runs tests/ui_shots.tscn: five shots that pair with the 025 sample (pair-*), eleven more, and six pause/quit shots (22 shots).
+# Judges the run: exit code 0, one "UI SHOTS OK 22" line, no ERROR lines, 22 "size," lines all equal to the
 # resolution (1280x720 without -Resolution). "state," lines say how each scene was posed; they are not judged.
 #
 # Godot path: -Godot argument, else the GODOT environment variable, else the candidates in tests/godot_path.ps1.
@@ -26,7 +26,7 @@ if (-not (Test-Path -LiteralPath $Godot -PathType Leaf)) {
 $project = Split-Path -Parent $PSScriptRoot
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $errorPattern = '^\s*(USER |)(SCRIPT |SHADER |)ERROR'
-$count = 16
+$count = 22
 
 # The first import may log errors while the project theme reads fonts that are not imported yet: import twice, judge the second.
 if (-not $SkipImport) { cmd /c "`"$Godot`" --headless --path `"$project`" --import 2>&1" | Out-Null }
@@ -77,6 +77,14 @@ if ($fit.Count -eq 1) {
 	if (-not $Resolution -and ($fitX -gt 1248 -or $fitY -gt 720)) { $reasons += "fit select ${fitX}x${fitY} (limit 1248x720)" }
 } elseif (-not $Resolution) {
 	$reasons += "fit,select lines $($fit.Count), not 1"
+}
+
+# Plan S02 task 7: in the six new pause/quit shots no worn-edge cut may touch a label or button ("wearhit,<shot>,<n>"). Other shots are only listed.
+$s02Shots = @('pause-practice', 'pause-day', 'pause-settings', 'quit-confirm', 'menu-counter', 'pause-hold')
+foreach ($s02 in $s02Shots) {
+	$hit = @($out | Where-Object { $_ -match "^wearhit,$s02," })
+	if ($hit.Count -ne 1) { $reasons += "wearhit,$s02 lines $($hit.Count), not 1"; continue }
+	if ([int](($hit[0] -split ',')[2]) -ne 0) { $reasons += "wearhit $s02 $(($hit[0] -split ',')[2]) (must be 0)" }
 }
 
 Write-Output ''

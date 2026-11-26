@@ -245,18 +245,28 @@ func t24_real_input() -> String:
 	if debug_label.visible:
 		errs.append("F1을 다시 눌렀는데 디버그 표시가 꺼지지 않음")
 
-	# Esc → 다른 노드 아래에 붙어 있을 때는 아무 일도 없다
+	# Esc → 멈춤 화면(계획 S02). 씬은 그대로이고, 한 번 더 누르면 닫혀 돌아오기 대기에 든다.
 	_send_key(KEY_ESCAPE)
 	if not is_instance_valid(duel) or not duel.is_inside_tree():
 		errs.append("Esc가 테스트 중인 씬을 바꿈")
+	elif not duel.get("paused") or duel.get_node_or_null(^"PauseMenu") == null:
+		errs.append("Esc를 눌렀는데 멈춤 화면이 뜨지 않음")
+	else:
+		_send_key(KEY_ESCAPE)
+		if duel.get_node_or_null(^"PauseMenu") != null:
+			errs.append("멈춤 화면에서 Esc를 눌렀는데 닫히지 않음")
+		elif not duel.get("paused"):
+			errs.append("멈춤 화면을 닫은 직후 돌아오기 대기가 아님")
 
-	# R → 새 판
+	# R → 새 판(대기도 지워진다)
 	_send_key(KEY_R)
 	var new_core: DuelCore = duel.get("core")
 	if new_core == core:
 		errs.append("R을 눌렀는데 새 판이 시작되지 않음")
 	elif new_core.time != 0.0 or new_core.player_state != DuelTypes.PlayerState.READY:
 		errs.append("R 뒤의 새 판이 처음 상태가 아님")
+	if duel.get("paused"):
+		errs.append("R 뒤에도 멈춤 상태가 남음")
 
 	duel.free()
 	return "OK" if errs.is_empty() else ", ".join(errs)

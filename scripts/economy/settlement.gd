@@ -172,6 +172,22 @@ func _proceed() -> void:
 		session.call("go_to_phase_scene")
 
 
+## Esc: 같은 멈춤 창을 "잠깐"으로 연다(계획 S02 Q3).
+func _unhandled_input(event: InputEvent) -> void:
+	if day != null and event.is_action_pressed(&"ui_cancel"):
+		if PauseMenu.open_for_day(self, day, _quit) != null:
+			get_viewport().set_input_as_handled()
+
+
+## 하루를 버리고 처음 화면으로 간다. 다른 씬 아래에 붙어 있을 때(테스트)는 아무 데도 가지 않는다.
+func _quit() -> void:
+	var session := Ui.current_session(self)
+	if session == null:
+		return
+	session.call("end_day_play")
+	session.call("go_to_title")
+
+
 func _return_to_title() -> void:
 	var session := Ui.current_session(self)
 	if session != null:

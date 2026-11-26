@@ -9,12 +9,17 @@ const States := preload("res://tests/opponent_states.gd")
 const Session := preload("res://scripts/game_session.gd")
 const WornEdge := preload("res://scripts/ui/worn_edge.gd")
 const PanelStyle := preload("res://scripts/ui/manuscript_panel_style.gd")
+const Select := preload("res://scripts/commission/commission_select.gd")
 
 const FEATHER_PATH := "res://data/commissions/feather_cut.tres"
 const USURER_PATH := "res://data/commissions/variants/first_blood_usurer.tres"
 const POOR_PATH := "res://data/commissions/variants/first_blood_poor.tres"
 ## 카운터의 의뢰인이 미끄러져 들어오는 시간(0.45초)과 간격의 보간이 끝날 때까지 기다린다.
 const SETTLE_MSEC := 900
+const WEAPON_PATH := "res://data/weapons/rapier.tres"
+const DELTA := 1.0 / 60.0
+## pause-hold: 예비 동작의 이만큼 지난 순간(pattern_shots.gd의 PROGRESS와 같다).
+const HOLD_PROGRESS := 0.35
 
 var _shots_dir := ""
 var _d := Day.new()
@@ -26,6 +31,8 @@ var _frames := 0
 ## 견본의 정산·카운터 장면을 잇는 하루(클라라 100점 → 비토리오)와 폐점까지 가는 하루.
 var _pair_day: DayState
 var _closing_day: DayState
+## 한 장에서 헤진 판의 자름 상자와 글·버튼 사각형이 겹친 수(계획 S02 작업 7).
+var _wearhit := 0
 
 
 func _ready() -> void:
@@ -47,6 +54,8 @@ func _ready() -> void:
 		["title", _title], ["title-save", _title_save], ["help", _help], ["settings", _settings], ["select", _select],
 		["settle-hurt", _settle_hurt], ["duel-far", _duel_far], ["duel-close", _duel_close],
 		["duel-close-bighold", _duel_close_bighold], ["duel-right-high", _duel_right_high], ["result", _result],
+		["pause-practice", _pause_practice], ["pause-day", _pause_day], ["pause-settings", _pause_settings],
+		["quit-confirm", _quit_confirm], ["menu-counter", _menu_counter], ["pause-hold", _pause_hold],
 	]
 	_next()
 
@@ -83,7 +92,9 @@ func _process(_delta: float) -> void:
 		var help := _node.find_child("PatternHelp", true, false) as Control
 		if grid != null and help != null:
 			print("fit,%s,%d,%d" % [_plan[_i][0], int(grid.get_global_rect().end.x), int(help.get_global_rect().end.y)])
+		_wearhit = 0
 		_wear_lines(_node, String(_plan[_i][0]))
+		print("wearhit,%s,%d" % [_plan[_i][0], _wearhit])
 		var q: Dictionary = PanelStyle.quota(_node)
 		print("wearq,%s,%d,%d,%d" % [_plan[_i][0], q["n"], q["k"], (q["worn"] as Dictionary).size()])
 		_next()
@@ -102,10 +113,23 @@ func _wear_lines(node: Node, shot: String) -> void:
 				for cut in (WornEdge.cuts(pc.size, int(sb.get("wear")), int(sb.get("wear_seed")) + name_seed) if name_seed >= 0 else []):
 					var b: Rect2 = cut["box"]
 					parts.append("%s@%d,%d,%d,%d" % [cut["kind"], b.position.x, b.position.y, b.size.x, b.size.y])
+					_wearhit += _hits_in(pc, Rect2(rect.position + b.position, b.size))
 			print("wear,%s,%d,%d,%d,%d,%s" % [shot, rect.position.x, rect.position.y, rect.size.x, rect.size.y,
 				";".join(parts) if not parts.is_empty() else "-"])
 	for child in node.get_children():
 		_wear_lines(child, shot)
+
+
+## 자름 상자(전역)와 겹치는, 그 판의 보이는 자손 Label·Button(글이 빈 Label은 뺀다)의 수.
+func _hits_in(node: Node, cut: Rect2) -> int:
+	var hits := 0
+	for child in node.get_children():
+		if (child is Label and not (child as Label).text.is_empty()) or child is Button:
+			var control := child as Control
+			if control.is_visible_in_tree() and control.get_global_rect().intersection(cut).get_area() > 0.0:
+				hits += 1
+		hits += _hits_in(child, cut)
+	return hits
 
 
 # ---------------------------------------------------------------- 하루 화면
@@ -215,10 +239,12 @@ func _select() -> String:
 
 # ---------------------------------------------------------------- 결투
 
-func _duel(commission_path: String) -> DuelCore:
+func _duel(commission_path: String, day: DayState = null) -> DuelCore:
 	_node = (load(Session.DUEL_PATH) as PackedScene).instantiate()
 	_node.set_meta("wear_screen", true)
 	_node.set("commission", load(commission_path))
+	if day != null:
+		_node.set("day", day)
 	_node.set("mouse_aim_enabled", false)
 	_node.set("rng_seed", 1)
 	add_child(_node)
@@ -311,3 +337,93 @@ func _result() -> String:
 	core.end_reason = DT.EndReason.TIME_UP
 	(_node.get_node("ResultPanel") as ResultPanel).show_result(core, load(FEATHER_PATH))
 	return "결과 패널(시간 초과)"
+
+
+# ---------------------------------------------------------------- 멈춤 화면과 확인 창(계획 S02)
+# 찍기 도구는 물리를 꺼 두므로 포커스로는 멈추지 않는다: 멈춤은 pause()를 직접 부른다.
+
+func _pause_practice() -> String:
+	_pose(_duel(FEATHER_PATH), DT.Distance.ENGAGE, false, DT.PlayerState.READY, DT.Direction.CENTER, DT.Height.MID)
+	_node.call("pause", &"shots")
+	return "연습 결투(깃털 자르기) 교전 대기의 멈춤"
+
+
+## 하루 결투의 멈춤: 처음 화면으로와 노트가 있다.
+func _day_duel_paused() -> void:
+	var commissions: Array[Commission] = [_scored(FEATHER_PATH, 45, 25, 100), load(USURER_PATH), load(POOR_PATH)]
+	var day := _new_day(commissions)
+	day.accept()
+	_pose(_duel(FEATHER_PATH, day), DT.Distance.ENGAGE, false, DT.PlayerState.READY, DT.Direction.CENTER, DT.Height.MID)
+	_node.call("pause", &"shots")
+
+
+func _pause_day() -> String:
+	_day_duel_paused()
+	return "하루 결투의 멈춤(처음 화면으로와 노트)"
+
+
+func _pause_settings() -> String:
+	_day_duel_paused()
+	(_node.find_child("PauseSettings", true, false) as Button).pressed.emit()
+	return "하루 결투의 멈춤 위의 설정 화면"
+
+
+func _counter_day() -> DayState:
+	var commissions: Array[Commission] = [_scored(FEATHER_PATH, 45, 25, 100), load(USURER_PATH), load(POOR_PATH)]
+	var day := _new_day(commissions)
+	_screen(Session.COUNTER_PATH, day)
+	return day
+
+
+func _quit_confirm() -> String:
+	var day := _counter_day()
+	QuitConfirm.open(_node, Session.quit_note(day, 0))
+	return "카운터 위의 끄기 확인 창(적힌 아침 없음)"
+
+
+func _menu_counter() -> String:
+	var day := _counter_day()
+	PauseMenu.open_for_day(_node, day, func() -> void: pass)
+	return "카운터의 Esc: 제목 잠깐"
+
+
+## 연습 결투, 첫 상대(바르톨로 원본)의 이어 베기 예비 동작 중에 멈췄다가 계속해 돌아오기 대기에 든 순간.
+## 예비 동작에 놓는 걸음은 pattern_shots.gd의 _pose와 같은 꼴이고, 첫 칸 막기는 뺀다(계속하면 막기가 풀린다).
+func _pause_hold() -> String:
+	var opponent := Select.load_trials()[0]
+	var base: AttackData = null
+	for atk in opponent.attacks:
+		if not atk.chain.is_empty() and not atk.dive:
+			base = atk
+			break
+	var solo := base.duplicate() as AttackData
+	var no_variants: Array[Resource] = []
+	solo.variants = no_variants
+	var weapon := (load(WEAPON_PATH) as WeaponData).duplicate() as WeaponData
+	weapon.close_bind_time = 0.0
+	_node = (load(Session.DUEL_PATH) as PackedScene).instantiate()
+	_node.set_meta("wear_screen", true)
+	_node.set("practice_opponent", opponent.drill(solo))
+	_node.set("test_weapon", weapon)
+	_node.set("mouse_aim_enabled", false)
+	_node.set("rng_seed", 1)
+	add_child(_node)
+	_node.set_process(false)
+	_node.set_physics_process(false)
+	var core: DuelCore = _node.get("core")
+	core.distance = DT.Distance.ENGAGE
+	core.brain.state_end = core.time
+	var guard := 0
+	while guard < 1200 and core.brain.state != DT.OpponentState.TELL:
+		core.tick(DELTA)
+		guard += 1
+	if core.brain.state != DT.OpponentState.TELL:
+		return "예비 동작이 오지 않음"
+	var until := core.brain.state_start + HOLD_PROGRESS * (core.brain.state_end - core.brain.state_start)
+	while core.time < until and core.brain.state == DT.OpponentState.TELL:
+		core.tick(DELTA)
+	_node.set("_display_time", core.time)
+	_node.call("_update_views", 0.0)
+	_node.call("pause", &"shots")
+	_node.call("resume")
+	return "%s · 이어 베기 예비 동작 중 멈춤 뒤 계속: 돌아오기 대기(물리 걸음이 꺼져 끝나지 않는다)" % solo.attack_name

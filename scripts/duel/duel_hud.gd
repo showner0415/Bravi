@@ -8,7 +8,9 @@ const Ui := preload("res://scripts/day_ui.gd")
 const STATE_FONT := preload("res://assets/ui/font_state.tres")
 
 const LOG_LINES := 3
-const HELP_RETRY := " · R 다시 하기 · Esc 의뢰 선택"
+const HELP_RETRY := " · R 다시 하기"
+## 하루 모드에서도 남는다(결정 514).
+const HELP_PAUSE := " · Esc 멈춤"
 ## 선공의 안내(넷째 줄). %s에는 횟수가 들어간다("(한 판에 한 번)" 등. 제한이 없는 상대면 빈 글).
 const HELP_LUNGE := "방심한 상대(칼끝을 내린다)에게는 S로 물러나 멀리에서 좌클릭 — 런지%s · 예비 동작 중에는 뛰어들지 않는다"
 ## 런지가 나가는 때의 조준 글자. 판정과 같은 코어 함수를 읽어, 닿을 때에만 "닿는다"고 말한다.
@@ -27,6 +29,7 @@ const HELP_DIVE := " · 뛰어드는 찌르기는 막기를 떼고 멀리까지 
 ## 엉킴 게이지가 이 값 이상이고 간격이 밀착이면 경고를 낸다(게이지의 색, 가운데 글자, 내 칼의 경고 표시).
 const BIND_WARN_RATIO := 0.8
 const BIND_WARN_TEXT := "칼이 엉킨다!"
+const RESUME_HOLD_TEXT := "다시 시작한다"
 ## 게이지의 짙은 띠와 무대 위 글의 테두리 색(바이블 6절 경고 규칙 2).
 const BAND_COLOR := Color("#2E2620")
 ## 패널의 층: 무대(−2)와 상대·내 손(0) 사이라 칼과 손이 패널 위로 지난다(결정 316).
@@ -34,7 +37,7 @@ const BACK_LAYER := -1
 ## 조준 패널의 윗변(아래 앵커 기준). 덧말이 붙으면 한 줄만큼 올라간다.
 const AIM_PANEL_TOP := -170.0
 const AIM_PANEL_GROW := 24.0
-const HELP_TEXT := "좌클릭 공격 · 우클릭 막기 (떼고 있다가 고리가 띠에 들어올 때 누르면 패리) · 마우스 위치로 방향·높이 · W/S 간격" + HELP_RETRY + " · F1 디버그\n빈틈이 아닐 때 공격하면 상대가 자세를 되찾는다"
+const HELP_TEXT := "좌클릭 공격 · 우클릭 막기 (떼고 있다가 고리가 띠에 들어올 때 누르면 패리) · 마우스 위치로 방향·높이 · W/S 간격" + HELP_RETRY + HELP_PAUSE + " · F1 디버그\n빈틈이 아닐 때 공격하면 상대가 자세를 되찾는다"
 
 
 ## 조작 안내 전체. 둘째 줄의 뒷부분과 셋째 줄은 상대 데이터에서 조립한다(장치를 끈 상대에게 틀린 안내를 하지 않게).
@@ -341,6 +344,9 @@ var _distance_label: Label
 var _bind_bar: BindBar
 var _complacency_bar: ComplacencyBar
 var _bind_warning: Label
+var _resume_hold: Label
+## 돌아오기 대기 중이다. 그동안 HUD의 엉킴 경고 글을 숨긴다(refresh가 보고 한다. 내 칼의 경고와 게이지는 그대로).
+var _holding := false
 var _time_label: Label
 var _aim_label: Label
 var _log_label: Label
@@ -412,6 +418,14 @@ func _ready() -> void:
 	_bind_warning.add_theme_color_override("font_outline_color", Color.BLACK)
 	_bind_warning.add_theme_constant_override("outline_size", 8)
 	_bind_warning.visible = false
+	# 돌아오기 대기의 글(결정 509): 엉킴 경고와 같은 사각형이라 고리와 테두리를 가리지 않는다.
+	_resume_hold = _add_label(Vector2(0.5, 1.0), Rect2(-130, -170, 260, 40), 28, HORIZONTAL_ALIGNMENT_CENTER, true)
+	_resume_hold.name = "ResumeHold"
+	_resume_hold.text = RESUME_HOLD_TEXT
+	_resume_hold.add_theme_font_override("font", STATE_FONT)
+	_resume_hold.add_theme_constant_override("outline_size", 8)
+	_resume_hold.add_theme_color_override("font_outline_color", Color.BLACK)
+	_resume_hold.visible = false
 	# 최근 사건: 왼쪽 가운데, 조용한 구역 밖(결정 319)
 	_log_label = _add_label(Vector2(0.0, 0.5), Rect2(20, -80, 410, 160), 20, HORIZONTAL_ALIGNMENT_LEFT, true)
 	_log_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -430,6 +444,14 @@ func set_commission(commission: Commission) -> void:
 	_commission = commission
 	_condition_label.text = "\n".join(commission.describe()) if commission != null else "자유 결투 (의뢰 없음)"
 	_meter.visible = false
+
+
+## 돌아오기 대기를 켜고 끈다(결정 509). 켜면 엉킴 경고 글을 바로 숨기고 끄면 다음 refresh가 되돌린다.
+func set_resume_hold(on: bool) -> void:
+	_holding = on
+	_resume_hold.visible = on
+	if on:
+		_bind_warning.visible = false
 
 
 func toggle_debug() -> void:
@@ -456,7 +478,7 @@ func refresh(core: DuelCore) -> void:
 	var bind_warn := bind_warning_now(core)
 	_bind_bar.visible = core.has_bind()
 	_bind_bar.set_values(core.bind_gauge(), bind_warn)
-	_bind_warning.visible = bind_warn
+	_bind_warning.visible = bind_warn and not _holding
 	_complacency_bar.visible = core.has_lunge()
 	_complacency_bar.set_values(core.complacency(), core.has_lunge() and core.brain.is_wary())
 	_time_label.text = "남은 시간 %.1f초 · 경과 %.1f초" % [maxf(core.rules.time_limit - core.time, 0.0), core.time]

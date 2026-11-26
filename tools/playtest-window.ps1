@@ -1,9 +1,16 @@
 # Coordinates are in pixels of this process's client-area PNG.
 # Use Windows PowerShell. Multiple calls in one shell reuse the native bindings.
+# Actions: Shot, Move, Click, GuardDown, GuardUp, Key, Close, DoubleClick, FocusOut, FocusIn, Quit.
+# DoubleClick: two left press/release pairs, 150 ms between the presses, no screenshot between them.
+# FocusOut/FocusIn only SIMULATE focus loss/gain by posting WM_ACTIVATEAPP and WM_ACTIVATE.
+# They are NOT a real OS focus change (the foreground window and the engine's own
+# message order, e.g. WM_KILLFOCUS, differ from a real Alt+Tab). Report results as a simulation.
+# Close posts WM_CLOSE once. Quit posts WM_CLOSE, waits 1000 ms, posts it once more if the
+# window is still there, waits 2000 ms, and throws if the window still exists.
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)][ValidateRange(1, 2147483647)][int]$GamePid,
-    [ValidateSet('Shot', 'Move', 'Click', 'GuardDown', 'GuardUp', 'Key', 'Close')][string]$Action = 'Shot',
+    [ValidateSet('Shot', 'Move', 'Click', 'GuardDown', 'GuardUp', 'Key', 'Close', 'DoubleClick', 'FocusOut', 'FocusIn', 'Quit')][string]$Action = 'Shot',
     [int]$X = -1,
     [int]$Y = -1,
     [ValidateSet('Enter', 'Escape', 'W', 'S', 'Tab', 'Space', 'R', 'F1')][string]$Key,
@@ -142,9 +149,31 @@ namespace BraviPlaytest {
             worker.Join();
             if (error != null) throw new InvalidOperationException(error.Message, error);
         }
+        [DllImport("user32.dll")] static extern bool IsWindow(IntPtr window);
+        static bool WaitGone(IntPtr window, int ms) {
+            for (int waited = 0; waited < ms; waited += 50) {
+                if (!IsWindow(window)) return true;
+                Thread.Sleep(50);
+            }
+            return !IsWindow(window);
+        }
+        static void Quit(IntPtr window) {
+            Post(window, 0x0010, 0, 0);
+            if (WaitGone(window, 1000)) return;
+            try { Post(window, 0x0010, 0, 0); }
+            catch (System.ComponentModel.Win32Exception) { if (!IsWindow(window)) return; throw; }
+            if (!WaitGone(window, 2000)) throw new InvalidOperationException("window did not close");
+        }
         static void Perform(IntPtr window, string action, int x, int y, int key,
                             bool guardHeld, string image, int settleMs) {
             if (action == "close") { Post(window, 0x0010, 0, 0); return; }
+            if (action == "quit") { Quit(window); return; }
+            if (action == "focusout" || action == "focusin") {
+                int on = action == "focusin" ? 1 : 0;
+                Post(window, 0x001C, on, 0);
+                Post(window, 0x0006, on, 0);
+                return;
+            }
             Rect area;
             if (IsIconic(window) || !GetClientRect(window, out area))
                 throw new InvalidOperationException("The game window must be open and restored.");
@@ -161,6 +190,15 @@ namespace BraviPlaytest {
                 Post(window, 0x0200, mask, point);
                 switch (action) {
                     case "click":
+                        Post(window, 0x0201, mask | 1, point);
+                        Thread.Sleep(50);
+                        Post(window, 0x0202, mask, point);
+                        break;
+                    case "doubleclick":
+                        Post(window, 0x0201, mask | 1, point);
+                        Thread.Sleep(50);
+                        Post(window, 0x0202, mask, point);
+                        Thread.Sleep(100);
                         Post(window, 0x0201, mask | 1, point);
                         Thread.Sleep(50);
                         Post(window, 0x0202, mask, point);
@@ -192,7 +230,7 @@ namespace BraviPlaytest {
 }
 $keys = @{Enter=13; Escape=27; W=87; S=83; Tab=9; Space=32; R=82; F1=112}
 $code = if ($Key) { $keys[$Key] } else { 0 }
-$private = $Isolated -or $Action -in 'Move','GuardDown','GuardUp','Close'
+$private = $Isolated -or $Action -in 'Move','GuardDown','GuardUp','Close','DoubleClick','FocusOut','FocusIn','Quit'
 [BraviPlaytest.WindowInput]::Run($GamePid, $private, $Action.ToLowerInvariant(), $X, $Y, $code, $GuardHeld, $Screenshot, $SettleMs)
 if ($Screenshot) { Write-Output $Screenshot }
 

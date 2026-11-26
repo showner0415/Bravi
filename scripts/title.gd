@@ -1,6 +1,6 @@
 extends Control
 ## 처음 화면. 하루 플레이를 시작하거나(저장이 있으면 이어서 하거나 새로 시작한다) 연습(의뢰를 골라 결투)으로 간다.
-## 저장이 없으면 버튼은 넷이다(가게를 연다, 연습, 도움말, 설정). 도움말 화면은 처음 열 때 만든다(결정 323).
+## 저장이 없으면 버튼은 다섯이다(가게를 연다, 연습, 도움말, 설정, 게임 종료). 도움말 화면은 처음 열 때 만든다(결정 323).
 
 const Ui := preload("res://scripts/day_ui.gd")
 
@@ -18,6 +18,8 @@ const PRACTICE_TEXT := "연습 — 의뢰를 골라 결투"
 const HINT_TEXT := "Space / Enter 또는 클릭"
 const HELP_TEXT := "도움말"
 const SETTINGS_TEXT := "설정"
+const QUIT_TEXT := "게임 종료"
+const BOTTOM_GAP := 11.0
 const HELP_CLOSE_TEXT := "돌아간다"
 const HELP_RECT := Rect2(140, 60, 1000, 560)
 
@@ -138,17 +140,28 @@ static func help_groups() -> Array[String]:
 	return groups
 
 
-## 도움말 | 설정 두 칸으로 나눈다(계획 S01, 결정 503): 각 195 폭, 사이 10.
+## 도움말 | 설정 | 게임 종료 세 칸으로 나눈다(계획 S02, 결정 513): 각 126 폭, 사이 11.
 func _add_help_button(rect: Rect2) -> void:
-	var half := (rect.size.x - 10.0) / 2.0
-	_help_button = Ui.add_button(self, HELP_TEXT, 20, "Help")
+	var third := (rect.size.x - 2.0 * BOTTOM_GAP) / 3.0
+	_help_button = Ui.add_button(self, HELP_TEXT, 18, "Help")
 	_help_button.position = rect.position
-	_help_button.size = Vector2(half, rect.size.y)
+	_help_button.size = Vector2(third, rect.size.y)
 	_help_button.pressed.connect(_show_help)
-	_settings_button = Ui.add_button(self, SETTINGS_TEXT, 20, "Settings")
-	_settings_button.position = rect.position + Vector2(half + 10.0, 0)
-	_settings_button.size = Vector2(half, rect.size.y)
+	_settings_button = Ui.add_button(self, SETTINGS_TEXT, 18, "Settings")
+	_settings_button.position = rect.position + Vector2(third + BOTTOM_GAP, 0)
+	_settings_button.size = Vector2(third, rect.size.y)
 	_settings_button.pressed.connect(_show_settings)
+	var quit := Ui.add_button(self, QUIT_TEXT, 18, "QuitGame")
+	quit.position = rect.position + Vector2((third + BOTTOM_GAP) * 2.0, 0)
+	quit.size = Vector2(third, rect.size.y)
+	quit.pressed.connect(_quit_game)
+
+
+## 처음 화면은 하루 밖이라 잃는 것이 없다: 확인 없이 끈다(결정 513). 현재 씬이 아니면(테스트) 아무 일도 없다.
+func _quit_game() -> void:
+	var session := Ui.current_session(self)
+	if session != null:
+		session.call("quit_game")
 
 
 func _show_settings() -> void:

@@ -37,7 +37,9 @@ const PAY_TAIL_OFFER := " (받아 주면 기본 보수 %d, 대신 100점이어�
 const PAY_TAIL_AGREED := " · 100점이어야 다 받는다"
 const PAY_TAIL_REFUSED := " · 거절당해 팁이 깎였다"
 # "오늘은 그만" 아래의 한 줄.
-const QUIT_NOTE := "오늘 한 일은 남지 않는다 — 이어서 하면 오늘 아침부터다"
+## %d는 돌아올 날(결정 511). 세션이 없거나 적힌 날이 없으면 QUIT_NOTE_PLAIN이다.
+const QUIT_NOTE := "오늘 한 일은 남지 않는다 — 이어서 하면 %d일차 아침부터다"
+const QUIT_NOTE_PLAIN := "오늘 한 일은 남지 않는다 — 이어서 하면 오늘 아침부터다"
 
 ## 하루 플레이의 상태. 비어 있으면 /root/GameSession의 것을 본다.
 var day: DayState
@@ -185,7 +187,9 @@ func _build(commission: Commission) -> void:
 	quit.size = Vector2(170, 42)
 	quit.pressed.connect(_quit)
 	# 하루 중에 그만두면 버려지는 것을 누르기 전에 알린다(저장은 하루 단위다).
-	var quit_note := Ui.add_label(self, QUIT_NOTE, 14, Ui.ON_WOOD)
+	var quit_session := get_node_or_null(^"/root/GameSession")
+	var resume_day := int(quit_session.call("resume_day")) if quit_session != null else 0
+	var quit_note := Ui.add_label(self, QUIT_NOTE % resume_day if resume_day > 0 else QUIT_NOTE_PLAIN, 14, Ui.ON_WOOD)
 	quit_note.name = "QuitNote"
 	quit_note.position = Vector2(40, 694)
 
@@ -257,6 +261,13 @@ func _decline() -> void:
 	if day == null or not day.decline():
 		return
 	_go()
+
+
+## Esc: 같은 멈춤 창을 "잠깐"으로 연다(계획 S02 Q3). 시간은 흐르지 않으니 멈출 것은 없다.
+func _unhandled_input(event: InputEvent) -> void:
+	if day != null and event.is_action_pressed(&"ui_cancel"):
+		if PauseMenu.open_for_day(self, day, _quit) != null:
+			get_viewport().set_input_as_handled()
 
 
 func _quit() -> void:

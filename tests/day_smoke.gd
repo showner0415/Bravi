@@ -474,6 +474,14 @@ class Driver extends Node:
 			if get_tree().current_scene != scene:
 				_fail("하루 모드의 결투에서 Esc가 씬을 바꿈")
 				return
+			# Esc는 씬을 바꾸지 않고 멈춤 화면을 연다(계획 S02). 한 번 더 누르면 닫힌다.
+			if scene.get_node_or_null(^"PauseMenu") == null or not scene.get("paused"):
+				_fail("하루 모드의 결투에서 Esc가 멈춤 화면을 열지 않음")
+				return
+			_send_key(KEY_ESCAPE)
+			if scene.get_node_or_null(^"PauseMenu") != null:
+				_fail("멈춤 화면에서 Esc가 멈춤 화면을 닫지 않음")
+				return
 			# 끝나기 전의 Space는 아무것도 넘기지 않는다.
 			_send_key(KEY_SPACE)
 			if day.phase != DayState.Phase.DUEL:

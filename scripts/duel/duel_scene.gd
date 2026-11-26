@@ -14,6 +14,11 @@ const SELECT_PATH := "res://scenes/ui/commission_select.tscn"
 ## 하루 모드에서 결과를 넘기는 액션(Space / Enter).
 const ACCEPT_ACTION := &"ui_accept"
 const DAY_FOOTER := "Space / Enter: 의뢰소로 돌아간다"
+const SessionScript := preload("res://scripts/game_session.gd")
+## 멈춤 화면을 닫은 뒤 판을 멈춘 채 두는 시간(밀리초, 결정 509). 임시 값이다.
+const RESUME_HOLD_MSEC := 400
+const EXIT_DAY_TEXT := "처음 화면으로"
+const EXIT_PRACTICE_TEXT := "연습 고르기로"
 
 ## 의뢰. 비어 있으면 /root/GameSession에서 받고, 그것도 없으면 자유 결투다.
 @export var commission: Commission
@@ -34,6 +39,18 @@ var rng_seed := -1
 var test_weapon: WeaponData
 
 var core: DuelCore
+
+## 멈춤(멈춤 화면이 열렸거나 돌아오기 대기 중). get_tree().paused를 쓰지 않는 까닭은 결정 507이다.
+## 엔진이 부르는 _physics_process·_process·입력만 본다. advance()는 보지 않는다(테스트·스모크·찍기의 직접 걸음).
+var paused := false
+var resume_hold_msec := RESUME_HOLD_MSEC
+var _holding := false
+var _hold_until_msec := 0
+var _pause_menu: PauseMenu
+var _pause_count := 0
+var _pause_time := 0.0
+var _pause_drift := 0.0
+var _swallowed_attacks := 0
 
 var _display_time := 0.0
 ## 하루 모드인가. _ready에서 한 번 정한다(정산으로 넘긴 뒤 같은 씬에서 R·Esc가 살아나지 않게).
@@ -98,6 +115,10 @@ func start_duel() -> void:
 	core.setup(rules, weapon, opponent, rng, conditions, has_hat)
 	core.event.connect(_on_core_event)
 	_display_time = 0.0
+	_clear_pause()
+	_pause_count = 0
+	_pause_drift = 0.0
+	_swallowed_attacks = 0
 	_opponent_view.setup(opponent, weapon, has_hat)
 	_sword_view.setup()
 	_hud.reset()
@@ -118,7 +139,116 @@ func _apply_stage() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if paused and _holding and hold_over(_hold_until_msec, Time.get_ticks_msec()):
+		_end_hold()
+	if paused:
+		return
 	advance(delta)
+
+
+## 돌아오기 대기가 끝났는가(시각은 Time.get_ticks_msec()).
+static func hold_over(hold_until_msec: int, now_msec: int) -> bool:
+	return now_msec >= hold_until_msec
+
+
+## 판을 멈추고 멈춤 화면을 연다. 이미 멈춘 화면이 떠 있거나 판이 끝났으면 아무것도 하지 않고 false다.
+## 돌아오기 대기 중이면 대기를 접고 다시 멈춤 화면을 연다.
+func pause(_reason: StringName) -> bool:
+	if core == null or core.ended or (paused and not _holding):
+		return false
+	_holding = false
+	_hud.set_resume_hold(false)
+	paused = true
+	_pause_count += 1
+	_pause_time = core.time
+	var exit_text := EXIT_DAY_TEXT if _day_mode else EXIT_PRACTICE_TEXT
+	_pause_menu = PauseMenu.open(self, exit_text, _exit_note())
+	_pause_menu.resumed.connect(_on_menu_resumed)
+	_pause_menu.exit_pressed.connect(_on_exit_pressed)
+	return true
+
+
+## 멈춤 화면을 닫고 돌아오기 대기에 든다(멈춤 화면의 "계속"·Esc와 같다).
+func resume() -> void:
+	if not paused or _holding:
+		return
+	var menu := _pause_menu
+	_pause_menu = null
+	if menu != null and is_instance_valid(menu):
+		menu.resumed.disconnect(_on_menu_resumed)
+		if menu.get_parent() != null:
+			menu.get_parent().remove_child(menu)
+		menu.queue_free()
+	_begin_hold()
+
+
+## 하루 중 창 닫기 요청(GameSession.handle_close_request가 부른다). 창 포커스의 조건은 없다(결정 508).
+func pause_for_close() -> void:
+	pause(&"close")
+
+
+func _on_menu_resumed() -> void:
+	_pause_menu = null
+	_begin_hold()
+
+
+func _begin_hold() -> void:
+	# 멈춘 동안 우클릭을 뗐으면 막기가 풀린다. 쥔 채면 새로 누른 것이 아니다(패리 공짜 없음, 결정 509).
+	var held := Input.is_action_pressed(&"guard")
+	if core.guard_held != held:
+		core.set_guard(held)
+	if mouse_aim_enabled:
+		_update_aim_from_mouse()
+	_holding = true
+	_hold_until_msec = Time.get_ticks_msec() + resume_hold_msec
+	_hud.set_resume_hold(true)
+
+
+func _end_hold() -> void:
+	_pause_drift = maxf(_pause_drift, absf(core.time - _pause_time))
+	_holding = false
+	paused = false
+	_hud.set_resume_hold(false)
+
+
+## 새 판(start_duel)이 멈춤과 대기를 모두 지운다.
+func _clear_pause() -> void:
+	paused = false
+	_holding = false
+	_hud.set_resume_hold(false)
+	if _pause_menu != null and is_instance_valid(_pause_menu):
+		if _pause_menu.get_parent() != null:
+			_pause_menu.get_parent().remove_child(_pause_menu)
+		_pause_menu.queue_free()
+	_pause_menu = null
+
+
+func _exit_note() -> String:
+	if not _day_mode:
+		return ""
+	var session := get_node_or_null(^"/root/GameSession")
+	var resume_day := int(session.call("resume_day")) if session != null else 0
+	return SessionScript.quit_note(day, resume_day)
+
+
+func _on_exit_pressed() -> void:
+	if get_tree().current_scene != self:
+		return
+	if _day_mode:
+		var session := get_node_or_null(^"/root/GameSession")
+		if session != null:
+			session.call("end_day_play")
+			session.call("go_to_title")
+	else:
+		get_tree().change_scene_to_file(SELECT_PATH)
+
+
+## 창 포커스를 잃으면 멈춘다(결정 508 (나)). 물리 걸음이 꺼진 결투(찍기 도구)에서는 멈추지 않는다.
+## 돌아와도 저절로 풀리지 않는다.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_WM_WINDOW_FOCUS_OUT:
+		if core != null and is_physics_processing():
+			pause(&"focus")
 
 
 ## 조준 갱신과 코어 tick. 테스트가 실시간을 기다리지 않고 직접 부를 수 있다.
@@ -135,7 +265,9 @@ func advance(delta: float) -> void:
 
 func _process(delta: float) -> void:
 	# 표시용 시각: 고주사율 화면에서도 매끄럽게 움직이도록 물리 tick 사이를 보간한다.
-	# 판정은 건드리지 않는다.
+	# 판정은 건드리지 않는다. 멈춘 동안은 그림도 움직이지 않는다(결정 507).
+	if paused:
+		return
 	if core.ended:
 		_display_time = core.time
 	else:
@@ -147,23 +279,37 @@ func _process(delta: float) -> void:
 func _input(event: InputEvent) -> void:
 	if _use_virtual_mouse and event is InputEventMouse:
 		_virtual_mouse = event.position
-		if mouse_aim_enabled and core != null:
+		if mouse_aim_enabled and core != null and not paused:
 			_update_aim_from_mouse()
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _day_mode and (event.is_action_pressed(&"retry") or event.is_action_pressed(&"back")):
-		# 하루 중의 결투는 한 번뿐이다. 다시 하기와 나가기를 듣지 않는다.
-		return
 	if _day_mode and event.is_action_pressed(ACCEPT_ACTION):
 		_finish_day_duel()
+		return
+	# 멈춤 화면이 열린 동안은 결투의 액션을 하나도 듣지 않는다(결정 507). 돌아오기 대기 중에는 듣는다(결정 509).
+	if paused and not _holding:
+		return
+	if event.is_action_pressed(&"back"):
+		if not core.ended:
+			pause(&"esc")
+		elif not _day_mode and get_tree().current_scene == self:
+			# 끝난 판의 Esc는 지금처럼 의뢰 선택으로 간다. 다른 씬 아래에 붙어 있을 때(테스트)는 아무것도 하지 않는다.
+			get_tree().change_scene_to_file(SELECT_PATH)
+		return
+	if _day_mode and event.is_action_pressed(&"retry"):
+		# 하루 중의 결투는 한 번뿐이다. 다시 하기를 듣지 않는다.
 		return
 	if event.is_action_pressed(&"retry"):
 		start_duel()
 	elif event.is_action_pressed(&"debug_toggle"):
 		_hud.toggle_debug()
 	elif event.is_action_pressed(&"attack"):
-		core.press_attack()
+		if _holding:
+			# "계속"의 클릭과 더블클릭의 둘째 누름이 공격이 되지 않게(결정 509).
+			_swallowed_attacks += 1
+		else:
+			core.press_attack()
 	elif event.is_action_pressed(&"guard"):
 		core.set_guard(true)
 	elif event.is_action_released(&"guard"):
@@ -172,10 +318,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		core.step(1)
 	elif event.is_action_pressed(&"step_back"):
 		core.step(-1)
-	elif event.is_action_pressed(&"back"):
-		# 의뢰 선택으로 돌아간다. 다른 씬 아래에 붙어 있을 때(테스트)는 아무것도 하지 않는다.
-		if get_tree().current_scene == self:
-			get_tree().change_scene_to_file(SELECT_PATH)
 
 
 func _update_aim_from_mouse() -> void:
@@ -198,7 +340,8 @@ func _update_views(delta: float) -> void:
 
 func _on_core_event(ev: Dictionary) -> void:
 	CurveCheck.on_event(ev, core)
-	EventLog.on_event(ev, core, "하루" if _day_mode else ("의뢰 연습" if commission != null else "자유 결투"))
+	EventLog.on_event(ev, core, "하루" if _day_mode else ("의뢰 연습" if commission != null else "자유 결투"),
+			{"pauses": _pause_count, "pause_drift": _pause_drift, "swallowed_attacks": _swallowed_attacks})
 	_opponent_view.on_event(ev)
 	_sword_view.on_event(ev)
 	_hud.on_event(ev)

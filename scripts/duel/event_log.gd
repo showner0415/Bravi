@@ -6,8 +6,8 @@ const Summary := preload("res://scripts/duel/duel_summary.gd")
 const ENV := "BRAVI_EVENT_LOG"
 
 
-## 판이 끝난 이벤트에서 부른다. 한 줄: {opponent, heights(높이 막기를 쓰는가), mode, ...요약}.
-static func on_event(ev: Dictionary, core: DuelCore, mode: String) -> void:
+## 판이 끝난 이벤트에서 부른다. 한 줄: {opponent, heights(높이 막기를 쓰는가), mode, ...요약, ...extra(결투 씬의 pauses·pause_drift·swallowed_attacks. 결정 515)}.
+static func on_event(ev: Dictionary, core: DuelCore, mode: String, extra := {}) -> void:
 	if ev["type"] != DuelRecord.END:
 		return
 	var path := OS.get_environment(ENV)
@@ -17,6 +17,7 @@ static func on_event(ev: Dictionary, core: DuelCore, mode: String) -> void:
 	line["opponent"] = core.opponent_data.display_name
 	line["heights"] = DuelHud.uses_heights(core.opponent_data)
 	line["mode"] = mode
+	line.merge(extra, true)
 	var file := FileAccess.open(path, FileAccess.READ_WRITE) if FileAccess.file_exists(path) else FileAccess.open(path, FileAccess.WRITE)
 	if file == null:
 		return

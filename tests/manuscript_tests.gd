@@ -19,13 +19,15 @@ const STATE_FONT := "res://assets/ui/font_state.tres"
 ## 바이블 10절의 아홉 단계.
 const STEPS: Array[int] = [54, 46, 34, 28, 24, 20, 18, 16, 14]
 ## 자리와 크기를 직접 정한 버튼: 화면 -> {이름: 코드가 놓은 크기}. 최소 크기가 이보다 크면 버튼이 자란다(결정 314의 여백).
-const FRESH_BUTTONS := {"Proceed": Vector2(400, 84), "Practice": Vector2(400, 54), "Help": Vector2(195, 54), "Settings": Vector2(195, 54)}
-const SAVED_BUTTONS := {"Continue": Vector2(480, 84), "NewGame": Vector2(400, 50), "Practice": Vector2(400, 50), "Help": Vector2(195, 50), "Settings": Vector2(195, 50)}
+const FRESH_BUTTONS := {"Proceed": Vector2(400, 84), "Practice": Vector2(400, 54), "Help": Vector2(126, 54), "Settings": Vector2(126, 54), "QuitGame": Vector2(126, 54)}
+const SAVED_BUTTONS := {"Continue": Vector2(480, 84), "NewGame": Vector2(400, 50), "Practice": Vector2(400, 50), "Help": Vector2(126, 50), "Settings": Vector2(126, 50), "QuitGame": Vector2(126, 50)}
 const COUNTER_BUTTONS := {"Proceed": Vector2(320, 76), "Decline": Vector2(230, 56), "Quit": Vector2(170, 42), "Haggle": Vector2(210, 56)}
 const SETTLE_BUTTONS := {"Proceed": Vector2(320, 76)}
 const CLOSING_BUTTONS := {"Proceed": Vector2(380, 76), "Quit": Vector2(220, 46)}
 const HELP_BUTTONS := {"HelpClose": Vector2(200, 54)}
 const SETTINGS_BUTTONS := {"SettingsClose": Vector2(200, 54)}
+const PAUSE_BUTTONS := {"PauseResume": Vector2(340, 54), "PauseSettings": Vector2(340, 54), "PauseExit": Vector2(340, 54)}
+const CONFIRM_BUTTONS := {"QuitYes": Vector2(200, 54), "QuitNo": Vector2(200, 54)}
 
 var _tree: SceneTree
 var _d := Day.new()
@@ -214,6 +216,14 @@ func t75_manuscript() -> String:
 	hud.call("refresh", core)
 	(duel.get_node("ResultPanel") as ResultPanel).show_result(core, feather)
 	_check_text(errs, duel, "결투")
+	# 멈춤 화면과 창 닫기의 확인 창(계획 S02)도 글자·크기·버튼을 한 번씩 지난다.
+	duel.call("pause", &"test")
+	_expect(errs, _d._has_node(duel, "PauseResume"), "[멈춤] pause() 뒤 PauseResume이 없음")
+	_check_text(errs, duel, "결투·멈춤")
+	_check_buttons(errs, duel, "멈춤", PAUSE_BUTTONS)
+	QuitConfirm.open(duel, Session.quit_note(null, 3))
+	_check_text(errs, duel, "결투·확인 창")
+	_check_buttons(errs, duel, "확인 창", CONFIRM_BUTTONS)
 
 	# 6. 양피지 밖의 글은 색을 직접 가진다(결정 314).
 	var state_label := duel.get_node("OpponentView/StateLabel") as Label

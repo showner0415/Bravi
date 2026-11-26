@@ -265,6 +265,13 @@ func _next_day() -> void:
 		session.call("go_to_phase_scene")
 
 
+## Esc: 같은 멈춤 창을 "잠깐"으로 연다(계획 S02 Q3).
+func _unhandled_input(event: InputEvent) -> void:
+	if day != null and event.is_action_pressed(&"ui_cancel"):
+		if PauseMenu.open_for_day(self, day, _quit) != null:
+			get_viewport().set_input_as_handled()
+
+
 func _quit() -> void:
 	var session := Ui.current_session(self)
 	if session == null:

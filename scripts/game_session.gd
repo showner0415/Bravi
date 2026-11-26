@@ -37,6 +37,57 @@ var saved_day := 0
 func _ready() -> void:
 	var custom := OS.get_environment(SAVE_ENV)
 	save_path = custom if custom != "" else SAVE_PATH
+	# 창 닫기를 직접 받는다(결정 512). 하루 중에는 확인 창을 먼저 띄운다.
+	get_tree().set_auto_accept_quit(false)
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		if handle_close_request(get_tree().current_scene) == CloseAction.QUIT:
+			quit_game()
+
+
+## 세이브 파일에 적힌 날(돌아올 아침). 저장이 꺼져 있거나 파일이 없거나 날이 숫자가 아니면 0이다. 파일이 진실이다(결정 511).
+func resume_day() -> int:
+	var saved: Dictionary = SaveStore.read(save_path)
+	var value: Variant = saved.get("day")
+	if typeof(value) != TYPE_INT and typeof(value) != TYPE_FLOAT:
+		return 0
+	return maxi(int(value), 0)
+
+
+## 끌 때 보이는 글: 이어서 하면 어느 날 아침부터인가(결정 511).
+static func quit_note(p_day: DayState, p_resume_day: int) -> String:
+	if p_resume_day <= 0:
+		return "적힌 아침이 없다 — 다음에는 새로 시작한다"
+	if p_day != null and p_day.phase == DayState.Phase.CLOSING and p_resume_day == p_day.day_number + 1:
+		return "이어서 하면 %d일차 아침부터 시작한다 — 오늘 산 것까지 적혀 있다" % p_resume_day
+	return "이어서 하면 %d일차 아침부터 시작한다 — 오늘 한 일은 남지 않는다" % p_resume_day
+
+
+enum CloseAction { QUIT, CONFIRM }
+
+
+## 창 닫기 요청을 어떻게 받을지 정한다. 스스로 끄지 않는다(끄는 것은 _notification과 확인 창의 confirmed뿐).
+func handle_close_request(scene: Node) -> int:
+	if scene == null or day == null:
+		return CloseAction.QUIT
+	if day.phase == DayState.Phase.CLOSING and resume_day() == day.day_number + 1:
+		return CloseAction.QUIT
+	# 두 번째 닫기는 바로 끈다: 확인 창 처리에 탈이 나도 창을 닫을 길이다.
+	if scene.get_node_or_null(^"QuitConfirm") != null:
+		return CloseAction.QUIT
+	if scene.has_method("pause_for_close"):
+		scene.call("pause_for_close")
+	var confirm := QuitConfirm.open(scene, quit_note(day, resume_day()))
+	confirm.confirmed.connect(quit_game)
+	return CloseAction.CONFIRM
+
+
+## 트리 밖의 세션(테스트)에서는 아무것도 하지 않는다. 끌 때 적을 것은 없다(세이브는 아침에 이미 있다).
+func quit_game() -> void:
+	if is_inside_tree():
+		get_tree().quit()
 
 
 ## 하루 단계에 해당하는 씬의 경로.

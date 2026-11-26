@@ -150,12 +150,22 @@ func _report_overlaps(shot: String) -> void:
 	var radius := OpponentView.MARK_RADIUS * xf.get_scale().x
 	var boxes: Array = []
 	_collect(_node.get_node("HUD"), boxes)
+	# 돌아오기 대기의 글은 숨긴 채로도 자리를 잰다(계획 S02 결정 509).
+	var hold := _node.get_node("HUD").find_child("ResumeHold", true, false) as Control
+	if hold != null:
+		boxes.append(["ResumeHold", hold.get_global_rect()])
+	var marks := OpponentView.pattern_marks(core.brain, core.time)
+	# 고리 노드의 원점이 지금 타격의 자리라 번호 고리는 pos - origin에 그려진다(opponent_view.gd 293·592행).
+	var origin := Vector2.ZERO
+	for mark in marks:
+		if mark["role"] == &"now":
+			origin = mark["pos"]
 	var index := 0
-	for mark in OpponentView.pattern_marks(core.brain, core.time):
+	for mark in marks:
 		if not mark.has("pos"):
 			continue
 		index += 1
-		var center: Vector2 = xf * (mark["pos"] as Vector2)
+		var center: Vector2 = xf * ((mark["pos"] as Vector2) - origin)
 		var box := Rect2(center - Vector2(radius, radius), Vector2(radius, radius) * 2.0)
 		if not get_viewport().get_visible_rect().encloses(box):
 			print("overlap,%s,%d,화면 밖,%d" % [shot, index, roundi(box.get_area())])
