@@ -3,8 +3,8 @@
 #   powershell -ExecutionPolicy Bypass -File tests/run_ui_shots.ps1 -Shots "$env:TEMP\bravi-033-ui"
 #   powershell -ExecutionPolicy Bypass -File tests/run_ui_shots.ps1 -Shots "$env:TEMP\bravi-033-ui-1600" -Resolution 1600x900
 #
-# Runs tests/ui_shots.tscn: five shots that pair with the 025 sample (pair-*), eleven more, six pause/quit shots and two controls shots (24 shots).
-# Judges the run: exit code 0, one "UI SHOTS OK 24" line, no ERROR lines, 24 "size," lines all equal to the
+# Runs tests/ui_shots.tscn: five shots that pair with the 025 sample (pair-*), eleven more, six pause/quit shots and two controls shots and one display shot (25 shots).
+# Judges the run: exit code 0, one "UI SHOTS OK 25" line, no ERROR lines, 25 "size," lines all equal to the
 # resolution (1280x720 without -Resolution). "state," lines say how each scene was posed; they are not judged.
 #
 # Godot path: -Godot argument, else the GODOT environment variable, else the candidates in tests/godot_path.ps1.
@@ -26,7 +26,7 @@ if (-not (Test-Path -LiteralPath $Godot -PathType Leaf)) {
 $project = Split-Path -Parent $PSScriptRoot
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $errorPattern = '^\s*(USER |)(SCRIPT |SHADER |)ERROR'
-$count = 24
+$count = 25
 
 # The first import may log errors while the project theme reads fonts that are not imported yet: import twice, judge the second.
 if (-not $SkipImport) { cmd /c "`"$Godot`" --headless --path `"$project`" --import 2>&1" | Out-Null }
@@ -80,12 +80,16 @@ if ($fit.Count -eq 1) {
 }
 
 # Plan S02 task 7: in the six new pause/quit shots no worn-edge cut may touch a label or button ("wearhit,<shot>,<n>"). Other shots are only listed.
-$s02Shots = @('pause-practice', 'pause-day', 'pause-settings', 'quit-confirm', 'menu-counter', 'pause-hold', 'settings-controls', 'settings-controls-empty')
+$s02Shots = @('pause-practice', 'pause-day', 'pause-settings', 'quit-confirm', 'menu-counter', 'pause-hold', 'settings-controls', 'settings-controls-empty', 'settings-display')
 foreach ($s02 in $s02Shots) {
 	$hit = @($out | Where-Object { $_ -match "^wearhit,$s02," })
 	if ($hit.Count -ne 1) { $reasons += "wearhit,$s02 lines $($hit.Count), not 1"; continue }
 	if ([int](($hit[0] -split ',')[2]) -ne 0) { $reasons += "wearhit $s02 $(($hit[0] -split ',')[2]) (must be 0)" }
 }
+
+# Plan S04 task 4: the run must be window-locked and must never have touched the real window ("display,<locked 1/0>,<window_calls>").
+$displayLine = @($out | Where-Object { $_ -match '^display,' })
+if ($displayLine.Count -ne 1 -or $displayLine[0] -ne 'display,1,0') { $reasons += "display line not exactly one 'display,1,0' ($($displayLine -join ' | '))" }
 
 Write-Output ''
 if ($reasons.Count -eq 0) {

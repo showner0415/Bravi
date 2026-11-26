@@ -8,7 +8,7 @@ const LABELS := {&"attack": "공격", &"guard": "막기", &"step_forward": "전�
 const TOPICS := {&"attack": "공격은", &"guard": "막기는", &"step_forward": "전진은", &"step_back": "후퇴는"}
 const MOUSE_NAMES := {1: "좌클릭", 2: "우클릭", 3: "가운데 클릭", 8: "옆 버튼 1", 9: "옆 버튼 2"}
 ## 바꿀 수 없는 동작의 액션. 받지 않는다: Esc·Space를 공격에 주면 같은 누름에 멈춤·넘기기가 함께 걸린다(Q1 "다"에서도).
-const RESERVED := {&"back": "멈춤", &"ui_cancel": "멈춤", &"retry": "다시 하기", &"debug_toggle": "디버그", &"ui_accept": "화면 넘기기"}
+const RESERVED := {&"back": "멈춤", &"ui_cancel": "멈춤", &"retry": "다시 하기", &"debug_toggle": "디버그", &"ui_accept": "화면 넘기기", &"toggle_fullscreen": "전체 화면"}
 const NONE_NAME := "없음"
 const DASH := "—"
 

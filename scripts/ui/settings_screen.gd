@@ -7,11 +7,14 @@ const Ui := preload("res://scripts/day_ui.gd")
 
 ## [갈래 키, 탭 글, 몸을 짓는 메서드의 이름]. const에는 Callable을 담을 수 없어 이름을 담고 call()로 부른다.
 ## S03은 조작, S04는 화면 탭을 이 목록에 한 줄씩 더한다.
-const TABS: Array = [[&"audio", "소리", &"_build_audio"], [&"controls", "조작", &"_build_controls"]]
+const TABS: Array = [[&"audio", "소리", &"_build_audio"], [&"controls", "조작", &"_build_controls"], [&"display", "화면", &"_build_display"]]
 const Controls := preload("res://scripts/controls.gd")
+const Display := preload("res://scripts/display.gd")
+const DISPLAY_HINT := "F11로도 바꾼다 · 그림은 늘 16:9이고 남는 곳은 검은 띠 · 이 모니터에 들어가지 않는 크기는 뺐다"
+const DISPLAY_REPAIRED_NOTE := "읽을 수 없는 화면 설정을 처음 값으로 돌렸다"
 const BIND_WAIT_TEXT := "누른다…"
 const BIND_WAIT_NOTE := "%s에 쓸 키나 마우스 버튼을 누른다 — 좌클릭은 이 칸이나 빈 곳에서. Esc나 다른 버튼은 취소"
-const CONTROLS_HINT := "조준은 마우스 위치 그대로다 · Esc·R·F1·Space·Enter는 쓸 수 없다"
+const CONTROLS_HINT := "조준은 마우스 위치 그대로다 · Esc·R·F1·F11·Space·Enter는 쓸 수 없다"
 const CONTROLS_EMPTY_WARN := "비어 있는 동작: %s — 결투에서 쓸 수 없다"
 const CONTROLS_REPAIRED_NOTE := "읽을 수 없는 조작이 있어 처음 값으로 돌렸다"
 
@@ -54,6 +57,10 @@ var _eat_release := ""
 var _binds := {}
 var _note: Label
 var _warn: Label
+## 화면 탭의 칸(다른 탭으로 옮기면 비운다: 지워진 노드를 처리기가 건드리지 않게).
+var _mode_buttons := {}
+var _size_buttons := {}
+var _display_now: Label
 
 
 static func open(parent: Control, settings: Node) -> SettingsScreen:
@@ -98,6 +105,10 @@ func _ready() -> void:
 	close.size = Vector2(200, 54)
 	close.pressed.connect(_close)
 
+	# 탭 밖(F11)이나 창을 끌어서 바뀐 것을 글에 옮긴다. 처리기는 글과 눌림만 고친다(결정 527·529).
+	_settings.changed.connect(_on_settings_changed)
+	get_window().size_changed.connect(_refresh_display)
+
 	_select_tab(0)
 	# Space·Enter가 아래의 버튼을 누르지 않게 초점을 닫기 버튼에 둔다.
 	close.grab_focus()
@@ -110,6 +121,9 @@ func _select_tab(index: int) -> void:
 	_waiting = &""
 	_eat_release = ""
 	_binds.clear()
+	_mode_buttons.clear()
+	_size_buttons.clear()
+	_display_now = null
 	for child in _body.get_children():
 		_body.remove_child(child)
 		child.queue_free()
@@ -317,8 +331,124 @@ func _over_other_button(point: Vector2) -> bool:
 	return false
 
 
+func _build_display(body: VBoxContainer) -> void:
+	body.add_theme_constant_override("separation", 12)
+	var mode_row := HBoxContainer.new()
+	mode_row.add_theme_constant_override("separation", 12)
+	body.add_child(mode_row)
+	var mode_label := Ui.add_label(mode_row, "화면", 24)
+	mode_label.custom_minimum_size = Vector2(160, 0)
+	var mode_group := ButtonGroup.new()
+	for mode in Display.MODES:
+		var button := Ui.add_button(mode_row, Display.MODE_LABELS[mode], 20, "DisplayWindowed" if mode == &"windowed" else "DisplayFullscreen")
+		button.toggle_mode = true
+		button.button_group = mode_group
+		button.custom_minimum_size = Vector2(160, 42)
+		_mode_buttons[mode] = button
+	var size_row := HBoxContainer.new()
+	size_row.add_theme_constant_override("separation", 8)
+	body.add_child(size_row)
+	var size_label := Ui.add_label(size_row, "창 크기", 24)
+	size_label.custom_minimum_size = Vector2(160, 0)
+	var size_group := ButtonGroup.new()
+	var row := size_row
+	var count := 0
+	for dims: Vector2i in _settings.available_sizes():
+		# 170폭 버튼 다섯은 한 줄에 못 든다(판 폭 800): 한 줄에 셋씩, 둘째 줄은 라벨 폭만큼 들여 쓴다.
+		if count > 0 and count % 3 == 0:
+			row = HBoxContainer.new()
+			row.add_theme_constant_override("separation", 8)
+			body.add_child(row)
+			var indent := Control.new()
+			indent.custom_minimum_size = Vector2(160, 0)
+			row.add_child(indent)
+		count += 1
+		var button := Ui.add_button(row, Display.size_name(dims), 18, "Size_%dx%d" % [dims.x, dims.y])
+		button.toggle_mode = true
+		button.button_group = size_group
+		button.custom_minimum_size = Vector2(170, 42)
+		_size_buttons[dims] = button
+	_display_now = Ui.add_label(body, "", 18)
+	_display_now.name = "DisplayNow"
+	var hint := Ui.add_wrapped(body, DISPLAY_HINT, 16, Ui.DIM)
+	hint.name = "DisplayHint"
+	hint.custom_minimum_size = Vector2(CONTENT_WIDTH, 0)
+	var notes: Array[String] = []
+	if _settings.display_repaired:
+		notes.append(DISPLAY_REPAIRED_NOTE)
+		_settings.display_repaired = false
+	var plan: Dictionary = _settings.last_plan
+	if bool(plan.get("clamped", false)):
+		var wanted: Vector2i = _settings.display["size"]
+		var opened: Vector2i = plan["size"]
+		notes.append("이 모니터에 %s 창이 들어가지 않아 %s 열었다" % [Display.size_name(wanted), _with_ro(Display.size_name(opened))])
+	var note := Ui.add_wrapped(body, "\n".join(PackedStringArray(notes)), 18)
+	note.name = "DisplayNote"
+	note.custom_minimum_size = Vector2(CONTENT_WIDTH, 0)
+	note.visible = not notes.is_empty()
+	# 처음 값은 신호 없이 넣고 신호는 그 뒤에 잇는다(결정 500). pressed로 잇는다: 이미 눌린 버튼을 다시 눌러도 닿는다(결정 526).
+	_refresh_display()
+	for mode in _mode_buttons:
+		(_mode_buttons[mode] as Button).pressed.connect(_on_display_mode.bind(mode))
+	for dims in _size_buttons:
+		(_size_buttons[dims] as Button).pressed.connect(_on_display_size.bind(dims))
+
+
+## 마지막 글자의 받침으로 "으로"와 "로"를 고른다(크기 이름은 숫자로 끝난다: 1·8은 ㄹ 받침, 0·3·6·7은 받침).
+static func _with_ro(text: String) -> String:
+	return text + ("으로" if text.right(1) in ["0", "3", "6", "7"] else "로")
+
+
+func _on_display_mode(mode: StringName) -> void:
+	_settings.set_display_mode(mode)
+	_settings.save()
+	_refresh_display()
+
+
+func _on_display_size(dims: Vector2i) -> void:
+	_settings.set_window_size(dims)
+	_settings.save()
+	_refresh_display()
+
+
+func _on_settings_changed(section: StringName, _key: StringName) -> void:
+	if section == &"display":
+		_refresh_display()
+
+
+## 눌림과 "지금" 글만 다시 쓴다. 노드를 붙이거나 떼지 않는다(결정 527).
+func _refresh_display() -> void:
+	if _display_now == null or not is_instance_valid(_display_now):
+		return
+	var mode: StringName = _settings.display["mode"]
+	for key in _mode_buttons:
+		(_mode_buttons[key] as Button).set_pressed_no_signal(key == mode)
+	# 전체 화면에서도 창으로 돌아갈 크기가 눌려 있다. 적힌 크기가 목록에 없으면(줄인 때) 줄인 크기가 눌린다.
+	var wanted: Vector2i = _settings.display["size"]
+	var plan: Dictionary = _settings.last_plan
+	var pressed: Vector2i = wanted if _size_buttons.has(wanted) else plan.get("size", wanted)
+	for key in _size_buttons:
+		(_size_buttons[key] as Button).set_pressed_no_signal(key == pressed)
+	var text := "지금: %s" % Display.MODE_LABELS[mode]
+	if _settings.window_locked:
+		if mode == &"windowed":
+			text += " " + Display.size_name(plan.get("size", wanted))
+	else:
+		var window := get_window()
+		var window_size := window.size
+		var fullscreen := window.mode == Window.MODE_FULLSCREEN
+		text = "지금: %s %s" % ["전체 화면" if fullscreen else "창", Display.size_name(window_size)]
+		if not fullscreen and mode == &"windowed" and window_size != plan.get("size", window_size):
+			text += " — 끌어서 바꿨다 · 다음에 켜면 %s" % Display.size_name(wanted)
+	_display_now.text = text
+
+
 func _close() -> void:
 	_waiting = &""
+	if _settings.changed.is_connected(_on_settings_changed):
+		_settings.changed.disconnect(_on_settings_changed)
+	if get_window().size_changed.is_connected(_refresh_display):
+		get_window().size_changed.disconnect(_refresh_display)
 	_settings.save()
 	closed.emit()
 	var parent := get_parent()

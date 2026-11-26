@@ -78,10 +78,12 @@ if (!('BraviPlaytest.Desktop' -as [type])) {
 '@
 }
 $originalSave = $env:BRAVI_SAVE_PATH
+$originalSettings = $env:BRAVI_SETTINGS_PATH
 try {
     if (!$originalSave) { $env:BRAVI_SAVE_PATH = 'user://bravi_playtest_save.json' }
+    if (!$originalSettings) { $env:BRAVI_SETTINGS_PATH = 'user://bravi_playtest_settings.json' }
     $session = [BraviPlaytest.Desktop]::Start($run, $shell, $command, $project)
-} finally { $env:BRAVI_SAVE_PATH = $originalSave }
+} finally { $env:BRAVI_SAVE_PATH = $originalSave; $env:BRAVI_SETTINGS_PATH = $originalSettings }
 Write-Output "Game log: $log"
 try {
     while (!$session.Runner.WaitForExit(250)) {

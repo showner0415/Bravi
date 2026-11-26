@@ -26,7 +26,8 @@ const SETTLE_BUTTONS := {"Proceed": Vector2(320, 76)}
 const CLOSING_BUTTONS := {"Proceed": Vector2(380, 76), "Quit": Vector2(220, 46)}
 const HELP_BUTTONS := {"HelpClose": Vector2(200, 54)}
 const SETTINGS_BUTTONS := {"SettingsClose": Vector2(200, 54), "ControlsReset": Vector2(220, 42),
-	"Bind_attack": Vector2(240, 42), "Bind_guard": Vector2(240, 42), "Bind_step_forward": Vector2(240, 42), "Bind_step_back": Vector2(240, 42)}
+	"Bind_attack": Vector2(240, 42), "Bind_guard": Vector2(240, 42), "Bind_step_forward": Vector2(240, 42), "Bind_step_back": Vector2(240, 42),
+	"DisplayWindowed": Vector2(160, 42), "DisplayFullscreen": Vector2(160, 42), "Size_1280x720": Vector2(170, 42), "Size_1600x900": Vector2(170, 42), "Size_1920x1080": Vector2(170, 42)}
 const PAUSE_BUTTONS := {"PauseResume": Vector2(340, 54), "PauseSettings": Vector2(340, 54), "PauseExit": Vector2(340, 54)}
 const CONFIRM_BUTTONS := {"QuitYes": Vector2(200, 54), "QuitNo": Vector2(200, 54)}
 
@@ -149,6 +150,10 @@ func t75_manuscript() -> String:
 		if _d._press(fresh, "TabControls"):
 			_check_text(errs, fresh, "처음 화면·설정·조작")
 			_check_buttons(errs, fresh, "설정·조작", SETTINGS_BUTTONS)
+		# 화면 탭(계획 S04)도 같다.
+		if _d._press(fresh, "TabDisplay"):
+			_check_text(errs, fresh, "처음 화면·설정·화면")
+			_check_buttons(errs, fresh, "설정·화면", SETTINGS_BUTTONS)
 		_expect(errs, _d._press(fresh, "SettingsClose") and not _d._has_node(fresh, "SettingsScreen"), "[설정] SettingsClose로 닫히지 않음")
 	fresh.free()
 

@@ -18,6 +18,7 @@ func t0_input_actions() -> String:
 		["retry", "key", KEY_R],
 		["back", "key", KEY_ESCAPE],
 		["debug_toggle", "key", KEY_F1],
+		["toggle_fullscreen", "key", KEY_F11],
 	]
 	var errs: Array[String] = []
 	for row in expected:

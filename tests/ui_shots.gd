@@ -60,6 +60,7 @@ func _ready() -> void:
 		["pause-practice", _pause_practice], ["pause-day", _pause_day], ["pause-settings", _pause_settings],
 		["quit-confirm", _quit_confirm], ["menu-counter", _menu_counter], ["pause-hold", _pause_hold],
 		["settings-controls", _settings_controls], ["settings-controls-empty", _settings_controls_empty],
+		["settings-display", _settings_display],
 	]
 	_next()
 
@@ -74,6 +75,9 @@ func _next() -> void:
 		run_settings.call("reset_controls")
 	_i += 1
 	if _i >= _plan.size():
+		# 창이 잠겼고 창을 한 번도 건드리지 않았는지(계획 S04 결정 531). run_ui_shots.ps1이 "display,1,0"만 받는다.
+		if run_settings != null:
+			print("display,%d,%d" % [1 if run_settings.get("window_locked") else 0, int(run_settings.get("_window_calls"))])
 		print("UI SHOTS OK %d" % _plan.size())
 		set_process(false)
 		get_tree().quit(0)
@@ -244,6 +248,12 @@ func _settings_controls() -> String:
 	_settings()
 	(_node.find_child("TabControls", true, false) as Button).pressed.emit()
 	return "설정 화면의 조작 탭(처음 값)"
+
+
+func _settings_display() -> String:
+	_settings()
+	(_node.find_child("TabDisplay", true, false) as Button).pressed.emit()
+	return "설정 화면의 화면 탭(처음 값, 본보기 모니터의 크기 셋)"
 
 
 ## 막기를 좌클릭으로: 공격이 비고 알림·"없음"·경고가 함께 뜬 가장 긴 꼴. 화면의 _input에 직접 누름을 넣는다(버튼 밖의 자리).

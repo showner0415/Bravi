@@ -314,6 +314,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.is_action_pressed(&"attack"):
 			_swallowed_attacks += 1
 		return
+	# F11은 처리됨으로 치지 않는다: Settings가 이어서 화면을 바꾼다(결정 528). 전환 동안의 입력이 판에 닿지 않게 먼저 멈춘다.
+	if event.is_action_pressed(&"toggle_fullscreen"):
+		pause(&"display")
+		return
 	if event.is_action_pressed(&"back"):
 		if not core.ended:
 			pause(&"esc")
@@ -349,9 +353,13 @@ func _update_aim_from_mouse() -> void:
 	if size.x <= 0.0 or size.y <= 0.0:
 		return
 	var mouse := _virtual_mouse if _use_virtual_mouse else get_viewport().get_mouse_position()
-	var column := clampi(int(mouse.x / size.x * 3.0), 0, 2)
-	var row := clampi(int(mouse.y / size.y * 3.0), 0, 2)
-	core.set_aim(column, row)
+	var cell := aim_cell(mouse, size)
+	core.set_aim(cell.x, cell.y)
+
+
+## 마우스(뷰포트 좌표)가 가리키는 3x3 조준칸 (열, 행). 테스트가 게임의 셈을 그대로 부른다(결정 530).
+static func aim_cell(point: Vector2, size: Vector2) -> Vector2i:
+	return Vector2i(clampi(int(point.x / size.x * 3.0), 0, 2), clampi(int(point.y / size.y * 3.0), 0, 2))
 
 
 func _update_views(delta: float) -> void:
