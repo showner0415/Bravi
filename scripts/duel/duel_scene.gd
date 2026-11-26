@@ -123,6 +123,9 @@ func start_duel() -> void:
 	_sword_view.setup()
 	_hud.reset()
 	_hud.set_commission(commission)
+	var empty_note := DuelHud.empty_note(DuelHud.HELP_EMPTY).trim_prefix(" · ")
+	if empty_note != "":
+		_hud.add_note(empty_note)
 	_result_panel.hide_result()
 	_apply_stage()
 	_update_views(0.0)
@@ -215,6 +218,10 @@ func _end_hold() -> void:
 	_pause_drift = maxf(_pause_drift, absf(core.time - _pause_time))
 	_holding = false
 	paused = false
+	# 대기 중 버린 왼쪽 막기를 쥔 채면 이제 막기가 된다(결정 522).
+	var held := Input.is_action_pressed(&"guard")
+	if core.guard_held != held:
+		core.set_guard(held)
 	_hud.set_resume_hold(false)
 
 
@@ -301,6 +308,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	# 멈춤 화면이 열린 동안은 결투의 액션을 하나도 듣지 않는다(결정 507). 돌아오기 대기 중에는 듣는다(결정 509).
 	if paused and not _holding:
+		return
+	# 대기 중 왼쪽 버튼은 무엇에 묶였든 코어에 넘기지 않는다: "계속"을 누르는 버튼이라 둘째 누름이 막기·걸음이 되던 길을 막는다(결정 522).
+	if _holding and event is InputEventMouseButton and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+		if event.is_action_pressed(&"attack"):
+			_swallowed_attacks += 1
 		return
 	if event.is_action_pressed(&"back"):
 		if not core.ended:

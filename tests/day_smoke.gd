@@ -25,6 +25,10 @@ func _ready() -> void:
 
 
 func _start() -> void:
+	# 실제 키를 보내는 길이라 플레이어의 바꾼 키가 걸려 있으면 안 된다(계획 S03 결정 523).
+	var run_settings := get_node_or_null(^"/root/Settings")
+	if run_settings != null and run_settings.has_method("detach_for_run"):
+		run_settings.call("detach_for_run")
 	var driver := Driver.new()
 	driver.name = "DaySmokeDriver"
 	# 뿌리에 붙여 씬이 바뀌어도 남게 한다.

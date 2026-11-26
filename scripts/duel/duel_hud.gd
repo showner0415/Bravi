@@ -5,6 +5,7 @@ extends CanvasLayer
 
 const DT := preload("res://scripts/duel/duel_types.gd")
 const Ui := preload("res://scripts/day_ui.gd")
+const Controls := preload("res://scripts/controls.gd")
 const STATE_FONT := preload("res://assets/ui/font_state.tres")
 
 const LOG_LINES := 3
@@ -12,12 +13,13 @@ const HELP_RETRY := " · R 다시 하기"
 ## 하루 모드에서도 남는다(결정 514).
 const HELP_PAUSE := " · Esc 멈춤"
 ## 선공의 안내(넷째 줄). %s에는 횟수가 들어간다("(한 판에 한 번)" 등. 제한이 없는 상대면 빈 글).
-const HELP_LUNGE := "방심한 상대(칼끝을 내린다)에게는 S로 물러나 멀리에서 좌클릭 — 런지%s · 예비 동작 중에는 뛰어들지 않는다"
+## 앞 %s에는 후퇴, 다음에는 공격의 키 이름(토씨를 붙이지 않는다), 뒤 %s에는 횟수.
+const HELP_LUNGE := "방심한 상대(칼끝을 내린다)에게는 물러나(%s) 멀리에서 %s — 런지%s · 예비 동작 중에는 뛰어들지 않는다"
 ## 런지가 나가는 때의 조준 글자. 판정과 같은 코어 함수를 읽어, 닿을 때에만 "닿는다"고 말한다.
 const LUNGE_AIM_REACH := "(런지: 닿는다)"
 const LUNGE_AIM_WAIT := "(런지: 예비 동작 중 — 헛칠 때까지 기다린다)"
 const LUNGE_AIM_DODGE := "(런지: 머리는 피한다)"
-const HELP_BIND := " · 밀착은 엉킴이 차면 밀려난다 — 차기 전에 S로 먼저 물러난다"
+const HELP_BIND := " · 밀착은 엉킴이 차면 밀려난다 — 차기 전에 먼저 물러난다(%s)"
 ## 패턴의 막는 법(결정 377). 연습 화면도 같은 글을 쓴다.
 const HELP_CHAIN := " · 이어 치기는 번호 차례대로 막기를 옮긴다(누른 채 옮기면 막고, 박자마다 새로 누르면 패리)"
 const HELP_SWEEP := " · 휩쓸기는 막기를 쥔 채 점을 따라 끈다(떼면 뚫리고 패리는 없다)"
@@ -37,7 +39,11 @@ const BACK_LAYER := -1
 ## 조준 패널의 윗변(아래 앵커 기준). 덧말이 붙으면 한 줄만큼 올라간다.
 const AIM_PANEL_TOP := -170.0
 const AIM_PANEL_GROW := 24.0
-const HELP_TEXT := "좌클릭 공격 · 우클릭 막기 (떼고 있다가 고리가 띠에 들어올 때 누르면 패리) · 마우스 위치로 방향·높이 · W/S 간격" + HELP_RETRY + HELP_PAUSE + " · F1 디버그\n빈틈이 아닐 때 공격하면 상대가 자세를 되찾는다"
+## 키 이름은 InputMap에서 읽어 채운다(결정 521): 공격·막기·전진·후퇴. 처음 값이면 옛 글과 글자까지 같다.
+const HELP_CONTROLS := "%s 공격 · %s 막기 (떼고 있다가 고리가 띠에 들어올 때 누르면 패리) · 마우스 위치로 방향·높이 · %s/%s 간격"
+const HELP_DEBUG := " · F1 디버그"
+const HELP_EMPTY := " · 비어 있는 동작: %s — 설정의 조작 탭에서 준다"
+const HELP_SECOND := "\n빈틈이 아닐 때 공격하면 상대가 자세를 되찾는다"
 
 
 ## 조작 안내 전체. 둘째 줄의 뒷부분과 셋째 줄은 상대 데이터에서 조립한다(장치를 끈 상대에게 틀린 안내를 하지 않게).
@@ -71,9 +77,19 @@ static func uses_heights(opponent: OpponentData) -> bool:
 	return false
 
 
+## 비어 있는 동작이 있으면 틀(%s에 이름들)을 채운 글, 없으면 빈 글.
+static func empty_note(template: String) -> String:
+	var names: Array[String] = []
+	for action in Controls.empty_actions():
+		names.append(String(Controls.LABELS[action]))
+	return template % "·".join(PackedStringArray(names)) if not names.is_empty() else ""
+
+
 static func help_text(opponent: OpponentData, p_day_mode := false, has_hat := false,
 		weapon: WeaponData = null) -> String:
-	var text := HELP_TEXT
+	var text := HELP_CONTROLS % [Controls.help_name(&"attack"), Controls.help_name(&"guard"),
+			Controls.help_name(&"step_forward"), Controls.help_name(&"step_back")]
+	text += HELP_RETRY + HELP_PAUSE + HELP_DEBUG + empty_note(HELP_EMPTY) + HELP_SECOND
 	if p_day_mode:
 		# 하루 중의 결투는 한 번뿐이다. 다시 하기와 나가기를 안내하지 않는다.
 		text = text.replace(HELP_RETRY, "")
@@ -110,7 +126,7 @@ static func help_text(opponent: OpponentData, p_day_mode := false, has_hat := fa
 	if opponent.close_hit_posture_loss > 1:
 		text += " · 밀착에서 맞으면 자세 %d칸" % opponent.close_hit_posture_loss
 	if weapon != null and weapon.close_bind_time > 0.0:
-		text += HELP_BIND
+		text += HELP_BIND % Controls.help_name(&"step_back")
 	# 셋째 줄: 스치면 2칸 이상 깎이는 부위와 머리 지키기. 해당이 없으면 줄을 두지 않는다.
 	var parts: Array[String] = []
 	var by_cells := heavy_parts(opponent, has_hat)
@@ -129,7 +145,7 @@ static func help_text(opponent: OpponentData, p_day_mode := false, has_hat := fa
 			count = "(한 판에 한 번)"
 		elif opponent.complacent_limit > 1:
 			count = "(한 판에 %d번)" % opponent.complacent_limit
-		text += "\n" + HELP_LUNGE % count
+		text += "\n" + HELP_LUNGE % [Controls.help_name(&"step_back"), Controls.help_name(&"attack"), count]
 	return text
 
 
@@ -452,6 +468,14 @@ func set_resume_hold(on: bool) -> void:
 	_resume_hold.visible = on
 	if on:
 		_bind_warning.visible = false
+
+
+## 기록 줄에 한 줄을 넣는다(판의 기록·사건 기록에는 넣지 않는다, 결정 521).
+func add_note(text: String) -> void:
+	_log.append(text)
+	while _log.size() > LOG_LINES:
+		_log.pop_front()
+	_log_label.text = "\n".join(_log)
 
 
 func toggle_debug() -> void:

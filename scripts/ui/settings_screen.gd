@@ -7,7 +7,13 @@ const Ui := preload("res://scripts/day_ui.gd")
 
 ## [갈래 키, 탭 글, 몸을 짓는 메서드의 이름]. const에는 Callable을 담을 수 없어 이름을 담고 call()로 부른다.
 ## S03은 조작, S04는 화면 탭을 이 목록에 한 줄씩 더한다.
-const TABS: Array = [[&"audio", "소리", &"_build_audio"]]
+const TABS: Array = [[&"audio", "소리", &"_build_audio"], [&"controls", "조작", &"_build_controls"]]
+const Controls := preload("res://scripts/controls.gd")
+const BIND_WAIT_TEXT := "누른다…"
+const BIND_WAIT_NOTE := "%s에 쓸 키나 마우스 버튼을 누른다 — 좌클릭은 이 칸이나 빈 곳에서. Esc나 다른 버튼은 취소"
+const CONTROLS_HINT := "조준은 마우스 위치 그대로다 · Esc·R·F1·Space·Enter는 쓸 수 없다"
+const CONTROLS_EMPTY_WARN := "비어 있는 동작: %s — 결투에서 쓸 수 없다"
+const CONTROLS_REPAIRED_NOTE := "읽을 수 없는 조작이 있어 처음 값으로 돌렸다"
 
 const TITLE_TEXT := "설정"
 const CLOSE_TEXT := "돌아간다"
@@ -31,6 +37,8 @@ var _settings
 var _beeper: Beeper
 var _body: VBoxContainer
 var _tab_group := ButtonGroup.new()
+## TABS 순서의 탭 버튼(ButtonGroup.get_buttons()는 순서를 보장하지 않는다).
+var _tabs: Array[Button] = []
 var _slider: HSlider
 var _volume_value: Label
 var _mute_button: Button
@@ -38,6 +46,14 @@ var _muted_note: Label
 var _last_preview_msec := -100000
 ## 거른 미리 듣기가 있다. drag_ended는 이것이 켜져 있을 때만 소리를 낸다(홈을 한 번 누를 때 두 번 울리지 않게).
 var _preview_pending := false
+## 조작 탭의 기다림(결정 520). 비면 기다리지 않는다. 시작 시각은 테스트가 고칠 수 있다.
+var _waiting: StringName = &""
+var _capture_msec := 0
+## 잡은 누름의 뗌(부호)은 GUI에 닿지 않게 한 번 먹는다.
+var _eat_release := ""
+var _binds := {}
+var _note: Label
+var _warn: Label
 
 
 static func open(parent: Control, settings: Node) -> SettingsScreen:
@@ -71,6 +87,7 @@ func _ready() -> void:
 		tab.button_group = _tab_group
 		tab.custom_minimum_size = Vector2(140, 44)
 		tab.pressed.connect(_select_tab.bind(i))
+		_tabs.append(tab)
 	_body = VBoxContainer.new()
 	_body.name = "TabBody"
 	_body.add_theme_constant_override("separation", 16)
@@ -81,13 +98,18 @@ func _ready() -> void:
 	close.size = Vector2(200, 54)
 	close.pressed.connect(_close)
 
-	(_tab_group.get_buttons()[0] as Button).set_pressed_no_signal(true)
 	_select_tab(0)
 	# Space·Enter가 아래의 버튼을 누르지 않게 초점을 닫기 버튼에 둔다.
 	close.grab_focus()
 
 
 func _select_tab(index: int) -> void:
+	# 신호만 보낸 호출에서도 고른 탭 하나만 눌린 모습 — set_pressed_no_signal은 묶음의 다른 버튼을 풀지 않는다.
+	for i in _tabs.size():
+		_tabs[i].set_pressed_no_signal(i == index)
+	_waiting = &""
+	_eat_release = ""
+	_binds.clear()
 	for child in _body.get_children():
 		_body.remove_child(child)
 		child.queue_free()
@@ -95,6 +117,7 @@ func _select_tab(index: int) -> void:
 
 
 func _build_audio(body: VBoxContainer) -> void:
+	body.add_theme_constant_override("separation", 16)
 	var row := HBoxContainer.new()
 	row.custom_minimum_size = Vector2(CONTENT_WIDTH, 0)
 	row.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
@@ -164,7 +187,138 @@ func _preview(now: int) -> void:
 	_beeper.play(&"block")
 
 
+func _build_controls(body: VBoxContainer) -> void:
+	body.add_theme_constant_override("separation", 8)
+	for action in Controls.ACTIONS:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 16)
+		body.add_child(row)
+		var label := Ui.add_label(row, Controls.LABELS[action], 24)
+		label.custom_minimum_size = Vector2(160, 0)
+		var button := Ui.add_button(row, "", 20, "Bind_" + String(action))
+		button.custom_minimum_size = Vector2(240, 42)
+		button.pressed.connect(_begin_wait.bind(action))
+		_binds[action] = button
+	var reset_row := HBoxContainer.new()
+	reset_row.add_theme_constant_override("separation", 16)
+	body.add_child(reset_row)
+	var reset := Ui.add_button(reset_row, "처음 값으로", 20, "ControlsReset")
+	reset.custom_minimum_size = Vector2(220, 42)
+	reset.pressed.connect(_on_controls_reset)
+	var hint := Ui.add_wrapped(reset_row, CONTROLS_HINT, 16, Ui.DIM)
+	hint.name = "ControlsHint"
+	hint.custom_minimum_size = Vector2(320, 0)
+	_note = Ui.add_wrapped(body, "", 18)
+	_note.name = "ControlsNote"
+	_note.custom_minimum_size = Vector2(CONTENT_WIDTH, 0)
+	_warn = Ui.add_wrapped(body, "", 18, Ui.ACCENT)
+	_warn.name = "ControlsEmptyWarn"
+	_warn.custom_minimum_size = Vector2(CONTENT_WIDTH, 0)
+	_set_note(CONTROLS_REPAIRED_NOTE if _settings.controls_repaired else "")
+	_settings.controls_repaired = false
+	_refresh_controls()
+
+
+func _set_note(text: String) -> void:
+	_note.text = text
+	_note.visible = text != ""
+
+
+## 버튼 글과 빈 동작의 경고를 지금 값으로 다시 쓴다.
+func _refresh_controls() -> void:
+	var empties: Array[String] = []
+	for action in Controls.ACTIONS:
+		var code := String(_settings.controls[action])
+		var button := _binds[action] as Button
+		button.text = BIND_WAIT_TEXT if _waiting == action else Controls.name_of(code)
+		if code == "" and _waiting != action:
+			button.add_theme_color_override("font_color", Ui.ACCENT)
+		else:
+			button.remove_theme_color_override("font_color")
+		if code == "":
+			empties.append(String(Controls.LABELS[action]))
+	_warn.text = CONTROLS_EMPTY_WARN % " · ".join(PackedStringArray(empties)) if not empties.is_empty() else ""
+	_warn.visible = not empties.is_empty()
+
+
+func _begin_wait(action: StringName) -> void:
+	_waiting = action
+	_capture_msec = Time.get_ticks_msec()
+	_eat_release = ""
+	_refresh_controls()
+	_set_note(BIND_WAIT_NOTE % Controls.LABELS[action])
+
+
+func _end_wait(note: String) -> void:
+	_waiting = &""
+	_refresh_controls()
+	_set_note(note)
+
+
+func _on_controls_reset() -> void:
+	_waiting = &""
+	_eat_release = ""
+	var changed: bool = _settings.reset_controls()
+	_refresh_controls()
+	_set_note("처음 값으로 되돌렸다" if changed else "이미 처음 값이다")
+	_settings.save()
+
+
+## 기다리는 동안의 입력을 GUI보다 먼저 받는다(잡은 누름이 아래 버튼에 닿지 않게). 결정 520.
+func _input(event: InputEvent) -> void:
+	if _eat_release != "" and not event.is_pressed() and Controls.code_of(event) == _eat_release:
+		_eat_release = ""
+		get_viewport().set_input_as_handled()
+		return
+	if _waiting == &"" or not (event is InputEventKey or event is InputEventMouseButton) or not event.is_pressed():
+		return
+	_eat_release = ""
+	if Ui.is_arrival_press(event, _capture_msec, Time.get_ticks_msec()):
+		get_viewport().set_input_as_handled()
+		return
+	if event is InputEventMouseButton and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT \
+			and _over_other_button((event as InputEventMouseButton).position):
+		_end_wait("")
+		return
+	get_viewport().set_input_as_handled()
+	if event.is_action_pressed(&"ui_cancel"):
+		_end_wait("그대로 두었다")
+		return
+	var code := Controls.code_of(event)
+	if code == "":
+		_set_note("쓸 수 없는 입력이다 — 다른 것을 누른다")
+		return
+	var result: Dictionary = _settings.set_control(_waiting, code)
+	var action := _waiting
+	match result["result"]:
+		&"reserved":
+			_set_note("쓸 수 없는 키다 (%s · %s) — 다른 것을 누른다" % [Controls.name_of(code), result["use"]])
+		&"same":
+			_eat_release = code
+			_end_wait("그대로 두었다")
+		&"cleared":
+			_eat_release = code
+			_end_wait("겹쳤다 — %s: %s · %s 이제 비었다" % [Controls.LABELS[action], Controls.name_of(code), Controls.TOPICS[result["other"]]])
+			_settings.save()
+		_:
+			_eat_release = code
+			_end_wait("")
+			_settings.save()
+
+
+## 기다리는 칸 밖의 보이는 버튼 위인가(위치는 뷰포트 좌표이고 설정 화면의 층에는 변환이 없다).
+func _over_other_button(point: Vector2) -> bool:
+	for node in find_children("*", "BaseButton", true, false):
+		var button := node as BaseButton
+		if button == _binds.get(_waiting) or not button.is_visible_in_tree():
+			continue
+		if button.get_global_rect().has_point(point):
+			return true
+	return false
+
+
 func _close() -> void:
+	_waiting = &""
 	_settings.save()
 	closed.emit()
 	var parent := get_parent()

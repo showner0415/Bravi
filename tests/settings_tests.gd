@@ -213,7 +213,7 @@ func _check_broken_files(errs: Array[String]) -> void:
 
 ## 6. 모르는 칸을 남기고 version을 내려 적지 않는다.
 func _check_unknown_kept(errs: Array[String]) -> void:
-	_write_text('{"version": 1, "audio": {"volume": 60, "muted": false}, "view": {"text_scale": 1.3}, "controls": {"attack": "x"}}')
+	_write_text('{"version": 1, "audio": {"volume": 60, "muted": false}, "view": {"text_scale": 1.3}, "controls": {"dodge": "x"}}')
 	var s := _make(TEST_PATH)
 	s.set_volume(30)
 	_expect(errs, s.save(), "[6] 바꾼 뒤 save()가 거짓")
@@ -221,7 +221,7 @@ func _check_unknown_kept(errs: Array[String]) -> void:
 	var view := _section(data, "view")
 	var controls := _section(data, "controls")
 	_expect(errs, view.has("text_scale") and is_equal_approx(float(view["text_scale"]), 1.3), "[6] view가 그대로 남지 않음: %s" % str(view))
-	_expect(errs, controls.get("attack") == "x", "[6] controls가 그대로 남지 않음: %s" % str(controls))
+	_expect(errs, controls.get("dodge") == "x", "[6] controls의 모르는 칸이 그대로 남지 않음: %s" % str(controls))
 	_expect(errs, int(_section(data, "audio").get("volume", -1)) == 30, "[6] 바꾼 음량 30이 적히지 않음")
 	_free_made()
 	_write_text('{"version": 2, "audio": {"volume": 60, "muted": false}}')
@@ -280,7 +280,7 @@ func _check_screen(errs: Array[String]) -> void:
 	var close := screen.find_child("SettingsClose", true, false) as Button
 	var tab_row := screen.find_child("TabRow", true, false)
 	_expect(errs, slider != null and mute != null and close != null, "[8 나] VolumeSlider·MuteButton·SettingsClose 가운데 없는 것이 있음")
-	_expect(errs, tab_row != null and tab_row.get_child_count() == 1 and (tab_row.get_child(0) as Button).text == "소리", "[8 나] 탭 줄이 '소리' 하나가 아님")
+	_expect(errs, tab_row != null and tab_row.get_child_count() == SettingsScreen.TABS.size() and (tab_row.get_child(0) as Button).text == "소리", "[8 나] 탭 줄이 TABS(첫 탭 '소리')와 다름")
 	if slider == null or mute == null or close == null:
 		return
 	slider.value = 60

@@ -27,6 +27,10 @@ var _shot_count := 0
 
 
 func _ready() -> void:
+	# 결투가 InputMap을 읽으므로 플레이어의 바꾼 키가 장에 비치지 않게 처음 값으로 돌린다(계획 S03 결정 523).
+	var run_settings := get_node_or_null(^"/root/Settings")
+	if run_settings != null and run_settings.has_method("detach_for_run"):
+		run_settings.call("detach_for_run")
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--shots="):
 			_shots_dir = arg.trim_prefix("--shots=")

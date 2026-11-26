@@ -46,7 +46,10 @@ func _ready() -> void:
 	# 자동 로드 Settings의 쓰기를 끈다: 찍기를 따로 돌려도 플레이어의 설정 파일을 적지 않는다(계획 S01).
 	var settings := get_node_or_null(^"/root/Settings")
 	if settings != null:
-		settings.set("path", "")
+		if settings.has_method("detach_for_run"):
+			settings.call("detach_for_run")
+		else:
+			settings.set("path", "")
 	_d.set("_tree", get_tree())
 	_plan = [
 		["pair-duel", _pair_duel], ["pair-duel-warn", _pair_duel_warn], ["pair-settle", _pair_settle],
@@ -56,6 +59,7 @@ func _ready() -> void:
 		["duel-close-bighold", _duel_close_bighold], ["duel-right-high", _duel_right_high], ["result", _result],
 		["pause-practice", _pause_practice], ["pause-day", _pause_day], ["pause-settings", _pause_settings],
 		["quit-confirm", _quit_confirm], ["menu-counter", _menu_counter], ["pause-hold", _pause_hold],
+		["settings-controls", _settings_controls], ["settings-controls-empty", _settings_controls_empty],
 	]
 	_next()
 
@@ -64,6 +68,10 @@ func _next() -> void:
 	if _node != null:
 		_node.free()
 		_node = null
+	# 조작 장이 바꾼 키를 되돌린다(쓰기는 꺼져 있다. 계획 S03 작업 6).
+	var run_settings := get_node_or_null(^"/root/Settings")
+	if run_settings != null and run_settings.has_method("reset_controls"):
+		run_settings.call("reset_controls")
 	_i += 1
 	if _i >= _plan.size():
 		print("UI SHOTS OK %d" % _plan.size())
@@ -230,6 +238,26 @@ func _settings() -> String:
 	_title()
 	(_node.find_child("Settings", true, false) as Button).pressed.emit()
 	return "설정 화면(저장 없는 처음 화면 위)"
+
+
+func _settings_controls() -> String:
+	_settings()
+	(_node.find_child("TabControls", true, false) as Button).pressed.emit()
+	return "설정 화면의 조작 탭(처음 값)"
+
+
+## 막기를 좌클릭으로: 공격이 비고 알림·"없음"·경고가 함께 뜬 가장 긴 꼴. 화면의 _input에 직접 누름을 넣는다(버튼 밖의 자리).
+func _settings_controls_empty() -> String:
+	_settings_controls()
+	var screen := _node.find_child("SettingsScreen", true, false)
+	(_node.find_child("Bind_guard", true, false) as Button).pressed.emit()
+	screen.set("_capture_msec", Time.get_ticks_msec() - 1000)
+	var press := InputEventMouseButton.new()
+	press.button_index = MOUSE_BUTTON_LEFT
+	press.pressed = true
+	press.position = Vector2(5, 5)
+	screen.call("_input", press)
+	return "조작 탭: 막기를 좌클릭으로 줘 공격이 빈 모습"
 
 
 func _select() -> String:

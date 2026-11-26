@@ -25,7 +25,8 @@ const COUNTER_BUTTONS := {"Proceed": Vector2(320, 76), "Decline": Vector2(230, 5
 const SETTLE_BUTTONS := {"Proceed": Vector2(320, 76)}
 const CLOSING_BUTTONS := {"Proceed": Vector2(380, 76), "Quit": Vector2(220, 46)}
 const HELP_BUTTONS := {"HelpClose": Vector2(200, 54)}
-const SETTINGS_BUTTONS := {"SettingsClose": Vector2(200, 54)}
+const SETTINGS_BUTTONS := {"SettingsClose": Vector2(200, 54), "ControlsReset": Vector2(220, 42),
+	"Bind_attack": Vector2(240, 42), "Bind_guard": Vector2(240, 42), "Bind_step_forward": Vector2(240, 42), "Bind_step_back": Vector2(240, 42)}
 const PAUSE_BUTTONS := {"PauseResume": Vector2(340, 54), "PauseSettings": Vector2(340, 54), "PauseExit": Vector2(340, 54)}
 const CONFIRM_BUTTONS := {"QuitYes": Vector2(200, 54), "QuitNo": Vector2(200, 54)}
 
@@ -144,6 +145,10 @@ func t75_manuscript() -> String:
 	if _d._press(fresh, "Settings") and _d._has_node(fresh, "SettingsScreen"):
 		_check_text(errs, fresh, "처음 화면·설정")
 		_check_buttons(errs, fresh, "설정", SETTINGS_BUTTONS)
+		# 조작 탭(계획 S03)도 글자·크기·버튼을 지난다.
+		if _d._press(fresh, "TabControls"):
+			_check_text(errs, fresh, "처음 화면·설정·조작")
+			_check_buttons(errs, fresh, "설정·조작", SETTINGS_BUTTONS)
 		_expect(errs, _d._press(fresh, "SettingsClose") and not _d._has_node(fresh, "SettingsScreen"), "[설정] SettingsClose로 닫히지 않음")
 	fresh.free()
 

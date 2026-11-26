@@ -196,8 +196,11 @@ func _build_help() -> void:
 
 
 func _show_help() -> void:
-	if _help_screen == null:
-		_build_help()
+	# 키를 바꾼 뒤에 열어도 옛 글이 남지 않게 열 때마다 새로 짓는다(결정 521).
+	if _help_screen != null:
+		remove_child(_help_screen)
+		_help_screen.free()
+	_build_help()
 	_help_screen.visible = true
 	# Space·Enter가 아래의 버튼을 누르지 않게 초점을 닫기 버튼으로 옮긴다.
 	(_help_screen.find_child("HelpClose", true, false) as Button).grab_focus()

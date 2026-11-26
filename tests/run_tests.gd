@@ -7,7 +7,7 @@ extends SceneTree
 ##   클래스 캐시(.godot/, 깃에 없음)를 갱신해야 한다. 안 하면 테스트 파일이 파스 오류로 로드되지 않는다.
 ## 통과 판정: 종료 코드 0, 마지막 줄 "ALL PASS n/n", 출력에 SCRIPT ERROR / ERROR: 없음.
 ## 오토로드 GameSession이 떠 있으면 저장을 끄고 돈다(save_path를 비운다). 실제 저장 파일을 읽지 않는다.
-## 오토로드 Settings도 path를 비워 설정 파일을 적지 않는다.
+## 오토로드 Settings도 path를 비워 설정 파일을 적지 않고 조작을 처음 값으로 돌린다(detach_for_run, 계획 S03 결정 523).
 
 const TEST_FILES: Array[String] = [
 	"res://tests/project_tests.gd",
@@ -39,6 +39,7 @@ const TEST_FILES: Array[String] = [
 	"res://tests/painted_ui_tests.gd",
 	"res://tests/settings_tests.gd",
 	"res://tests/pause_tests.gd",
+	"res://tests/controls_tests.gd",
 ]
 
 var _started := false
@@ -80,8 +81,11 @@ func _process(_delta: float) -> bool:
 	if settings == null:
 		print("RUNNER 설정: 오토로드 Settings 없음")
 	else:
-		print("RUNNER 설정: 오토로드 Settings 있음, path '%s'를 비움" % str(settings.get("path")))
-		settings.set("path", "")
+		print("RUNNER 설정: 오토로드 Settings 있음, path '%s'를 비우고 조작을 처음 값으로" % str(settings.get("path")))
+		if settings.has_method("detach_for_run"):
+			settings.call("detach_for_run")
+		else:
+			settings.set("path", "")
 
 	var tests: Array = []
 	for path in TEST_FILES:
