@@ -3,6 +3,7 @@ extends StyleBox
 ## 필사본 패널(결정 312 나): 칠 → 결 → 바깥 테두리 → 안쪽 가는 선 → 네 모서리 마름모. 값이 0인 몫은 그리지 않는다(벽은 칠과 결만).
 
 const PaperGrain := preload("res://scripts/ui/paper_grain.gd")
+const PaintedPatch := preload("res://scripts/ui/painted_patch.gd")
 
 @export var fill_color := Color("E9D8B4")
 ## 견본과 나란히 대어 맞춘 세기(판 N). 1.0이면 견본보다 짙다.
@@ -14,9 +15,23 @@ const PaperGrain := preload("res://scripts/ui/paper_grain.gd")
 @export var inner_width := 1.0
 @export var corner_color := Color("D2B98C")
 @export var corner_radius := 4.0
+@export_group("그린 질감 (계획 033b)")
+## 비면 칠·결로 그린다. 있으면 그 그림의 한 곳을 잘라 깐다.
+@export var paper: Texture2D
+## 비면 테두리·안쪽 선·마름모를 코드로 그린다. 있으면 9조각(가운데는 비운다).
+@export var frame: Texture2D
+## 9조각의 조각 크기(화면 화소).
+@export var frame_margin := 24.0
+## 테두리의 원본 화소 수 = 화면 1.
+@export var density := 1.5
+## 테두리 가장자리의 늘이기 방식, 두 축에 같이(R5의 값 하나).
+@export var frame_axis := RenderingServer.NINE_PATCH_TILE_FIT
 
 
 func _draw(to_canvas_item: RID, rect: Rect2) -> void:
+	if paper != null or frame != null:
+		_draw_painted(to_canvas_item, rect)
+		return
 	if fill_color.a > 0.0:
 		RenderingServer.canvas_item_add_rect(to_canvas_item, rect, fill_color)
 	if grain > 0.0:
@@ -30,6 +45,31 @@ func _draw(to_canvas_item: RID, rect: Rect2) -> void:
 			for corner in [inner.position, Vector2(inner.end.x, inner.position.y),
 					Vector2(inner.position.x, inner.end.y), inner.end]:
 				_draw_diamond(to_canvas_item, corner)
+
+
+# 종이와 테두리는 따로 비울 수 있다(결정 489). 한쪽만 그림이면 다른 쪽은 033의 코드 그리기를 그대로 쓴다.
+func _draw_painted(item: RID, rect: Rect2) -> void:
+	if paper != null:
+		PaintedPatch.draw_paper(item, rect, paper, paper.get_width() / 1280.0, Color.WHITE)
+	else:
+		if fill_color.a > 0.0:
+			RenderingServer.canvas_item_add_rect(item, rect, fill_color)
+		if grain > 0.0:
+			_draw_grain(item, rect)
+	if frame != null:
+		var m := frame_margin * density
+		PaintedPatch.draw_nine_patch(item, rect, frame, Vector4(m, m, m, m), density,
+			frame_axis, frame_axis, Color.WHITE, false)
+		return
+	if border_width > 0.0:
+		_draw_frame(item, rect, border_width, border_color)
+	if inner_width > 0.0:
+		var inner := rect.grow(-inner_inset)
+		_draw_frame(item, inner, inner_width, inner_color)
+		if corner_radius > 0.0:
+			for corner in [inner.position, Vector2(inner.end.x, inner.position.y),
+					Vector2(inner.position.x, inner.end.y), inner.end]:
+				_draw_diamond(item, corner)
 
 
 # 텍스처 반복 설정에 기대지 않고 타일을 손으로 나눠 깐다(끝 타일은 같은 비로 잘라서).
