@@ -4,6 +4,7 @@
 #   powershell -ExecutionPolicy Bypass -File tests/run_duel_stats.ps1 -Runs 50 -Delay 0.3 -Counter mid,same,thrust -Miss 0.1
 #   powershell -ExecutionPolicy Bypass -File tests/run_duel_stats.ps1 -Opponent res://data/opponents/opponent_01.tres
 #   powershell -ExecutionPolicy Bypass -File tests/run_duel_stats.ps1 -Runs 30 -Opening off,1,2,3
+#   powershell -ExecutionPolicy Bypass -File tests/run_duel_stats.ps1 -Opponent res://data/opponents/opponent_01.tres -Opening 1 -Effects off,on -Counter thrust,arm,low -Nine
 #
 # Runs tests/duel_stats.gd: a bot plays whole duels and prints one "stat," line per setting
 # (length, endings, hits by reason, how openings ended) and one "routes," line (pattern routes seen).
@@ -11,7 +12,9 @@
 # -Opening: opening chance settings (base = as the data says, off = always opens, 1/2/3 = that day). Default base.
 # -Bonus: adds to the chance of the day settings 1/2/3 only (the upgrade), e.g. -Opening 3 -Bonus 0.15. Default 0.
 # -Dive: block (default) or retreat: how the bot meets a dive attack (retreat = step back, then strike the opening).
-# -Counter: where the counter is aimed (same = the guarded cell, mid = same side mid row, thrust = centre mid).
+# -Counter: where the counter is aimed (same = the guarded cell, mid = same side mid row, thrust = centre mid, arm = sword-arm mid row, low = centre low row).
+# -Effects: off (default, the old rule) and/or on (data/part_effects.tres worn by the opponent copy). The stat line ends with ",<old|new>,effects{...}" (plan R02).
+# -Nine: only the 9-cell rows (skips the "flat" rows of opponents that have heights).
 # Without -Opponent it plays every opponent in data/opponents, 9-cell and flat.
 # Judges the run: exit code 0, one "DUEL STATS OK <n>" line, no ERROR lines. The numbers are not judged.
 param(
@@ -24,7 +27,9 @@ param(
 	[string[]]$Opponent = @(),
 	[string]$Opening = 'base',
 	[double]$Bonus = 0.0,
-	[string]$Dive = 'block'
+	[string]$Dive = 'block',
+	[string]$Effects = 'off',
+	[switch]$Nine
 )
 
 . "$PSScriptRoot\godot_path.ps1"
@@ -50,7 +55,8 @@ if (-not $SkipImport) {
 }
 
 $inv = [System.Globalization.CultureInfo]::InvariantCulture
-$userArgs = "--runs=$Runs --delay=$($Delay.ToString($inv)) --miss=$($Miss.ToString($inv)) --counter=$Counter --opening=$Opening --bonus=$($Bonus.ToString($inv)) --dive=$Dive"
+$userArgs = "--runs=$Runs --delay=$($Delay.ToString($inv)) --miss=$($Miss.ToString($inv)) --counter=$Counter --opening=$Opening --bonus=$($Bonus.ToString($inv)) --dive=$Dive --effects=$Effects"
+if ($Nine) { $userArgs += " --nine" }
 foreach ($path in $Opponent) { $userArgs += " --opponent=$path" }
 $out = cmd /c "`"$Godot`" --headless --path `"$project`" --script res://tests/duel_stats.gd -- $userArgs 2>&1"
 $runExit = $LASTEXITCODE

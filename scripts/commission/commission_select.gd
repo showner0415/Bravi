@@ -11,12 +11,15 @@ const TITLE_PATH := "res://scenes/ui/title.tscn"
 const PRACTICE_DIR := "res://data/opponents"
 const SPARE_DIR := "res://data/attacks"
 const RULES_PATH := "res://data/duel_rules.tres"
+const EFFECTS_PATH := "res://data/part_effects.tres"
 ## 빈틈 줄의 버튼(결정 407). 0은 늘 열린다, 1~3은 그 날의 확률.
 const OPENING_DAYS := [[0, "늘 열린다"], [1, "1일차"], [2, "2일차"], [3, "3일차부터"]]
 
 ## 시험 줄의 버튼이 탈 날. 버튼이 묶어 둔 상대는 그대로 두고 넘기기 직전에 사본을 만든다.
 ## static: 결투에서 돌아와도 고른 날이 남는다(2026-11-25 playtester).
 static var _opening_day := 1
+## "반격 실험"이 켜져 있는가(계획 R02). 결투에서 돌아와도 남는다. 의뢰 카드의 판에는 타지 않는다.
+static var _part_effects := false
 var _head: HBoxContainer
 var _trial_grid: HBoxContainer
 var _trial_count := 0
@@ -162,6 +165,7 @@ func _add_trials(column: VBoxContainer) -> void:
 	if trials.is_empty():
 		return
 	_add_opening_row(_head)
+	_add_part_toggle(_head)
 	# 상대별 칸으로 묶는다: 상대가 셋이 되어도 1280 안에 들고 줄 수는 둘이다(결정 448).
 	_trial_grid = HBoxContainer.new()
 	_trial_grid.name = "TrialGrid"
@@ -203,8 +207,17 @@ func _add_trial_column(opponent: OpponentData) -> void:
 	var cell := VBoxContainer.new()
 	cell.add_theme_constant_override("separation", 20)
 	_trial_grid.add_child(cell)
-	var free_button := _add_trial_button(cell, opponent.display_name, "TrialDuel%d" % _trial_count, opponent)
+	# 첫 상대의 "베기만"은 패턴 줄이 아니라 자유 결투 옆에 둔다: 패턴 줄이 넓어지면 시험 칸이 1216을 넘는다(T91).
+	var slash := _plain_slash(opponent) if _trial_count == 0 else null
+	var free_row: Container = cell
+	if slash != null:
+		free_row = HBoxContainer.new()
+		free_row.add_theme_constant_override("separation", 12)
+		cell.add_child(free_row)
+	var free_button := _add_trial_button(free_row, opponent.display_name, "TrialDuel%d" % _trial_count, opponent)
 	free_button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	if slash != null:
+		_add_trial_button(free_row, "베기만", "SlashDrill", opponent.drill(slash))
 	_trial_count += 1
 	var drills := HBoxContainer.new()
 	drills.add_theme_constant_override("separation", 12)
@@ -214,6 +227,14 @@ func _add_trial_column(opponent: OpponentData) -> void:
 			continue
 		_add_trial_button(drills, atk.attack_name, "PatternDrill%d" % _drill_count, opponent.drill(atk))
 		_drill_count += 1
+
+
+## 단발 베기 하나(첫 공격 가운데 사슬·뛰어들기·큰 공격이 아니고 찌르기도 아닌 것). 없으면 null.
+func _plain_slash(opponent: OpponentData) -> AttackData:
+	for atk in opponent.attacks:
+		if atk.chain.is_empty() and not atk.dive and not atk.is_big and atk.direction != DuelTypes.Direction.CENTER:
+			return atk
+	return null
 
 
 ## 넷째 칸: 아직 상대가 없는 공격을 첫 상대의 몸으로 익힌다(결정 470).
@@ -259,16 +280,37 @@ func _add_trial_button(row: Container, text: String, node_name: String, opponent
 	return button
 
 
-## 의뢰 없이 그 상대와 결투한다. 고른 날의 빈틈 확률을 실은 사본을 넘긴다(결정 407).
-func _start_opponent(opponent: OpponentData) -> void:
+## 결투로 넘길 사본: 고른 날의 빈틈 확률(결정 407)과 켜져 있으면 부위별 반격의 값(계획 R02)을 싣는다.
+func _trial_copy(opponent: OpponentData) -> OpponentData:
 	var chance := 1.0
 	if _opening_day > 0:
 		chance = (load(RULES_PATH) as DuelRules).opening_chance_for(opponent.opening_chance, _opening_day)
+	var tried := opponent.with_opening(chance)
+	if _part_effects:
+		tried = tried.with_part_effects(load(EFFECTS_PATH) as PartEffectData)
+	return tried
+
+
+## 의뢰 없이 그 상대와 결투한다.
+func _start_opponent(opponent: OpponentData) -> void:
 	var session := get_node_or_null(^"/root/GameSession")
 	if session != null:
 		session.set("commission", null)
-		session.set("practice_opponent", opponent.with_opening(chance))
+		session.set("practice_opponent", _trial_copy(opponent))
 	get_tree().change_scene_to_file(DUEL_PATH)
+
+
+## 반격 실험: 켜면 시험 줄의 버튼이 부위별 반격의 새 규칙을 싣고 간다.
+func _add_part_toggle(row: HBoxContainer) -> void:
+	var button := Button.new()
+	button.name = "PartCounterToggle"
+	button.text = "반격 실험"
+	button.toggle_mode = true
+	button.button_pressed = _part_effects
+	button.tooltip_text = DuelHud.HELP_PART.trim_prefix(" · ")
+	button.add_theme_font_size_override("font_size", 18)
+	button.toggled.connect(func(on: bool) -> void: _part_effects = on)
+	row.add_child(button)
 
 
 ## 빈틈 줄: 버튼 넷 가운데 하나만 눌린다(결정 407).

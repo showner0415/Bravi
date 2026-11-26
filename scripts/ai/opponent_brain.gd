@@ -35,6 +35,8 @@ var opening_end := -INF
 ## 지금의 회수가 크게 열린 것인가: 패리당했거나 큰 공격을 쓴 뒤다. 회수가 시작될 때 정해지고
 ## 그 회수가 끝날 때까지 바뀌지 않는다. 회수 중이 아니면 거짓이다.
 var wide_open := false
+## 지금의 회수가 뿌리가 큰 공격이었는가(패리만으로는 켜지지 않는다). wide_open과 같은 자리에서 정해지고 지워진다(계획 R02).
+var big_open := false
 ## 마지막으로 경계를 세운 시각. 판 처음(0)과 런지가 판정된 시각이다. 방심 게이지는 여기서부터 찬다.
 var alert_since := 0.0
 ## 이 판에서 런지에 찔린(스침·유효타) 횟수.
@@ -48,6 +50,16 @@ var opening_roll := 0.0
 var closed_streak := 0
 ## 바로 앞 resolve_strike가 막혔는데 빈틈을 주지 않았는가.
 var last_closed := false
+## 칼 든 팔을 스쳐 앞으로 길어질 예비 동작의 남은 횟수(계획 R02 D4). 패턴 하나가 1회다.
+var slow_tells_left := 0
+## 지금 패턴이 길어진 예비 동작인가. 공격이 끝나면 지워진다.
+var pattern_slowed := false
+## 다리를 스쳐 다음 패리에 붙을 덤의 남은 횟수(D5).
+var parry_charges := 0
+## 바로 앞 resolve_strike가 쓴 다리 덤: &"opened" / &"time" / &"none" / &""(덤 없음).
+var last_leg_bonus := &""
+## 바로 앞 resolve_strike가 다리 덤으로 더한 빈틈의 초.
+var last_leg_time := 0.0
 ## 공격 가방(data.attack_bag_sets가 1 이상일 때만 쓴다). 판마다 새로 만든다.
 var _bag: Array[AttackData] = []
 
@@ -64,6 +76,8 @@ func start_idle(now: float) -> void:
 	if state == S.RECOVERY or state == S.STAGGER:
 		opening_end = now
 	wide_open = false
+	big_open = false
+	pattern_slowed = false
 	state = S.IDLE
 	state_start = now
 	state_end = now + rng.randf_range(data.idle_time_min, data.idle_time_max)
@@ -90,6 +104,11 @@ func start_tell(now: float, is_close: bool) -> void:
 	tell_duration = current_attack.tell_time
 	if is_close:
 		tell_duration *= data.close_tell_multiplier
+	# 난수를 부르지 않는다: 팔 효과는 횟수만 센다.
+	pattern_slowed = slow_tells_left > 0 and data.part_effects != null
+	if pattern_slowed:
+		slow_tells_left -= 1
+		tell_duration *= data.part_effects.arm_tell_multiplier
 	state = S.TELL
 	state_start = now
 	state_end = now + tell_duration
@@ -109,6 +128,8 @@ func start_tell(now: float, is_close: bool) -> void:
 ## braced: 막혔지만 버티기였다(표시된 공격을 들고만 있던 막기로 받음). 막힘으로 세되 빈틈이 없다.
 func resolve_strike(now: float, result: int, braced := false) -> float:
 	last_closed = false
+	last_leg_bonus = &""
+	last_leg_time = 0.0
 	# 단발이면 뿌리가 곧 지금 공격이라 아래 셈이 전과 같다.
 	var root := pattern_root if pattern_root != null else current_attack
 	# 막힌 타격 뒤에 걸음이 남았으면 빈틈 없이 다음 타격으로 간다. 패리도 중간에서는 패턴을 끊지 않는다(결정 371).
@@ -116,7 +137,7 @@ func resolve_strike(now: float, result: int, braced := false) -> float:
 	if (result == R.BLOCKED or result == R.PARRIED) and not braced and step_index < root.chain.size():
 		current_attack = root.chain[step_index] as AttackData
 		step_index += 1
-		tell_duration = current_attack.tell_time
+		tell_duration = _step_tell(current_attack)
 		state_start = now
 		state_end = now + tell_duration
 		return 0.0
@@ -136,8 +157,9 @@ func resolve_strike(now: float, result: int, braced := false) -> float:
 			blocked_streak = 0
 	# 헛친 뛰어들기도 확률을 굴린다(결정 451).
 	if recovery > 0.0 and (result == R.BLOCKED or result == R.PARRIED or (root.dive and result == R.WHIFF)):
-		if _opens(result == R.PARRIED):
+		if _opens_with_legs(result, recovery):
 			closed_streak = 0
+			recovery += last_leg_time
 		else:
 			recovery = 0.0
 			last_closed = true
@@ -145,6 +167,7 @@ func resolve_strike(now: float, result: int, braced := false) -> float:
 	if recovery > 0.0:
 		# 칼을 쳐내졌거나(패리) 온몸을 실은 큰 공격을 쓴 뒤에는 크게 열린다(헛친 큰 공격도 그렇다).
 		wide_open = result == R.PARRIED or root.is_big
+		big_open = root.is_big
 		state = S.RECOVERY
 		state_start = now
 		state_end = now + recovery
@@ -160,6 +183,31 @@ func _opens(parried: bool) -> bool:
 	if data.opening_miss_limit > 0 and closed_streak >= data.opening_miss_limit:
 		return true
 	return opening_roll < opening_chance + (parry_opening_bonus if parried else 0.0)
+
+
+## 막힘·패리가 빈틈이 되는가에 다리 덤을 얹는다(계획 R02 D5). 덤은 패리로 끝난 공격에서 한 번 쓴다.
+## 덤 없이는 안 열릴 굴림이 열리면 "opened", 덤 없이도 열렸을 패리는 빈틈 시간을 더해 "time", 덤을 더해도 안 열리면 "none".
+## 난수는 부르지 않는다(opening_roll은 start_tell에서 이미 뽑혀 있다).
+func _opens_with_legs(result: int, recovery: float) -> bool:
+	var fx := data.part_effects
+	var natural := _opens(result == R.PARRIED)
+	if result != R.PARRIED or parry_charges <= 0 or fx == null or recovery <= 0.0:
+		return natural
+	parry_charges -= 1
+	if natural:
+		last_leg_bonus = &"time"
+		last_leg_time = fx.legs_open_time_bonus
+		return true
+	if opening_roll < opening_chance + parry_opening_bonus + fx.legs_parry_opening_bonus:
+		last_leg_bonus = &"opened"
+		return true
+	last_leg_bonus = &"none"
+	return false
+
+
+## 패턴의 뒤따르는 타격 하나의 간격. 길어진 패턴이면 같은 배율을 곱한다.
+func _step_tell(step: AttackData) -> float:
+	return step.tell_time * data.part_effects.arm_tell_multiplier if pattern_slowed else step.tell_time
 
 
 ## 지금 타격의 높이. 높이가 없거나 공격 중이 아니면 -1이다.
@@ -196,7 +244,7 @@ func pattern_strike_times() -> Array[float]:
 	var at := first_strike_time
 	times.append(at)
 	for step: AttackData in pattern_root.chain:
-		at += step.tell_time
+		at += _step_tell(step)
 		times.append(at)
 	return times
 
@@ -206,6 +254,8 @@ func on_grazed(now: float, cells := 1) -> bool:
 	posture = maxi(posture - maxi(cells, 1), 0)
 	if posture == 0:
 		wide_open = false
+		big_open = false
+		pattern_slowed = false
 		state = S.STAGGER
 		state_start = now
 		state_end = now + data.stagger_time

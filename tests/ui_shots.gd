@@ -88,6 +88,16 @@ func _next() -> void:
 	_frames = 0
 
 
+## 보이는 버튼·글 칸의 가장 먼 오른쪽·아래 끝(연습 화면이 1280x720 안인지).
+func _far_edge(root: Node) -> Vector2:
+	var far := Vector2.ZERO
+	for node in root.find_children("*", "Control", true, false):
+		var control := node as Control
+		if (control is Button or control is Label) and control.is_visible_in_tree():
+			far = far.max(control.get_global_rect().end)
+	return far
+
+
 func _process(_delta: float) -> void:
 	if _node == null:
 		return
@@ -104,6 +114,8 @@ func _process(_delta: float) -> void:
 		var help := _node.find_child("PatternHelp", true, false) as Control
 		if grid != null and help != null:
 			print("fit,%s,%d,%d" % [_plan[_i][0], int(grid.get_global_rect().end.x), int(help.get_global_rect().end.y)])
+			print("practice,%s,%d,%d,%d,%d" % [_plan[_i][0], 1 if _node.find_child("PartCounterToggle", true, false) != null else 0,
+					1 if _node.find_child("SlashDrill", true, false) != null else 0, int(_far_edge(_node).x), int(_far_edge(_node).y)])
 		_wearhit = 0
 		_wear_lines(_node, String(_plan[_i][0]))
 		print("wearhit,%s,%d" % [_plan[_i][0], _wearhit])

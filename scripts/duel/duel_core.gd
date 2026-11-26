@@ -21,6 +21,7 @@ const SR := DuelTypes.StrikeResult
 const AR := DuelTypes.AttackResult
 const Sit := DuelTypes.Situation
 const End := DuelTypes.EndReason
+const Fc := DuelTypes.Forecast
 
 ## 조준 → 부위 표. 행은 높이(상/중/하), 열은 [찌르기, 상대 칼 든 쪽 베기, 반대쪽 베기].
 ## 모자 없는 상대의 표다. 칼 든 쪽 세로줄의 상단이 칼 든 손, 중단이 칼 든 팔이다.
@@ -173,12 +174,105 @@ func is_lunge_now() -> bool:
 	return has_lunge() and distance == Dist.FAR and brain.complacency(time) >= 1.0
 
 
-## 지금 런지로 머리를 노리면 상대가 피하는가: 머리를 지키는 상대이고, 크게 열린 회수도 무너짐도 아니다.
-## 조준 글자가 읽는다(판정은 _judge_attack의 같은 조건이다).
-func lunge_head_dodged_now() -> bool:
-	if not opponent_data.guards_head or brain.state == OpS.STAGGER:
+## t 시각에 상대의 머리에 닿는가. 판정·미리보기·런지의 글이 모두 이것을 읽는다(계획 R02 D2).
+## op_state는 t에 상대가 있을 상태(-1이면 지금의 상태)다.
+## 머리를 지키지 않거나 무너졌으면 늘 닿는다. 회수에서는 크게 열렸을 때만 닿는다:
+## 부위별 반격의 값이 있고 head_big_only이면 큰 공격 뒤의 회수가 시작되고 head_exposed_time 안일 때만이다.
+func head_open_at(t: float, op_state := -1) -> bool:
+	if not opponent_data.guards_head:
+		return true
+	var state := brain.state if op_state < 0 else op_state
+	if state == OpS.STAGGER:
+		return true
+	if state != OpS.RECOVERY:
 		return false
-	return not (brain.state == OpS.RECOVERY and brain.wide_open)
+	var fx := opponent_data.part_effects
+	if fx == null or not fx.head_big_only:
+		return brain.wide_open
+	if not brain.big_open:
+		return false
+	return fx.head_exposed_time <= 0.0 or t < brain.state_start + fx.head_exposed_time
+
+
+## 지금 런지로 머리를 노리면 상대가 피하는가. 조준 글자가 읽는다(판정은 _verdict의 같은 답이다).
+func lunge_head_dodged_now() -> bool:
+	return not head_open_at(time)
+
+
+## 내 공격의 예비 시간. press_attack과 미리보기가 함께 쓴다. 부위별 반격의 값이 있으면 노리는 부위의 초를 더한다(밀착 배율 뒤).
+func attack_windup(direction: int, height: int) -> float:
+	var windup := weapon.windup_for(direction, height, distance)
+	var fx := opponent_data.part_effects
+	if fx == null:
+		return windup
+	var extra := fx.windup_extra(aim_part(direction, height, opponent_data.sword_side, opponent_has_hat))
+	return windup if extra == 0.0 else maxf(windup + extra, PartEffectData.MIN_WINDUP)
+
+
+## 지금 누르면 어떻게 되는가를 판정과 같은 함수로 미리 센다: {verdict: DuelTypes.Forecast, margin: 빈틈이 끝나기까지 남는 초(닿을 때만)}.
+## 누를 수 없는 때는 UNSURE다.
+func attack_forecast() -> Dictionary:
+	if ended or (player_state != PlS.READY and player_state != PlS.GUARD):
+		return {"verdict": Fc.UNSURE, "margin": 0.0}
+	var lunge := is_lunge_now()
+	var windup := weapon.lunge_windup if lunge else attack_windup(aim_direction, aim_height)
+	return _foresee(current_aim_part(), lunge, time + windup)
+
+
+## 판정 시각 judge_time의 상대 상태·간격을 미리 셈해 _verdict에 넣는다. 난수와 내 다음 입력 없이 정해지는 것만 센다.
+## 셈하지 않는 셋은 UNSURE다: 예비 동작 중 타격이 판정보다 먼저 옴, 접근 뒤 새 대기가 판정 전에 끝날 수 있음,
+## (누를 수 없음은 attack_forecast가 먼저 거른다). 같은 시각은 상대 → 접근 → 나 → 엉킴 순이다(_Ev).
+func _foresee(part: int, lunge: bool, judge_time: float) -> Dictionary:
+	var unsure := {"verdict": Fc.UNSURE, "margin": 0.0}
+	if rules.time_limit < judge_time:
+		return unsure
+	var dist := distance
+	var state := brain.state
+	var state_end := brain.state_end
+	var approach_at := _approach_at
+	var ended_opening := false
+	if has_bind() and distance == Dist.CLOSE:
+		var full_at := _bind_full_at
+		# 무너짐이 판정 전에 끝나면 그때부터 게이지가 다시 찬다.
+		if state == OpS.STAGGER and state_end <= judge_time:
+			full_at = state_end + (1.0 - bind_gauge()) * weapon.close_bind_time
+		if full_at < judge_time:
+			return {"verdict": Fc.BIND_CUT, "margin": 0.0}
+	if state == OpS.TELL and state_end <= judge_time:
+		return unsure
+	if (state == OpS.RECOVERY or state == OpS.STAGGER) and state_end <= judge_time:
+		ended_opening = true
+		state = OpS.IDLE
+		approach_at = state_end + opponent_data.approach_delay if dist == Dist.FAR else INF
+	if dist == Dist.FAR and state == OpS.IDLE and approach_at <= judge_time:
+		dist = Dist.ENGAGE
+		# 접근 때 새로 뽑는 대기가 판정 전에 끝날 수 있으면 예비 동작이 시작될지 모른다.
+		if approach_at + opponent_data.idle_time_min <= judge_time:
+			return unsure
+	if lunge and dist == Dist.FAR:
+		dist = Dist.ENGAGE
+	var verdict := _verdict(part, lunge, dist, state, state_end, judge_time)
+	if ended_opening and not lunge and verdict == Fc.NO_OPENING:
+		verdict = Fc.LATE
+	var margin := 0.0
+	if verdict == Fc.REACH:
+		margin = (state_end if state != OpS.IDLE else INF) - judge_time
+	return {"verdict": verdict, "margin": margin}
+
+
+## 내 공격이 닿는가의 답 하나. _judge_attack(실제 값)과 _foresee(미리 센 값)가 함께 부른다.
+## op_state·op_end는 judge_time에 상대가 있는 상태와 그 끝 시각, judge_distance는 판정 때의 간격이다.
+## LATE는 여기서 나오지 않는다(_foresee가 빈틈이 막 끝난 NO_OPENING에 붙인다).
+func _verdict(part: int, lunge: bool, judge_distance: int, op_state: int, op_end: float, judge_time: float) -> int:
+	if judge_distance == Dist.FAR:
+		return Fc.OUT_OF_RANGE
+	var head_hidden := part == Part.HEAD and not head_open_at(judge_time, op_state)
+	if (op_state == OpS.RECOVERY or op_state == OpS.STAGGER) and judge_time < op_end:
+		return Fc.HEAD_GUARDED if head_hidden else Fc.REACH
+	# 런지(선공): 방심해 대기 중인 상대는 막지 못한다. 머리는 여전히 지킨다.
+	if lunge and op_state == OpS.IDLE:
+		return Fc.HEAD_GUARDED if head_hidden else Fc.REACH
+	return Fc.NO_OPENING
 
 
 ## 지금 타격이 오면 버티기가 되는가: 상대가 표시된 공격의 예비 동작 중이고,
@@ -217,7 +311,7 @@ func press_attack() -> void:
 	# 섣부른 공격인지도 누른 순간에 정해지고 그 뒤로 바뀌지 않는다.
 	attack_rash = is_rash_now()
 	attack_pressed_distance = distance
-	var windup := weapon.windup_for(attack_direction, attack_height, distance)
+	var windup := attack_windup(attack_direction, attack_height)
 	if attack_lunge:
 		windup = weapon.lunge_windup
 	player_state = PlS.WINDUP
@@ -333,12 +427,17 @@ func _on_opponent_state_end() -> void:
 				brain.hold_idle()
 			else:
 				brain.start_tell(time, distance == Dist.CLOSE)
-				_emit(DuelRecord.TELL_START, {
+				var tell := {
 					"attack": brain.current_attack, "strike_time": brain.state_end,
 					"duration": brain.tell_duration, "is_habit": brain.current_is_habit,
 					# heights는 사본이다: 기록이 이벤트를 그대로 들고 있어 뇌의 배열을 실으면 뒤에 값이 바뀐다(결정 392).
 					"height": brain.current_height(), "heights": brain.strike_heights.duplicate(),
-				})
+				}
+				# 효과 칸은 일어났을 때만 더한다(옛 규칙의 이벤트 줄이 그대로이게. 계획 R02 D7).
+				if brain.pattern_slowed:
+					tell["slowed"] = true
+					tell["slow_left"] = brain.slow_tells_left
+				_emit(DuelRecord.TELL_START, tell)
 		OpS.TELL:
 			_resolve_strike()
 		OpS.RECOVERY:
@@ -396,14 +495,18 @@ func _resolve_strike() -> void:
 	var chained := brain.state == OpS.TELL
 	if brain.last_closed:
 		_closed_until = time + rules.closed_counter_grace
-	_emit(DuelRecord.STRIKE, {
+	var strike := {
 		"attack": atk, "result": result, "situation": situation,
 		"recovery": recovery, "recovery_end": time + recovery,
 		"player_posture": player_posture, "braced": braced, "posture_loss": posture_loss,
 		"next_strike": brain.state_end if chained else -1.0,
 		"height": height, "guard_miss": guard_miss,
 		"closed": brain.last_closed, "closed_streak": brain.closed_streak, "miss_limit": opponent_data.opening_miss_limit,
-	})
+	}
+	if brain.last_leg_bonus != &"":
+		strike["leg_bonus"] = brain.last_leg_bonus
+		strike["leg_time"] = brain.last_leg_time
+	_emit(DuelRecord.STRIKE, strike)
 	if chained:
 		_emit(DuelRecord.PATTERN_STEP, {
 			"attack": brain.current_attack, "root": brain.pattern_root, "index": brain.step_index,
@@ -415,6 +518,20 @@ func _resolve_strike() -> void:
 		_set_distance(distance + 1, "dive")
 	if result == SR.HIT:
 		_end(End.PLAYER_DEFEATED, "유효타를 맞음")
+
+
+## 스침이 부위에 건 지속 효과를 걸고 이름을 돌려준다(계획 R02 D4·D5). 유효타에는 걸지 않는다(호출이 스침에서만이다).
+func _graze_effect(part: int) -> StringName:
+	var fx := opponent_data.part_effects
+	if fx == null:
+		return &""
+	if part == Part.SWORD_ARM and fx.arm_slow_tells > 0:
+		brain.slow_tells_left = fx.arm_slow_tells
+		return &"arm_slow"
+	if part == Part.LEGS and fx.legs_parry_charges > 0:
+		brain.parry_charges = fx.legs_parry_charges
+		return &"legs_parry"
+	return &""
 
 
 ## 휩쓸기의 둘째 점부터는 첫 점 이전부터 쥐고 있던 막기만 받아낸다(떼었다 다시 누르면 뚫린다. 결정 372).
@@ -478,32 +595,26 @@ func _judge_attack() -> void:
 	var cells := 0
 	# 머리를 노렸는데 상대가 피했는가.
 	var dodged := false
-	if distance == Dist.FAR:
-		result = AR.WHIFF
-	elif brain.state == OpS.RECOVERY and time < brain.state_end:
-		if attack_part == Part.HEAD and opponent_data.guards_head and not brain.wide_open:
-			# 상대는 얼굴을 지킨다. 크게 열리지 않은 빈틈에서 머리를 노리면 피한다.
+	# 스침이 건 지속 효과(계획 R02). 없으면 &""이고 이벤트에 칸을 더하지 않는다.
+	var effect := &""
+	match _verdict(attack_part, attack_lunge, distance, brain.state, brain.state_end, time):
+		Fc.OUT_OF_RANGE:
+			result = AR.WHIFF
+		Fc.HEAD_GUARDED:
+			# 상대는 얼굴을 지킨다. 머리가 열리지 않은 때 머리를 노리면 피한다.
 			# 상대의 자세·상태·타이머는 그대로다(회수는 끝나지 않는다). 그 빈틈을 날릴 뿐이다.
 			dodged = true
-		else:
-			# 자세가 남은 상대에게 닿음 = 스침. 한 빈틈에는 한 번만 닿는다(회수가 여기서 끝난다).
-			# 깎이는 칸 수는 부위마다 다르다(상대 데이터).
-			result = AR.GRAZE
-			var before := brain.posture
-			staggered = brain.on_grazed(time, opponent_data.graze_cells(attack_part))
-			cells = before - brain.posture
-	elif brain.state == OpS.STAGGER and time < brain.state_end:
-		result = AR.HIT
-	elif attack_lunge and brain.state == OpS.IDLE:
-		# 런지(선공): 방심해 대기 중인 상대는 막지 못한다. 머리는 여전히 지킨다(방심은 크게 열림이 아니다).
-		if attack_part == Part.HEAD and opponent_data.guards_head:
-			dodged = true
-		else:
-			# 스침과 같은 처리다: 부위의 칸 수만큼 깎이고 상대는 대기를 새로 시작한다(자세가 0이면 무너진다).
-			result = AR.GRAZE
-			var before := brain.posture
-			staggered = brain.on_grazed(time, opponent_data.graze_cells(attack_part))
-			cells = before - brain.posture
+		Fc.REACH:
+			if brain.state == OpS.STAGGER:
+				result = AR.HIT
+			else:
+				# 자세가 남은 상대에게 닿음 = 스침. 한 빈틈에는 한 번만 닿는다(회수가 여기서 끝난다).
+				# 깎이는 칸 수는 부위마다 다르다(상대 데이터). 방심한 상대에게 닿은 런지도 같은 처리다.
+				result = AR.GRAZE
+				var before := brain.posture
+				staggered = brain.on_grazed(time, opponent_data.graze_cells(attack_part))
+				cells = before - brain.posture
+				effect = _graze_effect(attack_part)
 	if attack_lunge:
 		# 판정된 런지는 결과와 상관없이 상대의 경계를 세운다. 닿았으면 찔린 횟수가 오른다.
 		brain.on_lunged(time, result == AR.GRAZE or result == AR.HIT)
@@ -512,13 +623,17 @@ func _judge_attack() -> void:
 	var posture_gain := 0
 	if attack_rash and result == AR.BLOCKED and not dodged:
 		posture_gain = brain.regain_posture()
-	_emit(DuelRecord.ATTACK, {
+	var attack_ev := {
 		"result": result, "direction": attack_direction, "height": attack_height,
 		"part": attack_part, "distance": distance, "pressed_distance": attack_pressed_distance,
 		"opponent_posture": brain.posture, "opponent_state": brain.state,
 		"rash": attack_rash, "posture_gain": posture_gain,
 		"cells": cells, "dodged": dodged, "lunge": attack_lunge,
-	})
+	}
+	if effect != &"":
+		attack_ev["effect"] = effect
+		attack_ev["slow_left"] = brain.slow_tells_left
+	_emit(DuelRecord.ATTACK, attack_ev)
 	if staggered:
 		_emit(DuelRecord.STAGGER_START, {"end_time": brain.state_end})
 	_refresh_approach(time)

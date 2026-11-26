@@ -21,6 +21,7 @@ static func summarize(record: DuelRecord) -> Dictionary:
 		"openings": {"닿음": 0, "머리 피함": 0, "늦음": 0, "안 침": 0},
 		"finishers": {"닿음": 0, "놓침": 0},
 		"rash": 0,
+		"effects": {"팔 둔함": 0, "다리 덤 씀": 0, "머리 스침": 0},
 	}
 	var strike_keys := ["헛침", "막음", "패리", "스침", "유효타"]
 	# 빈틈 하나의 끝: 열린 뒤 다음 예비 동작 전의 내 첫 공격으로 정한다.
@@ -46,6 +47,8 @@ static func summarize(record: DuelRecord) -> Dictionary:
 				elif (ev["result"] == DT.StrikeResult.BLOCKED or ev["result"] == DT.StrikeResult.PARRIED) \
 						and float(ev.get("recovery", 0.0)) > 0.0 and float(ev.get("next_strike", -1.0)) < 0.0:
 					out["guards"]["열림"] += 1
+				if ev.get("leg_bonus", &"") != &"":
+					out["effects"]["다리 덤 씀"] += 1
 				if ev["result"] == DT.StrikeResult.GRAZE or ev["result"] == DT.StrikeResult.HIT:
 					_bump(out["hits"], _reason(ev))
 				elif float(ev.get("recovery", 0.0)) > 0.0 and float(ev.get("next_strike", -1.0)) < 0.0:
@@ -58,6 +61,10 @@ static func summarize(record: DuelRecord) -> Dictionary:
 				if ev.get("rash", false):
 					out["rash"] += 1
 				var reached: bool = ev["result"] == DT.AttackResult.GRAZE or ev["result"] == DT.AttackResult.HIT
+				if ev.get("effect", &"") == &"arm_slow":
+					out["effects"]["팔 둔함"] += 1
+				if ev["result"] == DT.AttackResult.GRAZE and ev["part"] == DT.Part.HEAD:
+					out["effects"]["머리 스침"] += 1
 				if opening:
 					opening = false
 					if reached:

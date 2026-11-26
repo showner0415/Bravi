@@ -400,6 +400,8 @@ func _draw() -> void:
 		var rect := Rect2(Vector2(cell.x * core.aim_direction, cell.y * core.aim_height), cell)
 		draw_rect(rect, Color(1, 1, 1, 0.05))
 		draw_rect(rect, Color(1, 1, 1, 0.25), false, 2.0)
+		if DuelHud.forecast_on(core):
+			_draw_forecast_frame(rect.grow(-10.0), core.attack_forecast()["verdict"])
 		# 높이를 가진 타격이 오는 칸: 예비 색 테두리, 내 막기가 그 칸에 있으면 초록(결정 388).
 		var strike_height := core.brain.current_height()
 		if core.brain.state == DuelTypes.OpponentState.TELL and strike_height >= 0:
@@ -408,6 +410,33 @@ func _draw() -> void:
 					and core.aim_height == strike_height
 			var target := Rect2(Vector2(cell.x * strike_dir, cell.y * strike_height), cell).grow(-4.0)
 			draw_rect(target, Color(0.3, 1.0, 0.5, 0.75) if guarded else Color(1.0, 0.9, 0.25, 0.5), false, 4.0)
+
+
+## 조준 칸의 미리보기 테두리. 색만이 아니라 꼴로 가른다: 닿는다 굵은 실선, 늦다 점선, 멀다 꺾쇠, 피한다 실선과 가위표, 엉킴 잔 점선.
+func _draw_forecast_frame(rect: Rect2, verdict: int) -> void:
+	var corners := [rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)]
+	match verdict:
+		DuelTypes.Forecast.REACH:
+			draw_rect(rect, Color(0.3, 1.0, 0.5, 0.95), false, 6.0)
+		DuelTypes.Forecast.LATE:
+			var color := Color(1.0, 0.75, 0.2, 0.95)
+			for i in 4:
+				draw_dashed_line(corners[i], corners[(i + 1) % 4], color, 4.0, 22.0)
+		DuelTypes.Forecast.OUT_OF_RANGE:
+			var color := Color(0.8, 0.8, 0.8, 0.9)
+			for i in 4:
+				var toward: Vector2 = (corners[(i + 1) % 4] - corners[i]).normalized()
+				var back: Vector2 = (corners[(i + 3) % 4] - corners[i]).normalized()
+				draw_polyline(PackedVector2Array([corners[i] + toward * 36.0, corners[i], corners[i] + back * 36.0]), color, 4.0)
+		DuelTypes.Forecast.HEAD_GUARDED:
+			var color := Color(1.0, 0.4, 0.4, 0.95)
+			draw_rect(rect, color, false, 4.0)
+			draw_line(rect.position, rect.end, color, 4.0)
+			draw_line(corners[1], corners[3], color, 4.0)
+		DuelTypes.Forecast.BIND_CUT:
+			var color := Color(0.9, 0.4, 1.0, 0.95)
+			for i in 4:
+				draw_dashed_line(corners[i], corners[(i + 1) % 4], color, 4.0, 8.0)
 
 
 ## 하루 모드: 끝난 결투의 기록을 day에 넘기고 정산 화면으로 간다. 한 번만 넘긴다.

@@ -19,6 +19,16 @@ const HELP_LUNGE := "방심한 상대(칼끝을 내린다)에게는 물러나(%s
 const LUNGE_AIM_REACH := "(런지: 닿는다)"
 const LUNGE_AIM_WAIT := "(런지: 예비 동작 중 — 헛칠 때까지 기다린다)"
 const LUNGE_AIM_DODGE := "(런지: 머리는 피한다)"
+## 조준 미리보기(계획 R02 D3). 칸 테두리·꼬리표·덧말이 같은 말을 쓴다.
+const FORECAST_WORD := {
+	DT.Forecast.REACH: "닿는다", DT.Forecast.LATE: "늦다", DT.Forecast.OUT_OF_RANGE: "멀다",
+	DT.Forecast.HEAD_GUARDED: "피한다", DT.Forecast.BIND_CUT: "엉킴",
+}
+const FORECAST_NOTE := {
+	DT.Forecast.REACH: "(닿는다)", DT.Forecast.LATE: "(늦다 — 칼이 닿기 전에 빈틈이 끝난다)",
+	DT.Forecast.OUT_OF_RANGE: "(멀리: 닿지 않음)", DT.Forecast.HEAD_GUARDED: "(머리를 지킨다 — 피한다)",
+	DT.Forecast.BIND_CUT: "(엉킴 — 공격이 끊긴다)",
+}
 const HELP_BIND := " · 밀착은 엉킴이 차면 밀려난다 — 차기 전에 먼저 물러난다(%s)"
 ## 패턴의 막는 법(결정 377). 연습 화면도 같은 글을 쓴다.
 const HELP_CHAIN := " · 이어 치기는 번호 차례대로 막기를 옮긴다(누른 채 옮기면 막고, 박자마다 새로 누르면 패리)"
@@ -28,6 +38,8 @@ const HELP_OPENING := " · 막아도 틈을 안 줄 때가 있다(낮은 소리)
 const HELP_HEIGHT := " · 고리가 뜬 칸(방향과 높이)에 마우스를 두고 막는다"
 ## 뛰어드는 찌르기(결정 451·454). 연습 화면도 같은 글을 쓴다.
 const HELP_DIVE := " · 뛰어드는 찌르기는 막기를 떼고 멀리까지 물러서면 헛친다(막으면 밀착으로 밀고 온다)"
+## 부위별 반격(계획 R02). 연습 화면의 "반격 실험"도 같은 글을 쓴다.
+const HELP_PART := " · 반격 실험: 팔을 스치면 예비 동작이 느려지고, 다리를 스친 뒤 패리는 빈틈이 더 열리며, 머리는 큰 공격 뒤에만 닿는다"
 ## 엉킴 게이지가 이 값 이상이고 간격이 밀착이면 경고를 낸다(게이지의 색, 가운데 글자, 내 칼의 경고 표시).
 const BIND_WARN_RATIO := 0.8
 const BIND_WARN_TEXT := "칼이 엉킨다!"
@@ -123,6 +135,8 @@ static func help_text(opponent: OpponentData, p_day_mode := false, has_hat := fa
 		if atk.dive:
 			text += HELP_DIVE
 			break
+	if opponent.part_effects != null:
+		text += HELP_PART
 	if opponent.close_hit_posture_loss > 1:
 		text += " · 밀착에서 맞으면 자세 %d칸" % opponent.close_hit_posture_loss
 	if weapon != null and weapon.close_bind_time > 0.0:
@@ -354,6 +368,8 @@ var _back_root: Control
 var _aim_panel: Panel
 var _opponent_label: Label
 var _opponent_cells: PostureCells
+## 상대에게 걸린 지속 효과(팔 둔함·다리 흔들림. 계획 R02). 걸려 있을 때만 보인다.
+var _effect_label: Label
 var _player_label: Label
 var _player_cells: PostureCells
 var _distance_label: Label
@@ -393,6 +409,9 @@ func _ready() -> void:
 	# 위 가운데: 상대 이름과 자세
 	_opponent_label = _add_label(Vector2(0.5, 0.0), Rect2(-294, 9, 548, 26), 18, HORIZONTAL_ALIGNMENT_CENTER)
 	_opponent_cells = _add_cells(Vector2(0.5, 0.0), Rect2(-294, 40, 548, 14), true)
+	_effect_label = _add_label(Vector2(1.0, 0.0), Rect2(-380, 68, 360, 44), 18, HORIZONTAL_ALIGNMENT_RIGHT, true)
+	_effect_label.name = "EffectLabel"
+	_effect_label.visible = false
 	# 위 왼쪽: 간격, 엉킴 막대, 조건, 조건의 게이지
 	_distance_label = _add_label(Vector2(0.0, 0.0), Rect2(20, 12, 130, 34), 24, HORIZONTAL_ALIGNMENT_LEFT)
 	_bind_bar = BindBar.new()
@@ -496,6 +515,7 @@ func refresh(core: DuelCore) -> void:
 	var opp := core.opponent_data
 	_opponent_label.text = "%s — 자세 %d/%d" % [opp.display_name, core.brain.posture, opp.posture_max]
 	_opponent_cells.set_values(opp.posture_max, core.brain.posture)
+	_refresh_effects(core)
 	_player_label.text = "내 자세 %d/%d" % [core.player_posture, core.rules.player_posture_max]
 	_player_cells.set_values(core.rules.player_posture_max, core.player_posture)
 	_distance_label.text = "간격: %s" % DT.DISTANCE_NAMES[core.distance]
@@ -518,7 +538,10 @@ func refresh(core: DuelCore) -> void:
 		aim += " (%d칸)" % aim_cells
 	# 덧말은 줄을 바꿔 붙이고, 그동안 조준 패널이 한 줄 자란다(견본보다 한 줄 많은 유일한 때. 결정 316).
 	var note := ""
-	if lunge:
+	if forecast_on(core):
+		var verdict: int = core.attack_forecast()["verdict"]
+		note = lunge_aim_note(core, verdict) if lunge else FORECAST_NOTE.get(verdict, "")
+	elif lunge:
 		note = lunge_aim_note(core)
 	elif core.distance == DT.Distance.FAR:
 		note = "(멀리: 닿지 않음)"
@@ -572,9 +595,41 @@ static func bind_warning_now(core: DuelCore) -> bool:
 	return core.has_bind() and not core.ended and core.distance == DuelTypes.Distance.CLOSE 		and core.bind_gauge() >= BIND_WARN_RATIO
 
 
+## 걸려 있는 지속 효과의 글: 남은 횟수만큼 점을 찍는다. 아무것도 없으면 빈 글이다.
+static func effect_text(core: DuelCore) -> String:
+	var lines: PackedStringArray = []
+	if core.brain.slow_tells_left > 0:
+		lines.append("팔 둔함 " + "●".repeat(core.brain.slow_tells_left))
+	if core.brain.parry_charges > 0:
+		lines.append("다리 흔들림 ◆ 다음 패리")
+	return "\n".join(lines)
+
+
+func _refresh_effects(core: DuelCore) -> void:
+	var text := effect_text(core) if core.opponent_data.part_effects != null else ""
+	_effect_label.text = text
+	_effect_label.visible = text != ""
+
+
+## 조준 미리보기를 보일 판인가(상대 데이터가 켰다). 칸 테두리·꼬리표·덧말이 함께 본다.
+static func forecast_on(core: DuelCore) -> bool:
+	var fx := core.opponent_data.part_effects
+	return fx != null and fx.show_forecast
+
+
 ## 런지가 나가는 때의 조준 글자. 판정이 쓰는 코어 함수를 그대로 읽는다(HUD가 따로 계산하지 않는다).
 ## "닿는다"는 닿을 때에만 말한다: 상대가 예비 동작 중이면 "기다린다", 머리를 노리는데 피할 때면 "피한다".
-static func lunge_aim_note(core: DuelCore) -> String:
+## verdict가 0 이상이면 새 규칙: 판정의 미리보기만 읽는다(UNSURE면 덧말 없음).
+static func lunge_aim_note(core: DuelCore, verdict := -1) -> String:
+	if verdict >= 0:
+		match verdict:
+			DT.Forecast.REACH:
+				return LUNGE_AIM_REACH
+			DT.Forecast.HEAD_GUARDED:
+				return LUNGE_AIM_DODGE
+			DT.Forecast.NO_OPENING:
+				return LUNGE_AIM_WAIT
+		return ""
 	if core.is_rash_now():
 		return LUNGE_AIM_WAIT
 	if core.current_aim_part() == DuelTypes.Part.HEAD and core.lunge_head_dodged_now():
@@ -614,6 +669,12 @@ func _describe(ev: Dictionary) -> String:
 						return "받아냄!"
 					return "막음"
 				DT.StrikeResult.PARRIED:
+					# 다리 덤의 글은 일어난 일(leg_bonus)만 읽는다. none이면 덤은 한 일이 없어 말하지 않는다.
+					match ev.get("leg_bonus", &""):
+						&"opened":
+							return "패리! — 다리가 풀려 틈이 열렸다"
+						&"time":
+							return "패리! — 다리가 풀려 빈틈 +%s초" % str(snappedf(float(ev["leg_time"]), 0.01))
 					return "패리!"
 				DT.StrikeResult.WHIFF:
 					return "상대가 헛침"
@@ -640,11 +701,17 @@ func _describe(ev: Dictionary) -> String:
 						return "섣부른 공격 — 빈틈이 아니다"
 					return "닿지 않음 — %s" % part
 				DT.AttackResult.GRAZE:
+					var after := ""
+					match ev.get("effect", &""):
+						&"arm_slow":
+							after = " · 다음 공격 %d번이 느려진다" % int(ev["slow_left"])
+						&"legs_parry":
+							after = " · 다음 패리에 덤"
 					if ev.get("lunge", false):
-						return "선공! 런지 — %s%s" % [part, " (-%d)" % ev["cells"] if int(ev["cells"]) >= 2 else ""]
+						return "선공! 런지 — %s%s%s" % [part, " (-%d)" % ev["cells"] if int(ev["cells"]) >= 2 else "", after]
 					if int(ev["cells"]) >= 2:
-						return "스침 — %s (-%d)" % [part, ev["cells"]]
-					return "스침 — %s" % part
+						return "스침 — %s (-%d)%s" % [part, ev["cells"], after]
+					return "스침 — %s%s" % [part, after]
 				DT.AttackResult.HIT:
 					return "유효타! — %s" % part
 		DuelRecord.SHOVE:

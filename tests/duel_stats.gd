@@ -4,7 +4,8 @@ extends SceneTree
 ## 빈틈(opening): base 상대 그대로 / off 늘 열린다 / 1·2·3 그 날의 확률(결정 408). bonus는 1·2·3에만 든다(결정 420).
 ## 봇: 고리의 칸을 막고(miss의 확률로 높이를 틀린다), 빈틈이 열리면 delay초 뒤에 받아치고, 무너지면 가운데 중단을 찌른다.
 ## 뛰어들기(dive): block 막는다 / retreat 막기를 떼고 물러선 뒤 헛침의 빈틈에 가운데 중단(결정 456). 뛰어들기에만 다르다.
-## 받아치는 조준(counter): same 막은 칸 그대로 / mid 같은 방향 중단 / thrust 가운데 중단.
+## 받아치는 조준(counter): same 막은 칸 그대로 / mid 같은 방향 중단 / thrust 가운데 중단. arm 칼 든 팔 중단(칼 쪽 베기) / low 가운데 하단(찌르기).
+## 부위별 반격(effects): off 옛 규칙 / on 새 규칙(data/part_effects.tres를 실은 사본). nine이 참이면 가로만 줄을 건너뛴다(계획 R02).
 ## 줄: "stat,<상대>,<9칸|가로만>,<counter>,..." 하나가 설정 하나. 판정이 아니라 견줄 수다(통과 기준은 줄이 다 나오는 것뿐).
 
 const DT := preload("res://scripts/duel/duel_types.gd")
@@ -12,6 +13,7 @@ const Bot := preload("res://tests/duel_bots.gd")
 const Summary := preload("res://scripts/duel/duel_summary.gd")
 
 const RULES_PATH := "res://data/duel_rules.tres"
+const EFFECTS_PATH := "res://data/part_effects.tres"
 const WEAPON_PATH := "res://data/weapons/rapier.tres"
 const OPPONENT_DIR := "res://data/opponents"
 const DELTA := 1.0 / 60.0
@@ -28,6 +30,8 @@ func _initialize() -> void:
 	var openings: PackedStringArray = ["base"]
 	var bonus := 0.0
 	var dive := "block"
+	var effects_list: PackedStringArray = ["off"]
+	var nine_only := false
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--runs="):
 			runs = int(arg.trim_prefix("--runs="))
@@ -43,6 +47,10 @@ func _initialize() -> void:
 			bonus = float(arg.trim_prefix("--bonus="))
 		elif arg.begins_with("--dive="):
 			dive = arg.trim_prefix("--dive=")
+		elif arg.begins_with("--effects="):
+			effects_list = arg.trim_prefix("--effects=").split(",", false)
+		elif arg == "--nine":
+			nine_only = true
 		elif arg.begins_with("--opponent="):
 			paths.append(arg.trim_prefix("--opponent="))
 	if paths.is_empty():
@@ -57,23 +65,27 @@ func _initialize() -> void:
 	var bonus_rules := (load(RULES_PATH) as DuelRules).duplicate() as DuelRules
 	bonus_rules.opening_chance_bonus = bonus
 	var lines := 0
+	var effects_data := load(EFFECTS_PATH) as PartEffectData
 	for path in paths:
 		var opponent := load(path) as OpponentData
 		if opponent == null:
 			print("stat,%s,읽지 못함" % path)
 			continue
 		var variants: Array = [["9칸", opponent]] if DuelHud.uses_heights(opponent) else []
-		variants.append(["가로만", opponent.flat()])
+		if not nine_only or variants.is_empty():
+			variants.append(["가로만", opponent.flat()])
 		for variant: Array in variants:
 			for opening in openings:
 				var played := _with_opening(variant[1], opening, bonus_rules)
 				var label := "%s(%.3f)" % [opening, _chance(played)]
-				for counter in counters:
-					var summaries: Array = []
-					for i in runs:
-						summaries.append(_play(played, i + 1, delay, miss, counter, dive))
-					_print(path.get_file().get_basename(), variant[0], label, counter, delay, miss, Summary.merge(summaries))
-					lines += 1
+				for effect in effects_list:
+					var with_effects := played.with_part_effects(effects_data) if effect == "on" else played
+					for counter in counters:
+						var summaries: Array = []
+						for i in runs:
+							summaries.append(_play(with_effects, i + 1, delay, miss, counter, dive))
+						_print(path.get_file().get_basename(), variant[0], label, counter, delay, miss, Summary.merge(summaries), "새" if effect == "on" else "옛")
+						lines += 1
 	print("DUEL STATS OK %d" % lines)
 	quit(0)
 
@@ -99,6 +111,10 @@ func _play(opponent: OpponentData, seed_value: int, delay: float, miss: float, c
 		match counter:
 			"same":
 				return [atk.direction, height if height >= 0 else DT.Height.MID]
+			"arm":
+				return [_direction_of(opponent, DT.Part.SWORD_ARM), DT.Height.MID]
+			"low":
+				return [DT.Direction.CENTER, DT.Height.LOW]
 			"thrust":
 				return [DT.Direction.CENTER, DT.Height.MID]
 		return [atk.direction, DT.Height.MID]
@@ -129,7 +145,7 @@ func _chance(opponent: OpponentData) -> float:
 	return (load(RULES_PATH) as DuelRules).opening_chance_for(opponent.opening_chance, 0)
 
 
-func _print(name: String, kind: String, opening: String, counter: String, delay: float, miss: float, m: Dictionary) -> void:
+func _print(name: String, kind: String, opening: String, counter: String, delay: float, miss: float, m: Dictionary, rule: String) -> void:
 	var runs := float(m["runs"])
 	var opened := 0
 	for key: String in m["openings"]:
@@ -143,13 +159,23 @@ func _print(name: String, kind: String, opening: String, counter: String, delay:
 	for key: String in m["routes"]:
 		routes.append("%s×%d" % [key, int(m["routes"][key])])
 	var guards: Dictionary = m.get("guards", {})
-	print("stat,%s,%s,opening=%s,counter=%s,delay=%.2f,miss=%.2f | 막아서 열림 %d · 안 열림 %d | 판 %d · 평균 %.1f초 · 끝 %s | 판당 맞음: %s | 빈틈 판당 %.1f: 닿음 %s 머리피함 %s 늦음 %s 안침 %s | 마무리 닿음 %d 놓침 %d | 패턴 판당 %.1f" % [
+	var fx: Dictionary = m.get("effects", {})
+	print("stat,%s,%s,opening=%s,counter=%s,delay=%.2f,miss=%.2f | 막아서 열림 %d · 안 열림 %d | 판 %d · 평균 %.1f초 · 끝 %s | 판당 맞음: %s | 빈틈 판당 %.1f: 닿음 %s 머리피함 %s 늦음 %s 안침 %s | 마무리 닿음 %d 놓침 %d | 패턴 판당 %.1f,%s,effects{팔 둔함 %d · 다리 덤 씀 %d · 머리 스침 %d}" % [
 		name, kind, opening, counter, delay, miss, int(guards.get("열림", 0)), int(guards.get("안 열림", 0)), int(runs), float(m["length"]), str(m["end"]),
 		", ".join(hits) if not hits.is_empty() else "없음",
 		opened / runs, share.call("닿음"), share.call("머리 피함"), share.call("늦음"), share.call("안 침"),
 		int(m["finishers"]["닿음"]), int(m["finishers"]["놓침"]),
-		_total(m["patterns"]) / runs])
+		_total(m["patterns"]) / runs,
+		rule, int(fx.get("팔 둔함", 0)), int(fx.get("다리 덤 씀", 0)), int(fx.get("머리 스침", 0))])
 	print("routes,%s,%s,opening=%s | %s" % [name, kind, opening, ", ".join(routes) if not routes.is_empty() else "없음"])
+
+
+## 상대의 칼 든 팔이 있는 쪽(그 방향 중단이 칼 든 팔이다).
+func _direction_of(opponent: OpponentData, part: int) -> int:
+	for direction in 3:
+		if DuelCore.aim_part(direction, DT.Height.MID, opponent.sword_side, false) == part:
+			return direction
+	return DT.Direction.CENTER
 
 
 func _total(counts: Dictionary) -> int:

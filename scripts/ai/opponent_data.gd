@@ -68,6 +68,10 @@ extends Resource
 ## 연속으로 안 열릴 수 있는 횟수. 그만큼 안 열렸으면 다음은 반드시 열린다. 0이면 상한이 없다(결정 401. 판정 판 Q4 "뺀다"로 0).
 @export var opening_miss_limit := 0
 
+@export_group("부위별 반격 (계획 R02)")
+## 비어 있으면 옛 규칙이다. 하루의 상대에는 적지 않는다(연습의 실험이 사본에 실어 준다).
+@export var part_effects: PartEffectData
+
 @export_group("그림과 포즈")
 ## 비어 있으면 그림 없이 돈다(테스트가 만든 상대가 씬에 들어가도 깨지지 않게. 결정 256).
 @export var art: OpponentArt
@@ -135,4 +139,11 @@ func flat() -> OpponentData:
 func with_opening(chance: float) -> OpponentData:
 	var copy := duplicate() as OpponentData
 	copy.opening_chance = chance
+	return copy
+
+
+## 부위별 반격의 값만 실은 사본(연습의 반격 실험. 계획 R02). 이 자원은 고치지 않는다.
+func with_part_effects(fx: PartEffectData) -> OpponentData:
+	var copy := duplicate() as OpponentData
+	copy.part_effects = fx
 	return copy

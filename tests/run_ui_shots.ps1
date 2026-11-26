@@ -79,6 +79,17 @@ if ($fit.Count -eq 1) {
 	$reasons += "fit,select lines $($fit.Count), not 1"
 }
 
+# Plan R02 task 6: the practice shot has the "PartCounterToggle" and "SlashDrill" buttons and every button and label ends inside 1280x720 ("practice,select,<toggle>,<slash>,<x>,<y>").
+$practice = @($out | Where-Object { $_ -match "^practice,select," })
+if (-not $Resolution) {
+	if ($practice.Count -ne 1) { $reasons += "practice,select lines $($practice.Count), not 1" }
+	else {
+		$pp = $practice[0] -split ","
+		if ($pp[2] -ne "1" -or $pp[3] -ne "1") { $reasons += "practice,select lacks the toggle or slash button ($($practice[0]))" }
+		if ([int]$pp[4] -gt 1280 -or [int]$pp[5] -gt 720) { $reasons += "practice,select edge $($pp[4])x$($pp[5]) (limit 1280x720)" }
+	}
+}
+
 # Plan S02 task 7: in the six new pause/quit shots no worn-edge cut may touch a label or button ("wearhit,<shot>,<n>"). Other shots are only listed.
 $s02Shots = @('pause-practice', 'pause-day', 'pause-settings', 'quit-confirm', 'menu-counter', 'pause-hold', 'settings-controls', 'settings-controls-empty', 'settings-display')
 foreach ($s02 in $s02Shots) {

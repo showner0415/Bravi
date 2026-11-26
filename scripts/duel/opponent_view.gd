@@ -25,6 +25,8 @@ const COLOR_STRIKE := Color(0.95, 0.2, 0.2)
 const COLOR_RECOVERY := Color(0.3, 0.5, 0.95)
 const COLOR_STAGGER := Color(0.65, 0.35, 0.85)
 const COLOR_TOUCHED := Color(1.0, 1.0, 1.0)
+## 팔 둔함이 걸린 동안 칼 든 팔 파츠의 물(계획 R02 D4).
+const COLOR_ARM_SLOW := Color(0.55, 0.55, 0.58)
 const TINT_AMOUNT := 0.8
 const FLASH_TIME := 0.1
 const TOUCH_FLASH_TIME := 0.18
@@ -57,6 +59,16 @@ const HEIGHT_SHOULDER_SHIFT: Array[float] = [-16.0, 0.0, 12.0]
 const SWEEP_DOT_ARRIVE := 0.6
 ## 상태 글자(공격 이름, 빈틈, 무너짐)의 화면 세로 위치. 자세 칸 바로 아래.
 const STATE_LABEL_Y := 62.0
+
+## 부위 곁의 미리보기 꼬리표(계획 R02 D3): 여유 막대가 가득 차는 여유(초), 막대의 크기, 꼬리표를 놓을 화면 세로 범위.
+const FORECAST_FULL_MARGIN := 0.5
+const FORECAST_BAR_SIZE := Vector2(80.0, 8.0)
+const FORECAST_TAG_Y_RANGE := Vector2(80.0, 520.0)
+const FORECAST_COLORS := {
+	DT.Forecast.REACH: Color(0.45, 1.0, 0.6), DT.Forecast.LATE: Color(1.0, 0.75, 0.2),
+	DT.Forecast.OUT_OF_RANGE: Color(0.8, 0.8, 0.8), DT.Forecast.HEAD_GUARDED: Color(1.0, 0.45, 0.45),
+	DT.Forecast.BIND_CUT: Color(0.9, 0.45, 1.0),
+}
 
 ## 교전 거리 기준 위치. 결투 씬이 화면 크기에 맞춰 정한다.
 var anchor := Vector2.ZERO
@@ -96,6 +108,8 @@ var _dodge_head_deg := -20.1
 var _clock := 0.0
 var _flash_until := -INF
 var _touched_part := -1
+## 칼 든 팔이 둔해진 동안(팔 파츠에 잿빛 물이 든다).
+var _arm_slowed := false
 var _touched_until := -INF
 ## 섣부른 공격을 받아넘겼을 때("받아넘김")나 버티기가 됐을 때("밀어붙임") 상태 글자 자리에 잠깐 띄우는 글자.
 var _deflect_text := ""
@@ -124,6 +138,9 @@ var _snap := true
 @onready var _feather: Sprite2D = $Torso/Head/Hat/Feather
 @onready var _state_label: Label = $StateLabel
 var _ring: Node2D
+var _forecast_tag: Label
+var _forecast_bar: ColorRect
+var _forecast_fill: ColorRect
 
 
 func _ready() -> void:
@@ -141,6 +158,7 @@ func _ready() -> void:
 	add_child(_ring)
 	_ring.draw.connect(_draw_ring)
 	_state_label.z_index = 9
+	_build_forecast_tag()
 
 
 ## has_hat: 이 판의 상대가 모자를 쓰는가. 모자는 고정 부위가 아니라 의뢰가 씌운다.
@@ -281,6 +299,8 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 			var tell_height := brain.current_height()
 			if tell_height >= 0:
 				text += " · %s %s" % [DT.GUARD_NAMES[atk.direction], DT.HEIGHT_NAMES[tell_height]]
+			if brain.pattern_slowed:
+				text += " (둔함)"
 			if _ring_sweep:
 				text += "\n쥐고 끌어라"
 			if atk.dive:
@@ -297,8 +317,8 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 			if _art != null:
 				head_art = _art.head_oops
 			if core.opponent_data.guards_head:
-				if brain.wide_open:
-					text = "크게 열림!"
+				if core.head_open_at(core.time):
+					text = "머리가 열렸다!" if core.opponent_data.part_effects != null else "크게 열림!"
 				else:
 					head_closed = true
 		DT.OpponentState.STAGGER:
@@ -324,6 +344,7 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 	if _clock < _flash_until:
 		tint = COLOR_STRIKE
 		head_closed = false
+	_arm_slowed = brain.slow_tells_left > 0 or brain.pattern_slowed
 	_apply_colors(tint, head_closed)
 
 	# 받아넘김 글자는 상태 글자가 비어 있을 때만 보인다(예비 동작에 들어가면 공격 이름이 우선).
@@ -334,6 +355,7 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 		text = COMPLACENT_TEXT
 
 	_place_labels(text, inverse)
+	_update_forecast_tag(core, inverse)
 
 
 # 상태 글자와 고리는 간격에 따라 커지거나 움직이지 않게 한다.
@@ -343,6 +365,70 @@ func _place_labels(text: String, inverse: float) -> void:
 	_state_label.position = (Vector2(anchor.x - _state_label.size.x * 0.5, STATE_LABEL_Y) - position) * inverse
 	_ring.scale = Vector2.ONE * inverse
 	_ring.queue_redraw()
+
+
+func _build_forecast_tag() -> void:
+	_forecast_tag = Label.new()
+	_forecast_tag.name = "ForecastTag"
+	_forecast_tag.visible = false
+	_forecast_tag.z_index = 9
+	_forecast_tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_forecast_tag.add_theme_font_override(&"font", _state_label.get_theme_font(&"font"))
+	_forecast_tag.add_theme_font_size_override(&"font_size", 22)
+	_forecast_tag.add_theme_color_override(&"font_outline_color", Color(0, 0, 0, 1))
+	_forecast_tag.add_theme_constant_override(&"outline_size", 8)
+	add_child(_forecast_tag)
+	_forecast_bar = ColorRect.new()
+	_forecast_bar.color = Color(0.12, 0.1, 0.08, 0.8)
+	_forecast_bar.size = FORECAST_BAR_SIZE
+	_forecast_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_forecast_tag.add_child(_forecast_bar)
+	_forecast_fill = ColorRect.new()
+	_forecast_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_forecast_bar.add_child(_forecast_fill)
+
+
+## 조준한 부위 곁의 "닿는다/늦다/멀다/피한다/엉킴" 꼬리표. 코어의 미리보기 답만 읽는다(따로 셈하지 않는다).
+func _update_forecast_tag(core: DuelCore, inverse: float) -> void:
+	var verdict := -1
+	var margin := 0.0
+	if DuelHud.forecast_on(core):
+		var forecast := core.attack_forecast()
+		verdict = forecast["verdict"]
+		margin = forecast["margin"]
+	if not DuelHud.FORECAST_WORD.has(verdict):
+		_forecast_tag.visible = false
+		return
+	var word: String = DuelHud.FORECAST_WORD[verdict]
+	var color: Color = FORECAST_COLORS[verdict]
+	if _forecast_tag.text != word:
+		_forecast_tag.text = word
+		_forecast_tag.reset_size()
+	_forecast_tag.add_theme_color_override(&"font_color", color)
+	var has_bar := verdict == DT.Forecast.REACH or verdict == DT.Forecast.LATE
+	_forecast_bar.visible = has_bar
+	_forecast_bar.position = Vector2(0.0, _forecast_tag.size.y)
+	_forecast_fill.color = color
+	_forecast_fill.size = Vector2(FORECAST_BAR_SIZE.x * clampf(margin / FORECAST_FULL_MARGIN, 0.0, 1.0) if verdict == DT.Forecast.REACH else 0.0, FORECAST_BAR_SIZE.y)
+	# 윤곽선 옆(오른쪽)에 둔다. 화면 밖으로 나가면 왼쪽으로 넘긴다. 상태 글자·내 칼·판과 겹치지 않게 세로를 가둔다.
+	var rect := _part_screen_rect(core.current_aim_part())
+	var width := _forecast_tag.size.x * scale.x
+	var at := Vector2(rect.end.x + 10.0, clampf(rect.get_center().y - _forecast_tag.size.y * scale.y * 0.5, FORECAST_TAG_Y_RANGE.x, FORECAST_TAG_Y_RANGE.y))
+	if at.x + maxf(width, FORECAST_BAR_SIZE.x * scale.x) > get_viewport_rect().size.x - 8.0:
+		at.x = rect.position.x - 10.0 - maxf(width, FORECAST_BAR_SIZE.x * scale.x)
+	_forecast_tag.scale = Vector2.ONE * inverse
+	_forecast_tag.position = (at - position) * inverse
+	_forecast_tag.visible = true
+
+
+## 부위의 화면 상자. 그림이 있으면 그 그림의 상자, 팔·손(따로 그린 그림으로 바뀐다)과 그림 없는 부위는 관절 둘레의 작은 상자다.
+func _part_screen_rect(part: int) -> Rect2:
+	var node := get_node(PART_PATHS[part]) as Node2D
+	var sprite := _art_of(part)
+	if sprite.texture != null and part != DT.Part.SWORD_ARM and part != DT.Part.SWORD_HAND:
+		return sprite.get_global_transform() * sprite.get_rect()
+	var joint := node.global_position
+	return Rect2(joint - Vector2(30.0, 30.0) * scale.x, Vector2(60.0, 60.0) * scale.x)
 
 
 ## 지금 화면에 둘 포즈. 바뀜의 시작 시각은 알아챈 프레임이 아니라 데이터에서 센다(결정 258, 계획 029 T1).
@@ -427,6 +513,9 @@ func _apply_colors(tint: Variant, head_closed: bool) -> void:
 			# 흰 번쩍임도 칠에만: 선이 남아 무엇이 닿았는지 읽힌다(결정 259).
 			color = COLOR_TOUCHED
 			amount = 1.0
+		elif part == DT.Part.SWORD_ARM and _arm_slowed:
+			color = COLOR_ARM_SLOW
+			amount = TINT_AMOUNT
 		elif part == DT.Part.HEAD and head_closed:
 			amount = 0.0
 		elif tint != null and TINTED.has(part):

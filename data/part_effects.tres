@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="PartEffectData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/duel/part_effect_data.gd" id="1_fx"]
+
+[resource]
+script = ExtResource("1_fx")
+show_forecast = true
+arm_slow_tells = 3
+arm_tell_multiplier = 1.25
+legs_parry_charges = 1
+legs_parry_opening_bonus = 0.3
+legs_open_time_bonus = 0.3
+arm_windup_extra = 0.0
+legs_windup_extra = 0.1
+head_windup_extra = 0.0
+hand_windup_extra = 0.0
+head_big_only = true
+head_exposed_time = 0.9
