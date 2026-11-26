@@ -492,35 +492,25 @@ func t91_day_patterns() -> String:
 		errs.append("LORENZO_PATH가 DAY_PATHS[2]와 다름")
 	var select: Node = (load(Session.SELECT_PATH) as PackedScene).instantiate()
 	_tree.root.add_child(select)
+	# 처음 화면은 첫 상대의 칸 하나다(계획 040b).
+	var first_signatures := 0
+	for atk: AttackData in trials[0].attacks:
+		if atk.signature:
+			first_signatures += 1
 	var counts := [
 		select.find_children("TrialDuel*", "Button", true, false).size(),
 		select.find_children("PatternDrill*", "Button", true, false).size(),
 		select.find_children("TrialFlat*", "Button", true, false).size(),
 		select.find_children("OpeningDay*", "Button", true, false).size(),
 	]
-	if counts != [3, 5, 0, 4]:
-		errs.append("연습 화면의 버튼 (자유 결투·패턴만·가로만·빈틈) %s (기대 [3, 5, 0, 4])" % str(counts))
-	# 7. 연습 화면의 배치(결정 448): 상대가 셋보다 적으면 사본으로 채워 셋의 폭을 잰다.
-	while select.find_children("TrialDuel*", "Button", true, false).size() < 3:
-		var filler := (load(BARTOLO_PATH) as OpponentData).duplicate() as OpponentData
-		filler.display_name = "로렌초"
-		select.call("_add_trial_column", filler)
-	var grid := select.find_child("TrialGrid", true, false) as Control
-	var first_free := select.find_child("TrialDuel0", true, false) as Control
-	if grid == null or first_free == null:
-		errs.append("연습 화면에 TrialGrid나 TrialDuel0이 없음")
-	else:
-		var grid_size := grid.get_combined_minimum_size()
-		if grid_size.x > 1216.0 or grid_size.y > first_free.get_combined_minimum_size().y * 2.0 + 20.0:
-			errs.append("연습의 시험 칸 폭 %d (한도 1216) 높이 %d (한도 %d)" % [
-				int(grid_size.x), int(grid_size.y), int(first_free.get_combined_minimum_size().y * 2.0 + 20.0)])
+	if counts != [1, first_signatures, 0, 4]:
+		errs.append("연습 화면의 버튼 (자유 결투·패턴만·가로만·빈틈) %s (기대 [1, %d, 0, 4])" % [str(counts), first_signatures])
+	# 7. 고른 칸 안에서 패턴만 버튼의 이름이 차례로 이어진다.
 	var drill_buttons := select.find_children("PatternDrill*", "Button", true, false)
-	var free_total := select.find_children("TrialDuel*", "Button", true, false).size()
 	for n in drill_buttons.size():
 		if select.find_child("PatternDrill%d" % n, true, false) == null or (drill_buttons[n] as Button).text.contains(" · "):
 			errs.append("패턴만 버튼 %d: 이름이 이어지지 않거나 글에 \" · \"가 있음" % n)
-	for n in free_total:
-		if select.find_child("TrialDuel%d" % n, true, false) == null:
-			errs.append("자유 결투 버튼 %d가 이름 차례에 없음" % n)
+	if select.find_child("TrialDuel0", true, false) == null:
+		errs.append("자유 결투 버튼 0이 없음")
 	select.free()
 	return "OK" if errs.is_empty() else ", ".join(errs)

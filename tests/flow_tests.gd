@@ -5,6 +5,7 @@ extends RefCounted
 const Plain := preload("res://tests/plain_opponent.gd")
 const Bot := preload("res://tests/duel_bots.gd")
 const DT := preload("res://scripts/duel/duel_types.gd")
+const SelectScript := preload("res://scripts/commission/commission_select.gd")
 
 const COMMISSION_DIR := "res://data/commissions"
 const DUEL_PATH := "res://scenes/duel/duel.tscn"
@@ -146,6 +147,10 @@ func t22_flow() -> String:
 	for button in select.find_children("*", "Button", true, false):
 		if (button as Button).text == "이 의뢰를 맡는다":
 			buttons.append(button)
-	_expect(errs, buttons.size() == commissions.size(), "의뢰 선택 화면의 시작 버튼 %d개 (기대 %d)" % [buttons.size(), commissions.size()])
+	# 새 연습 화면은 카드 한 장이라 시작 버튼이 하나이고, 의뢰는 줄(쪽당 LIST_ROWS)로 고른다(계획 040b).
+	_expect(errs, buttons.size() == 1, "의뢰 선택 화면의 시작 버튼 %d개 (기대 1)" % buttons.size())
+	var picks := select.find_children("CommissionPick*", "Button", true, false).size()
+	var want_picks := mini(CommissionLibrary.load_tree(COMMISSION_DIR).size(), SelectScript.LIST_ROWS)
+	_expect(errs, picks == want_picks, "의뢰 선택 화면의 의뢰 줄 %d개 (기대 %d)" % [picks, want_picks])
 	select.free()
 	return _result(errs)

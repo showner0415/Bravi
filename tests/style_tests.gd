@@ -665,72 +665,94 @@ func t115_day_practice_save() -> String:
 func _practice_checks(bartolo: OpponentData, bruno: OpponentData, lorenzo: OpponentData) -> Array[String]:
 	var errs: Array[String] = []
 	var opponents: Array[OpponentData] = [bartolo, bruno, lorenzo]
-	var most := 0
-	for opp in opponents:
-		most = maxi(most, opp.tier_count())
 	SelectScript._style_tier = 0
+	SelectScript._picked_opponent = 0
 	var select: Node = (load(Session.SELECT_PATH) as PackedScene).instantiate()
 	_tree.root.add_child(select)
-	var pick := select.find_child("StyleTierPick", true, false) as OptionButton
-	if pick == null:
-		select.free()
+	for n in opponents.size():
+		var opp := opponents[n]
 		SelectScript._style_tier = 0
-		errs.append("연습 화면에 StyleTierPick이 없다")
-		return errs
-	if pick.item_count != most:
-		errs.append("StyleTierPick의 항목 %d개 (기대 %d)" % [pick.item_count, most])
-	for n in 3:
-		var button := select.find_child("TrialDuel%d" % n, true, false) as Button
-		if button == null or _bound_opponent(button) != opponents[n]:
-			errs.append("처음의 TrialDuel%d가 원본 상대를 묶고 있지 않다" % n)
-	for index in [2, 0, 6, 1, 99]:
-		var old_grid := select.find_child("TrialGrid", true, false)
-		var old_help := select.find_child("PatternHelp", true, false)
-		pick.item_selected.emit(index)
-		var grids := select.find_children("TrialGrid", "", true, false)
-		var helps := select.find_children("PatternHelp", "", true, false)
-		if grids.size() != 1 or is_instance_valid(old_grid):
-			errs.append("단 %d: TrialGrid가 새 노드 하나가 아니다 (%d개)" % [index + 1, grids.size()])
-		if helps.size() != 1 or is_instance_valid(old_help):
-			errs.append("단 %d: PatternHelp가 새 노드 하나가 아니다 (%d개)" % [index + 1, helps.size()])
-		for n in 3:
-			var button := select.find_child("TrialDuel%d" % n, true, false) as Button
+		select.call("pick_opponent", n)
+		var pick := select.find_child("StyleTierPick", true, false) as OptionButton
+		if pick == null:
+			select.free()
+			SelectScript._style_tier = 0
+			SelectScript._picked_opponent = 0
+			errs.append("상대 %d: 연습 화면에 StyleTierPick이 없다" % n)
+			return errs
+		if pick.item_count != opp.tier_count():
+			errs.append("상대 %d: StyleTierPick의 항목 %d개 (기대 %d)" % [n, pick.item_count, opp.tier_count()])
+		var first := select.find_child("TrialDuel0", true, false) as Button
+		if first == null or _bound_opponent(first) != opp:
+			errs.append("상대 %d: 처음의 TrialDuel0이 원본 상대를 묶고 있지 않다" % n)
+		for index in [2, 0, 6, 1, 99]:
+			var old_grid := select.find_child("TrialGrid", true, false)
+			var old_help := select.find_child("PatternHelp", true, false)
+			pick.item_selected.emit(index)
+			var grids := select.find_children("TrialGrid", "", true, false)
+			var helps := select.find_children("PatternHelp", "", true, false)
+			if grids.size() != 1 or is_instance_valid(old_grid):
+				errs.append("상대 %d 단 %d: TrialGrid가 새 노드 하나가 아니다 (%d개)" % [n, index + 1, grids.size()])
+			if helps.size() != 1 or is_instance_valid(old_help):
+				errs.append("상대 %d 단 %d: PatternHelp가 새 노드 하나가 아니다 (%d개)" % [n, index + 1, helps.size()])
+			if not is_instance_valid(pick) or select.find_child("StyleTierPick", true, false) != pick:
+				errs.append("상대 %d 단 %d: StyleTierPick이 같은 노드로 살아 있지 않다" % [n, index + 1])
+			var button := select.find_child("TrialDuel0", true, false) as Button
 			var bound: OpponentData = null
 			if button != null:
 				bound = _bound_opponent(button)
-			var opp := opponents[n]
 			if bound == null:
-				errs.append("단 %d: TrialDuel%d에 상대가 묶여 있지 않다" % [index + 1, n])
+				errs.append("상대 %d 단 %d: TrialDuel0에 상대가 묶여 있지 않다" % [n, index + 1])
 			elif index == 0:
 				if bound != opp:
-					errs.append("단 1: TrialDuel%d가 원본이 아니다" % n)
+					errs.append("상대 %d 단 1: TrialDuel0이 원본이 아니다" % n)
 			elif not _same_list(bound.attacks, opp.tiers[mini(index, opp.tiers.size()) - 1].attacks):
-				errs.append("단 %d: TrialDuel%d의 상대가 그 단(넘치면 마지막)의 목록이 아니다" % [index + 1, n])
-		var drills := _count(select, "PatternDrill*")
-		if drills != 5:
-			errs.append("단 %d: 패턴만 버튼 %d개 (기대 5)" % [index + 1, drills])
-		if _count(select, "TrialDuel*") != 3 or _count(select, "OpeningDay*") != 4 or _count(select, "PartCounterToggle") != 1 \
-				or _count(select, "SlashDrill") != 1:
-			errs.append("단 %d: 자유 결투 %d · 빈틈 날 %d · 반격 실험 %d · 베기만 %d (기대 3 · 4 · 1 · 1)" % [index + 1, _count(select, "TrialDuel*"),
-				_count(select, "OpeningDay*"), _count(select, "PartCounterToggle"), _count(select, "SlashDrill")])
-		var grid: Control = null
-		if not grids.is_empty():
-			grid = grids[0] as Control
-		var first_free := select.find_child("TrialDuel0", true, false) as Control
-		if grid != null and first_free != null:
-			var grid_size := grid.get_combined_minimum_size()
-			if grid_size.x > 1216.0 or grid_size.y > first_free.get_combined_minimum_size().y * 2.0 + 20.0:
-				errs.append("단 %d: 시험 칸 폭 %d (한도 1216) 높이 %d" % [index + 1, int(grid_size.x), int(grid_size.y)])
-		var head := select.get("_head") as Control
-		if head != null and head.get_combined_minimum_size().x > 1216.0:
-			errs.append("단 %d: 제목 줄 폭 %d (한도 1216)" % [index + 1, int(head.get_combined_minimum_size().x)])
+				errs.append("상대 %d 단 %d: TrialDuel0의 상대가 그 단(넘치면 마지막)의 목록이 아니다" % [n, index + 1])
+			var want_drills := 0
+			if bound != null:
+				for atk: AttackData in bound.attacks:
+					if atk.signature:
+						want_drills += 1
+			want_drills = mini(want_drills, SelectScript.DRILL_MAX)
+			var drills := _count(select, "PatternDrill*")
+			if drills != want_drills:
+				errs.append("상대 %d 단 %d: 패턴만 버튼 %d개 (기대 %d)" % [n, index + 1, drills, want_drills])
+			var slashes := _count(select, "SlashDrill")
+			if _count(select, "TrialDuel*") != 1 or _count(select, "OpeningDay*") != 4 or _count(select, "PartCounterToggle") != 1 \
+					or slashes != (1 if n == 0 else 0):
+				errs.append("상대 %d 단 %d: 자유 결투 %d · 빈틈 날 %d · 반격 실험 %d · 베기만 %d (기대 1 · 4 · 1 · %d)" % [n, index + 1,
+					_count(select, "TrialDuel*"), _count(select, "OpeningDay*"), _count(select, "PartCounterToggle"), slashes,
+					1 if n == 0 else 0])
+			var grid: Control = null
+			if not grids.is_empty():
+				grid = grids[0] as Control
+			var first_free := select.find_child("TrialDuel0", true, false) as Control
+			if grid != null and first_free != null:
+				var grid_size := grid.get_combined_minimum_size()
+				if grid_size.x > 1216.0 or grid_size.y > first_free.get_combined_minimum_size().y * 2.0 + 20.0:
+					errs.append("상대 %d 단 %d: 시험 칸 폭 %d (한도 1216) 높이 %d" % [n, index + 1, int(grid_size.x), int(grid_size.y)])
+			var head := select.get("_head") as Control
+			if head != null and head.get_combined_minimum_size().x > 1216.0:
+				errs.append("상대 %d 단 %d: 제목 줄 폭 %d (한도 1216)" % [n, index + 1, int(head.get_combined_minimum_size().x)])
+	# 가장 높은 단을 고른 채 단이 적은 상대로 가면 그 상대의 마지막 단이 보이고 고른 값은 남는다.
+	var most := 0
+	for opp in opponents:
+		most = maxi(most, opp.tier_count())
+	SelectScript._style_tier = most - 1
+	for n in opponents.size():
+		if opponents[n].tier_count() < most:
+			select.call("pick_opponent", n)
+			var short_pick := select.find_child("StyleTierPick", true, false) as OptionButton
+			if short_pick == null or short_pick.selected != opponents[n].tier_count() - 1 or SelectScript._style_tier != most - 1:
+				errs.append("상대 %d: %d단을 고른 채 가면 마지막 단이 보이고 값이 남아야 한다" % [n, most])
 	# 의뢰 카드의 판은 1단이다.
-	for commission in CommissionLibrary.load_all("res://data/commissions"):
+	for commission in CommissionLibrary.load_tree("res://data/commissions"):
 		if commission.opponent != null and FIRST_TIER_SIZES.has(commission.opponent.resource_path) \
 				and commission.opponent.attacks.size() != FIRST_TIER_SIZES[commission.opponent.resource_path]:
 			errs.append("%s의 상대 공격이 1단이 아니다" % commission.client_name)
 	select.free()
 	SelectScript._style_tier = 0
+	SelectScript._picked_opponent = 0
 	return errs
 
 

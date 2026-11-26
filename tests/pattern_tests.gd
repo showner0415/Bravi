@@ -5,6 +5,7 @@ extends RefCounted
 const Bot := preload("res://tests/duel_bots.gd")
 const DT := preload("res://scripts/duel/duel_types.gd")
 const Session := preload("res://scripts/game_session.gd")
+const SelectScript := preload("res://scripts/commission/commission_select.gd")
 
 const RULES_PATH := "res://data/duel_rules.tres"
 const WEAPON_PATH := "res://data/weapons/rapier.tres"
@@ -346,15 +347,31 @@ func t81_trial() -> String:
 	# 6. 연습 화면: 시험용 상대마다 자유 결투, 패턴마다 패턴만, 의뢰 카드는 그대로.
 	var select: Node = (load(Session.SELECT_PATH) as PackedScene).instantiate()
 	_tree.root.add_child(select)
+	# 처음 화면은 첫 상대의 칸 하나, 상대를 돌며 패턴만의 합을 센다(계획 040b).
 	var free_buttons := select.find_children("TrialDuel*", "Button", true, false).size()
-	var drill_buttons := select.find_children("PatternDrill*", "Button", true, false).size()
-	var cards := 0
+	var first_drills := select.find_children("PatternDrill*", "Button", true, false).size()
+	var first_signatures := 0
+	for atk: AttackData in (load(DAY_OPPONENTS[0]) as OpponentData).attacks:
+		if atk.signature:
+			first_signatures += 1
+	var starts := 0
 	for button: Button in select.find_children("*", "Button", true, false):
 		if button.text == "이 의뢰를 맡는다":
-			cards += 1
-	if free_buttons != DAY_OPPONENTS.size() or drill_buttons != pattern_total or cards != 3:
-		errs.append("연습 화면: 자유 결투 %d · 패턴만 %d(기대 %d) · 의뢰 카드 %d" % [free_buttons, drill_buttons, pattern_total, cards])
+			starts += 1
+	var drill_buttons := 0
+	for i in DAY_OPPONENTS.size():
+		select.call("pick_opponent", i)
+		drill_buttons += select.find_children("PatternDrill*", "Button", true, false).size()
+	var trial_count := SelectScript.load_trials().size()
+	var entries := trial_count + (1 if trial_count > 0 and not SelectScript.load_spare_attacks().is_empty() else 0)
+	select.call("pick_opponent", 0)
+	var pick_rows := select.find_children("OpponentPick*", "Button", true, false).size()
+	if free_buttons != 1 or first_drills != first_signatures or starts != 1 or drill_buttons != pattern_total \
+			or pick_rows != mini(entries, SelectScript.LIST_ROWS):
+		errs.append("연습 화면: 자유 결투 %d(기대 1) · 첫 상대의 패턴만 %d(기대 %d) · 시작 버튼 %d(기대 1) · 상대 돌며 패턴만 %d(기대 %d) · 상대 줄 %d(기대 %d)" % [
+			free_buttons, first_drills, first_signatures, starts, drill_buttons, pattern_total, pick_rows, mini(entries, SelectScript.LIST_ROWS)])
 	select.free()
+	SelectScript._picked_opponent = 0
 	return "OK" if errs.is_empty() else ", ".join(errs)
 
 
@@ -473,39 +490,7 @@ func t95_spare_thrusts() -> String:
 		for habit in opp.habits:
 			if _uses_spare(habit.response):
 				errs.append("%s의 버릇 반응이 폴더의 공격을 씀" % clean)
-	# 6. 연습 화면: 넷째 칸의 버튼 둘.
-	var select: Node = (load(Session.SELECT_PATH) as PackedScene).instantiate()
-	_tree.root.add_child(select)
-	var grid := select.find_child("TrialGrid", true, false) as Control
-	var first_free := select.find_child("TrialDuel0", true, false) as Control
-	var caption := select.find_child("SpareCaption", true, false) as Control
-	var spare_buttons := select.find_children("SpareDrill*", "Button", true, false)
-	if grid == null or first_free == null or caption == null:
-		errs.append("연습 화면에 TrialGrid·TrialDuel0·SpareCaption이 없음")
-	else:
-		if spare_buttons.size() != 2:
-			errs.append("SpareDrill 버튼 %d개 (기대 2)" % spare_buttons.size())
-		var seen := {}
-		for button: Button in spare_buttons:
-			if not grid.is_ancestor_of(button):
-				errs.append("%s가 TrialGrid의 자손이 아님" % button.name)
-			if not names.has(button.tooltip_text) or button.text != button.tooltip_text.get_slice(" ", 0):
-				errs.append("%s: 글 '%s' · 설명 '%s'" % [button.name, button.text, button.tooltip_text])
-			seen[button.tooltip_text] = true
-		if seen.size() != names.size():
-			errs.append("버튼 둘이 공격 이름 둘을 하나씩 덮지 않음 %s" % str(seen.keys()))
-		if not is_equal_approx(caption.get_combined_minimum_size().y, first_free.get_combined_minimum_size().y):
-			errs.append("SpareCaption 높이 %.1f · TrialDuel0 높이 %.1f" % [
-				caption.get_combined_minimum_size().y, first_free.get_combined_minimum_size().y])
-		var grid_size := grid.get_combined_minimum_size()
-		print("  INFO 연습의 시험 칸 폭 %d / 1216, 높이 %d" % [int(grid_size.x), int(grid_size.y)])
-	var counts := [
-		select.find_children("PatternDrill*", "Button", true, false).size(),
-		select.find_children("TrialDuel*", "Button", true, false).size(),
-	]
-	if counts != [5, 3]:
-		errs.append("연습 화면의 버튼 (패턴만·자유 결투) %s (기대 [5, 3])" % str(counts))
-	select.free()
+	# 6. 주인 없는 검술의 화면은 T117이 spare_source로 본다(계획 040b).
 	# 7. 층층 찌르기를 들고 막는 봇으로 30초: 위와 아래의 타격이 둘 다 나오고 번호 고리가 같은 x에서 세로로 선다.
 	var run := _run(_opp(stair), {}, 30.0)
 	var tall := {}

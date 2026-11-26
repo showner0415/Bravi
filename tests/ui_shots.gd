@@ -10,6 +10,7 @@ const Session := preload("res://scripts/game_session.gd")
 const WornEdge := preload("res://scripts/ui/worn_edge.gd")
 const PanelStyle := preload("res://scripts/ui/manuscript_panel_style.gd")
 const Select := preload("res://scripts/commission/commission_select.gd")
+const Practice := preload("res://tests/practice_screen_tests.gd")
 
 const FEATHER_PATH := "res://data/commissions/feather_cut.tres"
 const USURER_PATH := "res://data/commissions/variants/first_blood_usurer.tres"
@@ -61,6 +62,7 @@ func _ready() -> void:
 		["quit-confirm", _quit_confirm], ["menu-counter", _menu_counter], ["pause-hold", _pause_hold],
 		["settings-controls", _settings_controls], ["settings-controls-empty", _settings_controls_empty],
 		["settings-display", _settings_display],
+		["select-spare", _select_spare], ["select-many", _select_many], ["select-story", _select_story],
 	]
 	_next()
 
@@ -78,6 +80,7 @@ func _next() -> void:
 		# 창이 잠겼고 창을 한 번도 건드리지 않았는지(계획 S04 결정 531). run_ui_shots.ps1이 "display,1,0"만 받는다.
 		if run_settings != null:
 			print("display,%d,%d" % [1 if run_settings.get("window_locked") else 0, int(run_settings.get("_window_calls"))])
+		_reset_select()
 		print("UI SHOTS OK %d" % _plan.size())
 		set_process(false)
 		get_tree().quit(0)
@@ -116,6 +119,7 @@ func _process(_delta: float) -> void:
 			print("fit,%s,%d,%d" % [_plan[_i][0], int(grid.get_global_rect().end.x), int(help.get_global_rect().end.y)])
 			print("practice,%s,%d,%d,%d,%d" % [_plan[_i][0], 1 if _node.find_child("PartCounterToggle", true, false) != null else 0,
 					1 if _node.find_child("SlashDrill", true, false) != null else 0, int(_far_edge(_node).x), int(_far_edge(_node).y)])
+		_practice_lines(String(_plan[_i][0]))
 		_wearhit = 0
 		_wear_lines(_node, String(_plan[_i][0]))
 		print("wearhit,%s,%d" % [_plan[_i][0], _wearhit])
@@ -285,6 +289,71 @@ func _settings_controls_empty() -> String:
 func _select() -> String:
 	_screen(Session.SELECT_PATH, null)
 	return "연습 선택"
+
+
+## 연습 화면이 남기는 static 다섯을 처음 값으로(앞의 장 `select`가 영향받지 않게 새 장은 뒤에 둔다).
+func _reset_select() -> void:
+	Select._opening_day = 1
+	Select._part_effects = false
+	Select._style_tier = 0
+	Select._picked_opponent = 0
+	Select._picked_commission = 0
+
+
+## 시험 데이터(메모리)로 띄운 연습 화면.
+func _practice_screen(trials: Array[OpponentData], spare: Array[AttackData], commissions: Array[Commission]) -> void:
+	_reset_select()
+	_node = (load(Session.SELECT_PATH) as PackedScene).instantiate()
+	_node.set_meta("wear_screen", true)
+	_node.set("trial_source", trials)
+	_node.set("spare_source", spare)
+	_node.set("commission_source", commissions)
+	_node.set("use_sources", true)
+	add_child(_node)
+
+
+func _select_spare() -> String:
+	var trials := Select.load_trials()
+	_practice_screen(trials, Practice.test_spare(), CommissionLibrary.load_tree(Select.COMMISSION_DIR))
+	_node.call("pick_opponent", trials.size())
+	return "연습 선택: 주인 없는 검술(시험 공격 하나)"
+
+
+func _select_many() -> String:
+	var trials := Practice.big_trials()
+	_practice_screen(trials, Practice.big_spare(), Practice.big_commissions(trials))
+	_node.call("pick_opponent", 7)
+	var pick := _node.find_child("StyleTierPick", true, false) as OptionButton
+	if pick != null:
+		pick.item_selected.emit(pick.item_count - 1)
+	_node.call("pick_commission", 17)
+	return "연습 선택: 상대 12명·의뢰 30개(긴 글), 상대 7의 가장 높은 단, 의뢰 17"
+
+
+func _select_story() -> String:
+	var all: Array[Commission] = CommissionLibrary.load_tree(Select.COMMISSION_DIR)
+	var longest := 0
+	for i in all.size():
+		if Select.story_lines(all[i]) > Select.story_lines(all[longest]):
+			longest = i
+	_practice_screen(Select.load_trials(), Select.load_spare_attacks(), all)
+	_node.call("pick_commission", longest)
+	return "연습 선택: 가장 긴 사연(의뢰 %d, 셈 %d줄)" % [longest, Select.story_lines(all[longest]) if not all.is_empty() else 0]
+
+
+## many,<장>,<x>,<y>,<버튼 줄 수>,<상대 줄>,<의뢰 줄> 과 story,<장>,<놓인 줄>,<칸의 줄>,<내용 높이>,<칸 높이>,<칸 폭>,<셈의 폭>.
+func _practice_lines(shot: String) -> void:
+	if shot == "select-many":
+		var margin := _node.find_child("ScreenMargin", true, false) as Control
+		var grid := _node.find_child("TrialGrid", true, false) as Control
+		var end := margin.get_global_rect().end.max(_far_edge(_node))
+		print("many,%s,%d,%d,%d,%d,%d" % [shot, ceili(end.x), ceili(end.y), ceili(float(grid.get_child_count()) / Select.DRILL_COLUMNS),
+				_node.find_children("OpponentPick*", "Button", true, false).size(), _node.find_children("CommissionPick*", "Button", true, false).size()])
+	elif shot == "select-story":
+		var story := _node.find_child("CommissionStory", true, false) as RichTextLabel
+		if story != null:
+			print("story,%s,%d,%d,%d,%d,%d,%d" % [shot, story.get_line_count(), story.get_visible_line_count(), story.get_content_height(),
+					int(story.size.y), int(story.size.x), Select.STORY_WIDTH])
 
 
 # ---------------------------------------------------------------- 결투
