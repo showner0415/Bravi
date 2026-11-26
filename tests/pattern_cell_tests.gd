@@ -13,8 +13,10 @@ const Title := preload("res://scripts/title.gd")
 const DAY_PATHS: Array[String] = [
 	"res://data/opponents/opponent_01.tres",
 	"res://data/opponents/opponent_02.tres",
+	"res://data/opponents/opponent_03.tres",
 ]
 const LORENZO_PATH := "res://data/opponents/opponent_03.tres"
+const USURER_PATH := "res://data/commissions/variants/first_blood_usurer.tres"
 const BARTOLO_PATH := "res://data/opponents/opponent_01.tres"
 const RULES_PATH := "res://data/duel_rules.tres"
 const CATALOG_PATH := "res://data/upgrade_catalog.tres"
@@ -298,7 +300,10 @@ func t85_trial_cells() -> String:
 				for point in _points(line):
 					for h in point.heights:
 						cells[Vector2i(point.direction, h)] = true
-		if variant_count == 0:
+		var has_pattern := false
+		for base in bases:
+			has_pattern = has_pattern or not base.chain.is_empty()
+		if has_pattern and variant_count == 0:
 			errs.append("%s: 변주가 없음" % label)
 		if cells.size() < 4:
 			errs.append("%s: 쓰는 칸 %d개 (넷 이상)" % [label, cells.size()])
@@ -308,8 +313,11 @@ func t85_trial_cells() -> String:
 		# 5. 막는 법의 글: 높이를 쓰는 상대에만 붙는다.
 		if not DuelHud.help_text(opp).contains(DuelHud.HELP_HEIGHT) or DuelHud.help_text(opp.flat()).contains(DuelHud.HELP_HEIGHT):
 			errs.append("%s: HELP_HEIGHT가 9칸에 없거나 가로만에 있음" % label)
-	if cell_sets.size() == 2 and cell_sets[0] == cell_sets[1]:
-		errs.append("두 상대가 쓰는 칸의 모음이 같음")
+	var distinct := {}
+	for set_text in cell_sets:
+		distinct[set_text] = true
+	if cell_sets.size() != 3 or distinct.size() != 3:
+		errs.append("세 상대가 쓰는 칸의 모음이 짝마다 다르지 않음 (모음 %d개, 서로 다른 것 %d개)" % [cell_sets.size(), distinct.size()])
 	# 3. 고리의 줄.
 	var ring := OpponentView.RING_POSITION
 	for d in 3:
@@ -399,6 +407,24 @@ func t91_day_patterns() -> String:
 			errs.append("%s: 높이 %s · 변주 %d" % [label, str(DuelHud.uses_heights(opp)), variants])
 		if not is_equal_approx(opp.opening_chance, 0.8):
 			errs.append("%s: 빈틈의 확률 %.2f (기대 0.80)" % [label, opp.opening_chance])
+	# 로렌초(결정 453): 공격 넷 = 단발 셋 + 뛰어들기, 패턴·변주 없음, 높이를 쓴다.
+	var lorenzo := load(LORENZO_PATH) as OpponentData
+	var lorenzo_singles := 0
+	var lorenzo_patterns := 0
+	var lorenzo_dives := 0
+	for atk in lorenzo.attacks:
+		if atk.chain.is_empty() and not atk.dive:
+			lorenzo_singles += 1
+		if not atk.chain.is_empty():
+			lorenzo_patterns += 1
+		if atk.dive:
+			lorenzo_dives += 1
+	if lorenzo.attacks.size() != 4 or lorenzo_singles != 3 or lorenzo_patterns != 0 or lorenzo_dives != 1:
+		errs.append("opponent_03.tres: 공격 %d · 단발 %d · 패턴 %d · 뛰어들기 %d" % [lorenzo.attacks.size(), lorenzo_singles, lorenzo_patterns, lorenzo_dives])
+	if not DuelHud.uses_heights(lorenzo):
+		errs.append("opponent_03.tres: 높이를 쓰지 않음")
+	if not is_equal_approx(lorenzo.opening_chance, 0.8):
+		errs.append("opponent_03.tres: 빈틈의 확률 %.2f (기대 0.80)" % lorenzo.opening_chance)
 	if DirAccess.dir_exists_absolute("res://data/opponents/trial"):
 		errs.append("시험용 폴더가 남아 있음")
 	# 2. 가방: 한 벌 7장(3 + 1 + 1 + 1 + 1), 첫 예비 동작에서 한 장을 꺼내면 6.
@@ -446,6 +472,13 @@ func t91_day_patterns() -> String:
 	var bruno_help := DuelHud.help_text(load(DAY_PATHS[1]) as OpponentData)
 	if not bruno_help.contains(DuelHud.HELP_SWEEP) or not bruno_help.contains(DuelHud.HELP_HEIGHT):
 		errs.append("브루노의 막는 법 글: \"%s\"" % bruno_help)
+	var lorenzo_help := DuelHud.help_text(lorenzo)
+	if not lorenzo_help.contains(DuelHud.HELP_DIVE) or not lorenzo_help.contains(DuelHud.HELP_HEIGHT) \
+			or lorenzo_help.contains(DuelHud.HELP_CHAIN) or lorenzo_help.contains(DuelHud.HELP_SWEEP):
+		errs.append("로렌초의 막는 법 글: \"%s\"" % lorenzo_help)
+	var usurer_story := (load(USURER_PATH) as Commission).dialogue
+	if not usurer_story.begins_with("로렌초가 ") or not usurer_story.contains("뛰어"):
+		errs.append("비토리오의 사연이 로렌초와 뛰어들기를 말하지 않음")
 	var screen := "\n".join(PackedStringArray(Title.help_groups()))
 	if not screen.contains("번호 차례대로") or not screen.contains("고리가 뜬 칸"):
 		errs.append("도움말 화면에 이어 베기나 높이의 글이 없음")
@@ -455,6 +488,8 @@ func t91_day_patterns() -> String:
 	var trials := Select.load_trials()
 	if trials.size() != 3 or trials[0].resource_path != DAY_PATHS[0] or trials[1].resource_path != DAY_PATHS[1] or trials[2].resource_path != LORENZO_PATH:
 		errs.append("연습의 상대 %d명" % trials.size())
+	if LORENZO_PATH != DAY_PATHS[2]:
+		errs.append("LORENZO_PATH가 DAY_PATHS[2]와 다름")
 	var select: Node = (load(Session.SELECT_PATH) as PackedScene).instantiate()
 	_tree.root.add_child(select)
 	var counts := [

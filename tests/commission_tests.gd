@@ -11,6 +11,7 @@ const FIRST_BLOOD_PATH := "res://data/commissions/first_blood.tres"
 const FEATHER_PATH := "res://data/commissions/feather_cut.tres"
 const THROW_PATH := "res://data/commissions/throw_match.tres"
 const OPPONENT_PATH := "res://data/opponents/opponent_01.tres"
+const LORENZO_PATH := "res://data/opponents/opponent_03.tres"
 
 const AIM_MID_THRUST := [DT.Direction.CENTER, DT.Height.MID]
 const AIM_HIGH_THRUST := [DT.Direction.CENTER, DT.Height.HIGH]
@@ -116,6 +117,14 @@ func _cfg_feather_parry() -> Dictionary:
 	var guard := func(a: AttackData, _i: int) -> StringName:
 		return &"hold" if a.direction == DT.Direction.CENTER else &"parry"
 	return {"guard_fn": guard, "counter_fn": _counter_big_opening(), "finisher": AIM_HIGH_CUT}
+
+
+## 막기 봇과 같되 뛰어들기는 막기를 떼고 물러서고, 그 헛침의 빈틈에 가운데 중단(duel_stats.gd의 -Dive retreat와 같은 두 키. 결정 456).
+func _cfg_dive_retreat() -> Dictionary:
+	var cfg := Callable(_h, "_cfg_guard_only").call() as Dictionary
+	cfg["guard_fn"] = func(a: AttackData, _i: int) -> StringName: return &"retreat" if a.dive else &"hold"
+	cfg["whiff_fn"] = func(ev: Dictionary) -> Variant: return AIM_MID_THRUST if float(ev["recovery"]) > 0.0 else null
+	return cfg
 
 
 ## 깃털: 밀착에서 막기만 하고 베기 뒤에 상단 베기.
@@ -599,20 +608,28 @@ func t90_day_lengths() -> String:
 	var throw_match := _conditions(THROW_PATH)
 	var none: Array[CommissionCondition] = []
 	var guard_only := Callable(_h, "_cfg_guard_only")
-	# [이름, 설정, 조건, 날, 규칙(덤), 통과 조건 한도(%), 0이면 참고]
+	# 로렌초의 줄은 게임의 레이피어(엉킴 켬)로 돈다: 기본 무기는 엉킴이 꺼져 막기 봇이 뛰어든 뒤 밀착에 남는다(결정 463).
+	var lorenzo := load(LORENZO_PATH) as OpponentData
+	var game_weapon := load(Core.WEAPON_PATH) as WeaponData
+	# [이름, 설정, 조건, 날, 규칙(덤), 통과 조건 한도(%), 0이면 참고, 상대, 무기(null이면 기본)]
 	var rows := [
-		["막기 봇 · 1일차", guard_only, none, 1, rules, DAY_TIMEOUT_EARLY],
-		["막기 봇 · 2일차", guard_only, none, 2, rules, DAY_TIMEOUT_EARLY],
-		["막기 봇 · 3일차", guard_only, none, 3, rules, DAY_TIMEOUT_LATE],
-		["깃털 · 교전에서 베기를 패리 · 3일차", _cfg_feather_parry, feather, 3, rules, DAY_TIMEOUT_LATE],
-		["지기 · 싸우다 짐 · 3일차", _cfg_throw_fight, throw_match, 3, rules, DAY_TIMEOUT_LATE],
-		["(참고) 막기 봇 · 3일차 + 검술 교본", guard_only, none, 3, boosted, 0],
-		["(참고) 깃털 · 밀착에서 막기만 · 3일차", _cfg_feather_close, feather, 3, rules, 0],
+		["막기 봇 · 1일차", guard_only, none, 1, rules, DAY_TIMEOUT_EARLY, real, null],
+		["막기 봇 · 2일차", guard_only, none, 2, rules, DAY_TIMEOUT_EARLY, real, null],
+		["막기 봇 · 3일차", guard_only, none, 3, rules, DAY_TIMEOUT_LATE, real, null],
+		["깃털 · 교전에서 베기를 패리 · 3일차", _cfg_feather_parry, feather, 3, rules, DAY_TIMEOUT_LATE, real, null],
+		["지기 · 싸우다 짐 · 3일차", _cfg_throw_fight, throw_match, 3, rules, DAY_TIMEOUT_LATE, real, null],
+		["로렌초 · 막기 봇 · 1일차", guard_only, none, 1, rules, DAY_TIMEOUT_EARLY, lorenzo, game_weapon],
+		["로렌초 · 막기 봇 · 2일차", guard_only, none, 2, rules, DAY_TIMEOUT_EARLY, lorenzo, game_weapon],
+		["로렌초 · 막기 봇 · 3일차", guard_only, none, 3, rules, DAY_TIMEOUT_LATE, lorenzo, game_weapon],
+		["(참고) 막기 봇 · 3일차 + 검술 교본", guard_only, none, 3, boosted, 0, real, null],
+		["(참고) 깃털 · 밀착에서 막기만 · 3일차", _cfg_feather_close, feather, 3, rules, 0, real, null],
+		["(참고) 로렌초 · 뛰어들기만 물러서기 · 3일차", _cfg_dive_retreat, none, 3, rules, 0, lorenzo, game_weapon],
 	]
 	for row in rows:
 		var day_rules: DuelRules = row[4]
-		var chance := day_rules.opening_chance_for(real.opening_chance, row[3])
-		var st: Dictionary = _h.call("_simulate", real.with_opening(chance), row[1], row[2])
+		var row_opp: OpponentData = row[6]
+		var chance := day_rules.opening_chance_for(row_opp.opening_chance, row[3])
+		var st: Dictionary = _h.call("_simulate", row_opp.with_opening(chance), row[1], row[2], true, row[7])
 		print(str(_h.call("_stat_line", row[0], st)) + ", 확률 %.2f" % chance)
 		var max_pct: int = row[5]
 		if max_pct == 0:

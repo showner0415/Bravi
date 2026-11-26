@@ -1,5 +1,5 @@
 extends RefCounted
-## T93·T94: 셋째 상대 로렌초(계획 037·037b). 공격 밖의 판정 값이 바르톨로와 같다(결정 438), 그림 데이터가 온전하다(결정 442), 아직 어느 의뢰도 걸지 않는다(결정 443).
+## T93·T94: 셋째 상대 로렌초(계획 037·037b). 공격 밖의 판정 값이 바르톨로와 같다(결정 438), 그림 데이터가 온전하다(결정 442), 비토리오의 의뢰만 건다(결정 461).
 ## T94는 뛰어드는 찌르기(결정 450~452)와 로렌초의 공격 목록(결정 453)을 코어로 직접 돌려 본다.
 
 const Plain := preload("res://tests/plain_opponent.gd")
@@ -36,7 +36,7 @@ var _tree: SceneTree
 func list(tree: SceneTree) -> Array:
 	_tree = tree
 	return [
-		{"id": "T93", "name": "셋째 상대: 공격 밖의 판정 값이 바르톨로와 같다, 그림 데이터가 온전하다, 아직 어느 의뢰도 걸지 않는다", "fn": t93_third_opponent},
+		{"id": "T93", "name": "셋째 상대: 공격 밖의 판정 값이 바르톨로와 같다, 그림 데이터가 온전하다, 비토리오의 의뢰만 건다(결정 461)", "fn": t93_third_opponent},
 		{"id": "T94", "name": "뛰어드는 찌르기: 멀리까지 물러서면 헛치고 교전에, 막으면 밀착에. 로렌초의 단발은 바르톨로와 같다", "fn": t94_dive},
 	]
 
@@ -110,9 +110,12 @@ func t93_third_opponent() -> String:
 	_check_art(lorenzo.art, errs)
 	var all: Array[Commission] = CommissionLibrary.load_all("res://data/commissions")
 	all.append_array(CommissionLibrary.load_all("res://data/commissions/variants"))
+	var lorenzo_commissions: Array[String] = []
 	for c in all:
 		if c.opponent != null and c.opponent.resource_path == LORENZO_PATH:
-			errs.append("%s가 셋째를 검" % c.resource_path.get_file())
+			lorenzo_commissions.append(c.resource_path.get_file())
+	if lorenzo_commissions != ["first_blood_usurer.tres"]:
+		errs.append("로렌초를 거는 의뢰 %s (기대 first_blood_usurer.tres 하나)" % str(lorenzo_commissions))
 	return "OK" if errs.is_empty() else ", ".join(errs)
 
 

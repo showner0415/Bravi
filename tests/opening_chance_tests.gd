@@ -13,7 +13,7 @@ const Title := preload("res://scripts/title.gd")
 const RULES_PATH := "res://data/duel_rules.tres"
 const WEAPON_PATH := "res://data/weapons/rapier.tres"
 const CATALOG_PATH := "res://data/upgrade_catalog.tres"
-const DAY_OPPONENTS: Array[String] = ["res://data/opponents/opponent_01.tres", "res://data/opponents/opponent_02.tres"]
+const DAY_OPPONENTS: Array[String] = ["res://data/opponents/opponent_01.tres", "res://data/opponents/opponent_02.tres", "res://data/opponents/opponent_03.tres"]
 const DELTA := 1.0 / 60.0
 
 var _tree: SceneTree
@@ -341,7 +341,7 @@ func _brain_chance(day: DayState, base: DuelRules, opp: OpponentData) -> float:
 func t89_day_values() -> String:
 	var errs: Array[String] = []
 	var rules := load(RULES_PATH) as DuelRules
-	# 1. 하루의 상대 둘: 0.80, 바닥과 1.0 사이, 연속 상한 없음(결정 413).
+	# 1. 하루의 상대 셋: 0.80, 바닥과 1.0 사이, 연속 상한 없음(결정 413).
 	for path in DAY_OPPONENTS:
 		var day_opp := load(path) as OpponentData
 		if not is_equal_approx(day_opp.opening_chance, 0.8) or day_opp.opening_chance <= rules.opening_chance_floor \

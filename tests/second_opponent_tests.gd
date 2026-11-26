@@ -5,6 +5,8 @@ const BARTOLO_PATH := "res://data/opponents/opponent_01.tres"
 const BRUNO_PATH := "res://data/opponents/opponent_02.tres"
 const BRUNO_ART_DIR := "res://assets/art/opponents/bruno/"
 const LEGS_ONLY_PATH := "res://data/commissions/variants/legs_only.tres"
+const LORENZO_PATH := "res://data/opponents/opponent_03.tres"
+const USURER_PATH := "res://data/commissions/variants/first_blood_usurer.tres"
 ## 다를 수 있는 칸: 이름·그림·포즈(표시만이고 판정에 쓰지 않는다. 결정 291·357).
 const FREE_FIELDS := ["display_name", "art", "idle_pose", "stagger_pose", "complacent_pose",
 	"tell_pose", "hold_arm_deg", "strike_pose", "recover_arm_deg"]
@@ -99,7 +101,11 @@ func t78_second_opponent() -> String:
 	var all: Array[Commission] = CommissionLibrary.load_all("res://data/commissions")
 	all.append_array(CommissionLibrary.load_all("res://data/commissions/variants"))
 	for c in all:
-		var want: String = BRUNO_PATH if c.resource_path == LEGS_ONLY_PATH else BARTOLO_PATH
+		var want: String = BARTOLO_PATH
+		if c.resource_path == LEGS_ONLY_PATH:
+			want = BRUNO_PATH
+		elif c.resource_path == USURER_PATH:
+			want = LORENZO_PATH
 		var got: String = c.opponent.resource_path if c.opponent != null else "(없음)"
 		if got != want:
 			errs.append("%s의 상대 %s (기대 %s)" % [c.resource_path.get_file(), got, want])
