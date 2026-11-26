@@ -1,10 +1,11 @@
-[gd_resource type="Resource" script_class="OpponentData" load_steps=24 format=3]
+[gd_resource type="Resource" script_class="OpponentData" load_steps=46 format=3]
 
 [ext_resource type="Script" path="res://scripts/ai/attack_data.gd" id="1_attack"]
 [ext_resource type="Script" path="res://scripts/ai/habit_data.gd" id="2_habit"]
 [ext_resource type="Script" path="res://scripts/ai/opponent_data.gd" id="3_opponent"]
 [ext_resource type="Script" path="res://scripts/duel/pose_data.gd" id="4_pose"]
 [ext_resource type="Resource" path="res://data/opponents/lorenzo_art.tres" id="5_art"]
+[ext_resource type="Script" path="res://scripts/ai/style_tier.gd" id="6_tier"]
 
 [sub_resource type="Resource" id="pose_thrust_tell"]
 script = ExtResource("4_pose")
@@ -147,6 +148,312 @@ strike_pose = SubResource("pose_thrust_strike")
 recover_arm_deg = -40.0
 pose_color = Color(1, 0.45, 0.8, 1)
 dive = true
+signature = true
+
+[sub_resource type="Resource" id="step_thrust_basic"]
+script = ExtResource("1_attack")
+heights = Array[int]([0, 1, 2])
+attack_name = "찌르기"
+direction = 1
+tell_time = 0.65
+recovery_time = 0.0
+weight = 1.0
+is_big = false
+tell_pose = SubResource("pose_thrust_tell")
+hold_arm_deg = 93.0
+strike_pose = SubResource("pose_thrust_strike")
+recover_arm_deg = -40.0
+pose_color = Color(1, 0.9, 0.25, 1)
+
+[sub_resource type="Resource" id="attack_pair_thrust"]
+script = ExtResource("1_attack")
+heights = Array[int]([0, 1, 2])
+attack_name = "겹찌르기"
+direction = 1
+tell_time = 0.75
+recovery_time = 0.0
+weight = 1.0
+is_big = false
+tell_pose = SubResource("pose_thrust_tell")
+hold_arm_deg = 93.0
+strike_pose = SubResource("pose_thrust_strike")
+recover_arm_deg = -40.0
+pose_color = Color(1, 0.9, 0.25, 1)
+chain = Array[Resource]([SubResource("step_thrust_basic")])
+variants = Array[Resource]([])
+dive = false
+signature = false
+
+[sub_resource type="Resource" id="step_cut_left_basic"]
+script = ExtResource("1_attack")
+heights = Array[int]([1])
+attack_name = "왼쪽 베기"
+direction = 0
+tell_time = 0.75
+recovery_time = 0.0
+weight = 1.0
+is_big = false
+tell_pose = SubResource("pose_cut_left_tell")
+hold_arm_deg = 118.0
+strike_pose = SubResource("pose_cut_left_strike")
+recover_arm_deg = 10.8
+pose_color = Color(1, 0.75, 0.2, 1)
+
+[sub_resource type="Resource" id="step_cut_right_basic"]
+script = ExtResource("1_attack")
+heights = Array[int]([1])
+attack_name = "오른쪽 베기"
+direction = 2
+tell_time = 0.75
+recovery_time = 0.0
+weight = 1.0
+is_big = false
+tell_pose = SubResource("pose_cut_right_tell")
+hold_arm_deg = -96.0
+strike_pose = SubResource("pose_cut_right_strike")
+recover_arm_deg = -41.9
+pose_color = Color(1, 0.75, 0.2, 1)
+
+[sub_resource type="Resource" id="attack_thrust_cut_v"]
+script = ExtResource("1_attack")
+heights = Array[int]([0, 1, 2])
+attack_name = "찌르고 베기"
+direction = 1
+tell_time = 0.75
+recovery_time = 0.55
+weight = 1.0
+is_big = false
+tell_pose = SubResource("pose_thrust_tell")
+hold_arm_deg = 93.0
+strike_pose = SubResource("pose_thrust_strike")
+recover_arm_deg = -40.0
+pose_color = Color(1, 0.9, 0.25, 1)
+chain = Array[Resource]([SubResource("step_cut_right_basic")])
+variants = Array[Resource]([])
+dive = false
+signature = false
+
+[sub_resource type="Resource" id="attack_thrust_cut"]
+script = ExtResource("1_attack")
+heights = Array[int]([0, 1, 2])
+attack_name = "찌르고 베기"
+direction = 1
+tell_time = 0.75
+recovery_time = 0.55
+weight = 1.0
+is_big = false
+tell_pose = SubResource("pose_thrust_tell")
+hold_arm_deg = 93.0
+strike_pose = SubResource("pose_thrust_strike")
+recover_arm_deg = -40.0
+pose_color = Color(1, 0.9, 0.25, 1)
+chain = Array[Resource]([SubResource("step_cut_left_basic")])
+variants = Array[Resource]([SubResource("attack_thrust_cut_v")])
+dive = false
+signature = false
+
+[sub_resource type="Resource" id="step_dive_thrust"]
+script = ExtResource("1_attack")
+heights = Array[int]([0, 1, 2])
+attack_name = "찌르기"
+direction = 1
+tell_time = 0.65
+recovery_time = 0.0
+weight = 1.0
+is_big = false
+tell_pose = SubResource("pose_thrust_tell")
+hold_arm_deg = 93.0
+strike_pose = SubResource("pose_thrust_strike")
+recover_arm_deg = -40.0
+pose_color = Color(1, 0.45, 0.8, 1)
+
+[sub_resource type="Resource" id="step_dive_cut_left"]
+script = ExtResource("1_attack")
+heights = Array[int]([1])
+attack_name = "왼쪽 베기"
+direction = 0
+tell_time = 0.75
+recovery_time = 0.0
+weight = 1.0
+is_big = false
+tell_pose = SubResource("pose_cut_left_tell")
+hold_arm_deg = 118.0
+strike_pose = SubResource("pose_cut_left_strike")
+recover_arm_deg = 10.8
+pose_color = Color(1, 0.45, 0.8, 1)
+
+[sub_resource type="Resource" id="step_dive_cut_right"]
+script = ExtResource("1_attack")
+heights = Array[int]([1])
+attack_name = "오른쪽 베기"
+direction = 2
+tell_time = 0.75
+recovery_time = 0.0
+weight = 1.0
+is_big = false
+tell_pose = SubResource("pose_cut_right_tell")
+hold_arm_deg = -96.0
+strike_pose = SubResource("pose_cut_right_strike")
+recover_arm_deg = -41.9
+pose_color = Color(1, 0.45, 0.8, 1)
+
+[sub_resource type="Resource" id="attack_dive_h3"]
+script = ExtResource("1_attack")
+heights = Array[int]([0, 1, 2])
+attack_name = "뛰어드는 찌르기"
+direction = 1
+tell_time = 1.2
+recovery_time = 1.6
+weight = 3.0
+is_big = false
+tell_pose = SubResource("pose_dive_tell")
+hold_arm_deg = 93.0
+strike_pose = SubResource("pose_thrust_strike")
+recover_arm_deg = -40.0
+pose_color = Color(1, 0.45, 0.8, 1)
+chain = Array[Resource]([])
+variants = Array[Resource]([])
+dive = true
+signature = true
+
+[sub_resource type="Resource" id="attack_dive_again_thrust"]
+script = ExtResource("1_attack")
+heights = Array[int]([0, 1, 2])
+attack_name = "뛰어드는 찌르기"
+direction = 1
+tell_time = 1.2
+recovery_time = 2.0
+weight = 3.0
+is_big = false
+tell_pose = SubResource("pose_dive_tell")
+hold_arm_deg = 93.0
+strike_pose = SubResource("pose_thrust_strike")
+recover_arm_deg = -40.0
+pose_color = Color(1, 0.45, 0.8, 1)
+chain = Array[Resource]([SubResource("step_dive_thrust")])
+variants = Array[Resource]([])
+dive = true
+signature = true
+
+[sub_resource type="Resource" id="attack_dive_again_cut_left"]
+script = ExtResource("1_attack")
+heights = Array[int]([0, 1, 2])
+attack_name = "뛰어드는 찌르기"
+direction = 1
+tell_time = 1.2
+recovery_time = 2.0
+weight = 3.0
+is_big = false
+tell_pose = SubResource("pose_dive_tell")
+hold_arm_deg = 93.0
+strike_pose = SubResource("pose_thrust_strike")
+recover_arm_deg = -40.0
+pose_color = Color(1, 0.45, 0.8, 1)
+chain = Array[Resource]([SubResource("step_dive_cut_left")])
+variants = Array[Resource]([])
+dive = true
+signature = true
+
+[sub_resource type="Resource" id="attack_dive_again_cut_right"]
+script = ExtResource("1_attack")
+heights = Array[int]([0, 1, 2])
+attack_name = "뛰어드는 찌르기"
+direction = 1
+tell_time = 1.2
+recovery_time = 2.0
+weight = 3.0
+is_big = false
+tell_pose = SubResource("pose_dive_tell")
+hold_arm_deg = 93.0
+strike_pose = SubResource("pose_thrust_strike")
+recover_arm_deg = -40.0
+pose_color = Color(1, 0.45, 0.8, 1)
+chain = Array[Resource]([SubResource("step_dive_cut_right")])
+variants = Array[Resource]([])
+dive = true
+signature = true
+
+[sub_resource type="Resource" id="attack_dive_single_copy"]
+script = ExtResource("1_attack")
+heights = Array[int]([0, 1, 2])
+attack_name = "뛰어드는 찌르기"
+direction = 1
+tell_time = 1.2
+recovery_time = 1.6
+weight = 3.0
+is_big = false
+tell_pose = SubResource("pose_dive_tell")
+hold_arm_deg = 93.0
+strike_pose = SubResource("pose_thrust_strike")
+recover_arm_deg = -40.0
+pose_color = Color(1, 0.45, 0.8, 1)
+chain = Array[Resource]([])
+variants = Array[Resource]([])
+dive = true
+signature = true
+
+[sub_resource type="Resource" id="attack_dive_h3_v4"]
+script = ExtResource("1_attack")
+heights = Array[int]([0, 1, 2])
+attack_name = "뛰어드는 찌르기"
+direction = 1
+tell_time = 1.2
+recovery_time = 1.6
+weight = 3.0
+is_big = false
+tell_pose = SubResource("pose_dive_tell")
+hold_arm_deg = 93.0
+strike_pose = SubResource("pose_thrust_strike")
+recover_arm_deg = -40.0
+pose_color = Color(1, 0.45, 0.8, 1)
+chain = Array[Resource]([])
+variants = Array[Resource]([SubResource("attack_dive_again_thrust"), SubResource("attack_dive_single_copy")])
+dive = true
+signature = true
+
+[sub_resource type="Resource" id="attack_dive_h3_v6"]
+script = ExtResource("1_attack")
+heights = Array[int]([0, 1, 2])
+attack_name = "뛰어드는 찌르기"
+direction = 1
+tell_time = 1.2
+recovery_time = 1.6
+weight = 3.0
+is_big = false
+tell_pose = SubResource("pose_dive_tell")
+hold_arm_deg = 93.0
+strike_pose = SubResource("pose_thrust_strike")
+recover_arm_deg = -40.0
+pose_color = Color(1, 0.45, 0.8, 1)
+chain = Array[Resource]([])
+variants = Array[Resource]([SubResource("attack_dive_again_thrust"), SubResource("attack_dive_again_cut_left"), SubResource("attack_dive_again_cut_right"), SubResource("attack_dive_single_copy")])
+dive = true
+signature = true
+
+[sub_resource type="Resource" id="tier_2"]
+script = ExtResource("6_tier")
+from_day = 7
+attacks = Array[ExtResource("1_attack")]([SubResource("attack_thrust"), SubResource("attack_cut_left"), SubResource("attack_cut_right"), SubResource("attack_dive_h3")])
+
+[sub_resource type="Resource" id="tier_3"]
+script = ExtResource("6_tier")
+from_day = 9
+attacks = Array[ExtResource("1_attack")]([SubResource("attack_thrust"), SubResource("attack_cut_left"), SubResource("attack_cut_right"), SubResource("attack_dive_h3"), SubResource("attack_pair_thrust")])
+
+[sub_resource type="Resource" id="tier_4"]
+script = ExtResource("6_tier")
+from_day = 11
+attacks = Array[ExtResource("1_attack")]([SubResource("attack_thrust"), SubResource("attack_cut_left"), SubResource("attack_cut_right"), SubResource("attack_dive_h3_v4"), SubResource("attack_pair_thrust")])
+
+[sub_resource type="Resource" id="tier_5"]
+script = ExtResource("6_tier")
+from_day = 13
+attacks = Array[ExtResource("1_attack")]([SubResource("attack_thrust"), SubResource("attack_cut_left"), SubResource("attack_cut_right"), SubResource("attack_dive_h3_v4"), SubResource("attack_pair_thrust"), SubResource("attack_thrust_cut")])
+
+[sub_resource type="Resource" id="tier_6"]
+script = ExtResource("6_tier")
+from_day = 15
+attacks = Array[ExtResource("1_attack")]([SubResource("attack_thrust"), SubResource("attack_cut_left"), SubResource("attack_cut_right"), SubResource("attack_dive_h3_v6"), SubResource("attack_pair_thrust"), SubResource("attack_thrust_cut")])
 
 [sub_resource type="Resource" id="habit_big_cut"]
 script = ExtResource("2_habit")
@@ -159,6 +466,7 @@ description = "공격이 연속 3회 막히면 성질을 못 이기고 크게 �
 [resource]
 script = ExtResource("3_opponent")
 display_name = "로렌초"
+style_name = "뛰어드는 찌르기"
 opening_chance = 0.8
 sword_side = 0
 posture_max = 9
@@ -184,4 +492,5 @@ idle_pose = SubResource("pose_idle")
 stagger_pose = SubResource("pose_stagger")
 complacent_pose = SubResource("pose_complacent")
 attacks = Array[ExtResource("1_attack")]([SubResource("attack_thrust"), SubResource("attack_cut_left"), SubResource("attack_cut_right"), SubResource("attack_dive")])
+tiers = Array[ExtResource("6_tier")]([SubResource("tier_2"), SubResource("tier_3"), SubResource("tier_4"), SubResource("tier_5"), SubResource("tier_6")])
 habits = Array[ExtResource("2_habit")]([SubResource("habit_big_cut")])

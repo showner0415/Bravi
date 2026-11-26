@@ -3,6 +3,7 @@ extends Node
 ## 게임 창에서 그 순간을 기다려 잡던 것을 대신한다. 실행: tests/run_pattern_shots.ps1 (-Shots <폴더>면 창을 열어 PNG도 남긴다).
 ## 장마다 "shot,<이름>,<놓은 것>"을 내고, 고리가 HUD의 판과 겹치면 "overlap,<이름>,<번호>,<노드>,<겹친 넓이>"를 낸다.
 ## --commission=<의뢰 경로>를 주면 그 의뢰의 HUD와 모자로 찍는다(없으면 연습의 자유 결투).
+## --tier=<N|last>는 화면의 "N단"(1부터)의 사본으로 찍고 장 이름에 "-tN"을 끼운다(계획 040 결정 592). 없으면 이름이 옛 그대로다.
 ## 겹침은 알릴 뿐 판정하지 않는다. 판은 실제 코어를 돌려 놓는다(예비 동작의 이벤트가 뷰에 그대로 간다).
 
 const DT := preload("res://scripts/duel/duel_types.gd")
@@ -18,6 +19,7 @@ const SETTLE_MSEC := 250
 
 var _shots_dir := ""
 var _commission_path := ""
+var _tier := ""
 var _plan: Array = []
 var _i := -1
 var _node: Node
@@ -36,13 +38,23 @@ func _ready() -> void:
 			_shots_dir = arg.trim_prefix("--shots=")
 		elif arg.begins_with("--commission="):
 			_commission_path = arg.trim_prefix("--commission=")
+		elif arg.begins_with("--tier="):
+			_tier = arg.trim_prefix("--tier=")
 	if _shots_dir != "" and DisplayServer.get_name() != "headless":
 		DirAccess.make_dir_recursive_absolute(_shots_dir)
 	else:
 		_shots_dir = ""
 	var trials := Select.load_trials()
 	for t in trials.size():
-		var opponent := trials[t]
+		var source := trials[t]
+		var opponent := source
+		var tag := source.resource_path.get_file().get_basename()
+		if _tier != "":
+			# 단의 사본은 resource_path가 비어 있어 이름은 사본을 만들기 전의 원본에서 잡는다.
+			var count := source.tier_count()
+			var number := count if _tier == "last" else clampi(int(_tier), 1, count)
+			opponent = source.at_tier(number - 1)
+			tag += "-t%d" % number
 		var p := 0
 		for base in opponent.attacks:
 			if base.chain.is_empty() and not base.dive:
@@ -53,7 +65,7 @@ func _ready() -> void:
 			for l in lines.size():
 				for distance in 3:
 					_plan.append({
-						"name": "%s-p%d-l%d-%s" % [opponent.resource_path.get_file().get_basename(), p, l, DISTANCE_TAGS[distance]],
+						"name": "%s-p%d-l%d-%s" % [tag, p, l, DISTANCE_TAGS[distance]],
 						"opponent": opponent, "line": lines[l], "distance": distance,
 					})
 			p += 1

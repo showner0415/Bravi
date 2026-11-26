@@ -62,6 +62,12 @@ extends Resource
 ## 거짓이면 이 상대의 모든 타격이 높이 없이 나온다(견줘 보는 길과 되돌림. 결정 391).
 @export var use_heights := true
 
+@export_group("검술의 단 (계획 040)")
+## 고유 검술의 이름. 비면 갈래 표시가 없다(결정 581).
+@export var style_name := ""
+## 2단부터 담는다(1단은 attacks). 날이 오름차순이어야 하고 개수에 상한이 없다(결정 579).
+@export var tiers: Array[StyleTier] = []
+
 @export_group("빈틈의 확률 (계획 036c)")
 ## 막힘·패리가 빈틈이 될 확률의 바탕(1일차, 업그레이드 없음). 1.0 이상이면 이 규칙이 꺼진 상대다: 날에 깎이지 않고 난수도 부르지 않는다(결정 396).
 @export var opening_chance := 1.0
@@ -115,6 +121,45 @@ func graze_cells(part: int) -> int:
 		DuelTypes.Part.LEGS:
 			cells = graze_legs
 	return maxi(cells, 1)
+
+
+## 그 날의 단 번호(1단이 0). 맞는 단이 없거나 day가 0 이하면 0.
+func tier_for_day(day: int) -> int:
+	if day <= 0:
+		return 0
+	var found := 0
+	for i in tiers.size():
+		if tiers[i].from_day <= day:
+			found = i + 1
+	return found
+
+
+## 그 단의 상대. 0은 자기 자신이고(1단인 판은 객체까지 같아야 한다. 결정 579), 넘치면 마지막 단이다.
+func at_tier(index: int) -> OpponentData:
+	if index <= 0 or tiers.is_empty():
+		return self
+	var tier: StyleTier = tiers[mini(index, tiers.size()) - 1]
+	var copy := duplicate() as OpponentData
+	copy.attacks = tier.attacks.duplicate()
+	return copy
+
+
+func for_day(day: int) -> OpponentData:
+	return at_tier(tier_for_day(day))
+
+
+func tier_count() -> int:
+	return 1 + tiers.size()
+
+
+## 카운터의 "상대:" 줄에 붙는 갈래 이름. 1단은 이름만, 2단부터 단 숫자가 붙는다(결정 590).
+func style_label(day: int) -> String:
+	if style_name.is_empty():
+		return display_name
+	var index := tier_for_day(day)
+	if index == 0:
+		return "%s · %s" % [display_name, style_name]
+	return "%s · %s %d단" % [display_name, style_name, index + 1]
 
 
 ## 패턴 하나만 되풀이하는 연습용 상대(결정 377). 이 자원은 고치지 않고 새 배열을 넣은 사본을 돌려준다.

@@ -11,7 +11,8 @@ const USURER_PATH := "res://data/commissions/variants/first_blood_usurer.tres"
 const FREE_FIELDS := ["display_name", "art", "idle_pose", "stagger_pose", "complacent_pose",
 	"tell_pose", "hold_arm_deg", "strike_pose", "recover_arm_deg"]
 ## 공격 목록은 상대마다 다르다(바르톨로는 이어 베기, 브루노는 휩쓸기. 결정 425). 그 밖의 판정 값만 견준다.
-const ATTACK_FIELDS := ["attacks"]
+## 검술의 단과 갈래 이름도 공격 목록과 같은 검술 데이터다(계획 040).
+const ATTACK_FIELDS := ["attacks", "style_name", "tiers"]
 const PARTS := ["legs", "torso", "head", "head_oops", "head_dizzy", "hat", "feather", "arm", "hand", "sword"]
 ## 자른 그림의 크기(작업 6의 출력).
 const SIZES := {

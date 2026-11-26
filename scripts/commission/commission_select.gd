@@ -20,8 +20,11 @@ const OPENING_DAYS := [[0, "늘 열린다"], [1, "1일차"], [2, "2일차"], [3,
 static var _opening_day := 1
 ## "반격 실험"이 켜져 있는가(계획 R02). 결투에서 돌아와도 남는다. 의뢰 카드의 판에는 타지 않는다.
 static var _part_effects := false
+## 연습의 검술 단(0부터, 결정 589). 결투에서 돌아와도 남는다.
+static var _style_tier := 0
 var _head: HBoxContainer
 var _trial_grid: HBoxContainer
+var _pattern_help: Label
 var _trial_count := 0
 var _drill_count := 0
 
@@ -166,6 +169,56 @@ func _add_trials(column: VBoxContainer) -> void:
 		return
 	_add_opening_row(_head)
 	_add_part_toggle(_head)
+	_add_tier_pick(_head, column, trials)
+	_build_trials(column)
+
+
+## 단을 고르면 시험 칸을 제자리에서 다시 짓는다: reload_current_scene은 테스트(root에 붙인 화면)에서 못 쓴다(결정 589).
+func _on_tier_picked(index: int, column: VBoxContainer) -> void:
+	_style_tier = index
+	for node: Node in [_trial_grid, _pattern_help]:
+		if node != null:
+			node.get_parent().remove_child(node)
+			node.free()
+	_trial_grid = null
+	_pattern_help = null
+	_build_trials(column)
+
+
+func _max_tiers(opponents: Array) -> int:
+	var most := 1
+	for opponent: OpponentData in opponents:
+		most = maxi(most, opponent.tier_count())
+	return most
+
+
+## 단 고르기(결정 589). 단이 하나뿐이면 만들지 않는다.
+func _add_tier_pick(row: HBoxContainer, column: VBoxContainer, trials: Array) -> void:
+	var count := _max_tiers(trials)
+	if count <= 1:
+		return
+	_style_tier = clampi(_style_tier, 0, count - 1)
+	var pick := OptionButton.new()
+	pick.name = "StyleTierPick"
+	for i in count:
+		pick.add_item("검술 %d단" % (i + 1))
+	pick.select(_style_tier)
+	pick.custom_minimum_size = Vector2(120, 0)
+	pick.add_theme_font_size_override("font_size", 18)
+	pick.item_selected.connect(_on_tier_picked.bind(column))
+	row.add_child(pick)
+	# 머리 줄이 1216(1248 − 가장자리)을 넘으면 제목을 줄인다.
+	if row.get_combined_minimum_size().x > 1216:
+		(row.get_child(0) as Label).text = "연습  (Esc: 처음 화면)"
+
+
+## 시험 칸과 막는 법. 고른 단의 공격으로 짓는다(그 상대의 끝을 넘으면 마지막 단).
+func _build_trials(column: VBoxContainer) -> void:
+	var trials: Array[OpponentData] = []
+	for base in load_trials():
+		trials.append(base.at_tier(_style_tier))
+	_trial_count = 0
+	_drill_count = 0
 	# 상대별 칸으로 묶는다: 상대가 셋이 되어도 1280 안에 들고 줄 수는 둘이다(결정 448).
 	_trial_grid = HBoxContainer.new()
 	_trial_grid.name = "TrialGrid"
@@ -186,6 +239,7 @@ func _add_trials(column: VBoxContainer) -> void:
 		_add_trial_column(opponent)
 	_add_spare_cell(trials[0])
 	var how := Label.new()
+	_pattern_help = how
 	how.name = "PatternHelp"
 	how.text = "%s\n%s\n%s%s" % [DuelHud.HELP_CHAIN.trim_prefix(" · "), DuelHud.HELP_SWEEP.trim_prefix(" · "),
 			DuelHud.HELP_HEIGHT.trim_prefix(" · ") + DuelHud.opening_help(trials[0]),
@@ -223,7 +277,7 @@ func _add_trial_column(opponent: OpponentData) -> void:
 	drills.add_theme_constant_override("separation", 12)
 	cell.add_child(drills)
 	for atk in opponent.attacks:
-		if atk.chain.is_empty() and not atk.dive:
+		if not atk.signature:
 			continue
 		_add_trial_button(drills, atk.attack_name, "PatternDrill%d" % _drill_count, opponent.drill(atk))
 		_drill_count += 1

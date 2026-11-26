@@ -19,6 +19,8 @@ const LORENZO_ART_DIR := "res://assets/art/opponents/lorenzo/"
 ## 다를 수 있는 칸: 이름·그림·포즈(표시만이고 판정에 쓰지 않는다. 결정 291·438). 공격 목록은 견줄 때마다 skip으로 따로 뺀다(결정 458).
 const FREE_FIELDS := ["display_name", "art", "idle_pose", "stagger_pose", "complacent_pose",
 	"tell_pose", "hold_arm_deg", "strike_pose", "recover_arm_deg"]
+## 검술 데이터(공격 목록과 같은 갈래): 상대마다 다르다. 결정 425의 "공격 목록 밖의 판정 값"이 아니다(계획 040).
+const SWORD_FIELDS := ["style_name", "tiers"]
 const PARTS := ["legs", "torso", "head", "head_oops", "head_dizzy", "hat", "feather", "arm", "hand", "sword"]
 ## 자른 그림의 크기(작업 4·5의 출력).
 const SIZES := {
@@ -106,7 +108,7 @@ func t93_third_opponent() -> String:
 		errs.append("이름 '%s'" % lorenzo.display_name)
 	if lorenzo.art.resource_path != LORENZO_ART_PATH:
 		errs.append("그림 데이터 %s" % lorenzo.art.resource_path)
-	_compare(bartolo, lorenzo, "opponent", errs, FREE_FIELDS + ["attacks"])
+	_compare(bartolo, lorenzo, "opponent", errs, FREE_FIELDS + ["attacks"] + SWORD_FIELDS)
 	_check_art(lorenzo.art, errs)
 	var all: Array[Commission] = CommissionLibrary.load_all("res://data/commissions")
 	all.append_array(CommissionLibrary.load_all("res://data/commissions/variants"))
@@ -324,7 +326,7 @@ func t94_dive() -> String:
 	var plain_lorenzo := Plain.of(lorenzo)
 	if plain_lorenzo.attacks.size() != 3 or _opponent_has_dive(plain_lorenzo):
 		errs.append("옛 규칙 사본의 공격 %d개 (기대 뛰어들기 없는 3개)" % plain_lorenzo.attacks.size())
-	_compare(Plain.of(bartolo), plain_lorenzo, "plain", errs, FREE_FIELDS + ["heights"])
+	_compare(Plain.of(bartolo), plain_lorenzo, "plain", errs, FREE_FIELDS + ["heights"] + SWORD_FIELDS)
 
 	# 8. 안내.
 	var help := DuelHud.help_text(lorenzo)

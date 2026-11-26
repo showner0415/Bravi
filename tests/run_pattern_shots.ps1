@@ -4,6 +4,9 @@
 #   powershell -ExecutionPolicy Bypass -File tests/run_pattern_shots.ps1 -Shots "$env:TEMP\bravi-pattern"
 #   powershell -ExecutionPolicy Bypass -File tests/run_pattern_shots.ps1 -Commission res://data/commissions/feather_cut.tres  (that commission's HUD and hat)
 #
+#   powershell -ExecutionPolicy Bypass -File tests/run_pattern_shots.ps1 -Tier 3 -Shots "$env:TEMP\bravi-pattern-t3"  (the 3rd sword-style tier, 1 = first; "last" = each opponent's last)
+#   With -Tier the shot names become e.g. opponent_01-t3-p1-l0-engage; without it the names are as before.
+#
 # Runs tests/pattern_shots.tscn: every day-opponent pattern, every route (base and variants), three distances.
 # Prints "shot," lines (what was posed) and "overlap," lines (a numbered ring over a HUD panel or label).
 # Judges the run: exit code 0, one "PATTERN SHOTS OK <n>" line, no ERROR lines. Overlaps are reported, not judged.
@@ -11,7 +14,8 @@ param(
 	[switch]$SkipImport,
 	[string]$Godot,
 	[string]$Shots,
-	[string]$Commission = ""
+	[string]$Commission = "",
+	[string]$Tier = ""
 )
 
 . "$PSScriptRoot\godot_path.ps1"
@@ -39,7 +43,9 @@ if (-not $SkipImport) {
 
 $commissionArg = ""
 $headlessArgs = ""
-if ($Commission) { $commissionArg = " `"--commission=$Commission`""; $headlessArgs = " --$commissionArg" }
+if ($Commission) { $commissionArg = " `"--commission=$Commission`"" }
+if ($Tier) { $commissionArg += " `"--tier=$Tier`"" }
+if ($commissionArg) { $headlessArgs = " --$commissionArg" }
 if ($Shots) {
 	New-Item -ItemType Directory -Force -Path $Shots | Out-Null
 	$out = cmd /c "`"$Godot`" --path `"$project`" res://tests/pattern_shots.tscn --quit-after 20000 -- `"--shots=$Shots`"$commissionArg 2>&1"

@@ -16,6 +16,8 @@ extends Resource
 ## 표시된 공격: 예비 동작이 시작된 뒤에 올린 막기(또는 패리)만 받아낸다.
 ## 그 전부터 들고만 있던 막기는 버티기만 한다(막힘이지만 빈틈이 없다).
 @export var needs_raised_guard := false
+## 참이면 이 상대의 고유 검술의 공격(뿌리와 변주에 적는다. 걸음은 뿌리를 따른다. 결정 581).
+@export var signature := false
 
 @export_group("포즈 (바이블 15절)")
 ## 예비 동작에 들어선 포즈.

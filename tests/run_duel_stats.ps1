@@ -15,6 +15,8 @@
 # -Counter: where the counter is aimed (same = the guarded cell, mid = same side mid row, thrust = centre mid, arm = sword-arm mid row, low = centre low row).
 # -Effects: off (default, the old rule) and/or on (data/part_effects.tres worn by the opponent copy). The stat line ends with ",<old|new>,effects{...}" (plan R02).
 # -Nine: only the 9-cell rows (skips the "flat" rows of opponents that have heights).
+# -Tier: sword-style tiers as the screen counts them (1 = first), a list or "last" (each opponent's last tier), e.g. -Tier 1,3,last. The opponent name in the line becomes e.g. opponent_01-t3. Default none (lines as before).
+# The stat line ends with ",<label> <sum>" after the effects{...}: the label is the Korean word for "hit total" and the sum is total hits taken per duel (two decimals).
 # Without -Opponent it plays every opponent in data/opponents, 9-cell and flat.
 # Judges the run: exit code 0, one "DUEL STATS OK <n>" line, no ERROR lines. The numbers are not judged.
 param(
@@ -29,7 +31,8 @@ param(
 	[double]$Bonus = 0.0,
 	[string]$Dive = 'block',
 	[string]$Effects = 'off',
-	[switch]$Nine
+	[switch]$Nine,
+	[string]$Tier = ''
 )
 
 . "$PSScriptRoot\godot_path.ps1"
@@ -57,6 +60,7 @@ if (-not $SkipImport) {
 $inv = [System.Globalization.CultureInfo]::InvariantCulture
 $userArgs = "--runs=$Runs --delay=$($Delay.ToString($inv)) --miss=$($Miss.ToString($inv)) --counter=$Counter --opening=$Opening --bonus=$($Bonus.ToString($inv)) --dive=$Dive --effects=$Effects"
 if ($Nine) { $userArgs += " --nine" }
+if ($Tier) { $userArgs += " --tier=$Tier" }
 foreach ($path in $Opponent) { $userArgs += " --opponent=$path" }
 $out = cmd /c "`"$Godot`" --headless --path `"$project`" --script res://tests/duel_stats.gd -- $userArgs 2>&1"
 $runExit = $LASTEXITCODE

@@ -35,6 +35,8 @@ var _use_virtual_mouse := OS.get_cmdline_user_args().has("--bravi-virtual-mouse"
 var _virtual_mouse := Vector2.ZERO
 ## 0 이상이면 이 시드로 상대의 난수를 고정한다(테스트용).
 var rng_seed := -1
+## -1이면 하루는 날을 따르고 연습은 1단이다. 0 이상이면 그 단(0이 1단)으로 고정한다. start_duel 전에 정한다(결정 580).
+var style_tier := -1
 ## 비어 있지 않으면 로드한 무기 대신 이 무기로 판을 만든다(테스트용).
 var test_weapon: WeaponData
 
@@ -94,6 +96,11 @@ func start_duel() -> void:
 		opponent = commission.opponent
 	elif commission == null and practice_opponent != null:
 		opponent = practice_opponent
+	# 단은 CurveCheck보다 앞에서 골라 코어·뇌·뷰가 같은 사본을 받는다(결정 580).
+	if style_tier >= 0:
+		opponent = opponent.at_tier(style_tier)
+	elif _day_mode and day != null:
+		opponent = opponent.for_day(day.day_number)
 	# 반응 싸움 확인(계획 030): 켜져 있으면 표시의 곡선만 다른 사본을 코어와 뷰에 준다. 꺼져 있으면 그대로다.
 	opponent = CurveCheck.prepare(opponent)
 	var weapon: WeaponData = test_weapon if test_weapon != null else load(WEAPON_PATH)

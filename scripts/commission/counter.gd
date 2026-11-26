@@ -154,7 +154,7 @@ func _build(commission: Commission) -> void:
 	if day.effective_rules().haggle_bonus_percent > 0:
 		_haggle_line = Ui.add_label(bubble, "", 18, Ui.DIM)
 		_haggle_line.name = "HaggleLine"
-	Ui.add_label(bubble, "상대: %s" % (commission.opponent.display_name if commission.opponent != null else "?"), 18, Ui.DIM)
+	Ui.add_label(bubble, "상대: %s" % (commission.opponent.style_label(day.day_number) if commission.opponent != null else "?"), 18, Ui.DIM)
 	# 보수 줄. 글은 _refresh_haggle()이 채운다(흥정에 따라 바뀐다).
 	_pay_line = Ui.add_label(bubble, "", 18, Ui.DIM)
 	_pay_line.name = "PayLine"
