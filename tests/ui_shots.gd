@@ -8,6 +8,7 @@ const Day := preload("res://tests/day_tests.gd")
 const States := preload("res://tests/opponent_states.gd")
 const Session := preload("res://scripts/game_session.gd")
 const WornEdge := preload("res://scripts/ui/worn_edge.gd")
+const PanelStyle := preload("res://scripts/ui/manuscript_panel_style.gd")
 
 const FEATHER_PATH := "res://data/commissions/feather_cut.tres"
 const USURER_PATH := "res://data/commissions/variants/first_blood_usurer.tres"
@@ -79,6 +80,8 @@ func _process(_delta: float) -> void:
 		if grid != null and help != null:
 			print("fit,%s,%d,%d" % [_plan[_i][0], int(grid.get_global_rect().end.x), int(help.get_global_rect().end.y)])
 		_wear_lines(_node, String(_plan[_i][0]))
+		var q: Dictionary = PanelStyle.quota(_node)
+		print("wearq,%s,%d,%d,%d" % [_plan[_i][0], q["n"], q["k"], (q["worn"] as Dictionary).size()])
 		_next()
 
 
@@ -91,7 +94,8 @@ func _wear_lines(node: Node, shot: String) -> void:
 			var rect := pc.get_global_rect()
 			var parts: PackedStringArray = []
 			if sb.get("paper") != null and sb.get("frame") != null and minf(pc.size.x, pc.size.y) >= float(sb.get("wear_min_side")):
-				for cut in WornEdge.cuts(pc.size, pc.get_index(), int(sb.get("wear")), int(sb.get("wear_seed"))):
+				var name_seed := PanelStyle.worn_seed_of(pc)
+				for cut in (WornEdge.cuts(pc.size, int(sb.get("wear")), int(sb.get("wear_seed")) + name_seed) if name_seed >= 0 else []):
 					var b: Rect2 = cut["box"]
 					parts.append("%s@%d,%d,%d,%d" % [cut["kind"], b.position.x, b.position.y, b.size.x, b.size.y])
 			print("wear,%s,%d,%d,%d,%d,%s" % [shot, rect.position.x, rect.position.y, rect.size.x, rect.size.y,
@@ -104,6 +108,7 @@ func _wear_lines(node: Node, shot: String) -> void:
 
 func _screen(path: String, day: DayState) -> void:
 	_node = (load(path) as PackedScene).instantiate()
+	_node.set_meta("wear_screen", true)
 	if day != null:
 		_node.set("day", day)
 	add_child(_node)
@@ -181,6 +186,7 @@ func _title() -> String:
 
 func _title_save() -> String:
 	_node = (load(Session.TITLE_PATH) as PackedScene).instantiate()
+	_node.set_meta("wear_screen", true)
 	_node.set("saved", _closing_day)
 	add_child(_node)
 	return "저장 있음(%d일차)" % _closing_day.day_number
@@ -201,6 +207,7 @@ func _select() -> String:
 
 func _duel(commission_path: String) -> DuelCore:
 	_node = (load(Session.DUEL_PATH) as PackedScene).instantiate()
+	_node.set_meta("wear_screen", true)
 	_node.set("commission", load(commission_path))
 	_node.set("mouse_aim_enabled", false)
 	_node.set("rng_seed", 1)

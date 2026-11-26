@@ -1,7 +1,9 @@
 extends RefCounted
-## 헤진 가장자리의 바깥 꼴(계획 033b, 결정 498). 판의 크기·형제 순서·단계·씨앗으로만 정한다 — 화면 위치를 쓰면 판이 움직일 때 찢김이 떨린다.
+## 헤진 가장자리의 바깥 꼴(계획 033b, 결정 498). 판의 크기·단계·씨앗(판의 고정된 이름의 해시)으로만 정한다 — 화면 위치·형제 순서를 쓰면 판이 움직일 때 찢김이 떨린다.
+## 어느 판이 헤지는지는 `pick`이 화면 단위로 정한다(화면의 UI 창 가운데 30%).
 
 const MIN_SIDE := 160.0
+const SHARE := 0.3
 const STEP := 3.0
 ## 변의 헤짐·찢김은 모서리 자름(≤ 28)과 겹치지 않게 양 끝에서 이만큼 띄운다.
 const END_GAP := 32.0
@@ -12,29 +14,50 @@ static var _cache := {}
 
 
 ## 판의 바깥 꼴(판 안의 좌표, 시계 방향 단순 다각형). 자름이 없으면 네 꼭짓점.
-static func outline(size: Vector2, index: int, level: int, seed_value: int) -> PackedVector2Array:
-	return _build(size, index, level, seed_value)["outline"]
+static func outline(size: Vector2, level: int, seed_value: int) -> PackedVector2Array:
+	return _build(size, level, seed_value)["outline"]
 
 
 ## 자름마다 {"kind": fray|tear|worn|drop, "box": Rect2, "points": PackedVector2Array}.
-static func cuts(size: Vector2, index: int, level: int, seed_value: int) -> Array:
-	return _build(size, index, level, seed_value)["cuts"]
+static func cuts(size: Vector2, level: int, seed_value: int) -> Array:
+	return _build(size, level, seed_value)["cuts"]
 
 
-static func _build(size: Vector2, index: int, level: int, seed_value: int) -> Dictionary:
+## [0,1) 해시: 이름이 같으면 어느 실행에서도 같다.
+static func hash01(s: String) -> float:
+	return float(s.hash() & 0xFFFFFF) / 16777216.0
+
+
+static func hash_int(s: String) -> int:
+	return s.hash() & 0x7FFFFFFF
+
+
+## 한 화면의 판들 가운데 헤질 판의 번호들. n = ids.size()(UI 창 전부), k = floor(0.3n + u)(u는 화면 키의 해시: 고정된 확률적 반올림),
+## 헤질 수 없는 판은 고르지 않고 h가 작은 순서로 k개(자격 있는 판이 k보다 적으면 그만큼만).
+static func pick(ids: PackedStringArray, eligible: Array[bool], screen_key: String) -> PackedInt32Array:
+	var k := int(floor(SHARE * ids.size() + hash01(screen_key)))
+	var order: Array = []
+	for i in ids.size():
+		if i < eligible.size() and eligible[i]:
+			order.append([hash01(screen_key + "|" + ids[i]), i])
+	order.sort_custom(func(a, b): return a[0] < b[0] or (a[0] == b[0] and a[1] < b[1]))
+	var result := PackedInt32Array()
+	for j in mini(k, order.size()):
+		result.append(order[j][1])
+	return result
+
+
+static func _build(size: Vector2, level: int, seed_value: int) -> Dictionary:
 	if level <= 0 or minf(size.x, size.y) < MIN_SIDE:
 		return {"outline": PackedVector2Array([Vector2.ZERO, Vector2(size.x, 0), size, Vector2(0, size.y)]), "cuts": []}
-	var key := "%.2f,%.2f,%d,%d,%d" % [size.x, size.y, index, level, seed_value]
+	var key := "%.2f,%.2f,%d,%d" % [size.x, size.y, level, seed_value]
 	if _cache.has(key):
 		return _cache[key]
 	var lv := clampi(level, 1, 3)
 	var rng := RandomNumberGenerator.new()
-	rng.seed = _mix(size, index, lv, seed_value)
-	var count := 0
-	# 같은 크기의 판 셋에 하나는 깨끗하다: 위상은 순서를 빼고 정해 여덟 순서 안에 둘 이상 걸린다(결정 498).
-	var clean := lv < 3 and posmod(index + posmod(_mix(size, 0, lv, seed_value), 3), 3) == 0
-	if not clean:
-		count = rng.randi_range(1, 3) if lv == 3 else rng.randi_range(0, lv)
+	rng.seed = _mix(size, lv, seed_value)
+	# 헤지기로 뽑힌 판은 1~3곳(단계가 낮으면 단계까지).
+	var count := rng.randi_range(1, lv)
 	var slots := [0, 1, 2, 3, 4, 5, 6, 7]
 	for i in range(slots.size() - 1, 0, -1):
 		var j := rng.randi_range(0, i)
@@ -83,8 +106,8 @@ static func _build(size: Vector2, index: int, level: int, seed_value: int) -> Di
 	return result
 
 
-static func _mix(size: Vector2, index: int, level: int, seed_value: int) -> int:
-	return (roundi(size.x) * 73856093) ^ (roundi(size.y) * 19349663) ^ (index * 83492791) ^ (level * 2654435761) ^ (seed_value * 40503 + 977)
+static func _mix(size: Vector2, level: int, seed_value: int) -> int:
+	return (roundi(size.x) * 73856093) ^ (roundi(size.y) * 19349663) ^ (level * 2654435761) ^ (seed_value * 40503 + 977)
 
 
 static func _box(chain: PackedVector2Array, first: Vector2) -> Rect2:

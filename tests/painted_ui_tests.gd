@@ -14,7 +14,7 @@ const BUTTON_PATH := "res://assets/ui/button.png"
 const WALL_PATH := "res://assets/ui/wall_style.tres"
 
 # 판 U2의 답으로 바뀌는 값: 바뀌면 이 자리의 상수도 같이 바꾼다(U2-3 단계, U2-4 버튼의 못 누름·올림 값, 9조각 축).
-const WEAR := 3
+const WEAR := 3  # 단계 = 헤진 판의 자름 상한(1~3곳). 몇 판이 헤지는지는 화면의 30%(WornEdge.pick)
 const BUTTON_PAINTED := true
 const DISABLED_TINT := Color(1.0, 1.0, 1.0, 1.0)
 const HOVER_TINT := Color(0.961, 0.945, 0.914, 1.0)
@@ -178,18 +178,17 @@ func t96_painted() -> String:
 		var big := minf(size.x, size.y) >= WornEdge.MIN_SIDE
 		var rect := Rect2(Vector2.ZERO, size).grow(0.01)
 		var safe := _safe_octagon(size)
-		var level2_clean := 0
 		var level2_shapes := {}
 		for level in range(0, 4):
-			for index in 8:
-				var tag := "%s 순서 %d 단계 %d" % [size, index, level]
-				var o1 := WornEdge.outline(size, index, level, 0)
-				var o2 := WornEdge.outline(size, index, level, 0)
-				_expect(errs, o1 == o2 and WornEdge.cuts(size, index, level, 0).size() == WornEdge.cuts(size, index, level, 0).size(),
+			for seed_value in 8:
+				var tag := "%s 씨앗 %d 단계 %d" % [size, seed_value, level]
+				var o1 := WornEdge.outline(size, level, seed_value)
+				var o2 := WornEdge.outline(size, level, seed_value)
+				_expect(errs, o1 == o2 and WornEdge.cuts(size, level, seed_value).size() == WornEdge.cuts(size, level, seed_value).size(),
 					"[9a] %s: 같은 인자인데 점이 다름" % tag)
 				if level == 0 or not big:
 					# (e)
-					_expect(errs, o1.size() == 4 and WornEdge.cuts(size, index, level, 0).is_empty(), "[9e] %s: 꼭짓점 넷이 아님(%d)" % [tag, o1.size()])
+					_expect(errs, o1.size() == 4 and WornEdge.cuts(size, level, seed_value).is_empty(), "[9e] %s: 꼭짓점 넷이 아님(%d)" % [tag, o1.size()])
 					continue
 				_expect(errs, Geometry2D.clip_polygons(safe, o1).is_empty(), "[9b] %s: 안전 칸이 outline 밖으로 나옴" % tag)
 				var inside := true
@@ -198,8 +197,8 @@ func t96_painted() -> String:
 						inside = false
 				_expect(errs, inside, "[9c] %s: 점이 사각형 밖" % tag)
 				_expect(errs, not Geometry2D.triangulate_polygon(o1).is_empty(), "[9d] %s: 삼각형 나누기가 빔" % tag)
-				var cuts := WornEdge.cuts(size, index, level, 0)
-				_expect(errs, cuts.size() <= level, "[9g] %s: 자름 %d개 > 상한 %d" % [tag, cuts.size(), level])
+				var cuts := WornEdge.cuts(size, level, seed_value)
+				_expect(errs, cuts.size() >= 1 and cuts.size() <= level, "[9g] %s: 자름 %d개 (기대 1~%d)" % [tag, cuts.size(), level])
 				var kinds := {}
 				for cut: Dictionary in cuts:
 					kinds[cut["kind"]] = int(kinds.get(cut["kind"], 0)) + 1
@@ -208,12 +207,50 @@ func t96_painted() -> String:
 						_expect(errs, k == "fray" or k == "worn", "[9g] %s: 단계 1에 %s" % [tag, k])
 				if level == 2:
 					_expect(errs, int(kinds.get("tear", 0)) <= 1 and int(kinds.get("drop", 0)) <= 1, "[9g] %s: 찢김·떨어진 모서리가 둘 이상" % tag)
-					if cuts.is_empty():
-						level2_clean += 1
 					level2_shapes[hash(o1)] = true
-		# (f) 짧은 변이 문턱 아래인 판은 깎지 않으므로 큰 판에만
 		if big:
-			_expect(errs, level2_clean >= 1, "[9f] %s: 단계 2에서 순서 0~7이 모두 헤짐(깨끗한 판 0)" % size)
-			_expect(errs, level2_shapes.size() >= 2, "[9f] %s: 단계 2에서 순서 0~7의 outline이 모두 같음" % size)
+			_expect(errs, level2_shapes.size() >= 2, "[9h] %s: 단계 2에서 씨앗 0~7의 outline이 모두 같음" % size)
+
+	# (f) 화면의 몫: pick
+	var key_sum := 0.0
+	var key_count := 0
+	for key_i in 200:
+		var screen_key := "res://scenes/screen_%d.tscn" % key_i
+		for n in range(1, 11):
+			var ids := PackedStringArray()
+			var all_ok: Array[bool] = []
+			var some_ok: Array[bool] = []
+			for i in n:
+				ids.append("Root/Panel%d" % i)
+				all_ok.append(true)
+				some_ok.append(i % 2 == 0)
+			var got := WornEdge.pick(ids, all_ok, screen_key)
+			var want_k := int(floor(0.3 * n + WornEdge.hash01(screen_key)))
+			_expect(errs, got.size() == want_k, "[9f] %s n=%d: 고른 수 %d (기대 %d)" % [screen_key, n, got.size(), want_k])
+			_expect(errs, got == WornEdge.pick(ids, all_ok, screen_key), "[9f] %s n=%d: 같은 입력인데 결과가 다름" % [screen_key, n])
+			var part := WornEdge.pick(ids, some_ok, screen_key)
+			for idx in part:
+				_expect(errs, some_ok[idx], "[9f] %s n=%d: 헤질 수 없는 판 %d를 고름" % [screen_key, n, idx])
+			_expect(errs, part.size() <= want_k and part.size() <= (n + 1) / 2, "[9f] %s n=%d: 자격 수나 몫을 넘김(%d)" % [screen_key, n, part.size()])
+			key_sum += float(got.size()) / n
+			key_count += 1
+	_expect(errs, absf(key_sum / key_count - 0.3) <= 0.05, "[9f] 고른 비율의 평균 %.3f (기대 0.3 ± 0.05)" % (key_sum / key_count))
+
+	# (i) 자동 이름의 판 이름: 같은 구조를 다시 만들어도(전역 번호가 달라도) 같은 자리의 판은 같은 이름
+	var StyleScript := load(PANEL_STYLE) as GDScript
+	var names: Array = []
+	for pass_i in 2:
+		if pass_i == 1:
+			for junk in 5:
+				PanelContainer.new().free()
+		var tree_root := Control.new()
+		tree_root.name = "Screen"
+		var box := VBoxContainer.new()
+		tree_root.add_child(box)
+		for i in 3:
+			box.add_child(PanelContainer.new())
+		names.append(StyleScript.panel_name(tree_root, box.get_child(2)))
+		tree_root.free()
+	_expect(errs, names[0] == names[1] and "@" not in String(names[0]), "[9i] 같은 구조의 판 이름이 다름: %s / %s" % [names[0], names[1]])
 
 	return "OK" if errs.is_empty() else ", ".join(errs)
