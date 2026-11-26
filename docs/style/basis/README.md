@@ -28,6 +28,9 @@
 | `bruno-arms.png` | 브루노의 따로 그린 칼 팔 셋(큰 베기의 든 팔, 찌르기의 펜싱 런지, 대기의 펜싱 겨누기). 칼자루를 가로지르는 손가락 | 1536×1024 | `prompts/035-A1c-bruno-arms.txt`(A1a → A1b 소매를 셔츠 소매로 → A1c 손가락) | `generated/035-A1b-bruno-arms.png`(직전 시트). A1a는 `bruno-parts`와 `in/030c-in-arms` | `01a20d67-5fd7-7133-8844-d90b432566bc` | 2026-11-24 판 Y3 "고친다 — 칼자루를 가로지르는 손가락으로" → A1c "맞다 — 올린다" |
 | `lorenzo-front.png` | 결투 상대 셋째 로렌초 전신. 계획 037 | 1024×1536 | `prompts/037-F1a-lorenzo-front.txt` | `in/037-in-front`(그 사람의 섞은 SVG 스케치, 견본 `samples/037-third-opponent.html`) | `01a212cd-de6a-7221-8858-04a9023c90fb` | 2026-11-25 판 Y1 "맞다" |
 | `lorenzo-parts.png` | 로렌초 파츠 시트(머리 셋, 모자, 깃털, 몸통, 팔, 주먹, 칼, 다리) | 1536×1024 | `prompts/037-P1a-lorenzo-parts.txt` | `lorenzo-front`(사람), `in/037-in-parts`(배치) | `01a212d4-9f97-7bc1-9840-1d8ece20829a` | 2026-11-25 판 Y2 "맞다" |
+| `ui-paper.png` | UI 종이(테두리 없는 양피지). 계획 033b | 1672×941 | `prompts/033b-PP1a-ui-paper.txt` | `in/033b-in-paper` | 판 U1 "나", U2-1 "맞다" — 손질본 `assets/ui/paper.png`(`cutui -Flatten 0.7 -Mean 0.697 -Tint E9D8B4`) |
+| `ui-frame.png` | UI 장식 테두리(바깥 선·안쪽 선·모서리 마름모). 계획 033b | 1536×1024 | `prompts/033b-FR1a-ui-frame.txt` | `in/033b-in-frame` | 판 U1 "쓴다" — 손질본 `assets/ui/panel_frame.png`(`-OnPaper`)와 작은 판용 `panel_frame_plain.png`(`-Plain`) |
+| `ui-button.png` | UI 제비꼬리 버튼 띠. 계획 033b | 1536×1024 | `prompts/033b-BT1a-ui-button.txt` | `in/033b-in-button` | 판 U2-4 "쓴다 — 다" — 손질본 `assets/ui/button.png`(`-Mean 0.697`) |
 | `lorenzo-arms.png` | 로렌초의 따로 그린 칼 팔 셋(큰 베기의 든 팔, 찌르기의 펜싱 런지, 대기의 펜싱 겨누기) | 1536×1024 | `prompts/037-A1a-lorenzo-arms.txt` | `lorenzo-parts`, `in/030c-in-arms` | `01a212e0-f578-7783-ba9b-e15bf2c62fdd` | 2026-11-25 판 Y3 "맞다" |
 
 ## 손질 값 (견본 `samples/024-widen.html`에서 쓴 것)
