@@ -1,4 +1,4 @@
-﻿param([ValidateSet('paper', 'frame', 'button')][string]$Kind, [string]$Sheet, [string]$Out, [double]$Flatten = 1.0, [double]$Mean = 0, [double]$K = 0, [int]$Edge = 72, [int]$Tol = 28, [int]$Ring = 1, [switch]$Verify)
+﻿param([ValidateSet('paper', 'frame', 'button')][string]$Kind, [string]$Sheet, [string]$Out, [double]$Flatten = 1.0, [double]$Mean = 0, [double]$K = 0, [int]$Edge = 72, [int]$Tol = 28, [int]$Ring = 1, [switch]$OnPaper, [switch]$Verify)
 # Plan 033b decision 490: finish the three painted UI pictures. Absolute paths only. ASCII only. Prints one line of measured values.
 #  -Kind paper : cut a 16:9 box out of the middle of the sheet (the generator gives 1717x916 -> 1628x916), then -Flatten f pushes the
 #                relative luminance toward the mean (L' = mean + (L - mean) * f, hue kept, decision 491). Writes a 24 bit PNG.
@@ -8,6 +8,8 @@
 #  -Kind button: erase the flat background colour (flood from the border, tolerance -Tol, -Ring pixels of fringe), cut to the box, scale by
 #                K (default: height 84 = 56 screen px), -Flatten on the paper part only (pixels brighter than the ink). Writes a 32 bit PNG.
 #  -Mean L     : (paper, button; optional) also move the mean of that same relative luminance to L (the pivot of the push), when the source is too dark to reach 0.68.
+#  -OnPaper    : (frame) the ink is drawn on parchment, not on white: paper level per pixel = box blur (radius 24) of the luminance with ink pixels replaced by the median;
+#                alpha = clamp((Lpaper - L - 0.08) / (Lpaper - 0.03 - 0.08)) so faint stains and grain stay 0; colour solved back against the paper colour. The rest is the white path.
 #  -Verify     : runs the same arguments into a temporary file and compares its SHA256 with the existing -Out; makes nothing.
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
@@ -112,6 +114,7 @@ public static class CutUi {
   static int A(Img im, int x, int y) { return im.P[(y * im.W + x) * 4 + 3]; }
   static double Run(Img im, int x, int y, int dx, int dy, out int len) {
     double sum = 0, peak = 0; len = 0;
+    for (int sk = 0; sk < 24 && x >= 0 && y >= 0 && x < im.W && y < im.H && A(im, x, y) < 128; sk++) { x += dx; y += dy; }
     while (x >= 0 && y >= 0 && x < im.W && y < im.H && A(im, x, y) >= 8) { double a = A(im, x, y) / 255.0; sum += a; if (a > peak) peak = a; len++; x += dx; y += dy; }
     return peak > 0 ? sum / peak : 0;
   }
@@ -122,15 +125,41 @@ public static class CutUi {
     return n;
   }
 
+  // paper level for -OnPaper: pm = linear median colour b,g,r in 0..2 and its luminance in 3 (index order matches the BGRA bytes)
+  static double[] PaperLevel(Img im, out double[] pm) {
+    int W = im.W, H = im.H, n = W * H; var Ls = new double[n]; var all = new List<double>(n);
+    for (int p = 0; p < n; p++) { int i = p * 4; Ls[p] = Lum(im.P[i + 2], im.P[i + 1], im.P[i]); }
+    var cb = new List<byte>[3]; for (int c = 0; c < 3; c++) cb[c] = new List<byte>(n);
+    for (int p = 0; p < n; p++) for (int c = 0; c < 3; c++) cb[c].Add(im.P[p * 4 + c]);
+    pm = new double[4]; for (int c = 0; c < 3; c++) { cb[c].Sort(); pm[c] = lin[cb[c][n / 2]]; }
+    pm[3] = 0.0722 * pm[0] + 0.7152 * pm[1] + 0.2126 * pm[2];
+    var cl = new double[n]; for (int p = 0; p < n; p++) cl[p] = Ls[p] > 0.6 * pm[3] ? Ls[p] : pm[3];
+    int R = 24; var tmp = new double[n]; var o = new double[n];
+    for (int y = 0; y < H; y++) { var cum = new double[W + 1]; for (int x = 0; x < W; x++) cum[x + 1] = cum[x] + cl[y * W + x];
+      for (int x = 0; x < W; x++) { int a = Math.Max(0, x - R), b = Math.Min(W - 1, x + R); tmp[y * W + x] = (cum[b + 1] - cum[a]) / (b - a + 1); } }
+    for (int x = 0; x < W; x++) { var cum = new double[H + 1]; for (int y = 0; y < H; y++) cum[y + 1] = cum[y] + tmp[y * W + x];
+      for (int y = 0; y < H; y++) { int a = Math.Max(0, y - R), b = Math.Min(H - 1, y + R); o[y * W + x] = (cum[b + 1] - cum[a]) / (b - a + 1); } }
+    return o;
+  }
+
   // ---- frame ----
-  public static string Frame(string sheet, string outp, double k, int edge) {
+  public static string Frame(string sheet, string outp, double k, int edge, bool onPaper) {
     var im = Read(sheet); int W = im.W, H = im.H;
+    double[] lp = null; double[] pm = null;
+    if (onPaper) { lp = PaperLevel(im, out pm); }
     for (int p = 0; p < W * H; p++) { int i = p * 4; int r = im.P[i + 2], g = im.P[i + 1], b = im.P[i];
+      if (onPaper) {
+        double L = Lum(im.P[i + 2], im.P[i + 1], im.P[i]); double Lp = lp[p]; double al = Math.Max(0, Math.Min(1, (Lp - L - 0.08) / (Lp - 0.03 - 0.08)));
+        int ab = (int)Math.Round(al * 255); if (ab <= 6) { im.P[i] = im.P[i + 1] = im.P[i + 2] = im.P[i + 3] = 0; continue; }
+        double q = Lp / pm[3]; byte[] o3 = new byte[3];
+        for (int c = 0; c < 3; c++) { double pl = pm[c] * q; double px = lin[im.P[i + c]]; double v = (px - pl * (1 - al)) / al; o3[c] = Enc(v); }
+        im.P[i] = o3[0]; im.P[i + 1] = o3[1]; im.P[i + 2] = o3[2]; im.P[i + 3] = (byte)ab; continue;
+      }
       int a = Math.Max(255 - r, Math.Max(255 - g, 255 - b)); if (a <= 6) { im.P[i] = im.P[i + 1] = im.P[i + 2] = im.P[i + 3] = 0; continue; }
       double af = a / 255.0; im.P[i + 2] = (byte)Math.Max(0, Math.Min(255, Math.Round((r - 255 * (1 - af)) / af)));
       im.P[i + 1] = (byte)Math.Max(0, Math.Min(255, Math.Round((g - 255 * (1 - af)) / af))); im.P[i] = (byte)Math.Max(0, Math.Min(255, Math.Round((b - 255 * (1 - af)) / af))); im.P[i + 3] = (byte)a; }
     int x0 = W, y0 = H, x1 = -1, y1 = -1;
-    for (int y = 0; y < H; y++) for (int x = 0; x < W; x++) if (A(im, x, y) >= 26) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    for (int y = 0; y < H; y++) for (int x = 0; x < W; x++) if (A(im, x, y) >= (onPaper ? 128 : 26)) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
     if (x1 < 0) throw new Exception("no ink found");
     var ink = Crop(im, x0, y0, x1 - x0 + 1, y1 - y0 + 1); int w0 = ink.W, h0 = ink.H; int ln;
     double t0 = (Run(ink, 0, h0 / 2, 1, 0, out ln) + Run(ink, w0 - 1, h0 / 2, -1, 0, out ln) + Run(ink, w0 / 2, 0, 0, 1, out ln) + Run(ink, w0 / 2, h0 - 1, 0, -1, out ln)) / 4.0;
@@ -190,7 +219,7 @@ public static class CutUi {
 function Invoke-CutUi([string]$Dest) {
   switch ($Kind) {
     'paper' { [CutUi]::Paper($Sheet, $Dest, $Flatten, $Mean) }
-    'frame' { [CutUi]::Frame($Sheet, $Dest, $K, $Edge) }
+    'frame' { [CutUi]::Frame($Sheet, $Dest, $K, $Edge, [bool]$OnPaper) }
     'button' { [CutUi]::Button($Sheet, $Dest, $Flatten, $Mean, $K, $Tol, $Ring) }
   }
 }
