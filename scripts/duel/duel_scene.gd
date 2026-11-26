@@ -163,6 +163,13 @@ func pause(_reason: StringName) -> bool:
 	_pause_time = core.time
 	var exit_text := EXIT_DAY_TEXT if _day_mode else EXIT_PRACTICE_TEXT
 	_pause_menu = PauseMenu.open(self, exit_text, _exit_note())
+	# 붙이기가 실패하면 "멈췄는데 화면이 없는" 상태가 남는다(Esc·창 닫기 모두 못 푼다): 되돌린다.
+	if not _pause_menu.is_inside_tree():
+		_pause_menu.free()
+		_pause_menu = null
+		paused = false
+		_pause_count -= 1
+		return false
 	_pause_menu.resumed.connect(_on_menu_resumed)
 	_pause_menu.exit_pressed.connect(_on_exit_pressed)
 	return true
@@ -247,8 +254,13 @@ func _on_exit_pressed() -> void:
 ## 돌아와도 저절로 풀리지 않는다.
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_WM_WINDOW_FOCUS_OUT:
-		if core != null and is_physics_processing():
-			pause(&"focus")
+		# 엔진이 이 알림을 propagate_notification으로 돌리는 동안은 add_child가 막힌다(S02 창 확인): 미룬다.
+		_pause_from_focus.call_deferred()
+
+
+func _pause_from_focus() -> void:
+	if core != null and is_physics_processing():
+		pause(&"focus")
 
 
 ## 조준 갱신과 코어 tick. 테스트가 실시간을 기다리지 않고 직접 부를 수 있다.

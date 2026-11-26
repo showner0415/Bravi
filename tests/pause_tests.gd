@@ -345,8 +345,29 @@ func _check_focus(errs: Array[String]) -> void:
 	var in_app: int = Node.NOTIFICATION_APPLICATION_FOCUS_IN
 	var out_win: int = Node.NOTIFICATION_WM_WINDOW_FOCUS_OUT
 
+	# 실제 길: 엔진은 포커스 알림을 트리 전체에 propagate_notification으로 돌린다. 그 안에서는 add_child가 막혀
+	# (S02 창 확인의 버그) 알림은 멈춤을 미루기만 한다. 러너는 프레임이 없어 미룬 호출을 _pause_from_focus로 직접 돌린다.
+	var d0 := _spawn_practice()
+	_tree.root.propagate_notification(out_app)
+	_expect(errs, not bool(d0.get("paused")) and _menu_count(d0) == 0, "[4] 포커스 알림 안에서 바로 멈춤(미뤄야 함)")
+	d0.call("_pause_from_focus")
+	_expect(errs, bool(d0.get("paused")) and _menu_count(d0) == 1 and d0.get("_pause_menu") != null,
+		"[4] propagate 뒤 미룬 호출이 멈춤 화면을 붙이지 못함 (paused %s, 화면 %d)" % [str(d0.get("paused")), _menu_count(d0)])
+	_key(KEY_ESCAPE)
+	_expect(errs, bool(d0.get("paused")) and _menu_count(d0) == 0 and bool(d0.get("_holding")), "[4] propagate로 멈춘 뒤 Esc가 대기로 들이지 못함")
+	_free_made()
+
+	var dw := _spawn_practice()
+	_tree.root.propagate_notification(out_win)
+	dw.call("_pause_from_focus")
+	_expect(errs, bool(dw.get("paused")) and _menu_count(dw) == 1, "[4] propagate WM_WINDOW_FOCUS_OUT 뒤 멈춤 화면이 없음")
+	_key(KEY_ESCAPE)
+	_expect(errs, bool(dw.get("_holding")) and _menu_count(dw) == 0, "[4] propagate WM_WINDOW_FOCUS_OUT 뒤 Esc가 대기로 들이지 못함")
+	_free_made()
+
 	var d1 := _spawn_practice()
 	d1.notification(out_app)
+	d1.call("_pause_from_focus")
 	_expect(errs, bool(d1.get("paused")) and _menu_count(d1) == 1, "[4] APPLICATION_FOCUS_OUT 뒤 멈춤 화면이 없음")
 	d1.notification(in_app)
 	_expect(errs, bool(d1.get("paused")) and _menu_count(d1) == 1, "[4] FOCUS_IN 뒤 멈춤이 풀리거나 화면이 사라짐")
@@ -354,12 +375,15 @@ func _check_focus(errs: Array[String]) -> void:
 
 	var d2 := _spawn_practice()
 	d2.notification(out_win)
+	d2.call("_pause_from_focus")
 	_expect(errs, bool(d2.get("paused")) and _menu_count(d2) == 1, "[4] WM_WINDOW_FOCUS_OUT 뒤 멈춤 화면이 없음")
 	_free_made()
 
 	var d3 := _spawn_practice()
 	d3.notification(out_app)
 	d3.notification(out_win)
+	d3.call("_pause_from_focus")
+	d3.call("_pause_from_focus")
 	_expect(errs, _menu_count(d3) == 1, "[4] 두 알림이 잇달아 와서 PauseMenu가 %d개 (기대 1)" % _menu_count(d3))
 	_free_made()
 
@@ -369,6 +393,7 @@ func _check_focus(errs: Array[String]) -> void:
 	_key(KEY_ESCAPE)
 	_expect(errs, bool(d4.get("paused")) and _menu_count(d4) == 0, "[4] 대기 상태를 만들지 못함")
 	d4.notification(out_app)
+	d4.call("_pause_from_focus")
 	_expect(errs, bool(d4.get("paused")) and _menu_count(d4) == 1, "[4] 대기 중의 포커스 잃음이 멈춤 화면을 다시 열지 않음")
 	_free_made()
 
@@ -377,8 +402,9 @@ func _check_focus(errs: Array[String]) -> void:
 	_advance(d5, 0.3)
 	var time5 := core5.time
 	d5.set_physics_process(false)
-	d5.notification(out_app)
-	d5.notification(out_win)
+	_tree.root.propagate_notification(out_app)
+	_tree.root.propagate_notification(out_win)
+	d5.call("_pause_from_focus")
 	_expect(errs, not bool(d5.get("paused")) and _menu_count(d5) == 0 and core5.time == time5,
 		"[4] 물리 걸음이 꺼진 판이 포커스 알림으로 멈춤 (paused %s, 화면 %d)" % [str(d5.get("paused")), _menu_count(d5)])
 	_key(KEY_ESCAPE)
@@ -398,6 +424,7 @@ func _check_ended(errs: Array[String]) -> void:
 	_key(KEY_ESCAPE)
 	duel.notification(Node.NOTIFICATION_APPLICATION_FOCUS_OUT)
 	duel.notification(Node.NOTIFICATION_WM_WINDOW_FOCUS_OUT)
+	duel.call("_pause_from_focus")
 	_expect(errs, not bool(duel.get("paused")) and _menu_count(duel) == 0, "[5] 끝난 판이 멈춤 (paused %s, 화면 %d)" % [str(duel.get("paused")), _menu_count(duel)])
 
 
