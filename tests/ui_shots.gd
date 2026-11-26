@@ -36,11 +36,15 @@ func _ready() -> void:
 		DirAccess.make_dir_recursive_absolute(_shots_dir)
 	else:
 		_shots_dir = ""
+	# 자동 로드 Settings의 쓰기를 끈다: 찍기를 따로 돌려도 플레이어의 설정 파일을 적지 않는다(계획 S01).
+	var settings := get_node_or_null(^"/root/Settings")
+	if settings != null:
+		settings.set("path", "")
 	_d.set("_tree", get_tree())
 	_plan = [
 		["pair-duel", _pair_duel], ["pair-duel-warn", _pair_duel_warn], ["pair-settle", _pair_settle],
 		["pair-counter", _pair_counter], ["pair-closing", _pair_closing],
-		["title", _title], ["title-save", _title_save], ["help", _help], ["select", _select],
+		["title", _title], ["title-save", _title_save], ["help", _help], ["settings", _settings], ["select", _select],
 		["settle-hurt", _settle_hurt], ["duel-far", _duel_far], ["duel-close", _duel_close],
 		["duel-close-bighold", _duel_close_bighold], ["duel-right-high", _duel_right_high], ["result", _result],
 	]
@@ -196,6 +200,12 @@ func _help() -> String:
 	_title_save()
 	(_node.find_child("Help", true, false) as Button).pressed.emit()
 	return "도움말 화면"
+
+
+func _settings() -> String:
+	_title()
+	(_node.find_child("Settings", true, false) as Button).pressed.emit()
+	return "설정 화면(저장 없는 처음 화면 위)"
 
 
 func _select() -> String:

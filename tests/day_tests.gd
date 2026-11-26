@@ -524,7 +524,7 @@ func t33_screens() -> String:
 
 	# 처음 화면
 	var title := _spawn_screen(Session.TITLE_PATH, null)
-	_expect(errs, title.find_children("*", "Button", true, false).size() == 3, "처음 화면의 버튼이 3개가 아님")
+	_expect(errs, title.find_children("*", "Button", true, false).size() == 4, "처음 화면의 버튼이 4개가 아님")
 	_expect(errs, title.find_child("Help", true, false) is Button, "처음 화면에 Help가 없음")
 	_expect(errs, title.find_child("Proceed", true, false) is Button, "처음 화면에 Proceed가 없음")
 	title.free()

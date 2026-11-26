@@ -10,6 +10,7 @@
 # Prints one line per step, and only for a failed step its ERROR / FAIL lines. Full output goes to <log dir>\<step>.log.
 # Also prints the pattern step's "overlap," lines and the stats step's "stat," lines: they are what a reader needs.
 # Sets BRAVI_SAVE_PATH to the playtest save when it is not set, so no run touches the player's save.
+# Likewise BRAVI_SETTINGS_PATH to the playtest settings file, so no run touches the player's settings.
 # Exits 0 when every step passed, 1 otherwise. Last line: "VERIFY: OK" or "VERIFY: FAIL (<steps>)".
 param(
 	[string]$Godot,
@@ -26,6 +27,7 @@ if (-not (Test-Path -LiteralPath $Godot -PathType Leaf)) {
 	exit 1
 }
 if (-not $env:BRAVI_SAVE_PATH) { $env:BRAVI_SAVE_PATH = 'user://bravi_playtest_save.json' }
+if (-not $env:BRAVI_SETTINGS_PATH) { $env:BRAVI_SETTINGS_PATH = 'user://bravi_playtest_settings.json' }
 
 $project = Split-Path -Parent $PSScriptRoot
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

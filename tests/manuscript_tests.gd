@@ -19,12 +19,13 @@ const STATE_FONT := "res://assets/ui/font_state.tres"
 ## 바이블 10절의 아홉 단계.
 const STEPS: Array[int] = [54, 46, 34, 28, 24, 20, 18, 16, 14]
 ## 자리와 크기를 직접 정한 버튼: 화면 -> {이름: 코드가 놓은 크기}. 최소 크기가 이보다 크면 버튼이 자란다(결정 314의 여백).
-const FRESH_BUTTONS := {"Proceed": Vector2(400, 84), "Practice": Vector2(400, 54), "Help": Vector2(400, 54)}
-const SAVED_BUTTONS := {"Continue": Vector2(480, 84), "NewGame": Vector2(400, 50), "Practice": Vector2(400, 50), "Help": Vector2(400, 50)}
+const FRESH_BUTTONS := {"Proceed": Vector2(400, 84), "Practice": Vector2(400, 54), "Help": Vector2(195, 54), "Settings": Vector2(195, 54)}
+const SAVED_BUTTONS := {"Continue": Vector2(480, 84), "NewGame": Vector2(400, 50), "Practice": Vector2(400, 50), "Help": Vector2(195, 50), "Settings": Vector2(195, 50)}
 const COUNTER_BUTTONS := {"Proceed": Vector2(320, 76), "Decline": Vector2(230, 56), "Quit": Vector2(170, 42), "Haggle": Vector2(210, 56)}
 const SETTLE_BUTTONS := {"Proceed": Vector2(320, 76)}
 const CLOSING_BUTTONS := {"Proceed": Vector2(380, 76), "Quit": Vector2(220, 46)}
 const HELP_BUTTONS := {"HelpClose": Vector2(200, 54)}
+const SETTINGS_BUTTONS := {"SettingsClose": Vector2(200, 54)}
 
 var _tree: SceneTree
 var _d := Day.new()
@@ -137,6 +138,11 @@ func t75_manuscript() -> String:
 	_expect(errs, groups.size() >= 2 and used <= Title.HELP_RECT.size.y - 32.0,
 		"[도움말] 글의 높이 %.0f가 패널 안쪽 %.0f를 넘거나 묶음이 %d개" % [used, Title.HELP_RECT.size.y - 32.0, groups.size()])
 	_expect(errs, _d._press(fresh, "HelpClose") and help_screen != null and not help_screen.visible, "[도움말] HelpClose로 닫히지 않음")
+	# 설정 화면(계획 S01)도 글자·크기·버튼을 한 번 지난다.
+	if _d._press(fresh, "Settings") and _d._has_node(fresh, "SettingsScreen"):
+		_check_text(errs, fresh, "처음 화면·설정")
+		_check_buttons(errs, fresh, "설정", SETTINGS_BUTTONS)
+		_expect(errs, _d._press(fresh, "SettingsClose") and not _d._has_node(fresh, "SettingsScreen"), "[설정] SettingsClose로 닫히지 않음")
 	fresh.free()
 
 	var day1 := DayState.new(_d._rules(70, 60, 20, 250), load(DAY1_PATH) as DayData)

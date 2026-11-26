@@ -1,6 +1,6 @@
 extends Control
 ## 처음 화면. 하루 플레이를 시작하거나(저장이 있으면 이어서 하거나 새로 시작한다) 연습(의뢰를 골라 결투)으로 간다.
-## 저장이 없으면 버튼은 셋이다(가게를 연다, 연습, 도움말). 도움말 화면은 처음 열 때 만든다(결정 323).
+## 저장이 없으면 버튼은 넷이다(가게를 연다, 연습, 도움말, 설정). 도움말 화면은 처음 열 때 만든다(결정 323).
 
 const Ui := preload("res://scripts/day_ui.gd")
 
@@ -17,6 +17,7 @@ const SAVE_UNREADABLE := "저장 파일을 읽지 못했다 — 가게를 열면
 const PRACTICE_TEXT := "연습 — 의뢰를 골라 결투"
 const HINT_TEXT := "Space / Enter 또는 클릭"
 const HELP_TEXT := "도움말"
+const SETTINGS_TEXT := "설정"
 const HELP_CLOSE_TEXT := "돌아간다"
 const HELP_RECT := Rect2(140, 60, 1000, 560)
 
@@ -31,6 +32,7 @@ var _armed := false
 ## "새로 시작한다"를 처음 누른 때(Time.get_ticks_msec()).
 var _armed_msec := 0
 var _help_button: Button
+var _settings_button: Button
 ## 도움말 화면(HelpScreen). 처음 열 때 만든다. 그래서 열기 전의 처음 화면에는 버튼이 하나만 늘어난다.
 var _help_screen: Control
 
@@ -136,11 +138,25 @@ static func help_groups() -> Array[String]:
 	return groups
 
 
+## 도움말 | 설정 두 칸으로 나눈다(계획 S01, 결정 503): 각 195 폭, 사이 10.
 func _add_help_button(rect: Rect2) -> void:
+	var half := (rect.size.x - 10.0) / 2.0
 	_help_button = Ui.add_button(self, HELP_TEXT, 20, "Help")
 	_help_button.position = rect.position
-	_help_button.size = rect.size
+	_help_button.size = Vector2(half, rect.size.y)
 	_help_button.pressed.connect(_show_help)
+	_settings_button = Ui.add_button(self, SETTINGS_TEXT, 20, "Settings")
+	_settings_button.position = rect.position + Vector2(half + 10.0, 0)
+	_settings_button.size = Vector2(half, rect.size.y)
+	_settings_button.pressed.connect(_show_settings)
+
+
+func _show_settings() -> void:
+	var settings := get_node_or_null(^"/root/Settings")
+	if settings == null:
+		return
+	var screen := SettingsScreen.open(self, settings)
+	screen.closed.connect(_settings_button.grab_focus)
 
 
 func _build_help() -> void:

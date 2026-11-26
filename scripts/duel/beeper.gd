@@ -66,6 +66,13 @@ func on_event(ev: Dictionary) -> void:
 			_play(&"stagger")
 
 
+## 설정 화면의 미리 듣기(결정 504). _ready 전이나 모르는 키는 건너뛴다(_play의 % 0 오류 방지).
+func play(key: StringName) -> void:
+	if _players.is_empty() or not _streams.has(key):
+		return
+	_play(key)
+
+
 func _play(key: StringName) -> void:
 	var player := _players[_next]
 	_next = (_next + 1) % _players.size()
