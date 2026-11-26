@@ -1,4 +1,4 @@
-﻿param([ValidateSet('paper', 'frame', 'button')][string]$Kind, [string]$Sheet, [string]$Out, [double]$Flatten = 1.0, [double]$Mean = 0, [double]$K = 0, [int]$Edge = 72, [int]$Tol = 28, [int]$Ring = 1, [switch]$OnPaper, [switch]$Verify)
+﻿param([ValidateSet('paper', 'frame', 'button')][string]$Kind, [string]$Sheet, [string]$Out, [double]$Flatten = 1.0, [double]$Mean = 0, [double]$K = 0, [int]$Edge = 72, [int]$Tol = 28, [int]$Ring = 1, [switch]$OnPaper, [switch]$Plain, [string]$Tint = '', [switch]$Verify)
 # Plan 033b decision 490: finish the three painted UI pictures. Absolute paths only. ASCII only. Prints one line of measured values.
 #  -Kind paper : cut a 16:9 box out of the middle of the sheet (the generator gives 1717x916 -> 1628x916), then -Flatten f pushes the
 #                relative luminance toward the mean (L' = mean + (L - mean) * f, hue kept, decision 491). Writes a 24 bit PNG.
@@ -10,6 +10,8 @@
 #  -Mean L     : (paper, button; optional) also move the mean of that same relative luminance to L (the pivot of the push), when the source is too dark to reach 0.68.
 #  -OnPaper    : (frame) the ink is drawn on parchment, not on white: paper level per pixel = box blur (radius 24) of the luminance with ink pixels replaced by the median;
 #                alpha = clamp((Lpaper - L - 0.08) / (Lpaper - 0.03 - 0.08)) so faint stains and grain stay 0; colour solved back against the paper colour. The rest is the white path.
+#  -Tint RRGGBB: (paper; optional) after -Flatten/-Mean, add one offset per channel in sRGB so the mean colour lands on RRGGBB (grain contrast kept; plan 033b U2-1).
+#  -Plain      : (frame; optional) keep only the outer line band (pixels closer than 5 source px to the edge of the 9 patch source); inner line and diamonds get alpha 0 (plan 033b U2-2, small panels).
 #  -Verify     : runs the same arguments into a temporary file and compares its SHA256 with the existing -Out; makes nothing.
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
@@ -98,11 +100,15 @@ public static class CutUi {
   }
 
   // ---- paper ----
-  public static string Paper(string sheet, string outp, double f, double to) {
+  public static string Paper(string sheet, string outp, double f, double to, string tint) {
     var im = Read(sheet); int cw = im.W, ch = im.H; int want = (int)Math.Round(im.H * 16.0 / 9.0);
     if (im.W >= want) cw = want; else ch = (int)Math.Round(im.W * 9.0 / 16.0);
     var c = Crop(im, (im.W - cw) / 2, (im.H - ch) / 2, cw, ch);
     var pre = Stats(c, false, null); Squash(c, f, pre.mean, to > 0 ? to : pre.mean, false); var post = Stats(c, false, null);
+    if (!string.IsNullOrEmpty(tint)) { int tr = Convert.ToInt32(tint.Substring(0, 2), 16), tg = Convert.ToInt32(tint.Substring(2, 2), 16), tb = Convert.ToInt32(tint.Substring(4, 2), 16);
+      double dr = tr - post.r, dg = tg - post.g, db = tb - post.b;
+      for (int k = 0; k < c.W * c.H; k++) { int i = k * 4; c.P[i + 2] = (byte)Math.Max(0, Math.Min(255, Math.Round(c.P[i + 2] + dr))); c.P[i + 1] = (byte)Math.Max(0, Math.Min(255, Math.Round(c.P[i + 1] + dg))); c.P[i] = (byte)Math.Max(0, Math.Min(255, Math.Round(c.P[i] + db))); }
+      post = Stats(c, false, null); }
     int bx = (int)(cw * 0.05), by = (int)(ch * 0.05); double se = 0, sc = 0; int ne = 0, nc = 0;
     for (int y = 0; y < ch; y++) for (int x = 0; x < cw; x++) { int i = (y * cw + x) * 4; double L = Lum(c.P[i + 2], c.P[i + 1], c.P[i]);
       if (x < bx || x >= cw - bx || y < by || y >= ch - by) { se += L; ne++; } else { sc += L; nc++; } }
@@ -143,7 +149,7 @@ public static class CutUi {
   }
 
   // ---- frame ----
-  public static string Frame(string sheet, string outp, double k, int edge, bool onPaper) {
+  public static string Frame(string sheet, string outp, double k, int edge, bool onPaper, bool plain) {
     var im = Read(sheet); int W = im.W, H = im.H;
     double[] lp = null; double[] pm = null;
     if (onPaper) { lp = PaperLevel(im, out pm); }
@@ -178,6 +184,7 @@ public static class CutUi {
     blit(0, 0, 0, 0, m, m); blit(w1 - m, 0, S - m, 0, m, m); blit(0, h1 - m, 0, S - m, m, m); blit(w1 - m, h1 - m, S - m, S - m, m, m);
     blit((w1 - edge) / 2, 0, m, 0, edge, m); blit((w1 - edge) / 2, h1 - m, m, S - m, edge, m); blit(0, (h1 - edge) / 2, 0, m, m, edge); blit(w1 - m, (h1 - edge) / 2, S - m, m, m, edge);
     double oc = 0; for (int y = m; y < S - m; y++) for (int x = m; x < S - m; x++) oc += o.P[(y * S + x) * 4 + 3];
+    if (plain) { for (int y = 0; y < S; y++) for (int x = 0; x < S; x++) { if (Math.Min(Math.Min(x, y), Math.Min(S - 1 - x, S - 1 - y)) >= 5) { int i = (y * S + x) * 4; o.P[i] = o.P[i + 1] = o.P[i + 2] = o.P[i + 3] = 0; } } }
     Save(o, outp, true);
     return string.Format("ink {0}x{1},outer line {2} source px,K {3},scaled {4}x{5},outer line {6} screen,inner line offset {7} width {8} screen,diamond radius about {9} screen,ink depth on a side {10} screen,centre alpha mean {11},out {12}x{12} centre alpha {13}",
       w0, h0, F(t0, "0.00"), F(kk, "0.0000"), w1, h1, F(ot / dens, "0.00"), F(ic / dens, "0.00"), F(iw / dens, "0.00"), F(2.0 * dn / dens, "0.0"), F(depth / dens, "0.0"), F(sa / na, "0.0000"), S, F(oc, "0"));
@@ -218,8 +225,8 @@ public static class CutUi {
 }
 function Invoke-CutUi([string]$Dest) {
   switch ($Kind) {
-    'paper' { [CutUi]::Paper($Sheet, $Dest, $Flatten, $Mean) }
-    'frame' { [CutUi]::Frame($Sheet, $Dest, $K, $Edge, [bool]$OnPaper) }
+    'paper' { [CutUi]::Paper($Sheet, $Dest, $Flatten, $Mean, $Tint) }
+    'frame' { [CutUi]::Frame($Sheet, $Dest, $K, $Edge, [bool]$OnPaper, [bool]$Plain) }
     'button' { [CutUi]::Button($Sheet, $Dest, $Flatten, $Mean, $K, $Tol, $Ring) }
   }
 }

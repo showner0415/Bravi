@@ -9,14 +9,15 @@ const PANEL_STYLE := "res://scripts/ui/manuscript_panel_style.gd"
 const BUTTON_STYLE := "res://scripts/ui/swallowtail_style.gd"
 const PAPER_PATH := "res://assets/ui/paper.png"
 const FRAME_PATH := "res://assets/ui/panel_frame.png"
+const FRAME_SMALL_PATH := "res://assets/ui/panel_frame_plain.png"
 const BUTTON_PATH := "res://assets/ui/button.png"
 const WALL_PATH := "res://assets/ui/wall_style.tres"
 
 # 판 U2의 답으로 바뀌는 값: 바뀌면 이 자리의 상수도 같이 바꾼다(U2-3 단계, U2-4 버튼의 못 누름·올림 값, 9조각 축).
-const WEAR := 2
+const WEAR := 3
 const BUTTON_PAINTED := true
-const DISABLED_TINT := Color(0.90, 0.86, 0.78, 0.75)
-const HOVER_TINT := Color(0.90, 0.86, 0.78, 1.0)
+const DISABLED_TINT := Color(1.0, 1.0, 1.0, 1.0)
+const HOVER_TINT := Color(0.961, 0.945, 0.914, 1.0)
 const PRESSED_TINT := Color(0.79, 0.71, 0.60, 1.0)
 const BUTTON_AXIS_X := RenderingServer.NINE_PATCH_STRETCH
 const BUTTON_AXIS_Y := RenderingServer.NINE_PATCH_STRETCH
@@ -85,6 +86,9 @@ func t96_painted() -> String:
 		return ", ".join(errs)
 	_expect(errs, _tex_path(container, "paper") == PAPER_PATH, "[1] PanelContainer의 paper가 %s가 아님" % PAPER_PATH)
 	_expect(errs, _tex_path(container, "frame") == FRAME_PATH, "[1] PanelContainer의 frame이 %s가 아님" % FRAME_PATH)
+	for pair: Array in [["Panel", panel], ["PanelContainer", container]]:
+		_expect(errs, _tex_path(pair[1], "frame_small") == FRAME_SMALL_PATH, "[1] %s의 frame_small이 %s가 아님" % [pair[0], FRAME_SMALL_PATH])
+		_expect(errs, float(pair[1].get("frame_small_below")) == 160.0, "[1] %s의 frame_small_below가 %s (기대 160)" % [pair[0], pair[1].get("frame_small_below")])
 	_expect(errs, panel != container, "[1] Panel과 PanelContainer가 같은 자원임")
 	_expect(errs, _tex_path(panel, "paper") == PAPER_PATH, "[1] Panel의 paper가 PanelContainer와 다름")
 	var panel_frame := _tex_path(panel, "frame")

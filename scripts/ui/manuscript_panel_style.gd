@@ -22,6 +22,9 @@ const WEAR_LINE_WIDTH := 1.5
 @export var paper: Texture2D
 ## 비면 테두리·안쪽 선·마름모를 코드로 그린다. 있으면 9조각(가운데는 비운다).
 @export var frame: Texture2D
+## 짧은 변이 `frame_small_below` 아래인 작은 판의 테두리(바깥 선만. 판 U2-2). 비면 `frame`.
+@export var frame_small: Texture2D
+@export var frame_small_below := 160.0
 ## 9조각의 조각 크기(화면 화소).
 @export var frame_margin := 24.0
 ## 테두리의 원본 화소 수 = 화면 1.
@@ -70,7 +73,7 @@ func _draw_painted(item: RID, rect: Rect2) -> void:
 			_draw_grain(item, rect)
 	if frame != null:
 		var m := frame_margin * density
-		PaintedPatch.draw_nine_patch(item, rect, frame, Vector4(m, m, m, m), density,
+		PaintedPatch.draw_nine_patch(item, rect, _frame_for(rect), Vector4(m, m, m, m), density,
 			frame_axis, frame_axis, Color.WHITE, false)
 		return
 	if border_width > 0.0:
@@ -84,6 +87,12 @@ func _draw_painted(item: RID, rect: Rect2) -> void:
 				_draw_diamond(item, corner)
 
 
+func _frame_for(rect: Rect2) -> Texture2D:
+	if frame_small != null and minf(rect.size.x, rect.size.y) < frame_small_below:
+		return frame_small
+	return frame
+
+
 # 씨앗은 크기·형제 순서·단계·wear_seed뿐이다: 화면 위치를 쓰면 판이 움직일 때 찢김이 떨린다(결정 498).
 func _draw_worn(item: RID, rect: Rect2) -> void:
 	var drawn := get_current_item_drawn()
@@ -91,7 +100,7 @@ func _draw_worn(item: RID, rect: Rect2) -> void:
 	var outline := WornEdge.outline(rect.size, index, wear, wear_seed)
 	PaintedPatch.draw_paper_clipped(item, rect, paper, paper.get_width() / 1280.0, Color.WHITE, outline)
 	var m := frame_margin * density
-	PaintedPatch.draw_nine_patch_clipped(item, rect, frame, Vector4(m, m, m, m), density,
+	PaintedPatch.draw_nine_patch_clipped(item, rect, _frame_for(rect), Vector4(m, m, m, m), density,
 		frame_axis, frame_axis, Color.WHITE, outline)
 	for cut in WornEdge.cuts(rect.size, index, wear, wear_seed):
 		PaintedPatch.draw_edge_line(item, rect.position, cut["points"], wear_edge_color, WEAR_LINE_WIDTH)

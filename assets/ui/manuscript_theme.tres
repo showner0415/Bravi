@@ -1,4 +1,4 @@
-[gd_resource type="Theme" load_steps=15 format=3]
+[gd_resource type="Theme" load_steps=16 format=3]
 
 [ext_resource type="FontFile" path="res://assets/fonts/NanumSquareRoundEB.ttf" id="1_body"]
 [ext_resource type="FontVariation" path="res://assets/ui/font_title.tres" id="2_title"]
@@ -7,20 +7,23 @@
 [ext_resource type="Texture2D" path="res://assets/ui/paper.png" id="5_paper"]
 [ext_resource type="Texture2D" path="res://assets/ui/panel_frame.png" id="6_frame"]
 [ext_resource type="Texture2D" path="res://assets/ui/button.png" id="7_button"]
+[ext_resource type="Texture2D" path="res://assets/ui/panel_frame_plain.png" id="8_frame_plain"]
 
 [sub_resource type="StyleBox" id="StyleBox_panel_container"]
 script = ExtResource("3_panel")
 paper = ExtResource("5_paper")
 frame = ExtResource("6_frame")
+frame_small = ExtResource("8_frame_plain")
 frame_margin = 24.0
 density = 1.5
 frame_axis = 2
-wear = 2
+wear = 3
 
 [sub_resource type="StyleBox" id="StyleBox_panel"]
 script = ExtResource("3_panel")
 paper = ExtResource("5_paper")
 frame = ExtResource("6_frame")
+frame_small = ExtResource("8_frame_plain")
 frame_margin = 24.0
 density = 1.5
 frame_axis = 2
@@ -46,7 +49,7 @@ texture = ExtResource("7_button")
 cap = 13.3
 band = 6.0
 density = 1.5
-tint = Color(0.9, 0.86, 0.78, 1)
+tint = Color(0.961, 0.945, 0.914, 1)
 axis_x = 0
 axis_y = 0
 content_margin_left = 28.0
@@ -78,7 +81,7 @@ texture = ExtResource("7_button")
 cap = 13.3
 band = 6.0
 density = 1.5
-tint = Color(0.9, 0.86, 0.78, 0.75)
+tint = Color(1, 1, 1, 1)
 axis_x = 0
 axis_y = 0
 content_margin_left = 28.0
