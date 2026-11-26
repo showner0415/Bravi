@@ -53,6 +53,15 @@ func _ready() -> void:
 						"opponent": opponent, "line": lines[l], "distance": distance,
 					})
 			p += 1
+	for atk in Select.load_spare_attacks():
+		var spare_lines: Array[AttackData] = [atk]
+		for variant: AttackData in atk.variants:
+			spare_lines.append(variant)
+		for l in spare_lines.size():
+			_plan.append({
+				"name": "spare-%s-l%d-engage" % [atk.resource_path.get_file().get_basename(), l],
+				"opponent": trials[0], "line": spare_lines[l], "distance": DT.Distance.ENGAGE,
+			})
 	_next()
 
 

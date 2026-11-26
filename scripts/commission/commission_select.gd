@@ -9,6 +9,7 @@ const DUEL_PATH := "res://scenes/duel/duel.tscn"
 const TITLE_PATH := "res://scenes/ui/title.tscn"
 ## 연습의 줄을 만드는 상대들(결정 428). 이 폴더의 상대마다 "자유 결투" 버튼, 그 패턴마다 "패턴만" 버튼이 생긴다.
 const PRACTICE_DIR := "res://data/opponents"
+const SPARE_DIR := "res://data/attacks"
 const RULES_PATH := "res://data/duel_rules.tres"
 ## 빈틈 줄의 버튼(결정 407). 0은 늘 열린다, 1~3은 그 날의 확률.
 const OPENING_DAYS := [[0, "늘 열린다"], [1, "1일차"], [2, "2일차"], [3, "3일차부터"]]
@@ -141,6 +142,20 @@ static func load_trials() -> Array[OpponentData]:
 	return out
 
 
+## 다음 상대 몫의 공격을 읽는다(파일 이름 차례, 결정 470). 폴더가 없거나 비면 빈 배열이다.
+static func load_spare_attacks() -> Array[AttackData]:
+	var out: Array[AttackData] = []
+	if not DirAccess.dir_exists_absolute(SPARE_DIR):
+		return out
+	var files := Array(DirAccess.get_files_at(SPARE_DIR))
+	files.sort()
+	for file: String in files:
+		var path := SPARE_DIR.path_join(file.trim_suffix(".remap"))
+		if path.ends_with(".tres") and load(path) is AttackData:
+			out.append(load(path) as AttackData)
+	return out
+
+
 ## 카드 아래의 시험 줄 둘과 막는 법(결정 377). 시험용 상대가 없으면 아무것도 만들지 않는다.
 func _add_trials(column: VBoxContainer) -> void:
 	var trials := load_trials()
@@ -165,6 +180,7 @@ func _add_trials(column: VBoxContainer) -> void:
 		captions.add_child(label)
 	for opponent in trials:
 		_add_trial_column(opponent)
+	_add_spare_cell(trials[0])
 	var how := Label.new()
 	how.name = "PatternHelp"
 	how.text = "%s\n%s\n%s%s" % [DuelHud.HELP_CHAIN.trim_prefix(" · "), DuelHud.HELP_SWEEP.trim_prefix(" · "),
@@ -198,6 +214,30 @@ func _add_trial_column(opponent: OpponentData) -> void:
 			continue
 		_add_trial_button(drills, atk.attack_name, "PatternDrill%d" % _drill_count, opponent.drill(atk))
 		_drill_count += 1
+
+
+## 넷째 칸: 아직 상대가 없는 공격을 첫 상대의 몸으로 익힌다(결정 470).
+func _add_spare_cell(body: OpponentData) -> void:
+	var spare := load_spare_attacks()
+	if spare.is_empty():
+		return
+	var cell := VBoxContainer.new()
+	cell.name = "SpareCell"
+	cell.add_theme_constant_override("separation", 20)
+	_trial_grid.add_child(cell)
+	var caption := Label.new()
+	caption.name = "SpareCaption"
+	caption.text = "다음 상대 몫"
+	caption.add_theme_font_size_override("font_size", 18)
+	caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	caption.custom_minimum_size.y = (_trial_grid.find_child("TrialDuel0", true, false) as Button).get_combined_minimum_size().y
+	cell.add_child(caption)
+	var drills := HBoxContainer.new()
+	drills.add_theme_constant_override("separation", 12)
+	cell.add_child(drills)
+	for i in spare.size():
+		var button := _add_trial_button(drills, spare[i].attack_name.get_slice(" ", 0), "SpareDrill%d" % i, body.drill(spare[i]))
+		button.tooltip_text = spare[i].attack_name
 
 
 func _caption(row: HBoxContainer, caption: String) -> HBoxContainer:
