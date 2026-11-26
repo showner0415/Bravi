@@ -41,7 +41,7 @@ func _ready() -> void:
 		var opponent := trials[t]
 		var p := 0
 		for base in opponent.attacks:
-			if base.chain.is_empty():
+			if base.chain.is_empty() and not base.dive:
 				continue
 			var lines: Array[AttackData] = [base]
 			for variant: AttackData in base.variants:

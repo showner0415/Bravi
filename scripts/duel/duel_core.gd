@@ -353,6 +353,7 @@ func _on_opponent_state_end() -> void:
 ## 순서: ① 멀리면 헛침 ② GUARD이고 방향이 맞으면 막힘/패리 ③ 그 밖에는 닿음.
 func _resolve_strike() -> void:
 	var atk := brain.current_attack
+	var dive: bool = (brain.pattern_root if brain.pattern_root != null else atk).dive
 	# 걸음이 넘어가기 전에 이 타격의 높이를 잡아 둔다. -1이면 높이가 없어 방향만 본다(결정 386).
 	var height := brain.current_height()
 	var height_ok := height < 0 or aim_height == height
@@ -409,6 +410,9 @@ func _resolve_strike() -> void:
 			"count": brain.pattern_count(), "strike_time": brain.state_end, "duration": brain.tell_duration,
 			"height": brain.current_height(),
 		})
+	# 내 걸음이 간격을 정하고, 유효타로 판이 끝나면 좁히지 않는다(결정 450).
+	if dive and result != SR.HIT and player_state != PlS.STEPPING and distance != Dist.CLOSE:
+		_set_distance(distance + 1, "dive")
 	if result == SR.HIT:
 		_end(End.PLAYER_DEFEATED, "유효타를 맞음")
 

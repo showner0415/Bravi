@@ -37,6 +37,8 @@ const OUTLINE_COLOR := Color(1.0, 1.0, 0.4)
 ## 간격별 크기와 세로 이동(표시만).
 const DISTANCE_SCALE: Array[float] = [0.55, 0.85, 1.1]
 const DISTANCE_SHIFT: Array[float] = [-40.0, 0.0, 30.0]
+const DIVE_PULL_SCALE := 0.85
+const DIVE_PULL_SHIFT := -25.0
 
 ## 줄어드는 고리: 일정한 속도(px/초)로 줄어 0이 되는 순간이 타격이다.
 ## 패리 창에 해당하는 고정 띠(반지름 = 속도 x 패리 창)를 예비 동작 시작부터 그려 둔다.
@@ -106,6 +108,8 @@ var _ring_remaining := 0.0
 var _marks: Array[Dictionary] = []
 var _ring_sweep := false
 var _height_shift := 0.0
+var _dive_start := -INF
+var _dive_from_close := false
 ## 다음 갱신에서 크기와 위치를 보간 없이 맞춘다(시작, 다시 하기).
 var _snap := true
 
@@ -236,8 +240,15 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 		_snap = false
 
 	# --- 간격: 크기와 세로 위치 (표시만 보간)
-	var target_scale := DISTANCE_SCALE[core.distance]
-	var target_pos := anchor + Vector2(0, DISTANCE_SHIFT[core.distance])
+	# 뛰어들기의 예비 동작은 들어서기만큼 물러서고 타격까지 둔다(결정 454). 들어선 순간의 간격은 글자를 위해 잡아 둔다.
+	var dive_pull := 0.0
+	if brain.state == DT.OpponentState.TELL and brain.current_attack != null and brain.current_attack.dive:
+		if brain.state_start != _dive_start:
+			_dive_start = brain.state_start
+			_dive_from_close = core.distance == DT.Distance.CLOSE
+		dive_pull = OpponentMotion.ease_out(clampf((display_time - brain.state_start) / maxf(brain.tell_duration * core.opponent_data.tell_in, 0.001), 0.0, 1.0))
+	var target_scale := DISTANCE_SCALE[core.distance] * lerpf(1.0, DIVE_PULL_SCALE, dive_pull)
+	var target_pos := anchor + Vector2(0, DISTANCE_SHIFT[core.distance] + DIVE_PULL_SHIFT * dive_pull)
 	scale = scale.lerp(Vector2.ONE * target_scale, smooth)
 	position = position.lerp(target_pos, smooth)
 	var inverse := 1.0 / maxf(scale.x, 0.01)
@@ -272,6 +283,8 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 				text += " · %s %s" % [DT.GUARD_NAMES[atk.direction], DT.HEIGHT_NAMES[tell_height]]
 			if _ring_sweep:
 				text += "\n쥐고 끌어라"
+			if atk.dive:
+				text += "\n" + ("막아라" if _dive_from_close else "멀리 물러서거나 막아라")
 			# 표시된 공격은 예비 동작 내내, 지금의 막기가 버티기만 되는지 받아내는지 알려 준다.
 			if brain.step_index == 0 and atk.needs_raised_guard and core.player_state == DT.PlayerState.GUARD:
 				text += "\n" + ("막기를 뗐다 다시 올려라" if core.would_brace_now() else "받아낼 준비")

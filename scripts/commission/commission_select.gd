@@ -167,11 +167,20 @@ func _add_trials(column: VBoxContainer) -> void:
 		_add_trial_column(opponent)
 	var how := Label.new()
 	how.name = "PatternHelp"
-	how.text = "%s\n%s\n%s\n%s" % [DuelHud.HELP_CHAIN.trim_prefix(" · "), DuelHud.HELP_SWEEP.trim_prefix(" · "),
-			DuelHud.HELP_HEIGHT.trim_prefix(" · "), DuelHud.opening_help(trials[0]).trim_prefix(" · ")]
+	how.text = "%s\n%s\n%s%s" % [DuelHud.HELP_CHAIN.trim_prefix(" · "), DuelHud.HELP_SWEEP.trim_prefix(" · "),
+			DuelHud.HELP_HEIGHT.trim_prefix(" · ") + DuelHud.opening_help(trials[0]),
+			"\n" + DuelHud.HELP_DIVE.trim_prefix(" · ") if _any_dive(trials) else ""]
 	how.add_theme_font_size_override("font_size", 16)
 	how.add_theme_color_override("font_color", Ui.DIM)
 	column.add_child(how)
+
+
+func _any_dive(opponents: Array) -> bool:
+	for opponent: OpponentData in opponents:
+		for atk in opponent.attacks:
+			if atk.dive:
+				return true
+	return false
 
 
 func _add_trial_column(opponent: OpponentData) -> void:
@@ -185,7 +194,7 @@ func _add_trial_column(opponent: OpponentData) -> void:
 	drills.add_theme_constant_override("separation", 12)
 	cell.add_child(drills)
 	for atk in opponent.attacks:
-		if atk.chain.is_empty():
+		if atk.chain.is_empty() and not atk.dive:
 			continue
 		_add_trial_button(drills, atk.attack_name, "PatternDrill%d" % _drill_count, opponent.drill(atk))
 		_drill_count += 1

@@ -1,8 +1,9 @@
 extends SceneTree
 ## 봇이 결투를 여러 판 치르고 수를 낸다(창 없이). 게임 창에서 판을 끝까지 하며 세던 것을 대신한다.
-## 실행: tests/run_duel_stats.ps1 [-Runs 20] [-Delay 0.25] [-Counter mid,same,thrust] [-Miss 0.1] [-Opponent res://...tres] [-Opening base,off,1,2,3] [-Bonus 0.15]
+## 실행: tests/run_duel_stats.ps1 [-Runs 20] [-Delay 0.25] [-Counter mid,same,thrust] [-Miss 0.1] [-Opponent res://...tres] [-Opening base,off,1,2,3] [-Bonus 0.15] [-Dive block|retreat]
 ## 빈틈(opening): base 상대 그대로 / off 늘 열린다 / 1·2·3 그 날의 확률(결정 408). bonus는 1·2·3에만 든다(결정 420).
 ## 봇: 고리의 칸을 막고(miss의 확률로 높이를 틀린다), 빈틈이 열리면 delay초 뒤에 받아치고, 무너지면 가운데 중단을 찌른다.
+## 뛰어들기(dive): block 막는다 / retreat 막기를 떼고 물러선 뒤 헛침의 빈틈에 가운데 중단(결정 456). 뛰어들기에만 다르다.
 ## 받아치는 조준(counter): same 막은 칸 그대로 / mid 같은 방향 중단 / thrust 가운데 중단.
 ## 줄: "stat,<상대>,<9칸|가로만>,<counter>,..." 하나가 설정 하나. 판정이 아니라 견줄 수다(통과 기준은 줄이 다 나오는 것뿐).
 
@@ -26,6 +27,7 @@ func _initialize() -> void:
 	var paths: PackedStringArray = []
 	var openings: PackedStringArray = ["base"]
 	var bonus := 0.0
+	var dive := "block"
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--runs="):
 			runs = int(arg.trim_prefix("--runs="))
@@ -39,6 +41,8 @@ func _initialize() -> void:
 			openings = arg.trim_prefix("--opening=").split(",", false)
 		elif arg.begins_with("--bonus="):
 			bonus = float(arg.trim_prefix("--bonus="))
+		elif arg.begins_with("--dive="):
+			dive = arg.trim_prefix("--dive=")
 		elif arg.begins_with("--opponent="):
 			paths.append(arg.trim_prefix("--opponent="))
 	if paths.is_empty():
@@ -67,14 +71,14 @@ func _initialize() -> void:
 				for counter in counters:
 					var summaries: Array = []
 					for i in runs:
-						summaries.append(_play(played, i + 1, delay, miss, counter))
+						summaries.append(_play(played, i + 1, delay, miss, counter, dive))
 					_print(path.get_file().get_basename(), variant[0], label, counter, delay, miss, Summary.merge(summaries))
 					lines += 1
 	print("DUEL STATS OK %d" % lines)
 	quit(0)
 
 
-func _play(opponent: OpponentData, seed_value: int, delay: float, miss: float, counter: String) -> Dictionary:
+func _play(opponent: OpponentData, seed_value: int, delay: float, miss: float, counter: String, dive: String) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_value
 	# 봇의 실수는 판의 난수와 따로 뽑는다(판의 차례를 건드리지 않게).
@@ -83,7 +87,9 @@ func _play(opponent: OpponentData, seed_value: int, delay: float, miss: float, c
 	var core := DuelCore.new()
 	var none: Array[CommissionCondition] = []
 	core.setup(load(RULES_PATH), load(WEAPON_PATH), opponent, rng, none, false)
-	var guard := func(_atk: AttackData, _index: int) -> StringName:
+	var guard := func(atk: AttackData, _index: int) -> StringName:
+		if dive == "retreat" and atk.dive:
+			return &"retreat"
 		return &"wrong_height" if hand.randf() < miss else &"hold"
 	var aim := func(ev: Dictionary) -> Variant:
 		if float(ev["recovery"]) <= 0.0:
@@ -96,10 +102,14 @@ func _play(opponent: OpponentData, seed_value: int, delay: float, miss: float, c
 			"thrust":
 				return [DT.Direction.CENTER, DT.Height.MID]
 		return [atk.direction, DT.Height.MID]
-	var bot := Bot.new(core, {
+	var cfg := {
 		"guard_fn": guard, "step_fn": guard, "counter_fn": aim, "counter_delay": delay,
 		"finisher": [DT.Direction.CENTER, DT.Height.MID], "want_distance": DT.Distance.ENGAGE,
-	})
+	}
+	if dive == "retreat":
+		cfg["whiff_fn"] = func(ev: Dictionary) -> Variant:
+			return [DT.Direction.CENTER, DT.Height.MID] if float(ev["recovery"]) > 0.0 else null
+	var bot := Bot.new(core, cfg)
 	while not core.ended and core.time < HARD_STOP:
 		core.tick(DELTA)
 		bot.update()

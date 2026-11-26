@@ -134,7 +134,8 @@ func resolve_strike(now: float, result: int, braced := false) -> float:
 			# 플레이어에게 닿은 공격 뒤에는 빈틈이 없고, 연속 막힘도 끊긴다.
 			recovery = 0.0
 			blocked_streak = 0
-	if recovery > 0.0 and (result == R.BLOCKED or result == R.PARRIED):
+	# 헛친 뛰어들기도 확률을 굴린다(결정 451).
+	if recovery > 0.0 and (result == R.BLOCKED or result == R.PARRIED or (root.dive and result == R.WHIFF)):
 		if _opens(result == R.PARRIED):
 			closed_streak = 0
 		else:

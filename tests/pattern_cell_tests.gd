@@ -463,8 +463,8 @@ func t91_day_patterns() -> String:
 		select.find_children("TrialFlat*", "Button", true, false).size(),
 		select.find_children("OpeningDay*", "Button", true, false).size(),
 	]
-	if counts != [3, 6, 0, 4]:
-		errs.append("연습 화면의 버튼 (자유 결투·패턴만·가로만·빈틈) %s (기대 [3, 6, 0, 4])" % str(counts))
+	if counts != [3, 5, 0, 4]:
+		errs.append("연습 화면의 버튼 (자유 결투·패턴만·가로만·빈틈) %s (기대 [3, 5, 0, 4])" % str(counts))
 	# 7. 연습 화면의 배치(결정 448): 상대가 셋보다 적으면 사본으로 채워 셋의 폭을 잰다.
 	while select.find_children("TrialDuel*", "Button", true, false).size() < 3:
 		var filler := (load(BARTOLO_PATH) as OpponentData).duplicate() as OpponentData

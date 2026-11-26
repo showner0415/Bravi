@@ -272,18 +272,23 @@ func t81_trial() -> String:
 			errs.append("%s: 로드되지 않음" % label)
 			continue
 		var patterns: Array[AttackData] = []
+		var dives := 0
 		var seen_pattern := false
 		for i in trial.attacks.size():
-			if trial.attacks[i].chain.is_empty():
+			if trial.attacks[i].chain.is_empty() and not trial.attacks[i].dive:
 				if seen_pattern:
 					errs.append("%s: 단발 %d가 패턴 뒤에 있음" % [label, i])
 			else:
 				seen_pattern = true
-				patterns.append(trial.attacks[i])
-		if trial.attacks.size() - patterns.size() != 3:
-			errs.append("%s: 단발 %d개 (기대 3)" % [label, trial.attacks.size() - patterns.size()])
-		if patterns.is_empty():
-			errs.append("%s: 패턴이 없음" % label)
+				if trial.attacks[i].dive:
+					dives += 1
+				else:
+					patterns.append(trial.attacks[i])
+		var singles := trial.attacks.size() - patterns.size() - dives
+		if singles != 3:
+			errs.append("%s: 단발 %d개 (기대 3)" % [label, singles])
+		if patterns.is_empty() and dives == 0:
+			errs.append("%s: 패턴도 뛰어들기도 없음" % label)
 		for root in patterns:
 			_check_pattern(errs, trial, root, weapon, "%s · %s" % [label, root.attack_name])
 			var before := trial.attacks.size()
@@ -291,7 +296,7 @@ func t81_trial() -> String:
 			if drill.attacks.size() != 1 or drill.attacks[0] != root or not drill.habits.is_empty() or drill.attack_bag_sets != 0 \
 					or trial.attacks.size() != before or drill.display_name != trial.display_name or drill.art != trial.art:
 				errs.append("%s · %s: 패턴만 상대가 어긋남" % [label, root.attack_name])
-		pattern_total += patterns.size()
+		pattern_total += patterns.size() + dives
 	# 4. 번호 고리의 자리.
 	var ring := OpponentView.RING_POSITION
 	var start := _run(_opp(_chain()), {}, 1.5)

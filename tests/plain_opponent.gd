@@ -7,7 +7,8 @@ static func of(opponent: OpponentData) -> OpponentData:
 	copy.opening_chance = 1.0
 	var singles: Array[AttackData] = []
 	for atk in opponent.attacks:
-		if atk.chain.is_empty():
+		# 뛰어들기도 버린다: 옛 규칙의 상대는 뛰어들지 않는다(결정 457).
+		if atk.chain.is_empty() and not atk.dive:
 			singles.append(atk)
 	copy.attacks = singles
 	return copy

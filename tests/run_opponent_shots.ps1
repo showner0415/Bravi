@@ -73,7 +73,9 @@ if ($Shots -and $Stages) {
 
 $errors = @($out | Where-Object { $_ -match $errorPattern })
 $warnings = @($out | Where-Object { $_ -match '^\s*WARNING:' })
-$ok = @($out | Where-Object { $_ -match "^OPPONENT SHOTS OK $expected`$" })
+# A given -Opponent may add shots (Lorenzo: dive), so the count is read back instead of fixed.
+$okCount = if ($Opponent) { '\d+' } else { "$expected" }
+$ok = @($out | Where-Object { $_ -match "^OPPONENT SHOTS OK $okCount`$" })
 
 $reasons = @()
 if ($runExit -ne 0) { $reasons += "exit code $runExit" }

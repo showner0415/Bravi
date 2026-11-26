@@ -40,7 +40,9 @@ static func summarize(record: DuelRecord) -> Dictionary:
 			DuelRecord.STRIKE:
 				out["strikes"][strike_keys[ev["result"]]] += 1
 				if ev.get("closed", false):
-					out["guards"]["안 열림"] += 1
+					# 헛친 뛰어들기의 안 열림은 막힘·패리의 셈에 넣지 않는다(결정 451).
+					if ev["result"] == DT.StrikeResult.BLOCKED or ev["result"] == DT.StrikeResult.PARRIED:
+						out["guards"]["안 열림"] += 1
 				elif (ev["result"] == DT.StrikeResult.BLOCKED or ev["result"] == DT.StrikeResult.PARRIED) \
 						and float(ev.get("recovery", 0.0)) > 0.0 and float(ev.get("next_strike", -1.0)) < 0.0:
 					out["guards"]["열림"] += 1

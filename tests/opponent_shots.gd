@@ -82,7 +82,10 @@ func _ready() -> void:
 	_core = States.make_core(false, _opponent_path)
 	for atk in _opp.attacks:
 		# 패턴의 뿌리가 단발의 칸(cutl·cutr)을 덮지 않게 단발만 담는다(결정 426).
-		if atk.chain.is_empty():
+		# 뛰어들기도 가운데라 _key_of가 "thrust"로 매겨 찌르기를 덮으므로 따로 담는다(계획 037b T3).
+		if atk.dive:
+			_atks["dive"] = atk
+		elif atk.chain.is_empty():
 			_atks[_key_of(atk)] = atk
 	for habit in _opp.habits:
 		if habit.response != null:
@@ -147,6 +150,13 @@ func _plan() -> Array[Dictionary]:
 	out.append(_shot("strike-flash", S.RECOVERY, "cutl", 0.0, D.ENGAGE, false, "strike"))
 	out.append(_shot("pair-off", S.RECOVERY, "cutl", 0.5, D.ENGAGE, true, "pair-off"))
 	out.append(_shot("pair-on", S.RECOVERY, "cutl", 0.5, D.ENGAGE, true))
+	if _atks.has("dive"):
+		var dive_hold := OpponentMotion.hold_end((_atks["dive"] as AttackData).tell_time, _weapon.parry_window, _opp)
+		out.append(_shot("dive-tell25", S.TELL, "dive", 0.25))
+		out.append(_shot("dive-tell60", S.TELL, "dive", 0.6))
+		out.append(_shot("dive-hold", S.TELL, "dive", dive_hold))
+		out.append(_shot("dive-strike", S.TELL, "dive", 0.9999))
+		out.append(_shot("dive-tell25-close", S.TELL, "dive", 0.25, D.CLOSE))
 	return out
 
 
@@ -195,6 +205,9 @@ func _sil_plan() -> Array[Dictionary]:
 	out.append(_shot("sil-idle-far", S.IDLE, "", 0.0, D.FAR))
 	out.append(_shot("sil-complacent-mid", States.COMPLACENT))
 	out.append(_shot("sil-idle-mid-noarm", S.IDLE, "", 0.0, D.ENGAGE, false, "noarm"))
+	if _atks.has("dive"):
+		out.append(_shot("sil-dive-tell25-mid", S.TELL, "dive", 0.25))
+		out.append(_shot("sil-dive-tell25-close", S.TELL, "dive", 0.25, D.CLOSE))
 	return out
 
 

@@ -10,6 +10,7 @@
 # -Delay: seconds the bot waits before countering. -Miss: chance to guard the wrong height.
 # -Opening: opening chance settings (base = as the data says, off = always opens, 1/2/3 = that day). Default base.
 # -Bonus: adds to the chance of the day settings 1/2/3 only (the upgrade), e.g. -Opening 3 -Bonus 0.15. Default 0.
+# -Dive: block (default) or retreat: how the bot meets a dive attack (retreat = step back, then strike the opening).
 # -Counter: where the counter is aimed (same = the guarded cell, mid = same side mid row, thrust = centre mid).
 # Without -Opponent it plays every opponent in data/opponents, 9-cell and flat.
 # Judges the run: exit code 0, one "DUEL STATS OK <n>" line, no ERROR lines. The numbers are not judged.
@@ -22,7 +23,8 @@ param(
 	[string]$Counter = 'mid',
 	[string[]]$Opponent = @(),
 	[string]$Opening = 'base',
-	[double]$Bonus = 0.0
+	[double]$Bonus = 0.0,
+	[string]$Dive = 'block'
 )
 
 . "$PSScriptRoot\godot_path.ps1"
@@ -48,7 +50,7 @@ if (-not $SkipImport) {
 }
 
 $inv = [System.Globalization.CultureInfo]::InvariantCulture
-$userArgs = "--runs=$Runs --delay=$($Delay.ToString($inv)) --miss=$($Miss.ToString($inv)) --counter=$Counter --opening=$Opening --bonus=$($Bonus.ToString($inv))"
+$userArgs = "--runs=$Runs --delay=$($Delay.ToString($inv)) --miss=$($Miss.ToString($inv)) --counter=$Counter --opening=$Opening --bonus=$($Bonus.ToString($inv)) --dive=$Dive"
 foreach ($path in $Opponent) { $userArgs += " --opponent=$path" }
 $out = cmd /c "`"$Godot`" --headless --path `"$project`" --script res://tests/duel_stats.gd -- $userArgs 2>&1"
 $runExit = $LASTEXITCODE

@@ -18,10 +18,10 @@ extends RefCounted
 ##   counter_fn(strike_ev: Dictionary) -> Variant
 ##       막힘·패리 직후 받아칠 조준 [direction, height] 또는 null. 없으면 받아치지 않는다.
 ##   whiff_fn(strike_ev: Dictionary) -> Variant
-##       상대가 헛친 뒤 전진해서 칠 조준 [direction, height] 또는 null.
+##       상대가 헛친 뒤 칠 조준 [direction, height] 또는 null. 간격이 멀리일 때만 한 걸음 들어간다(결정 456).
 ##   finisher: [direction, height] — 상대가 무너지면 칠 조준.
 ##   max_counters: int — 받아치기 횟수 제한(-1이면 무제한).
-##   want_distance: int — 이 간격이 될 때까지 전진한다.
+##   want_distance: int — 이 간격이 될 때까지 전진한다. &"retreat"로 고른 예비 동작이 끝날 때까지는 쉰다(결정 456).
 ##   attack_at: {time, aim} — 코어 시각 time을 지난 첫 tick에 공격한다.
 ##   attack_before_strike: {index, lead, aim} — index번째 공격의 타격 lead초 전을 지난 첫 tick에 공격한다.
 ##   regrip_before_strike: {index, lead} — index번째 공격의 타격 lead초 전을 지난 첫 tick에
@@ -69,6 +69,8 @@ var _lunge_armed := false
 var _lunge_regrip := false
 ## 지금 패턴의 예비 동작에서 고른 모드. 걸음이 이어받는다.
 var _mode: StringName = &"hold"
+## &"retreat"로 고른 예비 동작이 끝나기 전: want_distance가 물러선 걸음을 되돌리지 않게 한다(결정 456).
+var _retreating := false
 
 
 ## 첫 피를 내는 봇의 설정: 막고, 빈틈이 생기는 공격 뒤에 중단 찌르기, 무너지면 중단 찌르기.
@@ -137,7 +139,7 @@ func update() -> void:
 			_attack(aim)
 		return
 	if ready and cfg.has("want_distance") and core.distance < int(cfg["want_distance"]) \
-			and not core.guard_held:
+			and not core.guard_held and not _retreating:
 		core.step(1)
 
 
@@ -174,6 +176,7 @@ func _on_tell(ev: Dictionary) -> void:
 	if cfg.has("guard_fn"):
 		mode = cfg["guard_fn"].call(atk, tells_seen)
 	_mode = mode
+	_retreating = mode == &"retreat"
 	match mode:
 		&"hold":
 			core.set_aim(atk.direction, height)
@@ -247,6 +250,7 @@ func _on_strike(ev: Dictionary) -> void:
 	# 패턴이 이어지는 중에는 받아치지도 움직이지도 않는다(다음 타격이 온다. 결정 379).
 	if float(ev.get("next_strike", -1.0)) >= 0.0:
 		return
+	_retreating = false
 	if result == DT.StrikeResult.BLOCKED or result == DT.StrikeResult.PARRIED:
 		# 빈틈이 없는 타격을 막았다: 상대는 대기로 돌아갔다. 들어가거나 나올 기회다.
 		if is_zero_approx(float(ev["recovery"])):
@@ -278,7 +282,9 @@ func _on_strike(ev: Dictionary) -> void:
 		var aim: Variant = cfg["whiff_fn"].call(ev)
 		if aim == null:
 			return
-		_pending_steps = [1]
+		_pending_steps = []
+		if core.distance == DT.Distance.FAR:
+			_pending_steps = [1]
 		_pending_attack = aim
 
 

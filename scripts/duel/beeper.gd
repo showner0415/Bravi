@@ -11,6 +11,8 @@ const VOICES := 4
 ## 사건별 [주파수(Hz), 길이(초)].
 const TONES := {
 	&"tell": [330.0, 0.07],
+	## 뛰어들기의 예비 동작: 예비 동작음보다 낮고 길다(결정 454).
+	&"dive": [200.0, 0.16],
 	&"block": [520.0, 0.06],
 	&"parry": [880.0, 0.12],
 	## 막았는데 빈틈을 주지 않았다: 막힘보다 한 옥타브 낮고 길다(결정 404).
@@ -38,7 +40,7 @@ func _ready() -> void:
 func on_event(ev: Dictionary) -> void:
 	match ev["type"]:
 		DuelRecord.TELL_START:
-			_play(&"tell")
+			_play(&"dive" if (ev["attack"] as AttackData).dive else &"tell")
 		DuelRecord.PATTERN_STEP:
 			_play(&"tell")
 		DuelRecord.STRIKE:

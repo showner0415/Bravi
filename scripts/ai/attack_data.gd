@@ -38,6 +38,10 @@ extends Resource
 ## 참이면 휩쓸기: 이 공격과 chain이 한 번의 긴 베기가 닿는 점들이다. 패리가 없고 막기를 쥔 채 끌어야 한다(결정 372).
 @export var sweep := false
 
+@export_group("뛰어들기 (계획 037b)")
+## 참이면 판정 뒤 간격을 한 칸 좁힌다(결정 450).
+@export var dive := false
+
 @export_group("칸과 변주 (계획 036b)")
 ## 이 타격이 올 수 있는 높이(DuelTypes.Height의 값)의 묶음. 비면 높이가 없는 타격이라 막기가 방향만 본다.
 ## 나올 때마다 하나를 고르게 뽑는다(같은 값을 여러 번 적으면 그만큼 자주 나온다. 결정 384).

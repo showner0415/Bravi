@@ -22,6 +22,8 @@ const HELP_SWEEP := " · 휩쓸기는 막기를 쥔 채 점을 따라 끈다(떼
 ## 빈틈의 확률이 있는 상대에만 붙는다(결정 404). %s는 상한의 글.
 const HELP_OPENING := " · 막아도 틈을 안 줄 때가 있다(낮은 소리)%s"
 const HELP_HEIGHT := " · 고리가 뜬 칸(방향과 높이)에 마우스를 두고 막는다"
+## 뛰어드는 찌르기(결정 451·454). 연습 화면도 같은 글을 쓴다.
+const HELP_DIVE := " · 뛰어드는 찌르기는 막기를 떼고 멀리까지 물러서면 헛친다(막으면 밀착으로 밀고 온다)"
 ## 엉킴 게이지가 이 값 이상이고 간격이 밀착이면 경고를 낸다(게이지의 색, 가운데 글자, 내 칼의 경고 표시).
 const BIND_WARN_RATIO := 0.8
 const BIND_WARN_TEXT := "칼이 엉킨다!"
@@ -98,6 +100,10 @@ static func help_text(opponent: OpponentData, p_day_mode := false, has_hat := fa
 		text += HELP_HEIGHT
 	if opponent.opening_chance < 1.0:
 		text += opening_help(opponent)
+	for atk in opponent.attacks:
+		if atk.dive:
+			text += HELP_DIVE
+			break
 	if opponent.close_hit_posture_loss > 1:
 		text += " · 밀착에서 맞으면 자세 %d칸" % opponent.close_hit_posture_loss
 	if weapon != null and weapon.close_bind_time > 0.0:
@@ -551,7 +557,8 @@ func _describe(ev: Dictionary) -> String:
 			return "이어서 %s (%d/%d)%s" % [step_atk.attack_name, int(ev["index"]) + 1, int(ev["count"]), where]
 		DuelRecord.STRIKE:
 			if ev.get("closed", false):
-				return "%s — 틈을 안 줬다%s" % ["패리" if ev["result"] == DT.StrikeResult.PARRIED else "막음",
+				return "%s — 틈을 안 줬다%s" % ["헛침" if ev["result"] == DT.StrikeResult.WHIFF \
+						else "패리" if ev["result"] == DT.StrikeResult.PARRIED else "막음",
 					" (다음은 열린다)" if OpponentView._limit_reached(ev) else ""]
 			match ev["result"]:
 				DT.StrikeResult.BLOCKED:
