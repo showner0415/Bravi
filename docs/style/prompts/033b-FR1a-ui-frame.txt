@@ -1,0 +1,20 @@
+Task: call your image generation tool exactly once to create exactly one image. You may use the code tool only to make that one call. Pass the attached guide image to the image generation tool as a referenced image by its path: {WORKDIR}\in-1.png. Give the image generation tool the text from the line that starts with Image: to the end of this message, word for word, as its prompt. Do not run shell commands. Do not read, create, change or delete any file. Do not use a browser, web search, computer use, apps or any other tool. Do not retry. When the image is done, reply with one line: done.
+
+Image: Landscape, 1536x1024 pixels. A hand drawn ink border for a text panel in a 2D game interface, drawn on a plain flat white background.
+
+Subject: only the ink lines of a rectangular panel border: one bold outer line, one thin inner line parallel to it and close inside it, and one small diamond on each of the four corners of the inner line. Nothing else. The middle of the rectangle is plain white and empty.
+
+Composition:
+- Follow the attached guide for the composition, the proportions and the places of the lines: the same rectangle, the same bold outer line, the same thin inner line close inside it, the same four small diamonds. The guide is made of flat shapes: draw its lines again by hand, with the feel of ink drawn with a pen.
+- Ink only, on a plain flat white background: no paper, no parchment, no fill, no texture, no color wash anywhere, neither inside the rectangle nor outside it. The whole background and the whole inside of the border stay plain white.
+- The border is one closed rectangle with straight, level sides and the same distance to the image edges as in the guide. The lines keep the weights of the guide: the outer line is not thinner and not thicker. No second frame, no extra ornament, no flourish, no leaf, no line outside the outer line.
+- No letters, no text, no pattern, no seal, no stamp, no shadow and no 3D or beveled border are added. The outer edge is straight: no torn edge, no gap in the lines.
+
+Style (the attached image is our own drawing and the reference for the shapes and the colors. Draw a new, original illustration of this interface piece in the same simple look, only hand made, with the feel of ink on old parchment):
+- A finished flat illustration for a game interface, hand made with ink on old parchment paper. The paper has fine fibers, uneven pale water stains and small faded spots. Ink lines are drawn by hand and wobble only slightly, as with a pen held by a steady hand. Keep it as simple as the attached image: the same few shapes and the same few lines. Add only the feel of hand made ink and old paper.
+- Ink lines: very dark warm brown, hex 3B2A1E, and the thin lines 6B5440. Every bold outer line keeps one even line weight along its whole length and every thin line keeps one thin line weight. Lines are smooth with round ends.
+- Fills are flat, faded and muted. The paper grain, the fibers and the pale stains belong only to the parchment itself. Where the piece is only ink lines on a plain white or plain blue background, that background stays one flat color, with no texture.
+- Do not add: letters, text, symbols, patterns, seals, stamps, drop shadows, bevels, embossed or 3D borders, glow, gradients on the ink, torn or rough outer edges, hatching, cross-hatching, an engraving or etching look.
+No text, no signature.
+
+Colors: Only these: the parchment E9D8B4, a slightly darker parchment D2B98C, the thin lines and the faint stains 6B5440, the outlines 3B2A1E, and the one flat background color that the Composition asks for. Avoid bright saturated yellow, orange, red or green, and pure black.

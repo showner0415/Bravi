@@ -1,0 +1,20 @@
+Task: call your image generation tool exactly once to create exactly one image. You may use the code tool only to make that one call. Pass the attached guide image to the image generation tool as a referenced image by its path: {WORKDIR}\in-1.png. Give the image generation tool the text from the line that starts with Image: to the end of this message, word for word, as its prompt. Do not run shell commands. Do not read, create, change or delete any file. Do not use a browser, web search, computer use, apps or any other tool. Do not retry. When the image is done, reply with one line: done.
+
+Image: Landscape, 1536x1024 pixels. One hand drawn parchment button for a 2D game interface, on a plain flat blue background.
+
+Subject: one wide horizontal band of parchment paper whose two short ends are cut into swallowtails: each end has a V shaped notch pointing inward to the middle of the band. A bold ink outline runs around the whole band, and one thin ink line runs along the inside of the top edge and one along the inside of the bottom edge. No text on it.
+
+Composition:
+- Follow the attached guide for the composition, the proportions and the places: the same band in the middle of the image, 1200 pixels wide and 224 pixels high in the 1536 by 1024 image, the same swallowtail notches at both ends, the same bold outline, the same two thin lines inside near the top and bottom edges, which stop short of the notches. The guide is made of flat shapes: draw it again by hand, with the feel of ink drawn with a pen.
+- The band is filled with parchment: fine paper fibers, a few pale stains and faded spots, all calm and light. Keep the fill light with no dark patch, because dark text will sit on it.
+- The background is one flat blue, exactly hex 4F7A9A, everywhere around the band, with no texture, no shadow, no gradient, no glow. Nothing else is in the image.
+- The band is perfectly straight and level, with straight top and bottom edges. No letters, no text, no pattern, no seal, no stamp, no shadow and no 3D or beveled border are added. The outer edge is straight: no torn edge, no curl, no fold, no second band, no ribbon tail, no knot.
+
+Style (the attached image is our own drawing and the reference for the shapes and the colors. Draw a new, original illustration of this interface piece in the same simple look, only hand made, with the feel of ink on old parchment):
+- A finished flat illustration for a game interface, hand made with ink on old parchment paper. The paper has fine fibers, uneven pale water stains and small faded spots. Ink lines are drawn by hand and wobble only slightly, as with a pen held by a steady hand. Keep it as simple as the attached image: the same few shapes and the same few lines. Add only the feel of hand made ink and old paper.
+- Ink lines: very dark warm brown, hex 3B2A1E, and the thin lines 6B5440. Every bold outer line keeps one even line weight along its whole length and every thin line keeps one thin line weight. Lines are smooth with round ends.
+- Fills are flat, faded and muted. The paper grain, the fibers and the pale stains belong only to the parchment itself. Where the piece is only ink lines on a plain white or plain blue background, that background stays one flat color, with no texture.
+- Do not add: letters, text, symbols, patterns, seals, stamps, drop shadows, bevels, embossed or 3D borders, glow, gradients on the ink, torn or rough outer edges, hatching, cross-hatching, an engraving or etching look.
+No text, no signature.
+
+Colors: Only these: the parchment E9D8B4, a slightly darker parchment D2B98C, the thin lines and the faint stains 6B5440, the outlines 3B2A1E, and the one flat background color that the Composition asks for. Avoid bright saturated yellow, orange, red or green, and pure black.

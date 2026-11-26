@@ -1102,3 +1102,80 @@ Colors: The wall parchment E9D8B4 with a slightly darker parchment D2B98C, the h
 
 - 소매의 색: `Every sleeve is the doublet sleeve of this character, filled with muted olive green 6F7F4F with shadow 59663F, the same as the arm in the first referenced image.`
 - 칼자루를 가로지르는 손가락: `On all three fists, the four fingers wrap around the grip: draw them as four short rounded finger bands lying side by side across the grip, stacked one above the other, with a thin line between the fingers; the thumb lies along the grip.`
+
+# 계획 033b의 블록 (그린 질감: 종이·테두리·버튼. 결정 488~493)
+
+영어, ASCII만, 큰따옴표 없이(결정 187). 있는 블록은 고치지 않고 아래만 더한다(결정 195: 명세가 먼저, 프롬프트가 옮겨 적는다). 지시 블록은 "길 가·무대"의 한 장 블록 그대로다(`{WORKDIR}\in-1.png` 하나). 넣는 그림은 셋 모두 우리 그림이다(결정 493): 종이는 `basis/counter-room.png`의 벽 한 조각(`generated/in/033b-in-paper.png`, 170×660), 테두리와 버튼은 메인이 System.Drawing으로 그린 안내도(`033b-in-frame.png`·`033b-in-button.png`, 1536×1024. 033의 꼴을 ×4로. 그리는 감싸개는 작업 폴더의 `guides.ps1`). 모든 구도 블록에 "글자·문양·도장·그림자·입체 테두리를 더하지 않는다, 바깥 가장자리는 곧다"를 넣었다. 화풍 `S-UI`와 색 `C-UI`는 셋이 같다(프롬프트의 차례: 지시 → `P-UI-*` → `S-UI` → `C-UI`).
+
+안내도의 값(화소로 잰 것, 결정 493과 같다):
+
+| 안내도 | 값 |
+|---|---|
+| 테두리 | 흰 바탕. 사각형은 사방 64 안쪽(1408×896), 바깥 선 12(`#3B2A1E`, 사각형 안쪽으로), 안쪽 선 4(`#6B5440`, 가장자리에서 20 안쪽), 안쪽 선의 네 모서리에 마름모 반지름 16(칠 `#D2B98C`, 테두리 4 `#3B2A1E`). 가운데는 흰색 |
+| 버튼 | `#4F7A9A` 바탕. 띠 폭 1200 · 높이 224(가운데), 양 끝 제비꼬리 홈 48, 바깥 선 10(`#3B2A1E`, 꼭짓점을 따라 가운데로 그은 둥근 이음), 위아래 20 안쪽에 선 4(`#3B2A1E` 알파 0.7, 홈 + 24 안쪽에서 멈춘다), 칠 `#E9D8B4` |
+| 종이 | 방 그림 벽의 들보 사이 한 조각(x 892, y 20, 170×660). 기둥·선반·카운터가 들지 않는다 |
+
+## 지시 블록 (033b)
+
+```
+Task: call your image generation tool exactly once to create exactly one image. You may use the code tool only to make that one call. Pass the attached guide image to the image generation tool as a referenced image by its path: {WORKDIR}\in-1.png. Give the image generation tool the text from the line that starts with Image: to the end of this message, word for word, as its prompt. Do not run shell commands. Do not read, create, change or delete any file. Do not use a browser, web search, computer use, apps or any other tool. Do not retry. When the image is done, reply with one line: done.
+```
+
+## P-UI-PAPER (종이 PP1a의 `Image:`·`Subject:`·`Composition:`. 넣는 그림은 `033b-in-paper`)
+
+```
+Image: Landscape, 1920x1080 pixels. One blank sheet of aged parchment paper for a 2D game interface, seen straight from the front and filling the whole image.
+
+Subject: a single plain sheet of old parchment paper with fine visible fibers, uneven pale water stains and small faded spots, spread evenly over the whole sheet. No object of any kind on it.
+
+Composition:
+- The attached image is our own drawing: a small piece of the same paper, only newer and cleaner. Use it for the color and the plain paper look only. Draw the same paper again, older and with more grain.
+- The paper fills the whole image to all four edges. The image is cut straight through the sheet: no torn edge, no curled corner, no border, no frame, no fold line, no vignette. The edges are not darker than the middle: the paper looks the same everywhere, so any part of it can be cut out and used.
+- The stains are soft, wide and pale. The spots are small and few. No stain or spot is darker than a slightly darker parchment: no dark patch anywhere, because dark text will sit on it.
+- No letters, no text, no drawing, no pattern, no seal, no stamp, no shadow and no 3D or beveled border are added. The outer edge is straight: no torn edge. No hole, no tear, no stitching, no tape, no wood, no table.
+```
+
+## P-UI-FRAME (테두리 FR1a의 `Image:`·`Subject:`·`Composition:`. 넣는 그림은 `033b-in-frame`)
+
+```
+Image: Landscape, 1536x1024 pixels. A hand drawn ink border for a text panel in a 2D game interface, drawn on a plain flat white background.
+
+Subject: only the ink lines of a rectangular panel border: one bold outer line, one thin inner line parallel to it and close inside it, and one small diamond on each of the four corners of the inner line. Nothing else. The middle of the rectangle is plain white and empty.
+
+Composition:
+- Follow the attached guide for the composition, the proportions and the places of the lines: the same rectangle, the same bold outer line, the same thin inner line close inside it, the same four small diamonds. The guide is made of flat shapes: draw its lines again by hand, with the feel of ink drawn with a pen.
+- Ink only, on a plain flat white background: no paper, no parchment, no fill, no texture, no color wash anywhere, neither inside the rectangle nor outside it. The whole background and the whole inside of the border stay plain white.
+- The border is one closed rectangle with straight, level sides and the same distance to the image edges as in the guide. The lines keep the weights of the guide: the outer line is not thinner and not thicker. No second frame, no extra ornament, no flourish, no leaf, no line outside the outer line.
+- No letters, no text, no pattern, no seal, no stamp, no shadow and no 3D or beveled border are added. The outer edge is straight: no torn edge, no gap in the lines.
+```
+
+## P-UI-BUTTON (버튼 BT1a의 `Image:`·`Subject:`·`Composition:`. 넣는 그림은 `033b-in-button`)
+
+```
+Image: Landscape, 1536x1024 pixels. One hand drawn parchment button for a 2D game interface, on a plain flat blue background.
+
+Subject: one wide horizontal band of parchment paper whose two short ends are cut into swallowtails: each end has a V shaped notch pointing inward to the middle of the band. A bold ink outline runs around the whole band, and one thin ink line runs along the inside of the top edge and one along the inside of the bottom edge. No text on it.
+
+Composition:
+- Follow the attached guide for the composition, the proportions and the places: the same band in the middle of the image, 1200 pixels wide and 224 pixels high in the 1536 by 1024 image, the same swallowtail notches at both ends, the same bold outline, the same two thin lines inside near the top and bottom edges, which stop short of the notches. The guide is made of flat shapes: draw it again by hand, with the feel of ink drawn with a pen.
+- The band is filled with parchment: fine paper fibers, a few pale stains and faded spots, all calm and light. Keep the fill light with no dark patch, because dark text will sit on it.
+- The background is one flat blue, exactly hex 4F7A9A, everywhere around the band, with no texture, no shadow, no gradient, no glow. Nothing else is in the image.
+- The band is perfectly straight and level, with straight top and bottom edges. No letters, no text, no pattern, no seal, no stamp, no shadow and no 3D or beveled border are added. The outer edge is straight: no torn edge, no curl, no fold, no second band, no ribbon tail, no knot.
+```
+
+## S-UI (종이·테두리·버튼의 화풍)
+
+```
+Style (the attached image is our own drawing and the reference for the shapes and the colors. Draw a new, original illustration of this interface piece in the same simple look, only hand made, with the feel of ink on old parchment):
+- A finished flat illustration for a game interface, hand made with ink on old parchment paper. The paper has fine fibers, uneven pale water stains and small faded spots. Ink lines are drawn by hand and wobble only slightly, as with a pen held by a steady hand. Keep it as simple as the attached image: the same few shapes and the same few lines. Add only the feel of hand made ink and old paper.
+- Ink lines: very dark warm brown, hex 3B2A1E, and the thin lines 6B5440. Every bold outer line keeps one even line weight along its whole length and every thin line keeps one thin line weight. Lines are smooth with round ends.
+- Fills are flat, faded and muted. The paper grain, the fibers and the pale stains belong only to the parchment itself. Where the piece is only ink lines on a plain white or plain blue background, that background stays one flat color, with no texture.
+- Do not add: letters, text, symbols, patterns, seals, stamps, drop shadows, bevels, embossed or 3D borders, glow, gradients on the ink, torn or rough outer edges, hatching, cross-hatching, an engraving or etching look.
+No text, no signature.
+```
+
+## C-UI (종이·테두리·버튼의 색)
+
+```
+Colors: Only these: the parchment E9D8B4, a slightly darker parchment D2B98C, the thin lines and the faint stains 6B5440, the outlines 3B2A1E, and the one flat background color that the Composition asks for. Avoid bright saturated yellow, orange, red or green, and pure black.
+```
