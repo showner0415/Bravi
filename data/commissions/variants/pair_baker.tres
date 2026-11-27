@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="Commission" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/commission/commission.gd" id="1_commission"]
+[ext_resource type="Script" path="res://scripts/commission/commission_condition.gd" id="2_condition"]
+[ext_resource type="Script" path="res://scripts/commission/spar_condition.gd" id="3_spar"]
+[ext_resource type="Resource" path="res://data/opponents/opponent_06.tres" id="4_opponent"]
+[ext_resource type="Resource" path="res://data/stages/piazza.tres" id="5_stage"]
+[ext_resource type="Texture2D" path="res://assets/art/clients/guglielmo.png" id="6_portrait"]
+
+[sub_resource type="Resource" id="condition_spar"]
+script = ExtResource("3_spar")
+topples_needed = 3
+partial_scores = PackedInt32Array(0, 25, 50)
+wound_score = 0
+hold_hint = "건드리지 마십쇼"
+
+[resource]
+script = ExtResource("1_commission")
+client_name = "제빵사 굴리엘모"
+dialogue = "허허, 그을음 얘긴 맞습죠. 그래도 아침마다 제 가게 문 앞에 소금을 뿌려 대니 손님이 발을 돌립죠. 칼로 가리자기에 같이 왔습죠. 저 양반을 다치게 하진 마시고 세 번만 넘어뜨려 주십쇼. 사람들 앞에서 세 번 넘어지면 더는 우기지 못합죠. 내일도 마주 보고 장사할 이웃입죠.
+저 양반은 한 번 휘두르는 척하고 다른 데를 칩죠. 처음 휘두르는 쪽에 손을 묶어 두지 마십쇼. 넘어진 뒤엔 건드리지 마시고요. 식기 전에!"
+opponent = ExtResource("4_opponent")
+opponent_posture_max = 3
+opponent_recover_posture = 1
+stage = ExtResource("5_stage")
+client_portrait = ExtResource("6_portrait")
+conditions = Array[ExtResource("2_condition")]([SubResource("condition_spar")])
+base_reward = 30
+tip_max = 15
+reputation_effect = {"accept": 0, "success": 3, "fail": -1}
+haggle_min_stars = 1
+success_line = "세 번 넘어지고는 그 양반이 먼저 소금 바가지를 치웠습죠. 빵 하나 가져가요."
+decline_line = "허허, 그럼 우리끼리 반죽을 치대 봐야겠습죠. 빵이 식기 전에!"
+fail_line = "오늘 일은 없던 걸로 합죠. 내일도 소금과 그을음으로 다투겠습죠. 값은 없습니다."
+partial_line = "넘어지긴 했는데 세 번은 못 됐습죠. 우길 구석이 남았으니 값도 그만큼만 드립죠."
+haggle_agree_line = "얼마든 좋습죠. 대신 그 양반 털끝 하나 다치면 안 됩니다."
+haggle_refuse_line = "빵값으로 치르는 처지라 그건 어렵습죠. 처음 값으로 합죠."
+sets_flags = PackedStringArray("sided_baker")

@@ -40,6 +40,15 @@ const PAY_TAIL_REFUSED := " · 거절당해 팁이 깎였다"
 ## %d는 돌아올 날(결정 511). 세션이 없거나 적힌 날이 없으면 QUIT_NOTE_PLAIN이다.
 const QUIT_NOTE := "오늘 한 일은 남지 않는다 — 이어서 하면 %d일차 아침부터다"
 const QUIT_NOTE_PLAIN := "오늘 한 일은 남지 않는다 — 이어서 하면 오늘 아침부터다"
+# 짝이 있는 손님 자리(계획 047). 처음 값이고 V3의 장과 판 M-1이 본다.
+const SWITCH_BUTTON := "%s의 말을 듣는다"
+const SWITCH_LOCKED := "값을 불렀다 — 이쪽 편이다"
+const PAIR_ACCEPT := "이쪽 편을 든다"
+const PAIR_DECLINE := "둘 다 돌려보낸다"
+const PAIR_OPPONENT_TAIL := " — 고르지 않은 쪽이 직접 칼을 든다"
+const PARTNER_OFFSET := Vector2(-90, 24)
+const PARTNER_SCALE := 0.92
+const PARTNER_TINT := Color(0.62, 0.62, 0.66)
 
 ## 하루 플레이의 상태. 비어 있으면 /root/GameSession의 것을 본다.
 var day: DayState
@@ -53,6 +62,7 @@ var shown_reputation := -1
 var _haggle_button: Button
 var _haggle_line: Label
 var _pay_line: Label
+var _switch_button: Button
 ## 화면이 열린 때(Time.get_ticks_msec()). 열린 직후의 누름을 삼키는 데 쓴다(Ui.swallow_arrival_press).
 var _opened_msec := 0
 
@@ -122,6 +132,18 @@ func _build(commission: Commission) -> void:
 			guests.name = "GuestNote"
 			guests.position = Vector2(32, 42)
 
+	# 말하지 않는 쪽은 말하는 쪽 뒤에 흐리게 서 있다(결정 751). 이름 글은 말하는 쪽의 것과 겹치니 숨긴다.
+	var partner := day.partner_commission()
+	if partner != null:
+		var behind := Ui.make_client(partner.client_name, partner.client_portrait)
+		behind.name = "Partner"
+		behind.position = Ui.CLIENT_POS + PARTNER_OFFSET
+		behind.scale = Vector2(PARTNER_SCALE, PARTNER_SCALE)
+		behind.modulate = PARTNER_TINT
+		for child in behind.get_children():
+			if child is Label:
+				child.visible = false
+		add_child(behind)
 	# 의뢰인은 카운터 뒤에 선다(카운터를 나중에 붙인다). 옆에서 한 번 미끄러져 들어온다.
 	var client := Ui.make_client(commission.client_name, commission.client_portrait)
 	client.name = "Client"
@@ -154,7 +176,10 @@ func _build(commission: Commission) -> void:
 	if day.effective_rules().haggle_bonus_percent > 0:
 		_haggle_line = Ui.add_label(bubble, "", 18, Ui.DIM)
 		_haggle_line.name = "HaggleLine"
-	Ui.add_label(bubble, "상대: %s" % (commission.opponent.style_label(day.day_number) if commission.opponent != null else "?"), 18, Ui.DIM)
+	var opponent_text := "상대: %s" % (commission.opponent.style_label(day.day_number) if commission.opponent != null else "?")
+	if partner != null:
+		opponent_text += PAIR_OPPONENT_TAIL
+	Ui.add_label(bubble, opponent_text, 18, Ui.DIM)
 	# 보수 줄. 글은 _refresh_haggle()이 채운다(흥정에 따라 바뀐다).
 	_pay_line = Ui.add_label(bubble, "", 18, Ui.DIM)
 	_pay_line.name = "PayLine"
@@ -165,14 +190,20 @@ func _build(commission: Commission) -> void:
 		_haggle_button.position = Vector2(410, 600)
 		_haggle_button.size = Vector2(210, 56)
 		_haggle_button.pressed.connect(_on_haggle)
+	# 버튼은 _refresh_haggle()보다 먼저 만든다: 흥정한 뒤 새로 연 카운터에서도 꺼진 채 서야 한다(결정 751).
+	if partner != null:
+		_switch_button = Ui.add_button(self, SWITCH_BUTTON % partner.client_name, 18, "SwitchSide")
+		_switch_button.position = Vector2(40, 588)
+		_switch_button.size = Vector2(330, 50)
+		_switch_button.pressed.connect(_on_switch_side)
 	_refresh_haggle()
 
-	var proceed := Ui.add_button(self, "맡는다", 28, "Proceed", true)
+	var proceed := Ui.add_button(self, PAIR_ACCEPT if partner != null else "맡는다", 28, "Proceed", true)
 	proceed.position = Vector2(900, 590)
 	proceed.size = Vector2(320, 76)
 	proceed.pressed.connect(_accept)
 
-	var decline := Ui.add_button(self, "돌려보낸다", 20, "Decline")
+	var decline := Ui.add_button(self, PAIR_DECLINE if partner != null else "돌려보낸다", 20, "Decline")
 	decline.position = Vector2(640, 600)
 	decline.size = Vector2(230, 56)
 	decline.pressed.connect(_decline)
@@ -204,6 +235,9 @@ func _refresh_haggle() -> void:
 		return
 	var commission := day.current_commission()
 	var state := day.haggle_state()
+	if _switch_button != null and day.partner_commission() != null:
+		_switch_button.disabled = not day.can_switch_side()
+		_switch_button.text = SWITCH_BUTTON % day.partner_commission().client_name if day.can_switch_side() else SWITCH_LOCKED
 	if _haggle_button != null:
 		_haggle_button.disabled = state != DayState.Haggle.NONE
 		if state == DayState.Haggle.AGREED:
@@ -249,6 +283,13 @@ func _on_haggle() -> void:
 	# 어떤 버튼에도 포커스를 두지 않는다(카운터의 다른 버튼과 같다).
 	if _haggle_button != null:
 		_haggle_button.release_focus()
+
+
+## 짝의 말을 듣는다: 바뀌었을 때만 씬을 다시 연다(다른 쪽이 앞으로 미끄러져 나온다).
+func _on_switch_side() -> void:
+	if day == null or not day.switch_side():
+		return
+	_go()
 
 
 func _accept() -> void:

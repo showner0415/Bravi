@@ -18,6 +18,9 @@ const POOR_PATH := "res://data/commissions/variants/first_blood_poor.tres"
 const SPAR_PATH := "res://data/commissions/spar.tres"
 const COURT_PATH := "res://data/commissions/variants/court_beehive.tres"
 const NOBLE_PATH := "res://data/commissions/variants/noble_baker.tres"
+const PAIR_HATTER_PATH := "res://data/commissions/variants/pair_hatter.tres"
+const AFTER_HATTER_PATH := "res://data/commissions/variants/after_hatter.tres"
+const AFTER_BAKER_PATH := "res://data/commissions/variants/after_baker.tres"
 ## 카운터의 의뢰인이 미끄러져 들어오는 시간(0.45초)과 간격의 보간이 끝날 때까지 기다린다.
 const SETTLE_MSEC := 900
 const WEAPON_PATH := "res://data/weapons/rapier.tres"
@@ -68,6 +71,8 @@ func _ready() -> void:
 		["select-spare", _select_spare], ["select-many", _select_many], ["select-story", _select_story],
 		["counter-spar", _counter_spar], ["duel-spar-stagger", _duel_spar_stagger], ["settle-spar", _settle_spar],
 		["counter-court", _counter_court], ["counter-noble", _counter_noble],
+		["counter-pair", _counter_pair], ["counter-pair-other", _counter_pair_other], ["counter-pair-haggled", _counter_pair_haggled],
+		["counter-after-hatter", _counter_after_hatter], ["counter-after-baker", _counter_after_baker], ["duel-close-hat", _duel_close_hat],
 	]
 	_next()
 
@@ -594,3 +599,54 @@ func _counter_noble() -> String:
 	day.day_number = 5
 	_screen(Session.COUNTER_PATH, day)
 	return "카운터: 5일차 귀족의 궂은일(레안드로, 색 도형)"
+
+
+## 둘이 함께(계획 047): 6일차의 첫 손님. 베아트리체가 말하고 굴리엘모가 뒤에 흐리게 선다. 뒤의 사람이 말하는 쪽의 그림 · 말풍선 · 버튼을 가리지 않는지.
+func _pair_counter_day() -> DayState:
+	var commissions: Array[Commission] = [load(PAIR_HATTER_PATH), load(USURER_PATH), load(POOR_PATH)]
+	var day := _new_day(commissions)
+	day.day_number = 6
+	return day
+
+
+func _counter_pair() -> String:
+	_screen(Session.COUNTER_PATH, _pair_counter_day())
+	return "카운터: 6일차 둘이 함께(베아트리체가 말하고 굴리엘모가 뒤에)"
+
+
+func _counter_pair_other() -> String:
+	var day := _pair_counter_day()
+	day.switch_side()
+	_screen(Session.COUNTER_PATH, day)
+	return "카운터: 6일차 쪽을 바꾼 하루(굴리엘모가 말하고 베아트리체가 뒤에)"
+
+
+func _counter_pair_haggled() -> String:
+	var day := _pair_counter_day()
+	day.haggle(0)
+	_screen(Session.COUNTER_PATH, day)
+	return "카운터: 6일차 값을 부른 뒤(SwitchSide가 꺼진 채)"
+
+
+func _counter_after_hatter() -> String:
+	var commissions: Array[Commission] = [load(AFTER_HATTER_PATH), load(USURER_PATH), load(POOR_PATH)]
+	var day := _new_day(commissions)
+	day.day_number = 7
+	day.flags = PackedStringArray(["sided_hatter"])
+	_screen(Session.COUNTER_PATH, day)
+	return "카운터: 7일차 뒷이야기 — 굴리엘모가 칼 든 손을 맡긴다"
+
+
+func _counter_after_baker() -> String:
+	var commissions: Array[Commission] = [load(AFTER_BAKER_PATH), load(USURER_PATH), load(POOR_PATH)]
+	var day := _new_day(commissions)
+	day.day_number = 7
+	day.flags = PackedStringArray(["sided_baker"])
+	_screen(Session.COUNTER_PATH, day)
+	return "카운터: 7일차 뒷이야기 — 베아트리체가 져 달라 한다"
+
+
+## 모자를 쓴 굴리엘모의 밀착(045b의 모자 한계). put 뒤에 advance · tick을 부르지 않는다(위험 R9).
+func _duel_close_hat() -> String:
+	_pose(_duel(PAIR_HATTER_PATH), DT.Distance.CLOSE, false, DT.PlayerState.READY, DT.Direction.CENTER, DT.Height.MID)
+	return "밀착 대기 · 모자를 쓴 굴리엘모"

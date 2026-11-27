@@ -750,7 +750,7 @@ func t115_day_practice_save() -> String:
 	var saved := saver.saved_state()
 	var keys := saved.keys()
 	keys.sort()
-	if str(keys) != str(["day", "dice_seed", "money", "owned", "reputation", "version"]):
+	if str(keys) != str(["day", "dice_seed", "flags", "money", "owned", "reputation", "version"]):
 		errs.append("저장 Dictionary의 열쇠 %s" % str(keys))
 	var data := DayData.new()
 	var one: Array[Commission] = [load(FIRST_BLOOD_PATH) as Commission]

@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="Commission" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/commission/commission.gd" id="1_commission"]
+[ext_resource type="Script" path="res://scripts/commission/commission_condition.gd" id="2_condition"]
+[ext_resource type="Script" path="res://scripts/commission/target_part_condition.gd" id="3_target_part"]
+[ext_resource type="Resource" path="res://data/opponents/opponent_03.tres" id="4_opponent"]
+[ext_resource type="Resource" path="res://data/stages/alley.tres" id="5_stage"]
+[ext_resource type="Texture2D" path="res://assets/art/clients/guglielmo.png" id="6_portrait"]
+
+[sub_resource type="Resource" id="condition_hand"]
+script = ExtResource("3_target_part")
+target_part = 4
+graze_penalty = 0
+hit_penalty = 30
+
+[resource]
+script = ExtResource("1_commission")
+client_name = "제빵사 굴리엘모"
+dialogue = "지난번엔 그 양반 편이셨지요. 원망은 없습죠. 그런데 오늘 아침 로렌초라는 멋쟁이가 그 양반 가게에서 모자를 써 보고는 촌스럽다며 손으로 구겨 던졌답니다. 그 양반은 이 가게에 또 오기 민망하다기에 제가 왔습죠. 값은 제가 치릅죠, 이웃이니까. 모자를 구긴 그 손에 한 줄만 그어 주십쇼.
+그 멋쟁이는 몸을 뒤로 빼면 뛰어듭죠. 그때 같이 물러서면 헛칩니다. 구긴 손은 아주 무너뜨린 뒤 칼 쪽 위를 베야 닿습죠."
+opponent = ExtResource("4_opponent")
+stage = ExtResource("5_stage")
+client_portrait = ExtResource("6_portrait")
+conditions = Array[ExtResource("2_condition")]([SubResource("condition_hand")])
+base_reward = 30
+tip_max = 20
+reputation_effect = {"accept": 1, "success": 3, "fail": -1, "win": 1}
+haggle_min_stars = 1
+success_line = "그 멋쟁이가 손등을 감싸 쥐고 갔답니다. 그 양반이 처음으로 제 빵을 사 갔습죠."
+decline_line = "허허, 이웃 일까지 떠맡기긴 무리였습죠. 반죽이나 치대러 가겠습니다."
+fail_line = "그 손은 멀쩡하답니다. 구겨진 모자는 제가 다려 볼 수밖에요. 값은 못 드립죠."
+partial_line = "손에 한 줄은 그었는데 다른 데까지 다쳤다지요. 이웃 일로 시끄러워지면 곤란합죠."
+haggle_agree_line = "얼마든 좋습죠. 그 손만입니다, 그 손만."
+haggle_refuse_line = "빵 판 돈으로 치르는 거라 그건 어렵습죠. 처음 값으로 합죠. 덤도 줄입죠."
+sets_flags = PackedStringArray("baker_helped")
+requires_flags = PackedStringArray("sided_hatter")
+excluded_flags = PackedStringArray("baker_helped")

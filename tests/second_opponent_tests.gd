@@ -13,6 +13,11 @@ const NOBLE_PATH := "res://data/commissions/variants/noble_baker.tres"
 const SERAFINA_PATH := "res://data/opponents/opponent_04.tres"
 const GUGLIELMO_PATH := "res://data/opponents/opponent_07.tres"
 const USURER_PATH := "res://data/commissions/variants/first_blood_usurer.tres"
+const BEATRICE_PATH := "res://data/opponents/opponent_06.tres"
+const PAIR_HATTER_PATH := "res://data/commissions/variants/pair_hatter.tres"
+const PAIR_BAKER_PATH := "res://data/commissions/variants/pair_baker.tres"
+const AFTER_HATTER_PATH := "res://data/commissions/variants/after_hatter.tres"
+const AFTER_BAKER_PATH := "res://data/commissions/variants/after_baker.tres"
 ## 다를 수 있는 칸: 이름·그림·포즈(표시만이고 판정에 쓰지 않는다. 결정 291·357).
 const FREE_FIELDS := ["display_name", "art", "idle_pose", "stagger_pose", "complacent_pose",
 	"tell_pose", "hold_arm_deg", "strike_pose", "recover_arm_deg"]
@@ -119,6 +124,12 @@ func t78_second_opponent() -> String:
 			want = GUGLIELMO_PATH
 		elif c.resource_path == SPAR_PATH:
 			want = AGOSTINO_PATH
+		elif c.resource_path == PAIR_HATTER_PATH:
+			want = GUGLIELMO_PATH
+		elif c.resource_path == PAIR_BAKER_PATH or c.resource_path == AFTER_BAKER_PATH:
+			want = BEATRICE_PATH
+		elif c.resource_path == AFTER_HATTER_PATH:
+			want = LORENZO_PATH
 		var got: String = c.opponent.resource_path if c.opponent != null else "(없음)"
 		if got != want:
 			errs.append("%s의 상대 %s (기대 %s)" % [c.resource_path.get_file(), got, want])

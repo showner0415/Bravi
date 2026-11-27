@@ -10,6 +10,7 @@ const PORTRAITS := {
 	"feather_cut.tres": "clara.png", "first_blood_usurer.tres": "vittorio.png", "first_blood.tres": "emilio.png",
 	"throw_match.tres": "ines.png", "throw_bet.tres": "gasparo.png", "legs_only.tres": "orsola.png",
 	"first_blood_poor.tres": "tomaso.png", "spar.tres": "agostino.png",
+	"pair_hatter.tres": "beatrice.png", "after_baker.tres": "beatrice.png", "pair_baker.tres": "guglielmo.png", "after_hatter.tres": "guglielmo.png",
 }
 ## 그림이 아직 없는 의뢰(도형이어야 한다). 그림이 오면 PORTRAITS로 옮긴다(BACKLOG 046-1).
 const NO_PORTRAIT: Array[String] = ["court_beehive.tres", "noble_baker.tres"]

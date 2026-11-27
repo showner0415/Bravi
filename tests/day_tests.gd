@@ -919,6 +919,10 @@ const LEGS_PATH := VARIANT_DIR + "legs_only.tres"
 const SPAR_PATH := "res://data/commissions/spar.tres"
 const COURT_PATH := VARIANT_DIR + "court_beehive.tres"
 const NOBLE_PATH := VARIANT_DIR + "noble_baker.tres"
+const PAIR_HATTER_PATH := VARIANT_DIR + "pair_hatter.tres"
+const PAIR_BAKER_PATH := VARIANT_DIR + "pair_baker.tres"
+const AFTER_HATTER_PATH := VARIANT_DIR + "after_hatter.tres"
+const AFTER_BAKER_PATH := VARIANT_DIR + "after_baker.tres"
 
 
 ## 막고, 빈틈이 생기는 공격 뒤에 가운데 하단, 무너지면 가운데 하단으로 치는 봇.
@@ -974,9 +978,9 @@ func t37_schedule_data() -> String:
 	var legs := load(LEGS_PATH) as Commission
 	_expect(errs, (legs.conditions[0] as TargetPartCondition).target_part == DT.Part.LEGS, "legs_only의 지정 부위가 다리가 아님")
 
-	# 열 의뢰의 한마디는 "치료비"를 담지 않는다(T33이 정산 화면의 그 낱말로 부상 줄을 본다).
+	# 열넷 의뢰의 한마디는 "치료비"를 담지 않는다(T33이 정산 화면의 그 낱말로 부상 줄을 본다).
 	var empty_lines := 0
-	for path in [FIRST_BLOOD_PATH, FEATHER_PATH, THROW_PATH, POOR_PATH, BET_PATH, USURER_PATH, LEGS_PATH, SPAR_PATH, COURT_PATH, NOBLE_PATH]:
+	for path in [FIRST_BLOOD_PATH, FEATHER_PATH, THROW_PATH, POOR_PATH, BET_PATH, USURER_PATH, LEGS_PATH, SPAR_PATH, COURT_PATH, NOBLE_PATH, PAIR_HATTER_PATH, PAIR_BAKER_PATH, AFTER_HATTER_PATH, AFTER_BAKER_PATH]:
 		var commission := load(path) as Commission
 		_expect(errs, not commission.success_line.contains("치료비") and not commission.decline_line.contains("치료비"),
 			"[%s] 한마디에 '치료비'가 있음" % commission.client_name)
@@ -1463,7 +1467,7 @@ func t45_full_pay() -> String:
 	base_rules.full_pay_covers_tip = false
 	var scores := [100, 90, 80, 70, 60, 40]
 	print("  INFO 받는 돈 (기준치 없음 / 팁에도 건다 / 기본 보수에만), 충족도 %s" % str(scores))
-	for path in [FIRST_BLOOD_PATH, FEATHER_PATH, THROW_PATH, POOR_PATH, BET_PATH, USURER_PATH, LEGS_PATH, SPAR_PATH, COURT_PATH, NOBLE_PATH]:
+	for path in [FIRST_BLOOD_PATH, FEATHER_PATH, THROW_PATH, POOR_PATH, BET_PATH, USURER_PATH, LEGS_PATH, SPAR_PATH, COURT_PATH, NOBLE_PATH, PAIR_HATTER_PATH, PAIR_BAKER_PATH, AFTER_HATTER_PATH, AFTER_BAKER_PATH]:
 		var commission := load(path) as Commission
 		var cells: Array[String] = []
 		for score: int in scores:

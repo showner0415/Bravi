@@ -77,3 +77,24 @@ func explain(record: DuelRecord) -> Array[String]:
 		if condition != null:
 			lines.append_array(condition.explain(record))
 	return lines
+
+
+## 함께 와서 맞서는 다른 쪽(계획 047). 목록에 서는 의뢰에만 적는다(서로 가리키면 .tres 불러오기가 돈다 — 결정 749).
+@export var partner: Commission
+## 이 의뢰를 맡아 정산했을 때 남기는 플래그. 결과로 갈리지 않는다(결정 752).
+@export var sets_flags := PackedStringArray()
+## 이 플래그가 모두 있어야 하루의 목록에 선다.
+@export var requires_flags := PackedStringArray()
+## 이 플래그가 하나라도 있으면 목록에 서지 않는다.
+@export var excluded_flags := PackedStringArray()
+
+
+## 가진 플래그로 목록에 서는가(결정 752).
+func allowed_by(flags: PackedStringArray) -> bool:
+	for flag in requires_flags:
+		if not flags.has(flag):
+			return false
+	for flag in excluded_flags:
+		if flags.has(flag):
+			return false
+	return true

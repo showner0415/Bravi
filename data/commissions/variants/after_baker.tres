@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="Commission" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/commission/commission.gd" id="1_commission"]
+[ext_resource type="Script" path="res://scripts/commission/commission_condition.gd" id="2_condition"]
+[ext_resource type="Script" path="res://scripts/commission/throw_undetected_condition.gd" id="3_throw"]
+[ext_resource type="Resource" path="res://data/opponents/opponent_06.tres" id="4_opponent"]
+[ext_resource type="Resource" path="res://data/stages/piazza.tres" id="5_stage"]
+[ext_resource type="Texture2D" path="res://assets/art/clients/beatrice.png" id="6_portrait"]
+
+[sub_resource type="Resource" id="condition_throw"]
+script = ExtResource("3_throw")
+
+[resource]
+script = ExtResource("1_commission")
+client_name = "모자 가게 베아트리체"
+dialogue = "지난번 광장에서 당신이 빵장수 편으로 제 앞에 섰잖아요? 이제 온 골목이 저더러 대리인까지 붙을 만큼 못된 이웃이래요. 그러니 이번엔 같은 광장에서 제 상대로 서서 져 주세요. 제가 이겨야 말이 바뀌잖아요? 봐준 티가 나면 더 웃음거리고요.
+제 칼은 휘두르는 척을 섞어요. 척하는 쪽을 막고 있다가 진짜에 맞으면 속은 걸로 보이잖아요? 가만히 서서 맞거나 금방 쓰러지면 다들 눈치채요."
+opponent = ExtResource("4_opponent")
+stage = ExtResource("5_stage")
+client_portrait = ExtResource("6_portrait")
+conditions = Array[ExtResource("2_condition")]([SubResource("condition_throw")])
+base_reward = 55
+tip_max = 30
+reputation_effect = {"accept": -1, "success": 0, "fail": -1}
+haggle_min_stars = 2
+success_line = "광장 사람들이 제가 이겼다고 손뼉을 쳤어요. 다음엔 제 가게로 오세요?"
+decline_line = "져 주는 건 못 하겠다고요? 그럼 제 체면은 누가 세워 주죠?"
+fail_line = "광장 사람들이 또 웃었어요. 이래선 제 모자가 안 팔리잖아요? 값은 없어요."
+partial_line = "이기긴 했는데 봐준 거 아니냐고 수군대요. 반만 체면을 세운 셈이잖아요?"
+haggle_agree_line = "좋아요, 그 값에 해요. 대신 티 나면 안 돼요, 아셨죠?"
+haggle_refuse_line = "져 주는 값치고 너무하잖아요? 처음 값으로 해요. 덤도 줄일게요."
+sets_flags = PackedStringArray("hatter_rematch")
+requires_flags = PackedStringArray("sided_baker")
+excluded_flags = PackedStringArray("hatter_rematch")

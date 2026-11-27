@@ -8,7 +8,7 @@ extends SceneTree
 ## 부위별 반격(effects): off 옛 규칙 / on 새 규칙(data/part_effects.tres를 실은 사본). nine이 참이면 가로만 줄을 건너뛴다(계획 R02).
 ## 단(tier): --tier=1,3,last 화면의 "N단"(1부터, last 그 상대의 마지막 단). 줄의 상대 이름이 "opponent_01-t3"이 된다. 안 주면 줄이 옛 그대로다.
 ## 박자 봇(guard): --guard=hold|parry(안 주면 지금의 봇), parry는 모든 타격을 패리하려 하고 --jitter=<비율>이 누르는 때를 흔든다(어긋남 = 비율 x 기다린 시간 x -1~+1. 계획 042 결정 644). 준 줄에는 ",guard=..,jitter=.."가 붙는다.
-## 의뢰(commission): --commission=<res 경로> 그 의뢰의 조건·모자·fit_opponent로 돈다(상대를 안 주면 의뢰의 상대 하나). --finisher=off 무너진 상대를 치지 않는 봇(계획 043 결정 662), --finisher=low 무너진 상대의 다리를 끝내는 봇(계획 046 결정 741). 준 줄에는 ",commission=..,finisher=.."가 붙고, --commission이면 설정마다 "score," 줄이 하나 더 나오고, 조건에 지정 부위(TargetPartCondition)가 있으면 "parts," 줄도 하나 더 나온다(내 스침·유효타를 부위별로, 계획 046).
+## 의뢰(commission): --commission=<res 경로> 그 의뢰의 조건·모자·fit_opponent로 돈다(상대를 안 주면 의뢰의 상대 하나). --finisher=off 무너진 상대를 치지 않는 봇(계획 043 결정 662), --finisher=low 무너진 상대의 다리를 끝내는 봇(계획 046 결정 741), --finisher=top 윗줄 칼 쪽 베기로 끝내는 봇(모자 또는 칼 든 손, 계획 047 결정 760). 준 줄에는 ",commission=..,finisher=.."가 붙고, --commission이면 설정마다 "score," 줄이 하나 더 나오고, 조건에 지정 부위(TargetPartCondition)가 있으면 "parts," 줄도 하나 더 나온다(내 스침·유효타를 부위별로, 계획 046).
 ## 헛손질(bite): --bite=<확률> 속는 봇 — 헛손질마다 그 확률로 그 칸을 막는다(안 주면 속지 않는다). 준 줄에는 ",bite=.."가 붙고, 헛손질이 있는 상대는 "feint," 줄이 하나 더 나온다(계획 044 결정 677).
 ## 따라붙기(chase): --chase=<확률> 상대가 치고 빠진 빈틈마다 그 확률로 막기를 떼고 걸어 들어가 친다(안 주면 늘 따라붙는다, 1과 같다). 준 줄에는 ",chase=.."가 붙고, 빠지는 상대는 "withdraw," 줄이 하나 더 나온다(계획 045 결정 708).
 ## 줄: "stat,<상대>,<9칸|가로만>,<counter>,..." 하나가 설정 하나. 판정이 아니라 견줄 수다(통과 기준은 줄이 다 나오는 것뿐).
@@ -30,6 +30,7 @@ var _conditions: Array[CommissionCondition] = []
 var _has_hat := false
 var _finisher_on := true
 var _finisher_low := false
+var _finisher_top := false
 var _scores: Array[int] = []
 var _topples: Array[int] = []
 ## 헛손질이 낀 패턴의 수와 그 가운데 속은 수(계획 044 결정 677). 설정마다 비운다.
@@ -112,6 +113,7 @@ func _initialize() -> void:
 			paths.append(commission.opponent.resource_path)
 	_finisher_on = finisher_arg != "off"
 	_finisher_low = finisher_arg == "low"
+	_finisher_top = finisher_arg == "top"
 	if paths.is_empty():
 		var files := Array(DirAccess.get_files_at(OPPONENT_DIR))
 		files.sort()
@@ -142,7 +144,7 @@ func _initialize() -> void:
 			var guard_tag: String = "" if guard_mode == "" and jitter == 0.0 else ",guard=%s,jitter=%.2f" % ["hold" if guard_mode == "" else guard_mode, jitter]
 			var comm_tag := ""
 			if commission_path != "" or finisher_arg != "":
-				comm_tag = ",commission=%s,finisher=%s" % [commission_path.get_file().get_basename() if commission_path != "" else "none", "low" if _finisher_low else ("on" if _finisher_on else "off")]
+				comm_tag = ",commission=%s,finisher=%s" % [commission_path.get_file().get_basename() if commission_path != "" else "none", "low" if _finisher_low else ("top" if _finisher_top else ("on" if _finisher_on else "off"))]
 				guard_tag += comm_tag
 			if bite >= 0.0:
 				guard_tag += ",bite=%.2f" % bite
@@ -219,6 +221,9 @@ func _play(opponent: OpponentData, seed_value: int, delay: float, miss: float, c
 		cfg.erase("finisher")
 	elif _finisher_low:
 		cfg["finisher"] = [DT.Direction.CENTER, DT.Height.LOW]
+	elif _finisher_top:
+		# 윗줄의 칼 쪽 베기: 모자를 쓴 상대면 모자, 아니면 칼 든 손이다(AIM_TABLE, 계획 047 결정 760).
+		cfg["finisher"] = [opponent.sword_side, DT.Height.HIGH]
 	if dive == "retreat":
 		cfg["whiff_fn"] = func(ev: Dictionary) -> Variant:
 			return [DT.Direction.CENTER, DT.Height.MID] if float(ev["recovery"]) > 0.0 else null

@@ -252,8 +252,8 @@ func t141_seventh_opponent() -> String:
 	for commission in CommissionLibrary.load_tree(COMMISSION_DIR):
 		if commission.opponent != null and commission.opponent.resource_path == GUGLIELMO_PATH:
 			users.append(commission.resource_path.get_file())
-	if users != ["noble_baker.tres"]:
-		errs.append("굴리엘모를 거는 의뢰 %s (기대 noble_baker.tres 하나)" % str(users))
+	if users != ["noble_baker.tres", "pair_hatter.tres"]:
+		errs.append("굴리엘모를 거는 의뢰 %s (기대 noble_baker.tres · pair_hatter.tres, 계획 047)" % str(users))
 	# ⑦ 갈래 글: 처음 서는 날 앞뒤와 단이 오르는 날, 마지막 단 뒤.
 	if gul.style_label(7) != "굴리엘모 · 치고 빠지기":
 		errs.append("style_label(7) '%s' (기대 '굴리엘모 · 치고 빠지기')" % gul.style_label(7))

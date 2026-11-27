@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="DayData" load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://scripts/economy/day_data.gd" id="1_day"]
+[ext_resource type="Script" path="res://scripts/commission/commission.gd" id="2_commission"]
+[ext_resource type="Resource" path="res://data/commissions/variants/after_hatter.tres" id="3_after_hatter"]
+[ext_resource type="Resource" path="res://data/commissions/variants/after_baker.tres" id="4_after_baker"]
+[ext_resource type="Resource" path="res://data/commissions/feather_cut.tres" id="5_feather"]
+[ext_resource type="Resource" path="res://data/commissions/first_blood.tres" id="6_first"]
+[ext_resource type="Resource" path="res://data/commissions/variants/first_blood_poor.tres" id="7_poor"]
+[ext_resource type="Resource" path="res://data/commissions/variants/legs_only.tres" id="8_legs"]
+[ext_resource type="Resource" path="res://data/commissions/variants/throw_bet.tres" id="9_bet"]
+[ext_resource type="Resource" path="res://data/commissions/variants/first_blood_usurer.tres" id="10_usurer"]
+[ext_resource type="Resource" path="res://data/commissions/throw_match.tres" id="11_throw"]
+
+[resource]
+script = ExtResource("1_day")
+commissions = Array[ExtResource("2_commission")]([ExtResource("3_after_hatter"), ExtResource("4_after_baker"), ExtResource("5_feather"), ExtResource("6_first"), ExtResource("7_poor"), ExtResource("8_legs"), ExtResource("9_bet"), ExtResource("10_usurer"), ExtResource("11_throw")])
+base_guests = 5
