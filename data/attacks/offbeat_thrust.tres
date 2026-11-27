@@ -76,6 +76,8 @@ pose_color = Color(1, 0.75, 0.2, 1)
 
 [sub_resource type="Resource" id="offbeat_b"]
 script = ExtResource("1_attack")
+mark_shape = &"beat"
+tell_hint = "하나 — 둘, 둘 반"
 heights = Array[int]([1])
 attack_name = "엇박 찌르기"
 direction = 1
@@ -92,6 +94,8 @@ chain = Array[Resource]([SubResource("of_b1"), SubResource("of_b2")])
 
 [resource]
 script = ExtResource("1_attack")
+mark_shape = &"beat"
+tell_hint = "하나, 둘 — 둘 반"
 heights = Array[int]([1])
 attack_name = "엇박 찌르기"
 direction = 1

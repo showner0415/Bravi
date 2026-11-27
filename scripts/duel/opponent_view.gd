@@ -51,6 +51,12 @@ const RING_POSITION: Array[Vector2] = [Vector2(-270, -150), Vector2(0, -140), Ve
 const MARK_REPEAT_SHIFT := 36.0
 const MARK_RADIUS := 26.0
 const MARK_FONT_SIZE := 24
+## 번호 고리의 꼴(AttackData.mark_shape). 박자 고리는 앞 타격부터의 기다림을 막대 길이로 보인다(결정 630·632).
+const MARK_SHAPES: Array[StringName] = [&"beat"]
+## 막대의 길이 = 그 타격 앞의 기다림(초) x 이 값(px). 막대의 바탕 높이와 흰 막대의 안쪽 여백.
+const BEAT_BAR_SPEED := 60.0
+const BEAT_BAR_HEIGHT := 14.0
+const BEAT_BAR_INSET := 3.0
 ## 높이를 가진 타격의 고리 줄(상대 기준 y, 상·중·하). 화면의 윗줄·가운뎃줄·아랫줄 안에 온다(결정 388).
 const RING_ROW_Y: Array[float] = [-300.0, -150.0, 80.0]
 ## 예비 동작 동안 높이에 따라 어깨를 옮기는 폭(표시만).
@@ -365,6 +371,9 @@ static func tell_texts(core: DuelCore, dive_from_close: bool) -> PackedStringArr
 	if brain.pattern_slowed:
 		text += " (둔함)"
 	var hints := PackedStringArray()
+	# 데이터의 세는 말은 귀띔의 맨 앞이고 패턴 내내 같은 글이다(결정 633).
+	if brain.pattern_root != null and brain.pattern_root.tell_hint != "":
+		hints.append(brain.pattern_root.tell_hint)
 	if brain.is_sweep():
 		hints.append("쥐고 끌어라")
 	if atk.dive:
@@ -678,7 +687,13 @@ static func pattern_marks(brain: OpponentBrain, display_time: float) -> Array[Di
 		if i < brain.step_index:
 			continue
 		var role := &"now" if i == brain.step_index else (&"next" if i == brain.step_index + 1 else &"later")
-		marks.append({"role": role, "number": i + 1, "pos": pos, "time": times[i]})
+		var mark := {"role": role, "number": i + 1, "pos": pos, "time": times[i]}
+		if root.mark_shape != &"":
+			# 막대는 칼 든 팔의 반대쪽으로 뻗는다(예비 동작을 보이는 팔과 칼을 가리지 않게. 결정 632).
+			mark["shape"] = root.mark_shape
+			mark["wait"] = times[i] - times[i - 1] if i > 0 else 0.0
+			mark["side"] = 1 if brain.data.sword_side == DT.Direction.LEFT else -1
+		marks.append(mark)
 	if brain.is_sweep():
 		# 따라가는 점: 첫 점의 시각까지 첫 자리에서 기다리고, 그 뒤 닿는 시각마다 그 점에 오도록 고르게 간다.
 		var dot := points[0]
@@ -688,6 +703,15 @@ static func pattern_marks(brain: OpponentBrain, display_time: float) -> Array[Di
 				dot = points[i - 1].lerp(points[i], k)
 		marks.append({"role": &"path", "points": points, "dot": dot})
 	return marks
+
+
+## 박자 고리의 기다림 막대(바탕) 상자. mark["pos"]와 같은 좌표(상대 기준)이고, 고리의 가장자리에서 side 쪽으로 wait x BEAT_BAR_SPEED px 뻗는다.
+static func beat_bar_rect(mark: Dictionary) -> Rect2:
+	var pos: Vector2 = mark["pos"]
+	var length: float = float(mark["wait"]) * BEAT_BAR_SPEED
+	var side: int = mark["side"]
+	var left := pos.x + MARK_RADIUS if side > 0 else pos.x - MARK_RADIUS - length
+	return Rect2(left, pos.y - BEAT_BAR_HEIGHT * 0.5, length, BEAT_BAR_HEIGHT)
 
 
 ## 지금 타격의 고리 자리. 패턴이면 번호 고리의 자리(되풀이 방향의 비킴 포함)다.
@@ -727,6 +751,11 @@ func _draw_marks() -> void:
 		if mark["role"] != &"now":
 			_ring.draw_circle(at, MARK_RADIUS, Color(0.12, 0.1, 0.08, 0.55 * alpha))
 			_ring.draw_arc(at, MARK_RADIUS, 0.0, TAU, 40, Color(1.0, 1.0, 1.0, alpha), 3.0)
+			if mark.has("shape") and MARK_SHAPES.has(mark["shape"]) and float(mark["wait"]) > 0.0:
+				var bar := beat_bar_rect(mark)
+				bar.position -= origin
+				_ring.draw_rect(bar, Color(0.12, 0.1, 0.08, 0.55 * alpha))
+				_ring.draw_rect(bar.grow(-BEAT_BAR_INSET), Color(1.0, 1.0, 1.0, alpha))
 		var label := str(mark["number"])
 		var width := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, MARK_FONT_SIZE).x
 		var base := at + Vector2(-width * 0.5, -MARK_RADIUS - 8.0)

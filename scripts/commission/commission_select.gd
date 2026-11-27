@@ -559,13 +559,17 @@ static func help_text(opponent: OpponentData, attacks: Array) -> String:
 	var has_chain := false
 	var has_sweep := false
 	var has_dive := false
+	var has_beat := false
 	for atk in flat:
+		has_beat = has_beat or atk.mark_shape == &"beat"
 		has_chain = has_chain or (not atk.chain.is_empty() and not atk.sweep)
 		has_sweep = has_sweep or atk.sweep
 		has_dive = has_dive or atk.dive
 	var lines: Array[String] = []
 	if has_chain:
 		lines.append(DuelHud.HELP_CHAIN.trim_prefix(" · "))
+	if has_beat:
+		lines.append(DuelHud.HELP_BEAT.trim_prefix(" · "))
 	if has_sweep:
 		lines.append(DuelHud.HELP_SWEEP.trim_prefix(" · "))
 	lines.append(DuelHud.HELP_HEIGHT.trim_prefix(" · ") + DuelHud.opening_help(opponent))

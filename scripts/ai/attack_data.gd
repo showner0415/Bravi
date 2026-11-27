@@ -51,3 +51,9 @@ extends Resource
 ## 이 공격의 다른 길들(원소는 모두 AttackData. chain과 같은 까닭으로 Resource 배열이다). 가방에서 이 공격이 나오면
 ## 이 공격과 변주 가운데 하나를 고르게 뽑는다. 변주의 variants·weight는 읽지 않는다.
 @export var variants: Array[Resource] = []
+
+@export_group("표시 (계획 042a)")
+## 번호 고리의 꼴(뿌리와 변주에 적는다. 걸음은 뿌리를 따른다). 빈 값이면 원 그대로이고 뜻이 있는 값은 OpponentView.MARK_SHAPES에 있다(결정 631).
+@export var mark_shape: StringName = &""
+## 예비 동작 동안 귀띔 자리에 뜨는 글(뿌리의 값을 쓴다). 빈 값이면 없다(결정 633).
+@export var tell_hint := ""

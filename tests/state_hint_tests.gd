@@ -50,7 +50,7 @@ var _five := {}
 func list(tree: SceneTree) -> Array:
 	_tree = tree
 	return [
-		{"id": "T124", "name": "상태 글자의 귀띔: 첫 줄은 한 줄, 귀띔의 글 다섯, 첫 줄 오른쪽 곁의 자리, 고리와 겹치지 않는다", "fn": t124_state_hint},
+		{"id": "T124", "name": "상태 글자의 귀띔: 첫 줄은 한 줄, 귀띔의 글(고정 다섯과 데이터의 글), 첫 줄 오른쪽 곁의 자리, 고리와 겹치지 않는다", "fn": t124_state_hint},
 	]
 
 
@@ -268,6 +268,9 @@ func _check_nodes(errs: Array[String], tag: String, view: OpponentView, label: L
 ## 귀띔의 표(결정 625): 휩쓸기는 뿌리가, 뛰어들기와 올려 막기는 지금 타격이 정한다(올려 막기는 첫 타격뿐).
 func _expected_hint(root: AttackData, atk: AttackData, step: int, mode: StringName, from_close: bool) -> String:
 	var parts: Array[String] = []
+	# 데이터의 세는 말(계획 042a 결정 633)은 늘 맨 앞이고 패턴 내내 같다.
+	if root.tell_hint != "":
+		parts.append(root.tell_hint)
 	if root.sweep and not root.chain.is_empty():
 		parts.append(HINT_SWEEP)
 	if atk.dive:
@@ -410,6 +413,9 @@ func _check_first_tell(errs: Array[String], label: String, mode: StringName, cor
 			if parts[0].contains(text):
 				_f._note(errs, "[①] %s: 첫 줄 '%s'에 귀띔의 글 '%s'가 섞였다" % [label, parts[0], text])
 				raised_ok = false
+		if solo.tell_hint != "" and parts[0].contains(solo.tell_hint):
+			_f._note(errs, "[①] %s: 첫 줄 '%s'에 데이터의 세는 말 '%s'가 섞였다" % [label, parts[0], solo.tell_hint])
+			raised_ok = false
 	if solo.needs_raised_guard and raised_ok:
 		_raised_branch[mode] = int(_raised_branch[mode]) + 1
 
