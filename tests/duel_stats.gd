@@ -7,6 +7,7 @@ extends SceneTree
 ## 받아치는 조준(counter): same 막은 칸 그대로 / mid 같은 방향 중단 / thrust 가운데 중단. arm 칼 든 팔 중단(칼 쪽 베기) / low 가운데 하단(찌르기).
 ## 부위별 반격(effects): off 옛 규칙 / on 새 규칙(data/part_effects.tres를 실은 사본). nine이 참이면 가로만 줄을 건너뛴다(계획 R02).
 ## 단(tier): --tier=1,3,last 화면의 "N단"(1부터, last 그 상대의 마지막 단). 줄의 상대 이름이 "opponent_01-t3"이 된다. 안 주면 줄이 옛 그대로다.
+## 박자 봇(guard): --guard=hold|parry(안 주면 지금의 봇), parry는 모든 타격을 패리하려 하고 --jitter=<비율>이 누르는 때를 흔든다(어긋남 = 비율 x 기다린 시간 x -1~+1. 계획 042 결정 644). 준 줄에는 ",guard=..,jitter=.."가 붙는다.
 ## 줄: "stat,<상대>,<9칸|가로만>,<counter>,..." 하나가 설정 하나. 판정이 아니라 견줄 수다(통과 기준은 줄이 다 나오는 것뿐).
 
 const DT := preload("res://scripts/duel/duel_types.gd")
@@ -35,6 +36,9 @@ func _initialize() -> void:
 	var nine_only := false
 	# 빈 칸 하나는 "단을 안 낀다"(옛 줄 그대로).
 	var tiers: PackedStringArray = [""]
+	# 안 주면 줄 꼴이 옛 그대로다.
+	var guard_mode := ""
+	var jitter := 0.0
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--runs="):
 			runs = int(arg.trim_prefix("--runs="))
@@ -54,6 +58,10 @@ func _initialize() -> void:
 			effects_list = arg.trim_prefix("--effects=").split(",", false)
 		elif arg.begins_with("--tier="):
 			tiers = arg.trim_prefix("--tier=").split(",", false)
+		elif arg.begins_with("--guard="):
+			guard_mode = arg.trim_prefix("--guard=")
+		elif arg.begins_with("--jitter="):
+			jitter = float(arg.trim_prefix("--jitter="))
 		elif arg == "--nine":
 			nine_only = true
 		elif arg.begins_with("--opponent="):
@@ -85,6 +93,7 @@ func _initialize() -> void:
 				var number := count if token == "last" else clampi(int(token), 1, count)
 				opponent = original.at_tier(number - 1)
 				name_tag += "-t%d" % number
+			var guard_tag: String = "" if guard_mode == "" and jitter == 0.0 else ",guard=%s,jitter=%.2f" % ["hold" if guard_mode == "" else guard_mode, jitter]
 			var variants: Array = [["9칸", opponent]] if DuelHud.uses_heights(opponent) else []
 			if not nine_only or variants.is_empty():
 				variants.append(["가로만", opponent.flat()])
@@ -97,25 +106,30 @@ func _initialize() -> void:
 						for counter in counters:
 							var summaries: Array = []
 							for i in runs:
-								summaries.append(_play(with_effects, i + 1, delay, miss, counter, dive))
-							_print(name_tag, variant[0], label, counter, delay, miss, Summary.merge(summaries), "새" if effect == "on" else "옛")
+								summaries.append(_play(with_effects, i + 1, delay, miss, counter, dive, guard_mode, jitter))
+							_print(name_tag, variant[0], label, counter, delay, miss, Summary.merge(summaries), "새" if effect == "on" else "옛", guard_tag)
 							lines += 1
 	print("DUEL STATS OK %d" % lines)
 	quit(0)
 
 
-func _play(opponent: OpponentData, seed_value: int, delay: float, miss: float, counter: String, dive: String) -> Dictionary:
+func _play(opponent: OpponentData, seed_value: int, delay: float, miss: float, counter: String, dive: String, guard_mode: String, jitter: float) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_value
 	# 봇의 실수는 판의 난수와 따로 뽑는다(판의 차례를 건드리지 않게).
 	var hand := RandomNumberGenerator.new()
 	hand.seed = 1000 + seed_value
+	# 박자 봇의 흔들림은 손 난수와도 따로 뽑는다(안 준 판의 차례를 건드리지 않게).
+	var beat := RandomNumberGenerator.new()
+	beat.seed = 2000 + seed_value
 	var core := DuelCore.new()
 	var none: Array[CommissionCondition] = []
 	core.setup(load(RULES_PATH), load(WEAPON_PATH), opponent, rng, none, false)
 	var guard := func(atk: AttackData, _index: int) -> StringName:
 		if dive == "retreat" and atk.dive:
 			return &"retreat"
+		if guard_mode == "parry":
+			return &"parry"
 		return &"wrong_height" if hand.randf() < miss else &"hold"
 	var aim := func(ev: Dictionary) -> Variant:
 		if float(ev["recovery"]) <= 0.0:
@@ -139,6 +153,9 @@ func _play(opponent: OpponentData, seed_value: int, delay: float, miss: float, c
 	if dive == "retreat":
 		cfg["whiff_fn"] = func(ev: Dictionary) -> Variant:
 			return [DT.Direction.CENTER, DT.Height.MID] if float(ev["recovery"]) > 0.0 else null
+	if guard_mode == "parry":
+		cfg["parry_error_fn"] = func(wait: float) -> float:
+			return jitter * wait * (beat.randf() * 2.0 - 1.0)
 	var bot := Bot.new(core, cfg)
 	while not core.ended and core.time < HARD_STOP:
 		core.tick(DELTA)
@@ -159,7 +176,7 @@ func _chance(opponent: OpponentData) -> float:
 	return (load(RULES_PATH) as DuelRules).opening_chance_for(opponent.opening_chance, 0)
 
 
-func _print(name: String, kind: String, opening: String, counter: String, delay: float, miss: float, m: Dictionary, rule: String) -> void:
+func _print(name: String, kind: String, opening: String, counter: String, delay: float, miss: float, m: Dictionary, rule: String, guard_tag: String) -> void:
 	var runs := float(m["runs"])
 	var opened := 0
 	for key: String in m["openings"]:
@@ -176,8 +193,8 @@ func _print(name: String, kind: String, opening: String, counter: String, delay:
 		routes.append("%s×%d" % [key, int(m["routes"][key])])
 	var guards: Dictionary = m.get("guards", {})
 	var fx: Dictionary = m.get("effects", {})
-	print("stat,%s,%s,opening=%s,counter=%s,delay=%.2f,miss=%.2f | 막아서 열림 %d · 안 열림 %d | 판 %d · 평균 %.1f초 · 끝 %s | 판당 맞음: %s | 빈틈 판당 %.1f: 닿음 %s 머리피함 %s 늦음 %s 안침 %s | 마무리 닿음 %d 놓침 %d | 패턴 판당 %.1f,%s,effects{팔 둔함 %d · 다리 덤 씀 %d · 머리 스침 %d},맞음합계 %.2f" % [
-		name, kind, opening, counter, delay, miss, int(guards.get("열림", 0)), int(guards.get("안 열림", 0)), int(runs), float(m["length"]), str(m["end"]),
+	print("stat,%s,%s,opening=%s,counter=%s,delay=%.2f,miss=%.2f%s | 막아서 열림 %d · 안 열림 %d | 판 %d · 평균 %.1f초 · 끝 %s | 판당 맞음: %s | 빈틈 판당 %.1f: 닿음 %s 머리피함 %s 늦음 %s 안침 %s | 마무리 닿음 %d 놓침 %d | 패턴 판당 %.1f,%s,effects{팔 둔함 %d · 다리 덤 씀 %d · 머리 스침 %d},맞음합계 %.2f" % [
+		name, kind, opening, counter, delay, miss, guard_tag, int(guards.get("열림", 0)), int(guards.get("안 열림", 0)), int(runs), float(m["length"]), str(m["end"]),
 		", ".join(hits) if not hits.is_empty() else "없음",
 		opened / runs, share.call("닿음"), share.call("머리 피함"), share.call("늦음"), share.call("안 침"),
 		int(m["finishers"]["닿음"]), int(m["finishers"]["놓침"]),

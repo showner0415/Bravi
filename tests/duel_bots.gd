@@ -42,6 +42,8 @@ extends RefCounted
 ##       (밀려남으로 사라진 공격에는 판정 이벤트가 오지 않는다).
 ##   step_fn(attack: AttackData, index: int) -> StringName — 패턴의 걸음(index는 1부터)에서 쓸 모드.
 ##       없으면 그 패턴의 예비 동작에서 고른 모드를 그대로 쓴다. 걸음은 tells_seen을 올리지 않는다(결정 379).
+##   parry_error_fn(wait: float) -> float — &"parry"를 누르는 때의 어긋남(초). wait는 그 타격의 예비·걸음의 간격(이벤트의 duration).
+##       +면 늦게(늦으면 맞는다), -면 일찍(막힘이지 패리가 아니다). 없으면 0과 같다(계획 042 결정 644).
 
 const DT := preload("res://scripts/duel/duel_types.gd")
 
@@ -195,7 +197,7 @@ func _on_tell(ev: Dictionary) -> void:
 		&"parry":
 			core.set_guard(false)
 			core.set_aim(atk.direction, height)
-			_parry_press_at = float(ev["strike_time"]) - PARRY_LEAD
+			_parry_press_at = _parry_time(ev)
 		&"retreat":
 			core.set_guard(false)
 			_pending_steps = [-1]
@@ -230,7 +232,15 @@ func _on_step(ev: Dictionary) -> void:
 		&"parry":
 			core.set_guard(false)
 			core.set_aim(atk.direction, height)
-			_parry_press_at = float(ev["strike_time"]) - PARRY_LEAD
+			_parry_press_at = _parry_time(ev)
+
+
+## 패리를 누를 코어 시각: 타격 PARRY_LEAD초 전, 키가 있으면 그 어긋남만큼 옮긴다.
+func _parry_time(ev: Dictionary) -> float:
+	var at := float(ev["strike_time"]) - PARRY_LEAD
+	if cfg.has("parry_error_fn"):
+		at += float(cfg["parry_error_fn"].call(float(ev["duration"])))
+	return at
 
 
 ## 막을 높이: 이벤트의 타격 높이, 없으면 중단.
