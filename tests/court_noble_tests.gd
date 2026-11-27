@@ -33,7 +33,7 @@ func list(tree: SceneTree) -> Array:
 	return [
 		{"id": "T145", "name": "법정 대리 의뢰: 데이터와 판돈, 가슴 높이로 고쳐 찌르는 봇과 막은 칸 그대로 받아치는 봇, 5일차 카운터, 정산의 세 구간", "fn": t145_court},
 		{"id": "T146", "name": "귀족의 궂은일: 데이터와 값, 다리만 끝내는 판, 해내는 것이 깎이는 평판, 5일차 카운터, 정산의 세 구간", "fn": t146_noble},
-		{"id": "T147", "name": "일정과 평판 항목의 이름: 다섯째 날, 둘 다 오는 별, settle_items의 '궂은일을 해냈다'", "fn": t147_schedule_and_items},
+		{"id": "T147", "name": "일정과 평판 항목의 이름: 다섯째 날, 법정이 오는 별, settle_items의 '궂은일을 해냈다'", "fn": t147_schedule_and_items},
 	]
 
 
@@ -411,19 +411,20 @@ func _check_schedule(errs: Array[String]) -> void:
 		return
 	var fifth: DayData = schedule.days[4]
 	_expect(errs, fifth.resource_path == DAY_DIR + "day_05.tres", "[①] 다섯째 날이 day_05.tres가 아니다(%s)" % fifth.resource_path)
-	_expect(errs, fifth.commissions.size() >= 2 and fifth.commissions[0].resource_path == COURT_PATH and fifth.commissions[1].resource_path == NOBLE_PATH, "[①] day_05의 첫째 · 둘째가 법정 · 귀족이 아니다")
+	_expect(errs, fifth.commissions.size() >= 1 and fifth.commissions[0].resource_path == COURT_PATH, "[①] day_05의 첫째가 법정이 아니다")
 	_expect(errs, fifth.base_guests <= fifth.commissions.size(), "[①] day_05의 기준 손님 수 %d가 목록 %d보다 크다" % [fifth.base_guests, fifth.commissions.size()])
 	var rules := load(REPUTATION_PATH) as ReputationRules
 	var economy := load(Session.ECONOMY_PATH) as EconomyRules
 	for star in range(1, rules.max_stars() + 1):
 		var count := ReputationRules.guest_count(fifth.commissions.size(), fifth.base_guests, rules.guest_change(star), economy.duels_per_day)
-		_expect(errs, count >= 2, "[①] 별 %d의 손님 %d (기대 둘 다 온다 — 2 이상)" % [star, count])
+		_expect(errs, count >= 2, "[①] 별 %d의 손님 %d (기대 법정이 온다 — 2 이상)" % [star, count])
 	for c in fifth.commissions:
 		_expect(errs, c.resource_path != "res://data/commissions/spar.tres", "[①] day_05에 spar.tres가 있다")
-	for n in [1, 2, 3, 4]:
-		var early := load(DAY_DIR + "day_0%d.tres" % n) as DayData
-		for c in early.commissions:
-			_expect(errs, c.resource_path != COURT_PATH and c.resource_path != NOBLE_PATH, "[①] day_0%d에 법정 · 귀족이 있다" % n)
+	for n in [1, 2, 3, 4, 5, 6, 7]:
+		var other := load(DAY_DIR + "day_0%d.tres" % n) as DayData
+		for c in other.commissions:
+			_expect(errs, n == 5 or c.resource_path != COURT_PATH, "[①] day_0%d에 법정이 있다" % n)
+			_expect(errs, n == 7 or c.resource_path != NOBLE_PATH, "[①] day_0%d에 귀족이 있다(귀족은 7일차 — 결정 785, 자리는 T157)" % n)
 
 
 func _check_item_names(errs: Array[String]) -> void:

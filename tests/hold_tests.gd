@@ -14,6 +14,7 @@ const DUN_PATH := VARIANT_DIR + "dun_master.tres"
 const SPAR_PATH := "res://data/commissions/spar.tres"
 const FEATHER_PATH := "res://data/commissions/feather_cut.tres"
 const THROW_MATCH_PATH := "res://data/commissions/throw_match.tres"
+const FIRST_BLOOD_PATH := "res://data/commissions/first_blood.tres"
 const USURER_PATH := VARIANT_DIR + "first_blood_usurer.tres"
 const PAIR_HATTER_PATH := VARIANT_DIR + "pair_hatter.tres"
 const BRUNO_PATH := "res://data/opponents/opponent_02.tres"
@@ -310,8 +311,10 @@ func _check_days(errs: Array[String], close: Commission, rival: Commission, dun:
 	var fifth: DayData = schedule.days[4]
 	var sixth: DayData = schedule.days[5]
 	_expect(errs, fourth.resource_path == DAY_DIR + "day_04.tres" and fifth.resource_path == DAY_DIR + "day_05.tres" and sixth.resource_path == DAY_DIR + "day_06.tres", "[③] 4 · 5 · 6번째 날이 day_04 · 05 · 06이 아님")
-	_expect(errs, fourth.commissions.size() >= 3 and fourth.commissions[0] == spar and fourth.commissions[1].resource_path == FEATHER_PATH and fourth.commissions[2] == close,
-		"[③] day_04의 첫째 · 둘째 · 셋째가 spar · feather_cut · close_baker가 아님")
+	_expect(errs, fourth.commissions.size() >= 3 and fourth.commissions[0] == spar and fourth.commissions[1].resource_path == FEATHER_PATH and fourth.commissions[2].resource_path == FIRST_BLOOD_PATH,
+		"[③] day_04의 첫째 · 둘째 · 셋째가 spar · feather_cut · first_blood가 아님(받아 주기는 3일차 — 결정 784)")
+	var third: DayData = schedule.days[2]
+	_expect(errs, third.commissions.size() >= 2 and third.commissions[1] == close, "[③] day_03의 둘째가 close_baker가 아님")
 	_expect(errs, fifth.commissions.size() >= 3 and fifth.commissions[2] == rival, "[③] day_05의 셋째가 rival_milliner가 아님")
 	_expect(errs, sixth.commissions.size() >= 2 and sixth.commissions[1] == dun, "[③] day_06의 둘째가 dun_master가 아님")
 	for c in fifth.commissions:
@@ -330,14 +333,14 @@ func _check_days(errs: Array[String], close: Commission, rival: Commission, dun:
 			for star in range(1, rules.max_stars() + 1):
 				var count := ReputationRules.guest_count(filtered.commissions.size(), filtered.base_guests, rules.guest_change(star), economy.duels_per_day)
 				_expect(errs, count >= 3, "[③] %s · 플래그 %s · 별 %d의 손님 %d (기대 3 이상)" % [day.resource_path.get_file(), str(flags), star, count])
-	for n in [1, 2, 3, 7]:
+	for n in [1, 2, 3, 4, 5, 6, 7]:
 		var other := load(DAY_DIR + "day_0%d.tres" % n) as DayData
 		for c in other.commissions:
-			_expect(errs, c != close and c != rival and c != dun, "[③] day_0%d에 세 의뢰가 있다" % n)
+			_expect(errs, (c != close or n == 3) and (c != rival or n == 5) and (c != dun or n == 6), "[③] day_0%d에 세 의뢰가 제 날이 아닌 곳에 있다" % n)
 
 
 func _check_tiers(errs: Array[String], close: Commission, rival: Commission, dun: Commission) -> void:
-	_expect(errs, close.opponent.style_label(4) == "브루노 · 휩쓸기 2단", "[④ 4일차] 브루노 '%s'" % close.opponent.style_label(4))
+	_expect(errs, close.opponent.style_label(3) == "브루노 · 휩쓸기", "[④ 3일차] 브루노 '%s'" % close.opponent.style_label(3))
 	_expect(errs, rival.opponent.style_label(5) == "베아트리체 · 속임 베기", "[④ 5일차] 베아트리체 '%s'" % rival.opponent.style_label(5))
 	_expect(errs, dun.opponent.style_label(6) == "아고스티노 · 엇박 찌르기 2단", "[④ 6일차] 아고스티노 '%s'" % dun.opponent.style_label(6))
 
@@ -470,7 +473,7 @@ func t156_duels() -> String:
 func _check_hold_duel(errs: Array[String]) -> void:
 	var close := _commission(CLOSE_PATH)
 	var hold := close.conditions[0] as HoldCondition
-	var bruno := close.opponent.for_day(4)
+	var bruno := close.opponent.for_day(3)
 	var mid := [DT.Direction.CENTER, DT.Height.MID]
 	var done := 0
 	for seed_value in range(1, 6):

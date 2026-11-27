@@ -30,6 +30,7 @@ const COMMISSION_PATHS: Array[String] = [
 	"res://data/commissions/variants/close_baker.tres",
 	"res://data/commissions/variants/rival_milliner.tres",
 	"res://data/commissions/variants/dun_master.tres",
+	"res://data/commissions/variants/washer_ledger.tres",
 ]
 
 ## 테스트가 적는 팁 문턱.
@@ -286,14 +287,14 @@ func t52_rules() -> String:
 			commission.client_name, commission.base_reward, commission.tip_max, values[0], values[1], values[2],
 			ReputationRules.items_total(loaded.settle_items(effect, 100, economy.tip_floor))])
 
-	# ---- INFO (통과 조건 아님): 나흘의 장부 어림. 결투는 돌리지 않고 점수를 고정해 평판과 수입을 따라간다.
-	print("  INFO 나흘의 어림 (날마다: 그날의 손님 수 · 수입 → 정산 뒤 평판과 별)")
+	# ---- INFO (통과 조건 아님): 이레의 장부 어림. 결투는 돌리지 않고 점수를 고정해 평판과 수입을 따라간다.
+	print("  INFO 이레의 어림 (날마다: 그날의 손님 수 · 수입 → 정산 뒤 평판과 별)")
 	for style in ["정직한 손님 셋을 전부 100점", "보수가 큰 셋을 전부 100점", "보수가 큰 셋을 전부 85점", "앞에서부터 셋을 전부 0점"]:
 		print("  INFO %s: %s" % [style, _ledger(style, loaded, economy, schedule)])
 	return _result(errs)
 
 
-## 한 가지 플레이로 나흘을 따라간 어림. 날마다 "손님 n명 · 수입 m → 평판 r(별 s)".
+## 한 가지 플레이로 이레를 따라간 어림(맡은 의뢰의 플래그로 다음 날 목록을 거른다). 날마다 "손님 n명 · 수입 m → 평판 r(별 s)".
 func _ledger(style: String, rules: ReputationRules, economy: EconomyRules, schedule: DaySchedule) -> String:
 	var reputation := rules.clamp_value(rules.start)
 	var parts: Array[String] = []
@@ -302,8 +303,9 @@ func _ledger(style: String, rules: ReputationRules, economy: EconomyRules, sched
 		score = 85
 	elif style.contains("전부 0점"):
 		score = 0
-	for day_number in range(1, 5):
-		var day_data := schedule.day_for(day_number)
+	var flags := PackedStringArray()
+	for day_number in range(1, 8):
+		var day_data := schedule.day_for(day_number).for_flags(flags)
 		var delta := rules.guest_change(rules.stars(reputation)) if rules.enabled else 0
 		var count := ReputationRules.guest_count(day_data.commissions.size(), day_data.base_guests, delta, economy.duels_per_day)
 		var came: Array[Commission] = []
@@ -329,6 +331,10 @@ func _ledger(style: String, rules: ReputationRules, economy: EconomyRules, sched
 			for commission in came:
 				if taken.size() < economy.duels_per_day:
 					taken.append(commission)
+		for commission in taken:
+			for flag in commission.sets_flags:
+				if not flags.has(flag):
+					flags.append(flag)
 		var income := 0
 		for commission in taken:
 			var pay := DayState.payout(score, commission.base_reward, commission.tip_max, economy)

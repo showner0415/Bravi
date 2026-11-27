@@ -24,6 +24,7 @@ const AFTER_BAKER_PATH := "res://data/commissions/variants/after_baker.tres"
 const CLOSE_BAKER_PATH := "res://data/commissions/variants/close_baker.tres"
 const RIVAL_MILLINER_PATH := "res://data/commissions/variants/rival_milliner.tres"
 const DUN_MASTER_PATH := "res://data/commissions/variants/dun_master.tres"
+const WASHER_LEDGER_PATH := "res://data/commissions/variants/washer_ledger.tres"
 ## 카운터의 의뢰인이 미끄러져 들어오는 시간(0.45초)과 간격의 보간이 끝날 때까지 기다린다.
 const SETTLE_MSEC := 900
 const WEAPON_PATH := "res://data/weapons/rapier.tres"
@@ -78,6 +79,7 @@ func _ready() -> void:
 		["counter-after-hatter", _counter_after_hatter], ["counter-after-baker", _counter_after_baker], ["duel-close-hat", _duel_close_hat],
 		["counter-close-baker", _counter_close_baker], ["counter-rival-milliner", _counter_rival_milliner], ["counter-dun-master", _counter_dun_master],
 		["duel-hold-early", _duel_hold_early], ["duel-hold-full", _duel_hold_full],
+		["counter-washer-ledger", _counter_washer_ledger], ["duel-hold-ledger", _duel_hold_ledger],
 	]
 	_next()
 
@@ -601,9 +603,9 @@ func _counter_court() -> String:
 func _counter_noble() -> String:
 	var commissions: Array[Commission] = [load(NOBLE_PATH), load(COURT_PATH), load(POOR_PATH)]
 	var day := _new_day(commissions)
-	day.day_number = 5
+	day.day_number = 7
 	_screen(Session.COUNTER_PATH, day)
-	return "카운터: 5일차 귀족의 궂은일(레안드로, 색 도형)"
+	return "카운터: 7일차 귀족의 궂은일(레안드로, 색 도형)"
 
 
 ## 둘이 함께(계획 047): 6일차의 첫 손님. 베아트리체가 말하고 굴리엘모가 뒤에 흐리게 선다. 뒤의 사람이 말하는 쪽의 그림 · 말풍선 · 버튼을 가리지 않는지.
@@ -657,13 +659,13 @@ func _duel_close_hat() -> String:
 	return "밀착 대기 · 모자를 쓴 굴리엘모"
 
 
-## 버티기와 속편(계획 048): 4 · 5 · 6일차의 새 손님. 사연(문단 둘) · 조건 글 · "상대:" 줄 · 흥정 줄이 말풍선 안에 서는지.
+## 버티기와 속편(계획 048): 새 손님. 3일차(계획 049가 4일차에서 옮겼다) · 5 · 6일차. 사연(문단 둘) · 조건 글 · "상대:" 줄 · 흥정 줄이 말풍선 안에 서는지.
 func _counter_close_baker() -> String:
 	var commissions: Array[Commission] = [load(CLOSE_BAKER_PATH), load(USURER_PATH), load(POOR_PATH)]
 	var day := _new_day(commissions)
-	day.day_number = 4
+	day.day_number = 3
 	_screen(Session.COUNTER_PATH, day)
-	return "카운터: 4일차 셋째 손님 — 굴리엘모의 버티기(브루노 2단)"
+	return "카운터: 3일차 둘째 손님 — 굴리엘모의 받아 주기(브루노)"
 
 
 func _counter_rival_milliner() -> String:
@@ -684,8 +686,8 @@ func _counter_dun_master() -> String:
 
 
 ## 받아냄을 기록에 더한 뒤 화면만 그린다(States.put · advance · tick 없음, 위험 R9).
-func _hold_screen(count: int) -> void:
-	var core := _duel(CLOSE_BAKER_PATH)
+func _hold_screen(count: int, path := CLOSE_BAKER_PATH) -> void:
+	var core := _duel(path)
 	for i in count:
 		core.record.add({"type": DuelRecord.STRIKE, "t": 1.0 + i, "result": DT.StrikeResult.BLOCKED, "braced": false})
 	_node.call("_update_views", 0.0)
@@ -699,3 +701,18 @@ func _duel_hold_early() -> String:
 func _duel_hold_full() -> String:
 	_hold_screen((load(CLOSE_BAKER_PATH) as Commission).conditions[0].blocks_needed)
 	return "버티기의 결투 · 게이지가 찬 뒤(받아냄 12/12 · 이제 치십쇼)"
+
+
+## 빨래터의 넬라(계획 049): 6일차 셋째 손님, 토마소의 일을 맡은 하루. 사연(문단 둘) · 조건 글 · "상대:" 줄 · 소문 · 흥정 줄이 말풍선 안에 서는지.
+func _counter_washer_ledger() -> String:
+	var commissions: Array[Commission] = [load(WASHER_LEDGER_PATH), load(USURER_PATH), load(POOR_PATH)]
+	var day := _new_day(commissions)
+	day.day_number = 6
+	day.flags = PackedStringArray(["tomaso_helped", "sparred_master"])
+	_screen(Session.COUNTER_PATH, day)
+	return "카운터: 6일차 셋째 손님 — 세탁부 넬라의 받아 주기(로렌초 1단)"
+
+
+func _duel_hold_ledger() -> String:
+	_hold_screen(9, WASHER_LEDGER_PATH)
+	return "넬라의 결투 · 받아냄 9/10 · 아직이에요가 막대 곁의 자리에 잘리지 않는다"

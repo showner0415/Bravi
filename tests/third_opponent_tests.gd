@@ -116,8 +116,8 @@ func t93_third_opponent() -> String:
 	for c in all:
 		if c.opponent != null and c.opponent.resource_path == LORENZO_PATH:
 			lorenzo_commissions.append(c.resource_path.get_file())
-	if lorenzo_commissions != ["after_hatter.tres", "first_blood_usurer.tres"]:
-		errs.append("로렌초를 거는 의뢰 %s (기대 after_hatter.tres · first_blood_usurer.tres, 계획 047)" % str(lorenzo_commissions))
+	if lorenzo_commissions != ["after_hatter.tres", "first_blood_usurer.tres", "washer_ledger.tres"]:
+		errs.append("로렌초를 거는 의뢰 %s (기대 after_hatter.tres · first_blood_usurer.tres · washer_ledger.tres, 계획 049)" % str(lorenzo_commissions))
 	return "OK" if errs.is_empty() else ", ".join(errs)
 
 

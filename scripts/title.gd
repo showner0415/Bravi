@@ -22,6 +22,7 @@ const QUIT_TEXT := "게임 종료"
 const BOTTOM_GAP := 11.0
 const HELP_CLOSE_TEXT := "돌아간다"
 const HELP_RECT := Rect2(140, 60, 1000, 560)
+const HELP_GUIDE := "상대마다 막는 법이 다르다 — 연습에서 그 상대를 고르면 보인다 · 둘이 함께 온 손님은 다른 쪽 말도 듣고 한쪽 편을 든다"
 
 ## 이어서 할 저장을 되돌린 하루. 비어 있으면 /root/GameSession에서 읽는다. 없으면 저장이 없는 처음 화면이다.
 var saved: DayState
@@ -137,6 +138,11 @@ static func help_groups() -> Array[String]:
 		for item in line.split(" · "):
 			items.append("· " + item)
 		groups.append("\n".join(PackedStringArray(items)))
+	# 상대별 막는 법은 연습 화면이 싣는다 — 도움말은 길만 가리킨다(결정 791).
+	var guide_items: Array[String] = []
+	for item in HELP_GUIDE.split(" · "):
+		guide_items.append("· " + item)
+	groups.append("\n".join(PackedStringArray(guide_items)))
 	return groups
 
 
