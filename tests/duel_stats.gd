@@ -8,7 +8,7 @@ extends SceneTree
 ## 부위별 반격(effects): off 옛 규칙 / on 새 규칙(data/part_effects.tres를 실은 사본). nine이 참이면 가로만 줄을 건너뛴다(계획 R02).
 ## 단(tier): --tier=1,3,last 화면의 "N단"(1부터, last 그 상대의 마지막 단). 줄의 상대 이름이 "opponent_01-t3"이 된다. 안 주면 줄이 옛 그대로다.
 ## 박자 봇(guard): --guard=hold|parry(안 주면 지금의 봇), parry는 모든 타격을 패리하려 하고 --jitter=<비율>이 누르는 때를 흔든다(어긋남 = 비율 x 기다린 시간 x -1~+1. 계획 042 결정 644). 준 줄에는 ",guard=..,jitter=.."가 붙는다.
-## 의뢰(commission): --commission=<res 경로> 그 의뢰의 조건·모자·fit_opponent로 돈다(상대를 안 주면 의뢰의 상대 하나). --finisher=off 무너진 상대를 치지 않는 봇(계획 043 결정 662). 준 줄에는 ",commission=..,finisher=.."가 붙고, --commission이면 설정마다 "score," 줄이 하나 더 나온다.
+## 의뢰(commission): --commission=<res 경로> 그 의뢰의 조건·모자·fit_opponent로 돈다(상대를 안 주면 의뢰의 상대 하나). --finisher=off 무너진 상대를 치지 않는 봇(계획 043 결정 662), --finisher=low 무너진 상대의 다리를 끝내는 봇(계획 046 결정 741). 준 줄에는 ",commission=..,finisher=.."가 붙고, --commission이면 설정마다 "score," 줄이 하나 더 나오고, 조건에 지정 부위(TargetPartCondition)가 있으면 "parts," 줄도 하나 더 나온다(내 스침·유효타를 부위별로, 계획 046).
 ## 헛손질(bite): --bite=<확률> 속는 봇 — 헛손질마다 그 확률로 그 칸을 막는다(안 주면 속지 않는다). 준 줄에는 ",bite=.."가 붙고, 헛손질이 있는 상대는 "feint," 줄이 하나 더 나온다(계획 044 결정 677).
 ## 따라붙기(chase): --chase=<확률> 상대가 치고 빠진 빈틈마다 그 확률로 막기를 떼고 걸어 들어가 친다(안 주면 늘 따라붙는다, 1과 같다). 준 줄에는 ",chase=.."가 붙고, 빠지는 상대는 "withdraw," 줄이 하나 더 나온다(계획 045 결정 708).
 ## 줄: "stat,<상대>,<9칸|가로만>,<counter>,..." 하나가 설정 하나. 판정이 아니라 견줄 수다(통과 기준은 줄이 다 나오는 것뿐).
@@ -29,11 +29,16 @@ const HARD_STOP := 400.0
 var _conditions: Array[CommissionCondition] = []
 var _has_hat := false
 var _finisher_on := true
+var _finisher_low := false
 var _scores: Array[int] = []
 var _topples: Array[int] = []
 ## 헛손질이 낀 패턴의 수와 그 가운데 속은 수(계획 044 결정 677). 설정마다 비운다.
 var _feint_patterns := 0
 var _bitten_patterns := 0
+## 지정 부위 의뢰의 부위별 내 스침·유효타(판 합)와 지정 부위 밖 스침이 난 판의 수(계획 046 결정 741). 설정마다 비운다.
+var _part_grazes: Array[int] = [0, 0, 0, 0, 0, 0]
+var _part_hits: Array[int] = [0, 0, 0, 0, 0, 0]
+var _off_target_runs := 0
 
 
 func _initialize() -> void:
@@ -106,6 +111,7 @@ func _initialize() -> void:
 		if paths.is_empty():
 			paths.append(commission.opponent.resource_path)
 	_finisher_on = finisher_arg != "off"
+	_finisher_low = finisher_arg == "low"
 	if paths.is_empty():
 		var files := Array(DirAccess.get_files_at(OPPONENT_DIR))
 		files.sort()
@@ -136,7 +142,7 @@ func _initialize() -> void:
 			var guard_tag: String = "" if guard_mode == "" and jitter == 0.0 else ",guard=%s,jitter=%.2f" % ["hold" if guard_mode == "" else guard_mode, jitter]
 			var comm_tag := ""
 			if commission_path != "" or finisher_arg != "":
-				comm_tag = ",commission=%s,finisher=%s" % [commission_path.get_file().get_basename() if commission_path != "" else "none", "on" if _finisher_on else "off"]
+				comm_tag = ",commission=%s,finisher=%s" % [commission_path.get_file().get_basename() if commission_path != "" else "none", "low" if _finisher_low else ("on" if _finisher_on else "off")]
 				guard_tag += comm_tag
 			if bite >= 0.0:
 				guard_tag += ",bite=%.2f" % bite
@@ -157,6 +163,9 @@ func _initialize() -> void:
 							var summaries: Array = []
 							_scores.clear()
 							_topples.clear()
+							_part_grazes.fill(0)
+							_part_hits.fill(0)
+							_off_target_runs = 0
 							_feint_patterns = 0
 							_bitten_patterns = 0
 							for i in runs:
@@ -165,6 +174,7 @@ func _initialize() -> void:
 							lines += 1
 							if commission != null:
 								_print_score(name_tag, variant[0], label, miss, comm_tag)
+								_print_parts(name_tag, variant[0], label, miss, comm_tag, counter)
 	print("DUEL STATS OK %d" % lines)
 	quit(0)
 
@@ -207,6 +217,8 @@ func _play(opponent: OpponentData, seed_value: int, delay: float, miss: float, c
 	}
 	if not _finisher_on:
 		cfg.erase("finisher")
+	elif _finisher_low:
+		cfg["finisher"] = [DT.Direction.CENTER, DT.Height.LOW]
 	if dive == "retreat":
 		cfg["whiff_fn"] = func(ev: Dictionary) -> Variant:
 			return [DT.Direction.CENTER, DT.Height.MID] if float(ev["recovery"]) > 0.0 else null
@@ -230,6 +242,7 @@ func _play(opponent: OpponentData, seed_value: int, delay: float, miss: float, c
 		core.tick(DELTA)
 		bot.update()
 	_tally_feints(core.record)
+	_tally_parts(core.record)
 	if not _conditions.is_empty():
 		var total := 0
 		for condition in _conditions:
@@ -237,6 +250,30 @@ func _play(opponent: OpponentData, seed_value: int, delay: float, miss: float, c
 		_scores.append(roundi(float(total) / _conditions.size()))
 		_topples.append(core.record.of_type(DuelRecord.STAGGER_START).size())
 	return Summary.summarize(core.record)
+
+
+## 지정 부위 의뢰에서 내 ATTACK의 부위별 스침·유효타를 센다. 지정 부위 밖 스침이 난 판은 따로 센다(계획 046 결정 741).
+func _tally_parts(record: DuelRecord) -> void:
+	var target := -1
+	for condition in _conditions:
+		if condition is TargetPartCondition:
+			target = (condition as TargetPartCondition).target_part
+	if target < 0:
+		return
+	var off := false
+	for ev in record.events:
+		if ev["type"] != DuelRecord.ATTACK:
+			continue
+		var part := int(ev["part"])
+		if part < 0 or part >= 6:
+			continue
+		if ev["result"] == DT.AttackResult.GRAZE:
+			_part_grazes[part] += 1
+			off = off or part != target
+		elif ev["result"] == DT.AttackResult.HIT:
+			_part_hits[part] += 1
+	if off:
+		_off_target_runs += 1
 
 
 ## 헛손질이 낀 패턴(TELL_START의 뿌리 또는 걸음에 feint)과 그 가운데 속은 패턴을 센다.
@@ -326,6 +363,25 @@ func _print_score(name: String, kind: String, opening: String, miss: float, tag:
 	var n := maxi(_scores.size(), 1)
 	print("score,%s,%s,opening=%s%s,miss=%.2f | 판 %d · 100점 %d · 부분 %d · 0점 %d · 평균 충족도 %.1f | 무너뜨림 판당 %.2f" % [
 		name, kind, opening, tag, miss, _scores.size(), full, _scores.size() - full - zero, zero, float(sum) / n, float(topple_sum) / n])
+
+
+## 지정 부위 의뢰의 부위별 내 스침·유효타(판당). 조건에 TargetPartCondition이 없으면 줄이 없다(계획 046).
+func _print_parts(name: String, kind: String, opening: String, miss: float, tag: String, counter: String) -> void:
+	var has_target := false
+	for condition in _conditions:
+		has_target = has_target or condition is TargetPartCondition
+	if not has_target:
+		return
+	var n := float(maxi(_scores.size(), 1))
+	var names := ["머리", "몸통", "다리", "팔", "손", "모자"]
+	var order := [DT.Part.HEAD, DT.Part.TORSO, DT.Part.LEGS, DT.Part.SWORD_ARM, DT.Part.SWORD_HAND, DT.Part.HAT]
+	var grazes: PackedStringArray = []
+	var hits: PackedStringArray = []
+	for i in order.size():
+		grazes.append("%s %.2f" % [names[i], _part_grazes[order[i]] / n])
+		hits.append("%s %.2f" % [names[i], _part_hits[order[i]] / n])
+	print("parts,%s,%s,opening=%s%s,miss=%.2f,counter=%s | 판당 내 스침: %s | 판당 내 유효타: %s | 몸통 밖 스침이 난 판 %d" % [
+		name, kind, opening, tag, miss, counter, " · ".join(grazes), " · ".join(hits), _off_target_runs])
 
 
 ## 상대의 칼 든 팔이 있는 쪽(그 방향 중단이 칼 든 팔이다).

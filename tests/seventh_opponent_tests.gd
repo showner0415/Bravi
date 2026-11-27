@@ -247,13 +247,13 @@ func t141_seventh_opponent() -> String:
 		var cards: int = brain.bag_remaining() + 1
 		if k >= BAG_SIZES.size() or cards != BAG_SIZES[k]:
 			errs.append("%d단의 가방 %d장 (기대 %s)" % [k + 1, cards, str(BAG_SIZES[k]) if k < BAG_SIZES.size() else "없음"])
-	# ⑥ 어느 의뢰도 굴리엘모를 걸지 않는다(결정 712).
+	# ⑥ 굴리엘모를 거는 의뢰는 귀족의 레안드로뿐이다(결정 712 · 계획 046).
 	var users: Array[String] = []
 	for commission in CommissionLibrary.load_tree(COMMISSION_DIR):
 		if commission.opponent != null and commission.opponent.resource_path == GUGLIELMO_PATH:
 			users.append(commission.resource_path.get_file())
-	if not users.is_empty():
-		errs.append("굴리엘모를 거는 의뢰 %s (기대 없음)" % str(users))
+	if users != ["noble_baker.tres"]:
+		errs.append("굴리엘모를 거는 의뢰 %s (기대 noble_baker.tres 하나)" % str(users))
 	# ⑦ 갈래 글: 처음 서는 날 앞뒤와 단이 오르는 날, 마지막 단 뒤.
 	if gul.style_label(7) != "굴리엘모 · 치고 빠지기":
 		errs.append("style_label(7) '%s' (기대 '굴리엘모 · 치고 빠지기')" % gul.style_label(7))

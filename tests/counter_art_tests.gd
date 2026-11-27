@@ -11,8 +11,8 @@ const PORTRAITS := {
 	"throw_match.tres": "ines.png", "throw_bet.tres": "gasparo.png", "legs_only.tres": "orsola.png",
 	"first_blood_poor.tres": "tomaso.png", "spar.tres": "agostino.png",
 }
-## 그림이 아직 없는 의뢰(도형이어야 한다). 그림이 오면 PORTRAITS로 옮긴다(BACKLOG 043-1).
-const NO_PORTRAIT: Array[String] = []
+## 그림이 아직 없는 의뢰(도형이어야 한다). 그림이 오면 PORTRAITS로 옮긴다(BACKLOG 046-1).
+const NO_PORTRAIT: Array[String] = ["court_beehive.tres", "noble_baker.tres"]
 const PORTRAIT_DIR := "res://assets/art/clients/"
 const PORTRAIT_SIZE := Vector2i(450, 675)
 ## 앞 띠 첫 행의 아홉 점이 짙은 선이어야 한다(T2: 의뢰인 위에 벽 줄이 얹히지 않는다).

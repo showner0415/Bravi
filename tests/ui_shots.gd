@@ -16,6 +16,8 @@ const FEATHER_PATH := "res://data/commissions/feather_cut.tres"
 const USURER_PATH := "res://data/commissions/variants/first_blood_usurer.tres"
 const POOR_PATH := "res://data/commissions/variants/first_blood_poor.tres"
 const SPAR_PATH := "res://data/commissions/spar.tres"
+const COURT_PATH := "res://data/commissions/variants/court_beehive.tres"
+const NOBLE_PATH := "res://data/commissions/variants/noble_baker.tres"
 ## 카운터의 의뢰인이 미끄러져 들어오는 시간(0.45초)과 간격의 보간이 끝날 때까지 기다린다.
 const SETTLE_MSEC := 900
 const WEAPON_PATH := "res://data/weapons/rapier.tres"
@@ -65,6 +67,7 @@ func _ready() -> void:
 		["settings-display", _settings_display],
 		["select-spare", _select_spare], ["select-many", _select_many], ["select-story", _select_story],
 		["counter-spar", _counter_spar], ["duel-spar-stagger", _duel_spar_stagger], ["settle-spar", _settle_spar],
+		["counter-court", _counter_court], ["counter-noble", _counter_noble],
 	]
 	_next()
 
@@ -573,3 +576,21 @@ func _pause_hold() -> String:
 	_node.call("pause", &"shots")
 	_node.call("resume")
 	return "%s · 이어 베기 예비 동작 중 멈춤 뒤 계속: 돌아오기 대기(물리 걸음이 꺼져 끝나지 않는다)" % solo.attack_name
+
+
+## 법정 대리(계획 046): 5일차 카운터의 첫 손님. 사연 문단 둘 · 조건 글 · "상대:" 줄이 말풍선 안에 서는지(결투 씬이 없어 tick이 없다).
+func _counter_court() -> String:
+	var commissions: Array[Commission] = [load(COURT_PATH), load(NOBLE_PATH), load(POOR_PATH)]
+	var day := _new_day(commissions)
+	day.day_number = 5
+	_screen(Session.COUNTER_PATH, day)
+	return "카운터: 5일차 법정 대리(체칠리아, 색 도형)"
+
+
+## 귀족의 궂은일(계획 046): 소문 줄 · 흥정 줄 · "상대:" 줄이 말풍선 안에 서는지.
+func _counter_noble() -> String:
+	var commissions: Array[Commission] = [load(NOBLE_PATH), load(COURT_PATH), load(POOR_PATH)]
+	var day := _new_day(commissions)
+	day.day_number = 5
+	_screen(Session.COUNTER_PATH, day)
+	return "카운터: 5일차 귀족의 궂은일(레안드로, 색 도형)"

@@ -917,6 +917,8 @@ const BET_PATH := VARIANT_DIR + "throw_bet.tres"
 const USURER_PATH := VARIANT_DIR + "first_blood_usurer.tres"
 const LEGS_PATH := VARIANT_DIR + "legs_only.tres"
 const SPAR_PATH := "res://data/commissions/spar.tres"
+const COURT_PATH := VARIANT_DIR + "court_beehive.tres"
+const NOBLE_PATH := VARIANT_DIR + "noble_baker.tres"
 
 
 ## 막고, 빈틈이 생기는 공격 뒤에 가운데 하단, 무너지면 가운데 하단으로 치는 봇.
@@ -972,9 +974,9 @@ func t37_schedule_data() -> String:
 	var legs := load(LEGS_PATH) as Commission
 	_expect(errs, (legs.conditions[0] as TargetPartCondition).target_part == DT.Part.LEGS, "legs_only의 지정 부위가 다리가 아님")
 
-	# 여덟 의뢰의 한마디는 "치료비"를 담지 않는다(T33이 정산 화면의 그 낱말로 부상 줄을 본다).
+	# 열 의뢰의 한마디는 "치료비"를 담지 않는다(T33이 정산 화면의 그 낱말로 부상 줄을 본다).
 	var empty_lines := 0
-	for path in [FIRST_BLOOD_PATH, FEATHER_PATH, THROW_PATH, POOR_PATH, BET_PATH, USURER_PATH, LEGS_PATH, SPAR_PATH]:
+	for path in [FIRST_BLOOD_PATH, FEATHER_PATH, THROW_PATH, POOR_PATH, BET_PATH, USURER_PATH, LEGS_PATH, SPAR_PATH, COURT_PATH, NOBLE_PATH]:
 		var commission := load(path) as Commission
 		_expect(errs, not commission.success_line.contains("치료비") and not commission.decline_line.contains("치료비"),
 			"[%s] 한마디에 '치료비'가 있음" % commission.client_name)
@@ -1452,7 +1454,7 @@ func t45_full_pay() -> String:
 	_expect(errs, loaded.full_pay_score >= 1 and loaded.full_pay_score <= 100, "로드한 전액 기준치 %d (1 이상 100 이하여야 함)" % loaded.full_pay_score)
 	print("  INFO 로드한 경제 규칙: 전액 기준치 %d, 팁에도 건다 %s, 팁 문턱 %d" % [loaded.full_pay_score, str(loaded.full_pay_covers_tip), loaded.tip_floor])
 
-	# ---- INFO (통과 조건 아님): 의뢰 일곱의 받는 돈을 세 가지로 — 기준치 없음 / 팁에도 건다 / 기본 보수에만
+	# ---- INFO (통과 조건 아님): 의뢰 열의 받는 돈을 세 가지로 — 기준치 없음 / 팁에도 건다 / 기본 보수에만
 	var none_rules := loaded.duplicate() as EconomyRules
 	none_rules.full_pay_score = 100
 	var both_rules := loaded.duplicate() as EconomyRules
@@ -1461,7 +1463,7 @@ func t45_full_pay() -> String:
 	base_rules.full_pay_covers_tip = false
 	var scores := [100, 90, 80, 70, 60, 40]
 	print("  INFO 받는 돈 (기준치 없음 / 팁에도 건다 / 기본 보수에만), 충족도 %s" % str(scores))
-	for path in [FIRST_BLOOD_PATH, FEATHER_PATH, THROW_PATH, POOR_PATH, BET_PATH, USURER_PATH, LEGS_PATH, SPAR_PATH]:
+	for path in [FIRST_BLOOD_PATH, FEATHER_PATH, THROW_PATH, POOR_PATH, BET_PATH, USURER_PATH, LEGS_PATH, SPAR_PATH, COURT_PATH, NOBLE_PATH]:
 		var commission := load(path) as Commission
 		var cells: Array[String] = []
 		for score: int in scores:

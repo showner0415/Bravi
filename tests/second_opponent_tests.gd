@@ -8,6 +8,10 @@ const LEGS_ONLY_PATH := "res://data/commissions/variants/legs_only.tres"
 const LORENZO_PATH := "res://data/opponents/opponent_03.tres"
 const AGOSTINO_PATH := "res://data/opponents/opponent_05.tres"
 const SPAR_PATH := "res://data/commissions/spar.tres"
+const COURT_PATH := "res://data/commissions/variants/court_beehive.tres"
+const NOBLE_PATH := "res://data/commissions/variants/noble_baker.tres"
+const SERAFINA_PATH := "res://data/opponents/opponent_04.tres"
+const GUGLIELMO_PATH := "res://data/opponents/opponent_07.tres"
 const USURER_PATH := "res://data/commissions/variants/first_blood_usurer.tres"
 ## 다를 수 있는 칸: 이름·그림·포즈(표시만이고 판정에 쓰지 않는다. 결정 291·357).
 const FREE_FIELDS := ["display_name", "art", "idle_pose", "stagger_pose", "complacent_pose",
@@ -109,6 +113,10 @@ func t78_second_opponent() -> String:
 			want = BRUNO_PATH
 		elif c.resource_path == USURER_PATH:
 			want = LORENZO_PATH
+		elif c.resource_path == COURT_PATH:
+			want = SERAFINA_PATH
+		elif c.resource_path == NOBLE_PATH:
+			want = GUGLIELMO_PATH
 		elif c.resource_path == SPAR_PATH:
 			want = AGOSTINO_PATH
 		var got: String = c.opponent.resource_path if c.opponent != null else "(없음)"

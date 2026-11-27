@@ -12,7 +12,7 @@ const ASSIGNED := {
 	"first_blood.tres": "piazza.tres", "feather_cut.tres": "alley.tres", "throw_match.tres": "court.tres",
 	"first_blood_usurer.tres": "piazza.tres", "throw_bet.tres": "alley.tres",
 	"first_blood_poor.tres": "alley.tres", "legs_only.tres": "court.tres",
-	"spar.tres": "court.tres",
+	"spar.tres": "court.tres", "court_beehive.tres": "court.tres", "noble_baker.tres": "alley.tres",
 }
 ## 결정 316의 패널: 이름 -> [앵커, 앵커 기준 사각형, 1280×720의 화면 사각형].
 const PANELS := {
@@ -35,7 +35,7 @@ var _tree: SceneTree
 func list(tree: SceneTree) -> Array:
 	_tree = tree
 	return [
-		{"id": "T72", "name": "무대: 데이터 셋, 의뢰 여덟의 배정, 1일차가 서로 다른 곳, 결투 씬의 무대", "fn": t72_stages},
+		{"id": "T72", "name": "무대: 데이터 셋, 의뢰 열의 배정, 1일차가 서로 다른 곳, 결투 씬의 무대", "fn": t72_stages},
 		{"id": "T73", "name": "HUD의 필사본 패널 다섯·층·마우스 무시·조준 패널의 높이(결정 316)", "fn": t73_hud_panels},
 	]
 

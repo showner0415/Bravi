@@ -10,6 +10,7 @@ const ITEM_ACCEPT_GOOD := "어려운 사람의 일을 맡았다"
 const ITEM_ACCEPT_BAD := "궂은일을 맡았다"
 const ITEM_WIN := "이겼다"
 const ITEM_SUCCESS := "해냈다"
+const ITEM_SUCCESS_BAD := "궂은일을 해냈다"
 const ITEM_PERFECT := "흠 없이"
 const ITEM_FAIL := "해내지 못했다"
 
@@ -112,7 +113,8 @@ func settle_items(effect: Dictionary, score: int, tip_floor: int, won := false, 
 		items.append([ITEM_WIN, scaled(win, scale_percent)])
 	if score > tip_floor:
 		if success != 0:
-			items.append([ITEM_SUCCESS, scaled(success, scale_percent)])
+			# 결정 738: 해내는 것이 깎이는 의뢰의 항목은 "해냈다 -N"으로 읽히지 않게 이름을 가른다
+			items.append([ITEM_SUCCESS if success > 0 else ITEM_SUCCESS_BAD, scaled(success, scale_percent)])
 		if score >= 100 and success > 0 and perfect_bonus != 0:
 			items.append([ITEM_PERFECT, scaled(perfect_bonus, scale_percent)])
 	elif score <= 0 and fail != 0:

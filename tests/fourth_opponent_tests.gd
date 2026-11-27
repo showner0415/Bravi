@@ -283,10 +283,13 @@ func t120_fourth_opponent() -> String:
 	for spare in SelectScript.load_spare_attacks():
 		if spare.attack_name == STYLE_NAME:
 			errs.append("data/attacks/에 '층층 찌르기'가 남아 있다")
-	# ⑦ 어느 의뢰도 세라피나를 걸지 않는다(하루에는 서지 않는다. 결정 623).
+	# ⑦ 세라피나를 거는 의뢰는 법정의 체칠리아뿐이다(하루에는 5일차 한 자리. 결정 623 · 계획 046).
+	var users: Array[String] = []
 	for commission in CommissionLibrary.load_tree(COMMISSION_DIR):
 		if commission.opponent != null and commission.opponent.resource_path == SERAFINA_PATH:
-			errs.append("의뢰 %s가 세라피나를 건다" % commission.client_name)
+			users.append(commission.resource_path.get_file())
+	if users != ["court_beehive.tres"]:
+		errs.append("세라피나를 거는 의뢰 %s (기대 court_beehive.tres 하나)" % str(users))
 	# ⑧ 옛 규칙 사본은 찌르기 하나이고 그 판정 값이 바르톨로의 사본의 찌르기와 같다.
 	var plain := Plain.of(serafina)
 	var plain_bartolo := Plain.of(bartolo)

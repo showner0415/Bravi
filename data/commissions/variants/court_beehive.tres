@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="Commission" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/commission/commission.gd" id="1_commission"]
+[ext_resource type="Script" path="res://scripts/commission/commission_condition.gd" id="2_condition"]
+[ext_resource type="Script" path="res://scripts/commission/target_part_condition.gd" id="3_target_part"]
+[ext_resource type="Resource" path="res://data/opponents/opponent_04.tres" id="4_opponent"]
+[ext_resource type="Resource" path="res://data/stages/court.tres" id="5_stage"]
+
+[sub_resource type="Resource" id="condition_torso"]
+script = ExtResource("3_target_part")
+target_part = 2
+graze_penalty = 10
+hit_penalty = 30
+
+[resource]
+script = ExtResource("1_commission")
+client_name = "양봉가 체칠리아"
+dialogue = "레안드로 백작 댁이 제 벌통 언덕을 정원으로 삼겠다며 소송을 걸었습니다. 판사님은 대리인끼리 결투로 가리라 하셨고, 백작 댁은 건너편 의뢰소의 세라피나를 세웠습니다. 법정의 결투는 가슴의 표만 칩니다. 다른 데를 스치면 그 여자가 장부에 적어 판사님께 올립니다.
+그 여자는 한 줄로 서서 높이만 바꿔 찔러 옵니다. 막은 높이 그대로 찌르지 마시고 가슴 높이로 고쳐 찌르십시오. 벌들이 겨울을 나야 합니다."
+opponent = ExtResource("4_opponent")
+opponent_posture_max = 6
+opponent_recover_posture = 3
+stage = ExtResource("5_stage")
+conditions = Array[ExtResource("2_condition")]([SubResource("condition_torso")])
+base_reward = 60
+tip_max = 25
+reputation_effect = {"accept": 0, "success": 4, "fail": -4, "win": 1}
+haggle_min_stars = 0
+success_line = "판사님이 언덕은 벌들 것이라 하셨습니다. 그 키 큰 대리인은 장부를 덮고 정정하겠다더군요."
+decline_line = "알겠습니다. 다른 대리인을 찾아보지요. 벌들이 가을까지 버텨 주면 좋으련만."
+fail_line = "언덕은 백작 댁으로 넘어갔습니다. 벌통을 어디로 옮겨야 할지 모르겠습니다."
+partial_line = "언덕은 지켰습니다만 장부에 적힌 게 많아 벌금을 물었습니다. 수당에서 덜겠습니다."

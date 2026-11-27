@@ -1,7 +1,7 @@
 extends RefCounted
-## T59: 의뢰인의 글 — 여덟 의뢰의 필드(채워짐, 길이, 금지 글자), 정산의 구간이 고르는 글, 흥정의 대답.
+## T59: 의뢰인의 글 — 열 의뢰의 필드(채워짐, 길이, 금지 글자), 정산의 구간이 고르는 글, 흥정의 대답.
 ## 하루의 도우미(고정 점수 의뢰, 화면 붙이기)는 day_tests.gd의 것을 쓴다.
-## 구간과 화면은 테스트가 직접 만든 의뢰와 규칙으로 본다(.tres의 값과 상관없다). 데이터는 여덟 .tres를 로드해 본다.
+## 구간과 화면은 테스트가 직접 만든 의뢰와 규칙으로 본다(.tres의 값과 상관없다). 데이터는 열 .tres를 로드해 본다.
 
 const Day := preload("res://tests/day_tests.gd")
 const DT := preload("res://scripts/duel/duel_types.gd")
@@ -18,6 +18,8 @@ const PATHS: Array[String] = [
 	"res://data/commissions/variants/first_blood_usurer.tres",
 	"res://data/commissions/variants/legs_only.tres",
 	"res://data/commissions/variants/throw_bet.tres",
+	"res://data/commissions/variants/court_beehive.tres",
+	"res://data/commissions/variants/noble_baker.tres",
 ]
 ## 글자 수의 상한(공백과 문장부호 포함). 정산의 글은 두 줄, 흥정의 대답은 한 줄에 들어가야 한다.
 const SETTLE_MAX := 56
@@ -33,7 +35,7 @@ func list(tree: SceneTree) -> Array:
 	_tree = tree
 	_d.set("_tree", tree)
 	return [
-		{"id": "T59", "name": "의뢰인의 글: 여덟 의뢰의 필드, 정산의 구간, 흥정의 대답", "fn": t59_client_lines},
+		{"id": "T59", "name": "의뢰인의 글: 열 의뢰의 필드, 정산의 구간, 흥정의 대답", "fn": t59_client_lines},
 	]
 
 
@@ -134,7 +136,7 @@ func t59_client_lines() -> String:
 	return _result(errs)
 
 
-## 가. 여덟 의뢰의 필드: 채워짐, 길이, 금지 글자, 서로 다름.
+## 가. 열 의뢰의 필드: 채워짐, 길이, 금지 글자, 서로 다름.
 func _check_data(errs: Array[String]) -> void:
 	var fails := {}
 	var partials := {}
