@@ -790,12 +790,16 @@ func _practice_checks(errs: Array[String]) -> void:
 	if pick != null:
 		pick.item_selected.emit(5)
 		_check_drill_and_help(errs, "6단")
-	# 상대 목록의 끝 줄(주인 없는 검술).
+	# 상대 목록: 주인 없는 검술이 비었으니 줄은 상대뿐이다(계획 042 — 쪽이 넘어가도 깨지지 않게 T81의 꼴).
 	_reset_statics()
-	_select.call("pick_opponent", trials.size())
+	_select.call("pick_opponent", 0)
 	var spare_count := _select.find_children("SpareDrill*", "Button", true, false).size()
-	if spare_count != 1:
-		errs.append("[연습] 주인 없는 검술의 SpareDrill %d개 (기대 1)" % spare_count)
+	var entries := trials.size() + (1 if not SelectScript.load_spare_attacks().is_empty() else 0)
+	var pick_rows := _select.find_children("OpponentPick*", "Button", true, false).size()
+	if not SelectScript.load_spare_attacks().is_empty() or spare_count != 0 or _select.find_child("SpareCaption", true, false) != null:
+		errs.append("[연습] 주인 없는 검술의 줄이 남아 있다 (SpareDrill %d개)" % spare_count)
+	if pick_rows != mini(entries, SelectScript.LIST_ROWS):
+		errs.append("[연습] 상대 줄 %d개 (기대 %d)" % [pick_rows, mini(entries, SelectScript.LIST_ROWS)])
 
 
 func _check_drill_and_help(errs: Array[String], label: String) -> void:

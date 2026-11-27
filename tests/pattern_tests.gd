@@ -30,7 +30,7 @@ func list(tree: SceneTree) -> Array:
 		{"id": "T79", "name": "이어 베기: 걸음의 시각·막힘·끊김·패리·큰 공격·버티기·단발 회귀", "fn": t79_chain},
 		{"id": "T80", "name": "휩쓸기: 쥐고 끌면 막힘, 패리 없음, 떼면 뚫림", "fn": t80_sweep},
 		{"id": "T81", "name": "하루의 상대의 패턴·패턴만 상대·번호 고리의 자리·연습의 길", "fn": t81_trial},
-		{"id": "T95", "name": "다음 상대 몫의 찌르기 하나: 하한을 지키고 어느 상대도 쓰지 않는다", "fn": t95_spare_thrusts},
+		{"id": "T95", "name": "주인 없는 공격의 자리: 비어 있고 어느 상대도 가리키지 않는다", "fn": t95_spare_thrusts},
 	]
 
 
@@ -375,22 +375,6 @@ func t81_trial() -> String:
 	return "OK" if errs.is_empty() else ", ".join(errs)
 
 
-## 폴더의 공격을 파일 이름 차례로(내보낸 빌드의 .remap은 떼고 읽는다).
-func _spare_attacks() -> Array[AttackData]:
-	var names: Array[String] = []
-	for file in DirAccess.get_files_at(SPARE_DIR):
-		var clean := file.trim_suffix(".remap")
-		if clean.ends_with(".tres") and not names.has(clean):
-			names.append(clean)
-	names.sort()
-	var out: Array[AttackData] = []
-	for clean in names:
-		var atk := load("%s/%s" % [SPARE_DIR, clean]) as AttackData
-		if atk != null:
-			out.append(atk)
-	return out
-
-
 ## 공격 하나와 그 변주·걸음·포즈가 아닌 하위 공격까지 폴더의 자원인 것이 있는가.
 func _uses_spare(atk: AttackData) -> bool:
 	if atk == null:
@@ -406,53 +390,14 @@ func _uses_spare(atk: AttackData) -> bool:
 
 func t95_spare_thrusts() -> String:
 	var errs: Array[String] = []
-	var weapon := load(WEAPON_PATH) as WeaponData
-	var bartolo := load(BARTOLO_PATH) as OpponentData
-	# 1. 폴더에 공격 하나: 엇박(층층은 세라피나가 가져갔다 — 계획 041, 그 확인은 T120 · T121 · T122가 이어 본다).
-	var spare := _spare_attacks()
-	var names: Array[String] = []
-	for atk in spare:
-		names.append(atk.attack_name)
-		if atk.chain.is_empty() or atk.sweep or atk.dive:
-			errs.append("%s: 걸음이 없거나 휩쓸기·뛰어들기임" % atk.attack_name)
-	if str(names) != str(["엇박 찌르기"]):
-		errs.append("폴더의 공격 이름 %s (기대 [엇박 찌르기])" % str(names))
-		return ", ".join(errs)
-	var offbeat := spare[0]
-	# 2. 바탕과 변주마다 하한(결정 375) + 모든 타격이 가운데.
-	for base in spare:
-		var lines: Array[AttackData] = [base]
-		for variant: AttackData in base.variants:
-			lines.append(variant)
-		for k in lines.size():
-			var label := "%s l%d" % [base.attack_name, k]
-			_check_pattern(errs, bartolo, lines[k], weapon, label)
-			var points: Array[AttackData] = [lines[k]]
-			for step: AttackData in lines[k].chain:
-				points.append(step)
-			for point in points:
-				if point.direction != DT.Direction.CENTER:
-					errs.append("%s: 가운데가 아닌 타격" % label)
-	# 3. 층층의 길 검사는 T120 ④로 옮겼다(계획 041).
-	# 4. 엇박: 간격이 고르지 않고 긴 것이 1.3 이하, 모든 타격의 높이가 [1].
-	var offbeat_lines: Array[AttackData] = [offbeat]
-	for variant: AttackData in offbeat.variants:
-		offbeat_lines.append(variant)
-	for k in offbeat_lines.size():
-		var line := offbeat_lines[k]
-		var longest := 0.0
-		var shortest := INF
-		for step: AttackData in line.chain:
-			longest = maxf(longest, step.tell_time)
-			shortest = minf(shortest, step.tell_time)
-		if longest - shortest < 0.5 - EPS or longest > 1.3 + EPS:
-			errs.append("엇박 l%d: 간격 최장 %.2f · 최단 %.2f (차 0.5 이상, 최장 1.3 이하)" % [k, longest, shortest])
-		var points: Array[AttackData] = [line]
-		for step: AttackData in line.chain:
-			points.append(step)
-		for point in points:
-			if point.heights.size() != 1 or point.heights[0] != DT.Height.MID:
-				errs.append("엇박 l%d: 높이 %s (기대 [1])" % [k, str(point.heights)])
+	# 1. 주인 없는 공격이 없다(엇박은 아고스티노가 가져갔다 — 계획 042, 그 확인은 T126 ④로 옮겼다. 층층은 T120 ④).
+	var spare := SelectScript.load_spare_attacks()
+	if not spare.is_empty():
+		var names: Array[String] = []
+		for atk in spare:
+			names.append(atk.attack_name)
+		errs.append("폴더에 주인 없는 공격이 남아 있다 %s (기대 빈 배열)" % str(names))
+	# 2 · 4. 하한·가운데·간격·높이의 확인은 아고스티노의 데이터로 T126 ④가 본다(계획 042).
 	# 5. 어느 상대도 폴더의 공격을 쓰지 않는다(변주·걸음·버릇 반응까지).
 	for file in DirAccess.get_files_at("res://data/opponents"):
 		var clean := file.trim_suffix(".remap")

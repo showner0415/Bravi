@@ -11,13 +11,14 @@ const BARTOLO_PATH := "res://data/opponents/opponent_01.tres"
 const BRUNO_PATH := "res://data/opponents/opponent_02.tres"
 const LORENZO_PATH := "res://data/opponents/opponent_03.tres"
 const SERAFINA_PATH := "res://data/opponents/opponent_04.tres"
+const AGOSTINO_PATH := "res://data/opponents/opponent_05.tres"
 const FIRST_BLOOD_PATH := "res://data/commissions/first_blood.tres"
 const LEGS_ONLY_PATH := "res://data/commissions/variants/legs_only.tres"
 const USURER_PATH := "res://data/commissions/variants/first_blood_usurer.tres"
 const RULES_PATH := "res://data/duel_rules.tres"
 const WEAPON_PATH := "res://data/weapons/rapier.tres"
 const DUEL_PATH := "res://scenes/duel/duel.tscn"
-const OPPONENT_PATHS: Array[String] = [BARTOLO_PATH, BRUNO_PATH, LORENZO_PATH, SERAFINA_PATH]
+const OPPONENT_PATHS: Array[String] = [BARTOLO_PATH, BRUNO_PATH, LORENZO_PATH, SERAFINA_PATH, AGOSTINO_PATH]
 const DELTA := 1.0 / 60.0
 const EPS := 1e-6
 ## 결정 375의 하한과 계획 040의 한 패턴 길이 상한.
@@ -30,9 +31,10 @@ const FROM_DAYS := {
 	BRUNO_PATH: [4, 5, 6, 7, 9, 11],
 	LORENZO_PATH: [7, 9, 11, 13, 15],
 	SERAFINA_PATH: [7, 9, 11, 13, 15],
+	AGOSTINO_PATH: [6, 8, 10, 12, 14],
 }
 ## 1단의 공격 수(하루의 상대의 목록은 그대로다).
-const FIRST_TIER_SIZES := {BARTOLO_PATH: 5, BRUNO_PATH: 5, LORENZO_PATH: 4, SERAFINA_PATH: 2}
+const FIRST_TIER_SIZES := {BARTOLO_PATH: 5, BRUNO_PATH: 5, LORENZO_PATH: 4, SERAFINA_PATH: 2, AGOSTINO_PATH: 4}
 
 var _tree: SceneTree
 
@@ -500,6 +502,11 @@ func _expected_rows(path: String) -> Array[String]:
 				"층층 찌르기 d1 t0.90 r1.60 b1 h[0] > d1 t0.60 h[1] > d1 t0.60 h[2]",
 				"층층 찌르기 d1 t0.90 r1.60 b1 h[2] > d1 t0.60 h[1] > d1 t0.60 h[0]",
 				"층층 찌르기 d1 t0.90 r1.60 b1 h[1] > d1 t0.60 h[2] > d1 t0.60 h[0]",
+			]
+		AGOSTINO_PATH:
+			return [
+				"엇박 찌르기 d1 t0.90 r0.55 b0 h[1] > d1 t0.60 h[1] > d1 t1.30 h[1]",
+				"엇박 찌르기 d1 t0.90 r0.55 b0 h[1] > d1 t1.30 h[1] > d1 t0.60 h[1]",
 			]
 	return []
 
