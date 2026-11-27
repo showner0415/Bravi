@@ -4,7 +4,7 @@
 [ext_resource type="Script" path="res://scripts/ai/habit_data.gd" id="2_habit"]
 [ext_resource type="Script" path="res://scripts/ai/opponent_data.gd" id="3_opponent"]
 [ext_resource type="Script" path="res://scripts/duel/pose_data.gd" id="4_pose"]
-[ext_resource type="Resource" path="res://data/opponents/bartolo_art.tres" id="5_art"]
+[ext_resource type="Resource" path="res://data/opponents/agostino_art.tres" id="5_art"]
 [ext_resource type="Script" path="res://scripts/ai/style_tier.gd" id="6_tier"]
 
 [sub_resource type="Resource" id="pose_thrust_tell"]
@@ -30,7 +30,7 @@ sword_deg = -120.0
 
 [sub_resource type="Resource" id="pose_cut_right_tell"]
 script = ExtResource("4_pose")
-arm_deg = -88.0
+arm_deg = -62.0
 sword_deg = 45.0
 
 [sub_resource type="Resource" id="pose_cut_right_strike"]
@@ -106,7 +106,7 @@ recovery_time = 0.75
 weight = 1.0
 is_big = false
 tell_pose = SubResource("pose_cut_right_tell")
-hold_arm_deg = -96.0
+hold_arm_deg = -68.0
 strike_pose = SubResource("pose_cut_right_strike")
 recover_arm_deg = -41.9
 pose_color = Color(1, 0.75, 0.2, 1)
@@ -174,7 +174,7 @@ recovery_time = 0.0
 weight = 1.0
 is_big = false
 tell_pose = SubResource("pose_cut_right_tell")
-hold_arm_deg = -96.0
+hold_arm_deg = -68.0
 strike_pose = SubResource("pose_cut_right_strike")
 recover_arm_deg = -41.9
 pose_color = Color(1, 0.75, 0.2, 1)

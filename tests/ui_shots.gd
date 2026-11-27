@@ -15,6 +15,7 @@ const Practice := preload("res://tests/practice_screen_tests.gd")
 const FEATHER_PATH := "res://data/commissions/feather_cut.tres"
 const USURER_PATH := "res://data/commissions/variants/first_blood_usurer.tres"
 const POOR_PATH := "res://data/commissions/variants/first_blood_poor.tres"
+const SPAR_PATH := "res://data/commissions/spar.tres"
 ## 카운터의 의뢰인이 미끄러져 들어오는 시간(0.45초)과 간격의 보간이 끝날 때까지 기다린다.
 const SETTLE_MSEC := 900
 const WEAPON_PATH := "res://data/weapons/rapier.tres"
@@ -63,6 +64,7 @@ func _ready() -> void:
 		["settings-controls", _settings_controls], ["settings-controls-empty", _settings_controls_empty],
 		["settings-display", _settings_display],
 		["select-spare", _select_spare], ["select-many", _select_many], ["select-story", _select_story],
+		["counter-spar", _counter_spar], ["duel-spar-stagger", _duel_spar_stagger], ["settle-spar", _settle_spar],
 	]
 	_next()
 
@@ -493,6 +495,31 @@ func _counter_day() -> DayState:
 	_screen(Session.COUNTER_PATH, day)
 	return day
 
+
+## 대련(계획 043): 카운터에 선 사범의 말풍선 · 조건 글 · "상대:" 줄이 안에 다 서는지.
+func _counter_spar() -> String:
+	var commissions: Array[Commission] = [load(SPAR_PATH), load(USURER_PATH), load(POOR_PATH)]
+	_screen(Session.COUNTER_PATH, _new_day(commissions))
+	return "카운터: 대련 의뢰(첫 손님)"
+
+
+## put 뒤에 advance·tick을 부르지 않는다: 놓은 코어를 걸리면 끝나지 않는 고리다(계획 043 위험 R9).
+func _duel_spar_stagger() -> String:
+	var core := _duel(SPAR_PATH)
+	var now := States.put(core, DT.OpponentState.STAGGER, null, 0.0, DT.Distance.ENGAGE)
+	core.record.add({"type": DuelRecord.STAGGER_START, "t": now, "end_time": core.brain.state_end})
+	_node.set("_display_time", now)
+	_node.call("_update_views", 0.0)
+	return "대련 의뢰 · 무너짐 1/3 · 귀띔 '치지 마라'"
+
+
+func _settle_spar() -> String:
+	var commissions: Array[Commission] = [_scored(SPAR_PATH, 32, 18, 100), load(USURER_PATH), load(POOR_PATH)]
+	var day := _new_day(commissions)
+	day.accept()
+	day.finish_duel(_d._record(DT.EndReason.CONDITION))
+	_screen(Session.SETTLEMENT_PATH, day)
+	return "정산: 대련 100점(고정 점수 의뢰에 사범의 한마디)"
 
 func _quit_confirm() -> String:
 	var day := _counter_day()

@@ -9,8 +9,10 @@ const ECONOMY_PATH := "res://data/economy_rules.tres"
 const PORTRAITS := {
 	"feather_cut.tres": "clara.png", "first_blood_usurer.tres": "vittorio.png", "first_blood.tres": "emilio.png",
 	"throw_match.tres": "ines.png", "throw_bet.tres": "gasparo.png", "legs_only.tres": "orsola.png",
-	"first_blood_poor.tres": "tomaso.png",
+	"first_blood_poor.tres": "tomaso.png", "spar.tres": "agostino.png",
 }
+## 그림이 아직 없는 의뢰(도형이어야 한다). 그림이 오면 PORTRAITS로 옮긴다(BACKLOG 043-1).
+const NO_PORTRAIT: Array[String] = []
 const PORTRAIT_DIR := "res://assets/art/clients/"
 const PORTRAIT_SIZE := Vector2i(450, 675)
 ## 앞 띠 첫 행의 아홉 점이 짙은 선이어야 한다(T2: 의뢰인 위에 벽 줄이 얹히지 않는다).
@@ -91,8 +93,8 @@ func t77_counter_art() -> String:
 	var errs: Array[String] = []
 	var all: Array[Commission] = CommissionLibrary.load_all("res://data/commissions")
 	all.append_array(CommissionLibrary.load_all("res://data/commissions/variants"))
-	if all.size() != PORTRAITS.size():
-		errs.append("의뢰 %d개 (기대 %d)" % [all.size(), PORTRAITS.size()])
+	if all.size() != PORTRAITS.size() + NO_PORTRAIT.size():
+		errs.append("의뢰 %d개 (기대 %d)" % [all.size(), PORTRAITS.size() + NO_PORTRAIT.size()])
 	var art := _art_on()
 	for commission in all:
 		var file := commission.resource_path.get_file()

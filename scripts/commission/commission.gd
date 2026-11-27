@@ -13,6 +13,9 @@ extends Resource
 @export var stage: StageData
 ## 카운터와 정산에 서는 의뢰인 그림(결정 347). 비면 색 도형이다.
 @export var client_portrait: Texture2D
+## 상대의 자세 칸을 이 의뢰가 정한다(계획 043 결정 659). 0이면 상대 데이터 그대로다. 두 칸이 0이면 fit_opponent는 같은 객체를 돌려준다.
+@export var opponent_posture_max := 0
+@export var opponent_recover_posture := 0
 @export var conditions: Array[CommissionCondition] = []
 @export var base_reward := 0
 @export var tip_max := 0
@@ -38,6 +41,13 @@ extends Resource
 ## 한 줄로 쓴다(줄바꿈되지 않는 자리다). 까닭(가게의 이름, 별)은 말하지 않는다.
 @export var haggle_agree_line := ""
 @export var haggle_refuse_line := ""
+
+
+## 의뢰의 칸으로 상대의 자세를 맞춘다. 칸이 비면 받은 상대 그 객체다.
+func fit_opponent(base: OpponentData) -> OpponentData:
+	if base == null:
+		return null
+	return base.with_posture(opponent_posture_max, opponent_recover_posture)
 
 
 ## 조건 설명을 한 줄씩.

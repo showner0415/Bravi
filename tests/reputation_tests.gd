@@ -20,6 +20,7 @@ const COMMISSION_PATHS: Array[String] = [
 	"res://data/commissions/variants/first_blood_poor.tres",
 	"res://data/commissions/variants/first_blood_usurer.tres",
 	"res://data/commissions/variants/throw_bet.tres",
+	"res://data/commissions/spar.tres",
 ]
 
 ## 테스트가 적는 팁 문턱.

@@ -9,6 +9,7 @@
 # -Shots <dir>: the three shot steps open a window and save PNGs under <dir>\opponent, <dir>\ui, <dir>\pattern.
 # Prints one line per step, and only for a failed step its ERROR / FAIL lines. Full output goes to <log dir>\<step>.log.
 # -Stats also adds tierwrong and tierclean (each opponent's last sword-style tier, -Opening 3 -Nine; -Miss 0.1 for tierwrong): their "stat," lines are printed.
+# -Stats also adds spar, sparwrong, sparparry (plan 043 decision 662: run_duel_stats.ps1 -Commission res://data/commissions/spar.tres -Opening 3 -Nine -Finisher off -Runs 60; sparwrong adds -Miss 0.1, sparparry adds -Guard parry -Jitter 0). These three steps print "stat," and "score," lines.
 # The counter step (tests/part_counter_shots.gd) prints its "counter," and "overlap," lines; the partstats step (run_duel_stats.ps1 with $extra args) prints its "stat," lines.
 # Also prints the pattern step's "overlap," lines and the stats step's "stat," lines: they are what a reader needs.
 # Sets BRAVI_SAVE_PATH to the playtest save when it is not set, so no run touches the player's save.
@@ -38,7 +39,7 @@ New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 Write-Output "logs: $LogDir"
 
 $steps = @('tests', 'smoke', 'opponent', 'ui', 'pattern', 'counter')
-if ($Stats) { $steps += @('stats', 'reach', 'partstats', 'tierwrong', 'tierclean') }
+if ($Stats) { $steps += @('stats', 'reach', 'partstats', 'tierwrong', 'tierclean', 'spar', 'sparwrong', 'sparparry') }
 if ($Only) { $steps = @($Only -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ }) }
 
 $errorPattern = '^\s*(USER |)(SCRIPT |SHADER |)ERROR'
@@ -62,12 +63,17 @@ $scripts = @{
 	ui = 'run_ui_shots.ps1'; pattern = 'run_pattern_shots.ps1'; stats = 'run_duel_stats.ps1'
 	reach = 'run_part_reach.ps1'; counter = 'run_part_counter_shots.ps1'; partstats = 'run_duel_stats.ps1'
 	tierwrong = 'run_duel_stats.ps1'; tierclean = 'run_duel_stats.ps1'
+	spar = 'run_duel_stats.ps1'; sparwrong = 'run_duel_stats.ps1'; sparparry = 'run_duel_stats.ps1'
 }
 $extra = @{
 	# Small tier set (plan 040 decision 593): every opponent's last tier; a bot that misjudges heights and one that does not.
 	tierwrong = @('-Tier', 'last', '-Opening', '3', '-Nine', '-Miss', '0.1')
 	tierclean = @('-Tier', 'last', '-Opening', '3', '-Nine')
 	partstats = @('-Opponent', 'res://data/opponents/opponent_01.tres', '-Opening', '1', '-Effects', 'off,on', '-Counter', 'thrust,arm,low', '-Nine')
+	# Plan 043 decision 662: the spar commission on day 4 (opening 3) with a bot that never strikes a staggered opponent. sparparry has no band: it only reports.
+	spar = @('-Commission', 'res://data/commissions/spar.tres', '-Opening', '3', '-Nine', '-Finisher', 'off', '-Runs', '60')
+	sparwrong = @('-Commission', 'res://data/commissions/spar.tres', '-Opening', '3', '-Nine', '-Finisher', 'off', '-Runs', '60', '-Miss', '0.1')
+	sparparry = @('-Commission', 'res://data/commissions/spar.tres', '-Opening', '3', '-Nine', '-Finisher', 'off', '-Runs', '60', '-Guard', 'parry', '-Jitter', '0')
 }
 $failed = @()
 foreach ($step in $steps) {
@@ -95,6 +101,8 @@ foreach ($step in $steps) {
 	if ($step -eq 'counter') { $out | Where-Object { $_ -match '^(overlap|counter),' } | ForEach-Object { Write-Output "  $_" } }
 	if ($step -eq 'stats') { $out | Where-Object { $_ -match '^(stat|routes),' } | ForEach-Object { Write-Output "  $_" } }
 	if (@('partstats', 'tierwrong', 'tierclean') -contains $step) { $out | Where-Object { $_ -match '^stat,' } | ForEach-Object { Write-Output "  $_" } }
+	# The three spar steps print the "score," lines too.
+	if (@('spar', 'sparwrong', 'sparparry') -contains $step) { $out | Where-Object { $_ -match '^(stat|score),' } | ForEach-Object { Write-Output "  $_" } }
 	if ($step -eq 'reach') { $out | Where-Object { $_ -match '^reach,' } | ForEach-Object { Write-Output "  $_" } }
 }
 

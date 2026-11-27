@@ -67,7 +67,7 @@ func t21_library() -> String:
 	DirAccess.remove_absolute(TEMP_DIR)
 
 	var real := CommissionLibrary.load_all(COMMISSION_DIR)
-	_expect(errs, real.size() == 3, "%s 에서 %d개 로드 (기대 3)" % [COMMISSION_DIR, real.size()])
+	_expect(errs, real.size() == 4, "%s 에서 %d개 로드 (기대 4)" % [COMMISSION_DIR, real.size()])
 	return _result(errs)
 
 
@@ -94,9 +94,9 @@ func _spawn_duel(commission: Commission) -> Node:
 func t22_flow() -> String:
 	var errs: Array[String] = []
 	var commissions := CommissionLibrary.load_all(COMMISSION_DIR)
-	_expect(errs, commissions.size() == 3, "의뢰 %d개 (기대 3)" % commissions.size())
+	_expect(errs, commissions.size() == 4, "의뢰 %d개 (기대 4)" % commissions.size())
 
-	# 의뢰 3개 각각 입력 없이 → 유효타를 맞아 끝나고, 결과 패널의 점수가 같은 record의 evaluate와 같다.
+	# 의뢰 4개 각각 입력 없이 → 유효타를 맞아 끝나고, 결과 패널의 점수가 같은 record의 evaluate와 같다.
 	for commission in commissions:
 		var duel := _spawn_duel(commission)
 		var panel: ResultPanel = duel.get_node("ResultPanel")

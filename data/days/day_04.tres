@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="DayData" load_steps=10 format=3]
+[gd_resource type="Resource" script_class="DayData" load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/economy/day_data.gd" id="1_day"]
 [ext_resource type="Script" path="res://scripts/commission/commission.gd" id="2_commission"]
@@ -9,8 +9,9 @@
 [ext_resource type="Resource" path="res://data/commissions/throw_match.tres" id="7_throw"]
 [ext_resource type="Resource" path="res://data/commissions/variants/first_blood_poor.tres" id="8_poor"]
 [ext_resource type="Resource" path="res://data/commissions/variants/legs_only.tres" id="9_legs"]
+[ext_resource type="Resource" path="res://data/commissions/spar.tres" id="10_spar"]
 
 [resource]
 script = ExtResource("1_day")
-commissions = Array[ExtResource("2_commission")]([ExtResource("3_feather"), ExtResource("4_bet"), ExtResource("5_first"), ExtResource("6_usurer"), ExtResource("7_throw"), ExtResource("8_poor"), ExtResource("9_legs")])
+commissions = Array[ExtResource("2_commission")]([ExtResource("10_spar"), ExtResource("3_feather"), ExtResource("4_bet"), ExtResource("5_first"), ExtResource("6_usurer"), ExtResource("7_throw"), ExtResource("8_poor"), ExtResource("9_legs")])
 base_guests = 5

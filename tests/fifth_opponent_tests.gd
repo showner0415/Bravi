@@ -1,6 +1,6 @@
 extends RefCounted
-## T126~T128: 다섯째 상대 아고스티노(계획 042, 결정 636~647). 데이터의 틀·엇박의 길·가방, 박자를 읽는 판, 표시와 연습 화면.
-## T129(그림 데이터)는 2부의 몫이다. 값(공격 수·가중치·길의 간격과 세는 말·가방·from_day)은 결정 642·643의 표를 손으로 적은 기대다.
+## T126~T129: 다섯째 상대 아고스티노(계획 042, 결정 636~647). 데이터의 틀·엇박의 길·가방, 박자를 읽는 판, 표시와 연습 화면.
+## T129(그림 데이터, 2부)는 맨 아래다. 값(공격 수·가중치·길의 간격과 세는 말·가방·from_day)은 결정 642·643의 표를 손으로 적은 기대다.
 ## 결정 645의 고치는 차례가 옮길 수 있는 값(찌르기의 가중치·기본 베기의 빈틈)은 이 파일의 상수 한두 곳이 함께 옮기는 기대다.
 ## 도우미는 fourth_opponent_tests.gd에서 빌린다(그 파일은 고치지 않는다. 빌리는 도우미는 _tree를 쓰지 않는다).
 
@@ -73,6 +73,7 @@ func list(tree: SceneTree) -> Array:
 		{"id": "T126", "name": "다섯째 상대: 판정 값이 바르톨로와 같다, 가운뎃줄 한 줄, 엇박의 길과 세는 말·단·가방, 하루에는 서지 않는다", "fn": t126_fifth_opponent},
 		{"id": "T127", "name": "엇박의 판: 쥔 손과 박자를 맞춘 손의 빈틈, 타격의 시각, 멈칫에 속는 손, 같은 씨앗, 박자 봇의 뜻", "fn": t127_offbeat_duel},
 		{"id": "T128", "name": "표시와 연습 화면: 박자 고리의 shape·wait와 세는 말, 네 박의 넷째 고리, 연습의 다섯째 칸", "fn": t128_marks_and_practice},
+		{"id": "T129", "name": "그림 데이터: 스물한 장과 팔 셋, 모자 없는 꼭대기(넷 가운데 가장 낮다)·머리 가운데의 자·모자 쓴 꼭대기·발끝, 다리 안의 지팡이", "fn": t129_agostino_art},
 	]
 
 
@@ -201,10 +202,13 @@ func t126_fifth_opponent() -> String:
 		errs.append("data/attacks/에 주인 없는 공격이 %d개 남아 있다" % SelectScript.load_spare_attacks().size())
 	if ResourceLoader.exists(OFFBEAT_FILE):
 		errs.append("%s가 아직 폴더에 있다" % OFFBEAT_FILE)
-	# ⑦ 어느 의뢰도 아고스티노를 걸지 않는다(하루에는 서지 않는다. 결정 646).
+	# ⑦ 아고스티노를 거는 의뢰는 대련 하나다(결정 646 → 043. 048이 독촉을 더하면 목록을 고친다).
+	var ago_commissions: Array[String] = []
 	for commission in CommissionLibrary.load_tree(COMMISSION_DIR):
 		if commission.opponent != null and commission.opponent.resource_path == AGOSTINO_PATH:
-			errs.append("의뢰 %s가 아고스티노를 건다" % commission.client_name)
+			ago_commissions.append(commission.resource_path.get_file())
+	if ago_commissions != ["spar.tres"]:
+		errs.append("아고스티노를 거는 의뢰 %s (기대 spar.tres 하나)" % str(ago_commissions))
 	# ⑧ 옛 규칙 사본은 단발 셋이고, 예비는 셋 모두 · 빈틈은 찌르기만 바르톨로의 옛 규칙 사본과 같다(베기의 빈틈은 ③이 본다).
 	var plain := Plain.of(ago)
 	var plain_bartolo := Plain.of(bartolo)
@@ -736,3 +740,124 @@ func _check_drill_and_help(errs: Array[String], label: String) -> void:
 	var has_dive: bool = _f._help_has(text, DuelHud.HELP_DIVE)
 	if has_sweep or has_dive:
 		errs.append("[② %s] 막는 법에 휩쓸기(%s)나 뛰어들기(%s) 줄이 있다" % [label, has_sweep, has_dive])
+
+
+# ================================================================ T129 그림 데이터
+
+const AGOSTINO_ART_PATH := "res://data/opponents/agostino_art.tres"
+const AGOSTINO_ART_DIR := "res://assets/art/opponents/agostino/"
+const AGO_ART_SIZES := {
+	"head": Vector2i(276, 262), "head_oops": Vector2i(278, 262), "head_dizzy": Vector2i(277, 262), "hat": Vector2i(136, 70),
+	"feather": Vector2i(134, 49), "torso": Vector2i(334, 403), "legs": Vector2i(281, 404), "arm": Vector2i(74, 211),
+	"hand": Vector2i(80, 71), "sword": Vector2i(126, 399), "arm_up_sword": Vector2i(155, 553), "arm_up": Vector2i(102, 302),
+	"arm_up_fist": Vector2i(137, 101), "arm_thrust": Vector2i(171, 125), "arm_thrust_fist": Vector2i(171, 234),
+	"arm_thrust_sword": Vector2i(273, 279), "arm_thrust_blade": Vector2i(64, 46), "arm_aim": Vector2i(132, 150),
+	"arm_aim_fist": Vector2i(132, 174), "arm_aim_sword": Vector2i(187, 201), "arm_aim_blade": Vector2i(104, 100),
+}
+## 머리 가운데의 자(결정 619의 관절 식): 꼭대기 - 머리 그림 / 2가 이 값 이상이어야 눈이 교전의 줄 위에 선다.
+const MIN_HEAD_MID := 252.0
+## 모자 없는 꼭대기의 상한과 발끝의 범위(판 S2의 자).
+const MAX_BARE_TOP := 311.0
+const MIN_FOOT := 185.0
+const MAX_FOOT_TIP := 200.0
+## 지팡이가 다리 그림 안에 있다: 다리 관절의 높이(단위)가 다른 넷의 6.5~10.3보다 훨씬 크다.
+const MIN_LEG_JOINT_Y := 50.0
+
+
+func t129_agostino_art() -> String:
+	var errs: Array[String] = []
+	var bartolo := load(BARTOLO_PATH) as OpponentData
+	var ago := load(AGOSTINO_PATH) as OpponentData
+	if ago == null or ago.art == null or bartolo == null or bartolo.art == null:
+		return "opponent_05.tres나 그 그림이 없음"
+	var art: OpponentArt = ago.art
+	if art.resource_path != AGOSTINO_ART_PATH:
+		errs.append("그림 데이터 %s (기대 %s)" % [art.resource_path, AGOSTINO_ART_PATH])
+	if art == bartolo.art:
+		errs.append("바르톨로의 그림을 빌려 쓴다")
+	_check_art_files(errs, art, bartolo.art)
+	_check_art_body(errs, art, bartolo.art)
+	var client := "res://assets/art/clients/agostino.png"
+	if ResourceLoader.exists(client):
+		var tex := load(client) as Texture2D
+		if tex == null or Vector2i(tex.get_size()) != Vector2i(450, 675):
+			errs.append("의뢰인 그림의 크기 %s (기대 450x675)" % (str(Vector2i(tex.get_size())) if tex != null else "읽을 수 없음"))
+	else:
+		print("INFO T129: assets/art/clients/agostino.png가 아직 없다(위험 R7)")
+	return _ok(errs)
+
+
+func _check_art_files(errs: Array[String], art: OpponentArt, bartolo_art: OpponentArt) -> void:
+	for part_name: String in Fourth.ART_PARTS:
+		var part := art.get(part_name) as PartArt
+		if part == null or part.texture == null or not part.texture.resource_path.begins_with(AGOSTINO_ART_DIR):
+			errs.append("그림 %s: 없거나 아고스티노의 폴더가 아님" % part_name)
+		elif part.units_per_px.x <= 0.0 or part.units_per_px.y <= 0.0:
+			errs.append("그림 %s: units_per_px %s" % [part_name, part.units_per_px])
+	if art.hand != null and art.hand.outline.size() < 6:
+		errs.append("손의 윤곽선이 없음")
+	if art.arm_arts.size() != bartolo_art.arm_arts.size():
+		errs.append("따로 그린 팔 %d개 (바르톨로 %d개)" % [art.arm_arts.size(), bartolo_art.arm_arts.size()])
+	else:
+		for i in art.arm_arts.size():
+			var mine := art.arm_arts[i]
+			var his := bartolo_art.arm_arts[i]
+			if mine.key != his.key or not is_equal_approx(mine.rotation_deg, his.rotation_deg) or mine.layers.size() != his.layers.size():
+				errs.append("팔 %s: 키·회전·층 수가 바르톨로(%s)와 다름" % [mine.key, his.key])
+				continue
+			for k in mine.layers.size():
+				var layer := mine.layers[k]
+				if layer.part != his.layers[k].part or layer.texture == null or not layer.texture.resource_path.begins_with(AGOSTINO_ART_DIR):
+					errs.append("팔 %s 층 %d: part·그림이 어긋남" % [mine.key, k])
+				elif (layer.part == 4) != (layer.outline.size() >= 6):
+					errs.append("팔 %s 층 %d: 주먹의 윤곽선이 없거나 주먹이 아닌데 있음" % [mine.key, k])
+	var keys: Array[StringName] = []
+	for arm_art in art.arm_arts:
+		keys.append(arm_art.key)
+	for want_key: StringName in [&"armUp", &"armThrust", &"armAim"]:
+		if not keys.has(want_key):
+			errs.append("팔 묶음 %s가 없음 (%s)" % [want_key, str(keys)])
+	for file: String in AGO_ART_SIZES:
+		var tex := load(AGOSTINO_ART_DIR + file + ".png") as Texture2D
+		if tex == null or Vector2i(tex.get_size()) != AGO_ART_SIZES[file]:
+			errs.append("%s.png의 크기 %s (기대 %s)" % [file, Vector2i(tex.get_size()) if tex != null else Vector2i.ZERO, AGO_ART_SIZES[file]])
+
+
+## 몸의 값(결정 619의 식): 한계는 다른 넷의 같은 식 값에서 읽고, 고정 수는 판 S2의 자(311·252·185~200·50)만 쓴다.
+func _check_art_body(errs: Array[String], art: OpponentArt, bartolo_art: OpponentArt) -> void:
+	if art.neck.y < -212.0 or art.neck.y > -200.0:
+		errs.append("neck.y %.1f (기대 -212~-200)" % art.neck.y)
+	if art.legs == null or art.legs.texture == null or art.head == null or art.hat == null:
+		return
+	var others: Array[OpponentArt] = [bartolo_art]
+	for path: String in [Fourth.BRUNO_PATH, Fourth.LORENZO_PATH, Fourth.SERAFINA_PATH]:
+		var other := load(path) as OpponentData
+		if other != null and other.art != null:
+			others.append(other.art)
+	if others.size() != 4:
+		errs.append("다른 상대의 그림 %d개 (기대 4)" % others.size())
+	var lowest: float = INF
+	for other_art in others:
+		lowest = minf(lowest, _f._bare_top(other_art, other_art.head))
+	var hat_limit: float = _f._hat_top(bartolo_art)
+	var hat_top: float = _f._hat_top(art)
+	var foot: float = _f._foot_tip(art)
+	var joint_y: float = art.legs.joint.y * art.legs.units_per_px.y
+	print("INFO T129: 모자 쓴 꼭대기 %.1f (바르톨로 %.1f) · 발끝 %.1f · 다리 관절 %.1f · 가장 낮은 다른 상대 꼭대기 %.1f" % [hat_top, hat_limit, foot, joint_y, lowest])
+	if hat_top > hat_limit + 0.01:
+		errs.append("모자 쓴 꼭대기 %.2f (바르톨로의 같은 식 값 %.2f 이하여야 한다)" % [hat_top, hat_limit])
+	for head_part: PartArt in [art.head, art.head_oops, art.head_dizzy]:
+		if head_part == null:
+			errs.append("머리 셋 가운데 빈 것이 있다")
+			continue
+		var top: float = _f._bare_top(art, head_part)
+		var mid: float = top - head_part.joint.y * head_part.units_per_px.y / 2.0
+		print("INFO T129: 모자 없는 꼭대기 %.1f · 머리 가운데 %.1f" % [top, mid])
+		if top >= lowest - 0.01 or top > MAX_BARE_TOP + 0.01:
+			errs.append("모자 없는 꼭대기 %.2f (다른 넷의 가장 낮은 값 %.2f보다, 그리고 %.0f보다 낮아야 한다)" % [top, lowest, MAX_BARE_TOP])
+		if mid < MIN_HEAD_MID - 0.01:
+			errs.append("머리 가운데의 자 %.2f (%.0f 이상이어야 한다)" % [mid, MIN_HEAD_MID])
+	if foot < MIN_FOOT - 0.01 or foot > MAX_FOOT_TIP + 0.01:
+		errs.append("발끝 %.2f (기대 %.0f~%.0f)" % [foot, MIN_FOOT, MAX_FOOT_TIP])
+	if joint_y < MIN_LEG_JOINT_Y:
+		errs.append("다리 관절의 높이 %.2f (지팡이가 다리 그림 안에 있으면 %.0f 이상)" % [joint_y, MIN_LEG_JOINT_Y])

@@ -101,6 +101,8 @@ func start_duel() -> void:
 		opponent = opponent.at_tier(style_tier)
 	elif _day_mode and day != null:
 		opponent = opponent.for_day(day.day_number)
+	if commission != null:
+		opponent = commission.fit_opponent(opponent)
 	# 반응 싸움 확인(계획 030): 켜져 있으면 표시의 곡선만 다른 사본을 코어와 뷰에 준다. 꺼져 있으면 그대로다.
 	opponent = CurveCheck.prepare(opponent)
 	var weapon: WeaponData = test_weapon if test_weapon != null else load(WEAPON_PATH)

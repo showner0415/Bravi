@@ -13,7 +13,7 @@ const Title := preload("res://scripts/title.gd")
 const RULES_PATH := "res://data/duel_rules.tres"
 const WEAPON_PATH := "res://data/weapons/rapier.tres"
 const CATALOG_PATH := "res://data/upgrade_catalog.tres"
-const DAY_OPPONENTS: Array[String] = ["res://data/opponents/opponent_01.tres", "res://data/opponents/opponent_02.tres", "res://data/opponents/opponent_03.tres"]
+const DAY_OPPONENTS: Array[String] = ["res://data/opponents/opponent_01.tres", "res://data/opponents/opponent_02.tres", "res://data/opponents/opponent_03.tres", "res://data/opponents/opponent_05.tres"]
 const DELTA := 1.0 / 60.0
 
 var _tree: SceneTree

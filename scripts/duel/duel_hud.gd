@@ -281,14 +281,25 @@ class Meter extends Control:
 	var label := ""
 	var value := 0
 	var pending := 0
+	var text := ""
 
-	func set_values(p_label: String, p_value: int, p_pending: int) -> void:
-		if p_label == label and p_value == value and p_pending == pending:
+	func set_values(p_label: String, p_value: int, p_pending: int, p_text: String = "") -> void:
+		if p_label == label and p_value == value and p_pending == pending and p_text == text:
 			return
 		label = p_label
 		value = p_value
 		pending = p_pending
+		text = p_text
 		queue_redraw()
+
+	## 막대 곁에 보이는 글. 조건이 글을 주면 그 글이고, 아니면 "이름 값"(+ 지금 끝나면 덧말).
+	func shown_text() -> String:
+		if text != "":
+			return text
+		var shown := "%s %d" % [label, value]
+		if pending > 0:
+			shown += " (지금 끝나면 +%d)" % pending
+		return shown
 
 	func _draw() -> void:
 		var bar := Rect2(0, 0, BAR_WIDTH, size.y)
@@ -304,10 +315,7 @@ class Meter extends Control:
 			var tick := size.y * (0.6 if k == 5 else 0.35)
 			draw_line(Vector2(x, size.y), Vector2(x, size.y - tick), DuelHud.INK, 1.0)
 		draw_rect(bar, DuelHud.INK, false, 1.5)
-		var text := "%s %d" % [label, value]
-		if pending > 0:
-			text += " (지금 끝나면 +%d)" % pending
-		draw_string(get_theme_default_font(), Vector2(BAR_WIDTH + 10, size.y - 4), text,
+		draw_string(get_theme_default_font(), Vector2(BAR_WIDTH + 10, size.y - 4), shown_text(),
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 14, DuelHud.INK)
 
 
@@ -569,7 +577,7 @@ func refresh(core: DuelCore) -> void:
 					break
 	_meter.visible = not meter.is_empty()
 	if not meter.is_empty():
-		_meter.set_values(str(meter["label"]), int(meter["value"]), int(meter["pending"]))
+		_meter.set_values(str(meter["label"]), int(meter["value"]), int(meter["pending"]), str(meter.get("text", "")))
 
 	if _debug_label.visible:
 		var brain := core.brain

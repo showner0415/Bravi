@@ -187,6 +187,20 @@ func with_opening(chance: float) -> OpponentData:
 	return copy
 
 
+## 의뢰가 정한 자세 칸만 바꾼 사본(계획 043 결정 659). 두 칸이 0 이하면 자기 자신이다(at_tier(0)의 꼴 — T115·T131).
+## 되찾는 자세는 1 이상, 그 사본의 posture_max 이하로 자른다. 이 자원은 고치지 않는다.
+func with_posture(max_cells: int, recover_cells: int) -> OpponentData:
+	if max_cells <= 0 and recover_cells <= 0:
+		return self
+	var copy := duplicate() as OpponentData
+	if max_cells > 0:
+		copy.posture_max = max_cells
+	if recover_cells > 0:
+		copy.stagger_recover_posture = recover_cells
+	copy.stagger_recover_posture = clampi(copy.stagger_recover_posture, 1, maxi(copy.posture_max, 1))
+	return copy
+
+
 ## 부위별 반격의 값만 실은 사본(연습의 반격 실험. 계획 R02). 이 자원은 고치지 않는다.
 func with_part_effects(fx: PartEffectData) -> OpponentData:
 	var copy := duplicate() as OpponentData

@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="Commission" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/commission/commission.gd" id="1_commission"]
+[ext_resource type="Script" path="res://scripts/commission/commission_condition.gd" id="2_condition"]
+[ext_resource type="Script" path="res://scripts/commission/spar_condition.gd" id="3_spar"]
+[ext_resource type="Resource" path="res://data/opponents/opponent_05.tres" id="4_opponent"]
+[ext_resource type="Resource" path="res://data/stages/court.tres" id="5_stage"]
+[ext_resource type="Texture2D" path="res://assets/art/clients/agostino.png" id="6_portrait"]
+
+[sub_resource type="Resource" id="condition_spar"]
+script = ExtResource("3_spar")
+topples_needed = 3
+partial_scores = PackedInt32Array(0, 25, 50)
+wound_score = 0
+hold_hint = "치지 마라"
+
+[resource]
+script = ExtResource("1_commission")
+client_name = "검술 사범 아고스티노"
+dialogue = "원수 갚으러 온 게 아니다. 칼 상대를 사러 왔다. 제자 놈들은 늙은 스승이라고 봐주거든. 내 자세를 세 번 무너뜨려 봐라. 그러면 끝이다. 다만 내일도 가르쳐야 하니 상처는 안 된다. 무너진 늙은이를 치는 건 대련이 아니라 싸움이지.
+귀띔 하나. 나는 박자를 입으로 센다. 하나, 둘 — 둘 반. 쥐고만 버티면 틈이 짧고, 마지막 박을 맞춰 받아야 크게 열린다. 수업료는 받지 않으마."
+opponent = ExtResource("4_opponent")
+opponent_posture_max = 3
+opponent_recover_posture = 3
+stage = ExtResource("5_stage")
+client_portrait = ExtResource("6_portrait")
+conditions = Array[ExtResource("2_condition")]([SubResource("condition_spar")])
+base_reward = 32
+tip_max = 18
+reputation_effect = {"accept": 0, "success": 4, "fail": -1}
+haggle_min_stars = 3
+success_line = "하나, 둘, 셋. 세 번 다 제 박자였다. 무너진 나를 건드리지도 않았고. 오늘 수업은 여기까지."
+decline_line = "봐줄 칼밖에 없는 동네로군. 됐다, 지팡이나 상대하지."
+fail_line = "이건 대련이 아니었다. 수업을 들은 것도 준 것도 아니니 값은 없다. 박자부터 다시 세라."
+partial_line = "세 번이라 했는데 모자랐다. 모자란 만큼은 값에서 덜어 내마. 박자는 나쁘지 않았다."
+haggle_agree_line = "늙은이 주머니를 턴다? 좋다. 대신 박자 하나 흘리지 마라."
+haggle_refuse_line = "수업료를 받아야 할 쪽은 나다. 처음 값이다. 덤도 줄인다."

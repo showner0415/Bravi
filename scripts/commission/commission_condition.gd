@@ -26,6 +26,11 @@ func explain(_record: DuelRecord) -> Array[String]:
 
 
 ## 결투 중 HUD 게이지. 비어 있으면 게이지 없음.
-## 있으면 {label: String, value: int 0~100, pending: int}.
+## 있으면 {label: String, value: int 0~100, pending: int, text: String(선택. 있으면 막대 곁의 글이 이 글이다)}.
 func live_meter(_record: DuelRecord) -> Dictionary:
 	return {}
+
+
+## 상대가 무너져 있는 동안 상태 글자 곁에 띄울 귀띔(계획 043 결정 660). 비면 없다.
+func stagger_hint(_record: DuelRecord) -> String:
+	return ""

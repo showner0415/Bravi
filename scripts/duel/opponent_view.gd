@@ -320,6 +320,7 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 		DT.OpponentState.STAGGER:
 			tint = COLOR_STAGGER
 			text = "무너짐!"
+			hint = stagger_hint_of(core)
 			if _art != null:
 				head_art = _art.head_dizzy
 
@@ -352,6 +353,16 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 
 	_place_labels(text, hint, inverse)
 	_update_forecast_tag(core, inverse)
+
+
+## 조건이 무너짐 동안 띄우길 원하는 귀띔(비어 있지 않은 첫 것). 의뢰·조건이 없는 판은 빈 글이다(계획 043 결정 660).
+static func stagger_hint_of(core: DuelCore) -> String:
+	for condition in core.conditions:
+		if condition != null:
+			var hint_text := condition.stagger_hint(core.record)
+			if hint_text != "":
+				return hint_text
+	return ""
 
 
 ## 예비 동작의 글을 [첫 줄, 귀띔]으로 가른다. 상태 글자는 늘 한 줄이고 귀띔은 StateHint가 맡는다(결정 624·625).

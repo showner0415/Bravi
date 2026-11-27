@@ -17,6 +17,7 @@
 # -Nine: only the 9-cell rows (skips the "flat" rows of opponents that have heights).
 # -Tier: sword-style tiers as the screen counts them (1 = first), a list or "last" (each opponent's last tier), e.g. -Tier 1,3,last. The opponent name in the line becomes e.g. opponent_01-t3. Default none (lines as before).
 # -Guard: hold (default, the bot holds the guard) or parry (the beat bot: tries to parry every strike). -Jitter: the beat bot press error as a share of the wait, e.g. -Guard parry -Jitter 0.15 (error = jitter * wait * random -1..1 seconds). Given, the stat line gets ",guard=..,jitter=.." after miss; not given, lines are as before.
+# -Commission: a commission .tres (res:// path); the bot plays by its conditions, hat and opponent fit (without -Opponent, the commission opponent only). -Finisher off: the bot does not strike a staggered opponent (plan 043). Given, the stat line gets ",commission=..,finisher=.." after miss, and each setting adds a "score," line (full / partial / zero scores, mean, topples per duel); not given, lines are as before.
 # The stat line ends with ",<label> <sum>" after the effects{...}: the label is the Korean word for "hit total" and the sum is total hits taken per duel (two decimals).
 # Without -Opponent it plays every opponent in data/opponents, 9-cell and flat.
 # Judges the run: exit code 0, one "DUEL STATS OK <n>" line, no ERROR lines. The numbers are not judged.
@@ -35,7 +36,9 @@ param(
 	[switch]$Nine,
 	[string]$Tier = '',
 	[string]$Guard = '',
-	[string]$Jitter = ''
+	[string]$Jitter = '',
+	[string]$Commission = '',
+	[string]$Finisher = ''
 )
 
 . "$PSScriptRoot\godot_path.ps1"
@@ -66,10 +69,12 @@ if ($Nine) { $userArgs += " --nine" }
 if ($Tier) { $userArgs += " --tier=$Tier" }
 if ($Guard) { $userArgs += " --guard=$Guard" }
 if ($Jitter) { $userArgs += " --jitter=$Jitter" }
+if ($Commission) { $userArgs += " --commission=$Commission" }
+if ($Finisher) { $userArgs += " --finisher=$Finisher" }
 foreach ($path in $Opponent) { $userArgs += " --opponent=$path" }
 $out = cmd /c "`"$Godot`" --headless --path `"$project`" --script res://tests/duel_stats.gd -- $userArgs 2>&1"
 $runExit = $LASTEXITCODE
-$out | Where-Object { $_ -match '^(stat|routes),|^DUEL STATS|ERROR|WARNING' } | ForEach-Object { Write-Output $_ }
+$out | Where-Object { $_ -match '^(stat|routes|score),|^DUEL STATS|ERROR|WARNING' } | ForEach-Object { Write-Output $_ }
 
 $errors = @($out | Where-Object { $_ -match $errorPattern })
 $ok = @($out | Where-Object { $_ -match '^DUEL STATS OK \d+$' })
