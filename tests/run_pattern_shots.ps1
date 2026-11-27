@@ -9,6 +9,7 @@
 #
 # Runs tests/pattern_shots.tscn: every day-opponent pattern, every route (base and variants), three distances.
 # Prints "shot," lines (what was posed) and "overlap," lines (a numbered ring over a HUD panel or label).
+# Also prints "view," (opponent view y and scale per shot) and "label," (ring vs state label overlap) lines: recorded numbers, never judged.
 # Judges the run: exit code 0, one "PATTERN SHOTS OK <n>" line, no ERROR lines. Overlaps are reported, not judged.
 param(
 	[switch]$SkipImport,

@@ -30,7 +30,7 @@ func list(tree: SceneTree) -> Array:
 		{"id": "T79", "name": "이어 베기: 걸음의 시각·막힘·끊김·패리·큰 공격·버티기·단발 회귀", "fn": t79_chain},
 		{"id": "T80", "name": "휩쓸기: 쥐고 끌면 막힘, 패리 없음, 떼면 뚫림", "fn": t80_sweep},
 		{"id": "T81", "name": "하루의 상대의 패턴·패턴만 상대·번호 고리의 자리·연습의 길", "fn": t81_trial},
-		{"id": "T95", "name": "다음 상대 몫의 찌르기 둘: 하한을 지키고 어느 상대도 쓰지 않는다", "fn": t95_spare_thrusts},
+		{"id": "T95", "name": "다음 상대 몫의 찌르기 하나: 하한을 지키고 어느 상대도 쓰지 않는다", "fn": t95_spare_thrusts},
 	]
 
 
@@ -408,18 +408,17 @@ func t95_spare_thrusts() -> String:
 	var errs: Array[String] = []
 	var weapon := load(WEAPON_PATH) as WeaponData
 	var bartolo := load(BARTOLO_PATH) as OpponentData
-	# 1. 폴더에 공격 둘: 파일 이름 차례로 엇박, 층층.
+	# 1. 폴더에 공격 하나: 엇박(층층은 세라피나가 가져갔다 — 계획 041, 그 확인은 T120 · T121 · T122가 이어 본다).
 	var spare := _spare_attacks()
 	var names: Array[String] = []
 	for atk in spare:
 		names.append(atk.attack_name)
 		if atk.chain.is_empty() or atk.sweep or atk.dive:
 			errs.append("%s: 걸음이 없거나 휩쓸기·뛰어들기임" % atk.attack_name)
-	if str(names) != str(["엇박 찌르기", "층층 찌르기"]):
-		errs.append("폴더의 공격 이름 %s (기대 [엇박 찌르기, 층층 찌르기])" % str(names))
+	if str(names) != str(["엇박 찌르기"]):
+		errs.append("폴더의 공격 이름 %s (기대 [엇박 찌르기])" % str(names))
 		return ", ".join(errs)
 	var offbeat := spare[0]
-	var stair := spare[1]
 	# 2. 바탕과 변주마다 하한(결정 375) + 모든 타격이 가운데.
 	for base in spare:
 		var lines: Array[AttackData] = [base]
@@ -434,29 +433,7 @@ func t95_spare_thrusts() -> String:
 			for point in points:
 				if point.direction != DT.Direction.CENTER:
 					errs.append("%s: 가운데가 아닌 타격" % label)
-	# 3. 층층: 길마다 타격의 높이가 값 하나씩이고 서로 다르다, 세 길의 차례가 고정이다.
-	var stair_lines: Array[AttackData] = [stair]
-	for variant: AttackData in stair.variants:
-		stair_lines.append(variant)
-	var stair_heights: Array = []
-	for line in stair_lines:
-		var row: Array = []
-		var points: Array[AttackData] = [line]
-		for step: AttackData in line.chain:
-			points.append(step)
-		for point in points:
-			if point.heights.size() != 1:
-				errs.append("층층: 높이가 값 하나가 아닌 타격 (%d개)" % point.heights.size())
-			else:
-				row.append(int(point.heights[0]))
-		var distinct := {}
-		for h in row:
-			distinct[h] = true
-		if distinct.size() != row.size():
-			errs.append("층층: 한 길 안에 같은 높이 %s" % str(row))
-		stair_heights.append(row)
-	if stair_heights != [[0, 1, 2], [2, 1, 0], [1, 2, 0]]:
-		errs.append("층층의 길의 높이 차례 %s (기대 [[0,1,2],[2,1,0],[1,2,0]])" % str(stair_heights))
+	# 3. 층층의 길 검사는 T120 ④로 옮겼다(계획 041).
 	# 4. 엇박: 간격이 고르지 않고 긴 것이 1.3 이하, 모든 타격의 높이가 [1].
 	var offbeat_lines: Array[AttackData] = [offbeat]
 	for variant: AttackData in offbeat.variants:
@@ -491,21 +468,5 @@ func t95_spare_thrusts() -> String:
 			if _uses_spare(habit.response):
 				errs.append("%s의 버릇 반응이 폴더의 공격을 씀" % clean)
 	# 6. 주인 없는 검술의 화면은 T117이 spare_source로 본다(계획 040b).
-	# 7. 층층 찌르기를 들고 막는 봇으로 30초: 위와 아래의 타격이 둘 다 나오고 번호 고리가 같은 x에서 세로로 선다.
-	var run := _run(_opp(stair), {}, 30.0)
-	var tall := {}
-	for ev in run.record.of_type(DuelRecord.STRIKE):
-		if (ev["attack"] as AttackData).direction == DT.Direction.CENTER:
-			tall[int(ev["height"])] = true
-	if run.record.of_type(DuelRecord.PATTERN_STEP).is_empty() or not tall.has(DT.Height.HIGH) or not tall.has(DT.Height.LOW):
-		errs.append("층층 30초: 걸음 %d · 가운데에서 나온 높이 %s" % [run.record.of_type(DuelRecord.PATTERN_STEP).size(), str(tall.keys())])
-	var shown := _run(_opp(stair), {}, 1.5)
-	var marks := OpponentView.pattern_marks(shown.brain, shown.time)
-	var xs := {}
-	var ys := {}
-	for mark in marks:
-		xs[(mark["pos"] as Vector2).x] = true
-		ys[(mark["pos"] as Vector2).y] = true
-	if marks.size() != 3 or xs.size() != 1 or ys.size() != 3:
-		errs.append("층층의 번호 고리: 수 %d · x %d가지 · y %d가지 (기대 3 · 1 · 3)" % [marks.size(), xs.size(), ys.size()])
+	# 7. 층층의 30초 판과 번호 고리는 T121 · T122 ②로 옮겼다(계획 041).
 	return "OK" if errs.is_empty() else ", ".join(errs)

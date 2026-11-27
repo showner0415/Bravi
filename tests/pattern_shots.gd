@@ -104,7 +104,9 @@ func _process(_delta: float) -> void:
 	_frames += 1
 	if _frames >= 3 and Time.get_ticks_msec() - _since >= SETTLE_MSEC:
 		var shot_name: String = _plan[_i]["name"]
+		_report_view(shot_name)
 		_report_overlaps(shot_name)
+		_report_labels(shot_name)
 		if _shots_dir != "":
 			get_viewport().get_texture().get_image().save_png(_shots_dir.path_join(shot_name + ".png"))
 		_shot_count += 1
@@ -151,6 +153,10 @@ func _pose(item: Dictionary) -> String:
 	var until := core.brain.state_start + PROGRESS * (core.brain.state_end - core.brain.state_start)
 	while core.time < until and core.brain.state == DT.OpponentState.TELL:
 		core.tick(DELTA)
+	# 뷰는 start_duel에서 멀리로 스냅해 두어, delta 0의 갱신은 간격을 따라가지 않는다. 다시 setup해 스냅시킨다(결정 615).
+	var has_hat := _node.get("commission") != null and (_node.get("commission") as Commission).opponent_wears_hat
+	(_node.get_node("OpponentView") as OpponentView).setup(core.opponent_data, core.weapon, has_hat)
+	(_node.get_node("PlayerSwordView") as PlayerSwordView).setup()
 	_node.set("_display_time", core.time)
 	_node.call("_update_views", 0.0)
 	return "%s · %s · 높이 %s · %s%s" % [
@@ -203,3 +209,38 @@ func _collect(node: Node, boxes: Array) -> void:
 			if rect.size.x < 900.0 and rect.get_area() > 0.0:
 				boxes.append([String(child.name), rect])
 		_collect(child, boxes)
+
+
+## 뷰의 간격 자리: 멈춘 뷰로 찍지 않았는지 보는 줄(결정 615). 판정이 아니라 적는 수다.
+func _report_view(shot: String) -> void:
+	var view := _node.get_node("OpponentView") as Node2D
+	print("view,%s,%.1f,%.3f" % [shot, view.global_position.y, view.global_scale.x])
+
+
+## 번호 고리와 상태 글자의 상자가 겹친 넓이와 높이(결정 616). 판정이 아니라 적는 수라 접두를 overlap과 달리 둔다.
+## 번호 고리가 없는 단발은 Ring의 원점을 번호 0으로 잰다.
+func _report_labels(shot: String) -> void:
+	var core: DuelCore = _node.get("core")
+	var label := _node.get_node("OpponentView/StateLabel") as Label
+	if label.text == "":
+		return
+	var ring := _node.get_node("OpponentView/Ring") as Node2D
+	var xf := ring.get_global_transform()
+	var radius := OpponentView.MARK_RADIUS * xf.get_scale().x
+	var label_box: Rect2 = label.get_global_transform() * Rect2(Vector2.ZERO, label.size)
+	var lines := label.text.count("\n") + 1
+	var marks := OpponentView.pattern_marks(core.brain, core.time)
+	var origin := Vector2.ZERO
+	for mark in marks:
+		if mark["role"] == &"now":
+			origin = mark["pos"]
+	var centers: Array[Vector2] = []
+	for mark in marks:
+		if mark.has("pos"):
+			centers.append(xf * ((mark["pos"] as Vector2) - origin))
+	if centers.is_empty():
+		centers.append(xf * Vector2.ZERO)
+	for n in centers.size():
+		var box := Rect2(centers[n] - Vector2(radius, radius), Vector2(radius, radius) * 2.0)
+		var cut := box.intersection(label_box)
+		print("label,%s,%d,%d,%d,%d" % [shot, n + 1 if not marks.is_empty() else 0, roundi(cut.get_area()), lines, roundi(cut.size.y)])

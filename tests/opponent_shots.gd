@@ -90,6 +90,14 @@ func _ready() -> void:
 	for habit in _opp.habits:
 		if habit.response != null:
 			_atks[_key_of(habit.response)] = habit.response
+	_fill_missing_from_tiers()
+	for key in ATTACK_KEYS:
+		if not _atks.has(key):
+			# ERROR 줄이 아닌 꼴로 끝내 러너가 "OK 줄 없음"으로 판정하게 한다(계획 041 작업 4b).
+			print("OPPONENT SHOTS FAIL: no single %s attack found in attacks/tiers" % key)
+			get_tree().quit(1)
+			set_process(false)
+			return
 	_view.anchor = ANCHOR
 	if _sil:
 		($Back as ColorRect).color = Color.WHITE
@@ -100,6 +108,30 @@ func _ready() -> void:
 	else:
 		_shots = _plan()
 		_shots.append_array(_plan_arms())
+
+
+## 1단에 옆 베기 단발이 없는 상대(세라피나)는 단의 공격과 그 사슬·변주의 걸음에서 사슬 없는 공격을 찾아 빈 칸을 채운다.
+func _fill_missing_from_tiers() -> void:
+	var pool: Array[AttackData] = []
+	for tier in _opp.tiers:
+		for atk in tier.attacks:
+			_collect(atk, pool)
+	for atk in pool:
+		if atk.dive or not atk.chain.is_empty():
+			continue
+		var key := _key_of(atk)
+		if ATTACK_KEYS.has(key) and not _atks.has(key):
+			_atks[key] = atk
+
+
+func _collect(atk: AttackData, pool: Array[AttackData]) -> void:
+	if pool.has(atk):
+		return
+	pool.append(atk)
+	for step in atk.chain:
+		_collect(step as AttackData, pool)
+	for variant in atk.variants:
+		_collect(variant as AttackData, pool)
 
 
 func _key_of(atk: AttackData) -> String:
