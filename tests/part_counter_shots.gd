@@ -273,6 +273,10 @@ func _report_overlaps(shot: String) -> void:
 	var state := _node.get_node("OpponentView/StateLabel") as Label
 	if state.visible and state.text != "":
 		texts.append(["StateLabel", _text_rect(state)])
+	# 이 도구의 장에는 귀띔이 뜨는 장이 없어 판정의 뜻은 없다(자리만 둔다. 계획 041b 작업 4b).
+	var state_hint := _node.get_node("OpponentView/StateHint") as Label
+	if state_hint.visible and state_hint.text != "":
+		texts.append(["StateHint", _text_rect(state_hint)])
 	var tag := _tag()
 	var tag_boxes: Array = []
 	if tag.visible:

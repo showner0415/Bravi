@@ -59,15 +59,19 @@ $out | ForEach-Object { Write-Output $_ }
 $errors = @($out | Where-Object { $_ -match $errorPattern })
 $ok = @($out | Where-Object { $_ -match '^PATTERN SHOTS OK \d+$' })
 $overlaps = @($out | Where-Object { $_ -match '^overlap,' })
+# hint, lines: StateHint box vs ring boxes; any nonzero area is a FAIL (plan 041b decision 627).
+$hints = @($out | Where-Object { $_ -match '^hint,' })
+$badHints = @($hints | Where-Object { ($_ -split ',')[3] -ne '0' })
 
 $reasons = @()
 if ($runExit -ne 0) { $reasons += "exit code $runExit" }
 if ($ok.Count -ne 1) { $reasons += 'no "PATTERN SHOTS OK" line' }
 if ($errors.Count -gt 0) { $reasons += "error lines $($errors.Count)" }
+if ($badHints.Count -gt 0) { $reasons += "hint overlap lines $($badHints.Count)" }
 
 Write-Output ''
 if ($reasons.Count -eq 0) {
-	Write-Output "RESULT: OK ($($ok[0]), overlap lines $($overlaps.Count), error lines 0)"
+	Write-Output "RESULT: OK ($($ok[0]), overlap lines $($overlaps.Count), hint lines $($hints.Count), hint overlaps 0, error lines 0)"
 	exit 0
 }
 Write-Output "RESULT: FAIL ($($reasons -join ', '))"

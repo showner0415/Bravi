@@ -345,6 +345,9 @@ func _put(shot: Dictionary) -> void:
 	var pair := fx.begins_with("pair") or str(shot["name"]).begins_with("pair")
 	(_view.get_node(^"Ring") as CanvasItem).visible = not pair and not _sil
 	(_view.get_node(^"StateLabel") as CanvasItem).visible = not pair and not _sil
+	# 귀띔은 뷰가 켜고 끄므로 숨길 때만 건드린다(로렌초의 뛰어들기 실루엣 장에 글이 섞이지 않게).
+	if pair or _sil:
+		(_view.get_node(^"StateHint") as CanvasItem).visible = false
 	if fx.ends_with("-off"):
 		var pts: Array = TINT_PTS if fx == "pair-off" else (PAIR_UP_PTS if fx == "pair-up-off" else PAIR_THRUST_PTS)
 		_print_points(str(shot["name"]), pts)

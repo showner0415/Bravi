@@ -45,6 +45,7 @@ func _ready() -> void:
 	else:
 		_shots_dir = ""
 	var trials := Select.load_trials()
+	var raise_plan: Array = []
 	for t in trials.size():
 		var source := trials[t]
 		var opponent := source
@@ -55,6 +56,16 @@ func _ready() -> void:
 			var number := count if _tier == "last" else clampi(int(_tier), 1, count)
 			opponent = source.at_tier(number - 1)
 			tag += "-t%d" % number
+		# 올려 막기 공격은 attacks가 아니라 버릇의 반응에 있다(계획 041b 결정 629).
+		var raise_attack: AttackData = null
+		for habit in opponent.habits:
+			if habit.response != null and habit.response.needs_raised_guard:
+				raise_attack = habit.response
+				break
+		raise_plan.append({
+			"name": "%s-raise-engage" % tag, "opponent": opponent, "line": raise_attack,
+			"distance": DT.Distance.ENGAGE,
+		})
 		var p := 0
 		for base in opponent.attacks:
 			if base.chain.is_empty() and not base.dive:
@@ -78,6 +89,7 @@ func _ready() -> void:
 				"name": "spare-%s-l%d-engage" % [atk.resource_path.get_file().get_basename(), l],
 				"opponent": trials[0], "line": spare_lines[l], "distance": DT.Distance.ENGAGE,
 			})
+	_plan.append_array(raise_plan)
 	_next()
 
 
@@ -92,6 +104,10 @@ func _next() -> void:
 		get_tree().quit(0)
 		return
 	var item: Dictionary = _plan[_i]
+	if item["line"] == null:
+		print("shot,%s,올려 막기 공격 없음" % item["name"])
+		_next()
+		return
 	var note := _pose(item)
 	print("shot,%s,%s" % [item["name"], note])
 	_since = Time.get_ticks_msec()
@@ -107,6 +123,7 @@ func _process(_delta: float) -> void:
 		_report_view(shot_name)
 		_report_overlaps(shot_name)
 		_report_labels(shot_name)
+		_report_hints(shot_name)
 		if _shots_dir != "":
 			get_viewport().get_texture().get_image().save_png(_shots_dir.path_join(shot_name + ".png"))
 		_shot_count += 1
@@ -244,3 +261,37 @@ func _report_labels(shot: String) -> void:
 		var box := Rect2(centers[n] - Vector2(radius, radius), Vector2(radius, radius) * 2.0)
 		var cut := box.intersection(label_box)
 		print("label,%s,%d,%d,%d,%d" % [shot, n + 1 if not marks.is_empty() else 0, roundi(cut.get_area()), lines, roundi(cut.size.y)])
+
+
+## 귀띔(StateHint)의 실제 노드 상자와 번호 고리·지금 고리의 패리 띠가 겹친 넓이와 높이(계획 041b 결정 627). 0이 아니면 러너가 FAIL을 낸다.
+## 귀띔이 숨어 있으면 내지 않는다. 지금 고리의 상자는 휩쓸기가 아니면 패리 띠의 반지름으로 잰다.
+func _report_hints(shot: String) -> void:
+	var hint := _node.get_node("OpponentView/StateHint") as Label
+	if not hint.visible or hint.text == "":
+		return
+	var core: DuelCore = _node.get("core")
+	var ring := _node.get_node("OpponentView/Ring") as Node2D
+	var xf := ring.get_global_transform()
+	var scale := xf.get_scale().x
+	var hint_box: Rect2 = hint.get_global_transform() * Rect2(Vector2.ZERO, hint.size)
+	var band := OpponentView.RING_SPEED * core.weapon.parry_window * scale
+	var marks := OpponentView.pattern_marks(core.brain, core.time)
+	var origin := Vector2.ZERO
+	for mark in marks:
+		if mark["role"] == &"now":
+			origin = mark["pos"]
+	var boxes: Array = []
+	for mark in marks:
+		if not mark.has("pos"):
+			continue
+		var radius := OpponentView.MARK_RADIUS * scale
+		if mark["role"] == &"now" and not core.brain.is_sweep():
+			radius = maxf(radius, band)
+		boxes.append([xf * ((mark["pos"] as Vector2) - origin), radius])
+	if boxes.is_empty():
+		boxes.append([xf * Vector2.ZERO, maxf(OpponentView.MARK_RADIUS * scale, band)])
+	for n in boxes.size():
+		var center: Vector2 = boxes[n][0]
+		var r: float = boxes[n][1]
+		var cut := Rect2(center - Vector2(r, r), Vector2(r, r) * 2.0).intersection(hint_box)
+		print("hint,%s,%d,%d,%d" % [shot, n + 1 if not marks.is_empty() else 0, roundi(cut.get_area()), roundi(cut.size.y)])

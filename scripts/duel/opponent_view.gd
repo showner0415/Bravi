@@ -59,6 +59,8 @@ const HEIGHT_SHOULDER_SHIFT: Array[float] = [-16.0, 0.0, 12.0]
 const SWEEP_DOT_ARRIVE := 0.6
 ## 상태 글자(공격 이름, 빈틈, 무너짐)의 화면 세로 위치. 자세 칸 바로 아래.
 const STATE_LABEL_Y := 62.0
+## 귀띔(StateHint)과 첫 줄의 글 끝 사이의 틈. 임시(계획 041b 결정 625).
+const STATE_HINT_GAP := 24.0
 
 ## 부위 곁의 미리보기 꼬리표(계획 R02 D3): 여유 막대가 가득 차는 여유(초), 막대의 크기, 꼬리표를 놓을 화면 세로 범위.
 const FORECAST_FULL_MARGIN := 0.5
@@ -138,6 +140,7 @@ var _snap := true
 @onready var _feather: Sprite2D = $Torso/Head/Hat/Feather
 @onready var _state_label: Label = $StateLabel
 var _ring: Node2D
+var _state_hint: Label
 var _forecast_tag: Label
 var _forecast_bar: ColorRect
 var _forecast_fill: ColorRect
@@ -158,6 +161,7 @@ func _ready() -> void:
 	add_child(_ring)
 	_ring.draw.connect(_draw_ring)
 	_state_label.z_index = 9
+	_build_state_hint()
 	_build_forecast_tag()
 
 
@@ -274,6 +278,7 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 	# --- 상태별 색과 글자. 포즈는 _pose_for가 정한다(결정 258).
 	var tint: Variant = null
 	var text := ""
+	var hint := ""
 	_ring_active = false
 	_marks = []
 	_ring_sweep = false
@@ -288,26 +293,11 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 		DT.OpponentState.TELL:
 			var atk := brain.current_attack
 			tint = atk.pose_color
-			text = atk.attack_name + ("!!" if atk.is_big else "")
 			_marks = pattern_marks(brain, display_time)
 			_ring_sweep = brain.is_sweep()
-			if brain.pattern_count() > 1:
-				# 패턴은 뿌리의 이름과 몇째 타격인지를 보인다(결정 374).
-				var root := brain.pattern_root
-				text = "%s (%d/%d)%s" % [root.attack_name, brain.step_index + 1, brain.pattern_count(), "!!" if root.is_big else ""]
-			# 높이를 가진 타격은 막을 칸의 이름을 붙인다(결정 388).
-			var tell_height := brain.current_height()
-			if tell_height >= 0:
-				text += " · %s %s" % [DT.GUARD_NAMES[atk.direction], DT.HEIGHT_NAMES[tell_height]]
-			if brain.pattern_slowed:
-				text += " (둔함)"
-			if _ring_sweep:
-				text += "\n쥐고 끌어라"
-			if atk.dive:
-				text += "\n" + ("막아라" if _dive_from_close else "멀리 물러서거나 막아라")
-			# 표시된 공격은 예비 동작 내내, 지금의 막기가 버티기만 되는지 받아내는지 알려 준다.
-			if brain.step_index == 0 and atk.needs_raised_guard and core.player_state == DT.PlayerState.GUARD:
-				text += "\n" + ("막기를 뗐다 다시 올려라" if core.would_brace_now() else "받아낼 준비")
+			var tell_parts := tell_texts(core, _dive_from_close)
+			text = tell_parts[0]
+			hint = tell_parts[1]
 			_ring_active = true
 			_ring_remaining = maxf(brain.state_end - display_time, 0.0)
 			_ring.position = _now_mark_position(atk, brain) * inverse
@@ -354,17 +344,71 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 	if text == "" and complacent:
 		text = COMPLACENT_TEXT
 
-	_place_labels(text, inverse)
+	_place_labels(text, hint, inverse)
 	_update_forecast_tag(core, inverse)
 
 
+## 예비 동작의 글을 [첫 줄, 귀띔]으로 가른다. 상태 글자는 늘 한 줄이고 귀띔은 StateHint가 맡는다(결정 624·625).
+## 귀띔이 둘 이상이면 " · "로 한 줄로 잇는다.
+static func tell_texts(core: DuelCore, dive_from_close: bool) -> PackedStringArray:
+	var brain := core.brain
+	var atk := brain.current_attack
+	var text := atk.attack_name + ("!!" if atk.is_big else "")
+	if brain.pattern_count() > 1:
+		# 패턴은 뿌리의 이름과 몇째 타격인지를 보인다(결정 374).
+		var root := brain.pattern_root
+		text = "%s (%d/%d)%s" % [root.attack_name, brain.step_index + 1, brain.pattern_count(), "!!" if root.is_big else ""]
+	# 높이를 가진 타격은 막을 칸의 이름을 붙인다(결정 388).
+	var tell_height := brain.current_height()
+	if tell_height >= 0:
+		text += " · %s %s" % [DT.GUARD_NAMES[atk.direction], DT.HEIGHT_NAMES[tell_height]]
+	if brain.pattern_slowed:
+		text += " (둔함)"
+	var hints := PackedStringArray()
+	if brain.is_sweep():
+		hints.append("쥐고 끌어라")
+	if atk.dive:
+		hints.append("막아라" if dive_from_close else "멀리 물러서거나 막아라")
+	# 표시된 공격은 예비 동작 내내, 지금의 막기가 버티기만 되는지 받아내는지 알려 준다.
+	if brain.step_index == 0 and atk.needs_raised_guard and core.player_state == DT.PlayerState.GUARD:
+		hints.append("막기를 뗐다 다시 올려라" if core.would_brace_now() else "받아낼 준비")
+	return PackedStringArray([text, " · ".join(hints)])
+
+
+## 귀띔의 왼쪽 끝(화면 x): 가운데 정렬된 첫 줄의 글 끝 + 틈.
+static func hint_left(line_width: float, center_x: float) -> float:
+	return center_x + line_width * 0.5 + STATE_HINT_GAP
+
+
 # 상태 글자와 고리는 간격에 따라 커지거나 움직이지 않게 한다.
-func _place_labels(text: String, inverse: float) -> void:
+func _place_labels(text: String, hint: String, inverse: float) -> void:
 	_state_label.text = text
 	_state_label.scale = Vector2.ONE * inverse
 	_state_label.position = (Vector2(anchor.x - _state_label.size.x * 0.5, STATE_LABEL_Y) - position) * inverse
+	# 글이 바뀐 그 호출에서 새 폭을 얻으려고 reset_size를 부른다(귀띔의 자리가 첫 줄의 글 폭을 따른다).
+	if _state_hint.text != hint:
+		_state_hint.text = hint
+		_state_hint.reset_size()
+	_state_hint.visible = hint != ""
+	_state_hint.scale = Vector2.ONE * inverse
+	_state_hint.position = (Vector2(hint_left(_state_label.get_minimum_size().x, anchor.x), STATE_LABEL_Y) - position) * inverse
 	_ring.scale = Vector2.ONE * inverse
 	_ring.queue_redraw()
+
+
+# 꼴은 상태 글자의 값을 읽어 온다(새 색·크기를 쓰지 않는다. 결정 625).
+func _build_state_hint() -> void:
+	_state_hint = Label.new()
+	_state_hint.name = "StateHint"
+	_state_hint.visible = false
+	_state_hint.z_index = 9
+	_state_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_state_hint.add_theme_font_override(&"font", _state_label.get_theme_font(&"font"))
+	_state_hint.add_theme_font_size_override(&"font_size", _state_label.get_theme_font_size(&"font_size"))
+	_state_hint.add_theme_color_override(&"font_color", _state_label.get_theme_color(&"font_color"))
+	_state_hint.add_theme_color_override(&"font_outline_color", _state_label.get_theme_color(&"font_outline_color"))
+	_state_hint.add_theme_constant_override(&"outline_size", _state_label.get_theme_constant(&"outline_size"))
+	add_child(_state_hint)
 
 
 func _build_forecast_tag() -> void:
