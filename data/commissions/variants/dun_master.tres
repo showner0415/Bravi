@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="Commission" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/commission/commission.gd" id="1_commission"]
+[ext_resource type="Script" path="res://scripts/commission/commission_condition.gd" id="2_condition"]
+[ext_resource type="Script" path="res://scripts/commission/target_part_condition.gd" id="3_target_part"]
+[ext_resource type="Resource" path="res://data/opponents/opponent_05.tres" id="4_opponent"]
+[ext_resource type="Resource" path="res://data/stages/court.tres" id="5_stage"]
+[ext_resource type="Texture2D" path="res://assets/art/clients/vittorio.png" id="6_portrait"]
+
+[sub_resource type="Resource" id="condition_head"]
+script = ExtResource("3_target_part")
+target_part = 0
+graze_penalty = 0
+hit_penalty = 30
+
+[resource]
+script = ExtResource("1_commission")
+client_name = "대금업자 비토리오"
+dialogue = "그 늙은 사범이 도장을 잡히고 내 돈을 빌려 쓰고는 석 달째 안 갚소. 지난번 자네가 그 늙은이와 대련을 했다지? 박자를 안다니 잘됐군. 제자들 앞에서 그 반들반들한 머리에 한 줄 그어 주시오. 그 망신이면 제자들이 떠나고 도장은 내 것이오. 얼굴은 두라던 나요. 이번엔 보이는 데라야 하오.
+무너진 늙은이를 치는 건 싸움이라 했다지? 바로 그 싸움이오. 아주 무너뜨린 뒤 가운데 위를 찌르시오."
+opponent = ExtResource("4_opponent")
+stage = ExtResource("5_stage")
+client_portrait = ExtResource("6_portrait")
+conditions = Array[ExtResource("2_condition")]([SubResource("condition_head")])
+base_reward = 70
+tip_max = 20
+reputation_effect = {"accept": -3, "success": -2, "fail": -1}
+haggle_min_stars = 5
+success_line = "제자들이 그 정수리를 보고 수군댔다더군. 도장 문서는 내일 받으러 가겠소. 약속한 돈이오."
+decline_line = "늙은이 편을 든다? 정이 들었나 보군. 칼은 또 있소."
+fail_line = "그 머리가 아직 반들반들하다더군. 도장은 그대로 그자 것이오. 한 푼도 없소."
+partial_line = "머리에 긋긴 했는데 여기저기 베었다지. 늙은이를 난도질했다는 소문은 곤란하오. 제하겠소."
+haggle_agree_line = "좋소, 치르지. 대신 머리요, 다른 데는 안 되오."
+haggle_refuse_line = "빚쟁이에게서 돈을 더 뜯겠다? 처음 값이오. 얹어 주려던 것도 줄이겠소."
+sets_flags = PackedStringArray("dunned_master")
+requires_flags = PackedStringArray("sparred_master")
+excluded_flags = PackedStringArray("dunned_master")

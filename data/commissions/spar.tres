@@ -35,3 +35,4 @@ fail_line = "이건 대련이 아니었다. 수업을 들은 것도 준 것도 �
 partial_line = "세 번이라 했는데 모자랐다. 모자란 만큼은 값에서 덜어 내마. 박자는 나쁘지 않았다."
 haggle_agree_line = "늙은이 주머니를 턴다? 좋다. 대신 박자 하나 흘리지 마라."
 haggle_refuse_line = "수업료를 받아야 할 쪽은 나다. 처음 값이다. 덤도 줄인다."
+sets_flags = PackedStringArray("sparred_master")

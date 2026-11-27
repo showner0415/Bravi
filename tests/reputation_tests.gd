@@ -27,6 +27,9 @@ const COMMISSION_PATHS: Array[String] = [
 	"res://data/commissions/variants/pair_baker.tres",
 	"res://data/commissions/variants/after_hatter.tres",
 	"res://data/commissions/variants/after_baker.tres",
+	"res://data/commissions/variants/close_baker.tres",
+	"res://data/commissions/variants/rival_milliner.tres",
+	"res://data/commissions/variants/dun_master.tres",
 ]
 
 ## 테스트가 적는 팁 문턱.

@@ -202,13 +202,13 @@ func t126_fifth_opponent() -> String:
 		errs.append("data/attacks/에 주인 없는 공격이 %d개 남아 있다" % SelectScript.load_spare_attacks().size())
 	if ResourceLoader.exists(OFFBEAT_FILE):
 		errs.append("%s가 아직 폴더에 있다" % OFFBEAT_FILE)
-	# ⑦ 아고스티노를 거는 의뢰는 대련 하나다(결정 646 → 043. 048이 독촉을 더하면 목록을 고친다).
+	# ⑦ 아고스티노를 거는 의뢰는 대련과 독촉이다(결정 646 → 043. 048이 독촉을 더했다).
 	var ago_commissions: Array[String] = []
 	for commission in CommissionLibrary.load_tree(COMMISSION_DIR):
 		if commission.opponent != null and commission.opponent.resource_path == AGOSTINO_PATH:
 			ago_commissions.append(commission.resource_path.get_file())
-	if ago_commissions != ["spar.tres"]:
-		errs.append("아고스티노를 거는 의뢰 %s (기대 spar.tres 하나)" % str(ago_commissions))
+	if ago_commissions != ["spar.tres", "dun_master.tres"]:
+		errs.append("아고스티노를 거는 의뢰 %s (기대 spar.tres · dun_master.tres, 계획 048)" % str(ago_commissions))
 	# ⑧ 옛 규칙 사본은 단발 셋이고, 예비는 셋 모두 · 빈틈은 찌르기만 바르톨로의 옛 규칙 사본과 같다(베기의 빈틈은 ③이 본다).
 	var plain := Plain.of(ago)
 	var plain_bartolo := Plain.of(bartolo)

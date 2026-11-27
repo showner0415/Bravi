@@ -18,6 +18,9 @@ const PAIR_HATTER_PATH := "res://data/commissions/variants/pair_hatter.tres"
 const PAIR_BAKER_PATH := "res://data/commissions/variants/pair_baker.tres"
 const AFTER_HATTER_PATH := "res://data/commissions/variants/after_hatter.tres"
 const AFTER_BAKER_PATH := "res://data/commissions/variants/after_baker.tres"
+const CLOSE_BAKER_PATH := "res://data/commissions/variants/close_baker.tres"
+const RIVAL_MILLINER_PATH := "res://data/commissions/variants/rival_milliner.tres"
+const DUN_MASTER_PATH := "res://data/commissions/variants/dun_master.tres"
 ## 다를 수 있는 칸: 이름·그림·포즈(표시만이고 판정에 쓰지 않는다. 결정 291·357).
 const FREE_FIELDS := ["display_name", "art", "idle_pose", "stagger_pose", "complacent_pose",
 	"tell_pose", "hold_arm_deg", "strike_pose", "recover_arm_deg"]
@@ -114,7 +117,7 @@ func t78_second_opponent() -> String:
 	all.append_array(CommissionLibrary.load_all("res://data/commissions/variants"))
 	for c in all:
 		var want: String = BARTOLO_PATH
-		if c.resource_path == LEGS_ONLY_PATH:
+		if c.resource_path == LEGS_ONLY_PATH or c.resource_path == CLOSE_BAKER_PATH:
 			want = BRUNO_PATH
 		elif c.resource_path == USURER_PATH:
 			want = LORENZO_PATH
@@ -122,11 +125,11 @@ func t78_second_opponent() -> String:
 			want = SERAFINA_PATH
 		elif c.resource_path == NOBLE_PATH:
 			want = GUGLIELMO_PATH
-		elif c.resource_path == SPAR_PATH:
+		elif c.resource_path == SPAR_PATH or c.resource_path == DUN_MASTER_PATH:
 			want = AGOSTINO_PATH
 		elif c.resource_path == PAIR_HATTER_PATH:
 			want = GUGLIELMO_PATH
-		elif c.resource_path == PAIR_BAKER_PATH or c.resource_path == AFTER_BAKER_PATH:
+		elif c.resource_path == PAIR_BAKER_PATH or c.resource_path == AFTER_BAKER_PATH or c.resource_path == RIVAL_MILLINER_PATH:
 			want = BEATRICE_PATH
 		elif c.resource_path == AFTER_HATTER_PATH:
 			want = LORENZO_PATH

@@ -21,6 +21,9 @@ const NOBLE_PATH := "res://data/commissions/variants/noble_baker.tres"
 const PAIR_HATTER_PATH := "res://data/commissions/variants/pair_hatter.tres"
 const AFTER_HATTER_PATH := "res://data/commissions/variants/after_hatter.tres"
 const AFTER_BAKER_PATH := "res://data/commissions/variants/after_baker.tres"
+const CLOSE_BAKER_PATH := "res://data/commissions/variants/close_baker.tres"
+const RIVAL_MILLINER_PATH := "res://data/commissions/variants/rival_milliner.tres"
+const DUN_MASTER_PATH := "res://data/commissions/variants/dun_master.tres"
 ## 카운터의 의뢰인이 미끄러져 들어오는 시간(0.45초)과 간격의 보간이 끝날 때까지 기다린다.
 const SETTLE_MSEC := 900
 const WEAPON_PATH := "res://data/weapons/rapier.tres"
@@ -73,6 +76,8 @@ func _ready() -> void:
 		["counter-court", _counter_court], ["counter-noble", _counter_noble],
 		["counter-pair", _counter_pair], ["counter-pair-other", _counter_pair_other], ["counter-pair-haggled", _counter_pair_haggled],
 		["counter-after-hatter", _counter_after_hatter], ["counter-after-baker", _counter_after_baker], ["duel-close-hat", _duel_close_hat],
+		["counter-close-baker", _counter_close_baker], ["counter-rival-milliner", _counter_rival_milliner], ["counter-dun-master", _counter_dun_master],
+		["duel-hold-early", _duel_hold_early], ["duel-hold-full", _duel_hold_full],
 	]
 	_next()
 
@@ -650,3 +655,47 @@ func _counter_after_baker() -> String:
 func _duel_close_hat() -> String:
 	_pose(_duel(PAIR_HATTER_PATH), DT.Distance.CLOSE, false, DT.PlayerState.READY, DT.Direction.CENTER, DT.Height.MID)
 	return "밀착 대기 · 모자를 쓴 굴리엘모"
+
+
+## 버티기와 속편(계획 048): 4 · 5 · 6일차의 새 손님. 사연(문단 둘) · 조건 글 · "상대:" 줄 · 흥정 줄이 말풍선 안에 서는지.
+func _counter_close_baker() -> String:
+	var commissions: Array[Commission] = [load(CLOSE_BAKER_PATH), load(USURER_PATH), load(POOR_PATH)]
+	var day := _new_day(commissions)
+	day.day_number = 4
+	_screen(Session.COUNTER_PATH, day)
+	return "카운터: 4일차 셋째 손님 — 굴리엘모의 버티기(브루노 2단)"
+
+
+func _counter_rival_milliner() -> String:
+	var commissions: Array[Commission] = [load(RIVAL_MILLINER_PATH), load(USURER_PATH), load(POOR_PATH)]
+	var day := _new_day(commissions)
+	day.day_number = 5
+	_screen(Session.COUNTER_PATH, day)
+	return "카운터: 5일차 클라라의 맞수(베아트리체 1단, 칼 든 팔)"
+
+
+func _counter_dun_master() -> String:
+	var commissions: Array[Commission] = [load(DUN_MASTER_PATH), load(USURER_PATH), load(POOR_PATH)]
+	var day := _new_day(commissions)
+	day.day_number = 6
+	day.flags = PackedStringArray(["sparred_master"])
+	_screen(Session.COUNTER_PATH, day)
+	return "카운터: 6일차 비토리오의 독촉(대련을 맡은 하루, 소문 −)"
+
+
+## 받아냄을 기록에 더한 뒤 화면만 그린다(States.put · advance · tick 없음, 위험 R9).
+func _hold_screen(count: int) -> void:
+	var core := _duel(CLOSE_BAKER_PATH)
+	for i in count:
+		core.record.add({"type": DuelRecord.STRIKE, "t": 1.0 + i, "result": DT.StrikeResult.BLOCKED, "braced": false})
+	_node.call("_update_views", 0.0)
+
+
+func _duel_hold_early() -> String:
+	_hold_screen(5)
+	return "버티기의 결투 · 받는 마디 중간(받아냄 5/12 · 아직입죠)"
+
+
+func _duel_hold_full() -> String:
+	_hold_screen((load(CLOSE_BAKER_PATH) as Commission).conditions[0].blocks_needed)
+	return "버티기의 결투 · 게이지가 찬 뒤(받아냄 12/12 · 이제 치십쇼)"

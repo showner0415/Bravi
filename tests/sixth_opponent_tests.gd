@@ -217,13 +217,13 @@ func t136_sixth_opponent() -> String:
 		var cards: int = brain.bag_remaining() + 1
 		if k >= BAG_SIZES.size() or cards != BAG_SIZES[k]:
 			errs.append("%d단의 가방 %d장 (기대 %s)" % [k + 1, cards, str(BAG_SIZES[k]) if k < BAG_SIZES.size() else "없음"])
-	# ⑥ 베아트리체를 거는 의뢰는 굴리엘모 편의 대련과 그의 편을 든 뒤의 지기뿐이다(계획 047. 결정 681은 047이 넘는다).
+	# ⑥ 베아트리체를 거는 의뢰는 굴리엘모 편의 대련과 그의 편을 든 뒤의 지기, 클라라의 맞수뿐이다(계획 047. 결정 681은 047이 넘는다).
 	var users: Array[String] = []
 	for commission in CommissionLibrary.load_tree(COMMISSION_DIR):
 		if commission.opponent != null and commission.opponent.resource_path == BEATRICE_PATH:
 			users.append(commission.resource_path.get_file())
-	if users != ["after_baker.tres", "pair_baker.tres"]:
-		errs.append("베아트리체를 거는 의뢰 %s (기대 after_baker.tres · pair_baker.tres, 계획 047)" % str(users))
+	if users != ["after_baker.tres", "pair_baker.tres", "rival_milliner.tres"]:
+		errs.append("베아트리체를 거는 의뢰 %s (기대 after_baker.tres · pair_baker.tres · rival_milliner.tres, 계획 048)" % str(users))
 	return _ok(errs)
 
 

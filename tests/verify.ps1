@@ -12,6 +12,7 @@
 # -Stats also adds spar, sparwrong, sparparry (plan 043 decision 662: run_duel_stats.ps1 -Commission res://data/commissions/spar.tres -Opening 3 -Nine -Finisher off -Runs 60; sparwrong adds -Miss 0.1, sparparry adds -Guard parry -Jitter 0). These three steps print "stat," and "score," lines.
 # -Stats also adds court, courtwrong, courtnaive, noble, noblewrong (plan 046 decision 741; the five bands are in the plan). They print "stat,", "score," and "parts," lines.
 # -Stats also adds pairhat, pairhatwrong, pairspar, pairsparclean, afterhand (plan 047 decision 760; the bands are in the plan). They print "stat,", "score," and "parts," lines.
+# -Stats also adds hold, holdwrong, holdrash, sleeve, dunhead (plan 048 decision 778; the bands are in the plan). They print "stat,", "score,", "hold," and "parts," lines.
 # The counter step (tests/part_counter_shots.gd) prints its "counter," and "overlap," lines; the partstats step (run_duel_stats.ps1 with $extra args) prints its "stat," lines.
 # Also prints the pattern step's "overlap," lines and the stats step's "stat," lines: they are what a reader needs.
 # Sets BRAVI_SAVE_PATH to the playtest save when it is not set, so no run touches the player's save.
@@ -41,7 +42,7 @@ New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 Write-Output "logs: $LogDir"
 
 $steps = @('tests', 'smoke', 'opponent', 'ui', 'pattern', 'counter')
-if ($Stats) { $steps += @('stats', 'reach', 'partstats', 'tierwrong', 'tierclean', 'spar', 'sparwrong', 'sparparry', 'court', 'courtwrong', 'courtnaive', 'noble', 'noblewrong', 'pairhat', 'pairhatwrong', 'pairspar', 'pairsparclean', 'afterhand') }
+if ($Stats) { $steps += @('stats', 'reach', 'partstats', 'tierwrong', 'tierclean', 'spar', 'sparwrong', 'sparparry', 'court', 'courtwrong', 'courtnaive', 'noble', 'noblewrong', 'pairhat', 'pairhatwrong', 'pairspar', 'pairsparclean', 'afterhand', 'hold', 'holdwrong', 'holdrash', 'sleeve', 'dunhead') }
 if ($Only) { $steps = @($Only -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ }) }
 
 $errorPattern = '^\s*(USER |)(SCRIPT |SHADER |)ERROR'
@@ -68,6 +69,7 @@ $scripts = @{
 	spar = 'run_duel_stats.ps1'; sparwrong = 'run_duel_stats.ps1'; sparparry = 'run_duel_stats.ps1'
 	court = 'run_duel_stats.ps1'; courtwrong = 'run_duel_stats.ps1'; courtnaive = 'run_duel_stats.ps1'; noble = 'run_duel_stats.ps1'; noblewrong = 'run_duel_stats.ps1'
 	pairhat = 'run_duel_stats.ps1'; pairhatwrong = 'run_duel_stats.ps1'; pairspar = 'run_duel_stats.ps1'; pairsparclean = 'run_duel_stats.ps1'; afterhand = 'run_duel_stats.ps1'
+	hold = 'run_duel_stats.ps1'; holdwrong = 'run_duel_stats.ps1'; holdrash = 'run_duel_stats.ps1'; sleeve = 'run_duel_stats.ps1'; dunhead = 'run_duel_stats.ps1'
 }
 $extra = @{
 	# Small tier set (plan 040 decision 593): every opponent's last tier; a bot that misjudges heights and one that does not.
@@ -90,6 +92,12 @@ $extra = @{
 	pairspar = @('-Commission', 'res://data/commissions/variants/pair_baker.tres', '-Opening', '3', '-Nine', '-Runs', '60', '-Finisher', 'off', '-Bite', '0.3')
 	pairsparclean = @('-Commission', 'res://data/commissions/variants/pair_baker.tres', '-Opening', '3', '-Nine', '-Runs', '60', '-Finisher', 'off')
 	afterhand = @('-Commission', 'res://data/commissions/variants/after_hatter.tres', '-Opening', '3', '-Nine', '-Runs', '60', '-Finisher', 'top', '-Dive', 'retreat', '-Tier', '2')
+	# Plan 048 decision 778: day 4-6 (opening 3). hold = the patient bot on the hold errand at Bruno tier 2 (-Tier 2, the line name is opponent_02-t2), holdwrong adds -Miss 0.1, holdrash is the same without -Patient (counters at once: early touches cost points), sleeve = sword-arm errand (finisher arm, -Bite 0.3), dunhead = head errand at Agostino tier 2 (finisher head). They print stat, score, hold and parts lines.
+	hold = @('-Commission', 'res://data/commissions/variants/close_baker.tres', '-Tier', '2', '-Opening', '3', '-Nine', '-Runs', '60', '-Patient')
+	holdwrong = @('-Commission', 'res://data/commissions/variants/close_baker.tres', '-Tier', '2', '-Opening', '3', '-Nine', '-Runs', '60', '-Patient', '-Miss', '0.1')
+	holdrash = @('-Commission', 'res://data/commissions/variants/close_baker.tres', '-Tier', '2', '-Opening', '3', '-Nine', '-Runs', '60')
+	sleeve = @('-Commission', 'res://data/commissions/variants/rival_milliner.tres', '-Opening', '3', '-Nine', '-Runs', '60', '-Finisher', 'arm', '-Bite', '0.3')
+	dunhead = @('-Commission', 'res://data/commissions/variants/dun_master.tres', '-Opening', '3', '-Nine', '-Runs', '60', '-Finisher', 'head', '-Tier', '2')
 }
 $failed = @()
 foreach ($step in $steps) {
@@ -118,7 +126,7 @@ foreach ($step in $steps) {
 	if ($step -eq 'stats') { $out | Where-Object { $_ -match '^(stat|routes),' } | ForEach-Object { Write-Output "  $_" } }
 	if (@('partstats', 'tierwrong', 'tierclean') -contains $step) { $out | Where-Object { $_ -match '^stat,' } | ForEach-Object { Write-Output "  $_" } }
 	# The spar and court/noble steps print the "score," lines too ("parts," only exists for a target-part commission).
-	if (@('spar', 'sparwrong', 'sparparry', 'court', 'courtwrong', 'courtnaive', 'noble', 'noblewrong', 'pairhat', 'pairhatwrong', 'pairspar', 'pairsparclean', 'afterhand') -contains $step) { $out | Where-Object { $_ -match '^(stat|score|parts),' } | ForEach-Object { Write-Output "  $_" } }
+	if (@('spar', 'sparwrong', 'sparparry', 'court', 'courtwrong', 'courtnaive', 'noble', 'noblewrong', 'pairhat', 'pairhatwrong', 'pairspar', 'pairsparclean', 'afterhand', 'hold', 'holdwrong', 'holdrash', 'sleeve', 'dunhead') -contains $step) { $out | Where-Object { $_ -match '^(stat|score|parts|hold),' } | ForEach-Object { Write-Output "  $_" } }
 	if ($step -eq 'reach') { $out | Where-Object { $_ -match '^reach,' } | ForEach-Object { Write-Output "  $_" } }
 }
 

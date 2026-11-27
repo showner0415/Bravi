@@ -10,6 +10,7 @@ extends SceneTree
 ## 박자 봇(guard): --guard=hold|parry(안 주면 지금의 봇), parry는 모든 타격을 패리하려 하고 --jitter=<비율>이 누르는 때를 흔든다(어긋남 = 비율 x 기다린 시간 x -1~+1. 계획 042 결정 644). 준 줄에는 ",guard=..,jitter=.."가 붙는다.
 ## 의뢰(commission): --commission=<res 경로> 그 의뢰의 조건·모자·fit_opponent로 돈다(상대를 안 주면 의뢰의 상대 하나). --finisher=off 무너진 상대를 치지 않는 봇(계획 043 결정 662), --finisher=low 무너진 상대의 다리를 끝내는 봇(계획 046 결정 741), --finisher=top 윗줄 칼 쪽 베기로 끝내는 봇(모자 또는 칼 든 손, 계획 047 결정 760). 준 줄에는 ",commission=..,finisher=.."가 붙고, --commission이면 설정마다 "score," 줄이 하나 더 나오고, 조건에 지정 부위(TargetPartCondition)가 있으면 "parts," 줄도 하나 더 나온다(내 스침·유효타를 부위별로, 계획 046).
 ## 헛손질(bite): --bite=<확률> 속는 봇 — 헛손질마다 그 확률로 그 칸을 막는다(안 주면 속지 않는다). 준 줄에는 ",bite=.."가 붙고, 헛손질이 있는 상대는 "feint," 줄이 하나 더 나온다(계획 044 결정 677).
+## 받아 주기(patient): --patient 조건의 게이지가 100이 될 때까지 받아치지 않는 봇, --finisher=arm 칼 든 팔 중단 / head 가운데 위(계획 048 결정 778). patient를 준 줄에는 ",patient"가 붙고, 받아 주기 의뢰에는 "hold," 줄이 하나 더 선다.
 ## 따라붙기(chase): --chase=<확률> 상대가 치고 빠진 빈틈마다 그 확률로 막기를 떼고 걸어 들어가 친다(안 주면 늘 따라붙는다, 1과 같다). 준 줄에는 ",chase=.."가 붙고, 빠지는 상대는 "withdraw," 줄이 하나 더 나온다(계획 045 결정 708).
 ## 줄: "stat,<상대>,<9칸|가로만>,<counter>,..." 하나가 설정 하나. 판정이 아니라 견줄 수다(통과 기준은 줄이 다 나오는 것뿐).
 
@@ -31,6 +32,14 @@ var _has_hat := false
 var _finisher_on := true
 var _finisher_low := false
 var _finisher_top := false
+var _finisher_arm := false
+var _finisher_head := false
+## 받는 마디를 참는 봇(계획 048 결정 778): 조건의 게이지가 100이 되기 전에는 받아치지 않는다.
+var _patient := false
+## 받아 주기 의뢰의 판 합: 받아냄을 채운 판, 채운 시각의 합, 먼저 댄 칼의 합(계획 048). 설정마다 비운다.
+var _hold_reached := 0
+var _hold_time_sum := 0.0
+var _hold_early_sum := 0
 var _scores: Array[int] = []
 var _topples: Array[int] = []
 ## 헛손질이 낀 패턴의 수와 그 가운데 속은 수(계획 044 결정 677). 설정마다 비운다.
@@ -65,6 +74,8 @@ func _initialize() -> void:
 	var bite := -1.0
 	# 안 주면(-1) 줄 꼴이 옛 그대로다(계획 045 결정 708).
 	var chase := -1.0
+	# 안 주면 줄 꼴이 옛 그대로다(계획 048 결정 778).
+	var patient := false
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--runs="):
 			runs = int(arg.trim_prefix("--runs="))
@@ -96,6 +107,8 @@ func _initialize() -> void:
 			chase = float(arg.trim_prefix("--chase="))
 		elif arg.begins_with("--finisher="):
 			finisher_arg = arg.trim_prefix("--finisher=")
+		elif arg == "--patient":
+			patient = true
 		elif arg == "--nine":
 			nine_only = true
 		elif arg.begins_with("--opponent="):
@@ -114,6 +127,9 @@ func _initialize() -> void:
 	_finisher_on = finisher_arg != "off"
 	_finisher_low = finisher_arg == "low"
 	_finisher_top = finisher_arg == "top"
+	_finisher_arm = finisher_arg == "arm"
+	_finisher_head = finisher_arg == "head"
+	_patient = patient
 	if paths.is_empty():
 		var files := Array(DirAccess.get_files_at(OPPONENT_DIR))
 		files.sort()
@@ -144,12 +160,14 @@ func _initialize() -> void:
 			var guard_tag: String = "" if guard_mode == "" and jitter == 0.0 else ",guard=%s,jitter=%.2f" % ["hold" if guard_mode == "" else guard_mode, jitter]
 			var comm_tag := ""
 			if commission_path != "" or finisher_arg != "":
-				comm_tag = ",commission=%s,finisher=%s" % [commission_path.get_file().get_basename() if commission_path != "" else "none", "low" if _finisher_low else ("top" if _finisher_top else ("on" if _finisher_on else "off"))]
+				comm_tag = ",commission=%s,finisher=%s" % [commission_path.get_file().get_basename() if commission_path != "" else "none", "low" if _finisher_low else ("top" if _finisher_top else ("arm" if _finisher_arm else ("head" if _finisher_head else ("on" if _finisher_on else "off"))))]
 				guard_tag += comm_tag
 			if bite >= 0.0:
 				guard_tag += ",bite=%.2f" % bite
 			if chase >= 0.0:
 				guard_tag += ",chase=%.2f" % chase
+			if _patient:
+				guard_tag += ",patient"
 			var variants: Array = [["9칸", opponent]] if DuelHud.uses_heights(opponent) else []
 			if not nine_only or variants.is_empty():
 				variants.append(["가로만", opponent.flat()])
@@ -170,6 +188,9 @@ func _initialize() -> void:
 							_off_target_runs = 0
 							_feint_patterns = 0
 							_bitten_patterns = 0
+							_hold_reached = 0
+							_hold_time_sum = 0.0
+							_hold_early_sum = 0
 							for i in runs:
 								summaries.append(_play(with_effects, i + 1, delay, miss, counter, dive, guard_mode, jitter, bite, chase))
 							_print(name_tag, variant[0], label, counter, delay, miss, Summary.merge(summaries), "새" if effect == "on" else "옛", guard_tag)
@@ -177,6 +198,7 @@ func _initialize() -> void:
 							if commission != null:
 								_print_score(name_tag, variant[0], label, miss, comm_tag)
 								_print_parts(name_tag, variant[0], label, miss, comm_tag, counter)
+								_print_hold(name_tag, variant[0], label, miss, comm_tag)
 	print("DUEL STATS OK %d" % lines)
 	quit(0)
 
@@ -201,6 +223,9 @@ func _play(opponent: OpponentData, seed_value: int, delay: float, miss: float, c
 	var aim := func(ev: Dictionary) -> Variant:
 		if float(ev["recovery"]) <= 0.0:
 			return null
+		# 받는 마디를 참는다: 조건의 게이지가 다 차기 전에는 받아치지 않는다(결정 778).
+		if _patient and not _meter_full(core.record):
+			return null
 		var atk := ev["attack"] as AttackData
 		var height := int(ev.get("height", -1))
 		match counter:
@@ -224,6 +249,10 @@ func _play(opponent: OpponentData, seed_value: int, delay: float, miss: float, c
 	elif _finisher_top:
 		# 윗줄의 칼 쪽 베기: 모자를 쓴 상대면 모자, 아니면 칼 든 손이다(AIM_TABLE, 계획 047 결정 760).
 		cfg["finisher"] = [opponent.sword_side, DT.Height.HIGH]
+	elif _finisher_arm:
+		cfg["finisher"] = [_direction_of(opponent, DT.Part.SWORD_ARM), DT.Height.MID]
+	elif _finisher_head:
+		cfg["finisher"] = [DT.Direction.CENTER, DT.Height.HIGH]
 	if dive == "retreat":
 		cfg["whiff_fn"] = func(ev: Dictionary) -> Variant:
 			return [DT.Direction.CENTER, DT.Height.MID] if float(ev["recovery"]) > 0.0 else null
@@ -248,6 +277,7 @@ func _play(opponent: OpponentData, seed_value: int, delay: float, miss: float, c
 		bot.update()
 	_tally_feints(core.record)
 	_tally_parts(core.record)
+	_tally_hold(core.record)
 	if not _conditions.is_empty():
 		var total := 0
 		for condition in _conditions:
@@ -402,3 +432,36 @@ func _total(counts: Dictionary) -> int:
 	for key in counts:
 		n += int(counts[key])
 	return n
+
+
+## 조건 가운데 하나라도 비지 않은 게이지가 100 아래이면 거짓. 게이지가 없는 의뢰에서는 늘 참이다.
+func _meter_full(record: DuelRecord) -> bool:
+	for condition in _conditions:
+		var meter := condition.live_meter(record)
+		if not meter.is_empty():
+			return int(meter["value"]) >= 100
+	return true
+
+
+## 받아 주기 의뢰의 판 합: 채운 판 수, 채운 시각, 먼저 댄 칼(계획 048).
+func _tally_hold(record: DuelRecord) -> void:
+	for condition in _conditions:
+		if condition is HoldCondition:
+			var hold := condition as HoldCondition
+			var at := hold.reach_time(record)
+			if at >= 0.0:
+				_hold_reached += 1
+				_hold_time_sum += at
+			_hold_early_sum += hold.early_touches(record)
+
+
+## 받아 주기 의뢰에만 한 줄 더한다(다른 의뢰의 출력이 그대로이게. 계획 048 결정 778).
+func _print_hold(name: String, kind: String, opening: String, miss: float, tag: String) -> void:
+	var has_hold := false
+	for condition in _conditions:
+		has_hold = has_hold or condition is HoldCondition
+	if not has_hold:
+		return
+	var n := float(maxi(_scores.size(), 1))
+	print("hold,%s,%s,opening=%s%s,miss=%.2f | 판 %d · 받아냄을 채운 판 %d · 채운 시각 평균 %.1f초 · 먼저 댄 칼 판당 %.2f" % [
+		name, kind, opening, tag, miss, _scores.size(), _hold_reached, _hold_time_sum / maxf(float(_hold_reached), 1.0), _hold_early_sum / n])
