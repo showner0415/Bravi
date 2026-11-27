@@ -74,6 +74,7 @@
   | 근심 | 안쪽이 들림 | 점 | 작은 곧은 선 |
   | 깐깐함 | 곧은 막대 둘, 한쪽만 조금 높음 | 코안경 안의 점 | 곧은 짧은 선 |
   | 능청 | 눈 위로 늘어진 흰 덩이 둘 | 위로 굽은 짧은 선 둘 | 한쪽 꼬리만 올라간 짧은 선 |
+  | 떠보기 | 한쪽은 높이 든 호, 다른 쪽은 낮은 곧은 막대 | 한쪽으로 몰린 점 둘(곁눈) | 양 끝이 같이 오른 다문 작은 호 |
 
 - 홍조, 땀방울, 눈물, 눈 하이라이트, 속눈썹, 입술 색, 볼의 빗금은 없다.
 
@@ -125,6 +126,7 @@
 | `--se-gown` / `-sh` | `#8E6E80` / `#765A6A` | S23 V56 / S24 V46 | 0.46 / 0.38 | 세라피나 긴 옷·소매(계획 041) |
 | `--ag-jacket` / `-sh` | `#B7AD9A` / `#9C927F` | S16 V72 / S19 V61 | 0.68 / 0.58 | 아고스티노 누빔 검술복·소매(계획 042) |
 | `--ag-hose` / `-sh` | `#857868` / `#6F6457` | S22 V52 / S22 V44 | 0.48 / 0.40 | 아고스티노 양말(계획 042) |
+| `--be-dress` / `-sh` | `#5E7F72` / `#4B665B` | S26 V50 / S26 V40 | 0.47 / 0.37 | 베아트리체 몸판·소매·치마(계획 044b) |
 | `--st-shade` | `#3A3027` | S33 V23 | 0.19 | 무대 가운데 그늘 |
 | `--st-sky` | `#3E4A55` | S27 V33 | 0.28 | 밤하늘 |
 | `--st-ground` | `#4E4336` | S31 V31 | 0.27 | 땅 |
@@ -1232,6 +1234,74 @@ Colors: The wall parchment E9D8B4 with a slightly darker parchment D2B98C, the h
 - 다섯째 항목: `- Fills: flat solid colors, muted and faded. The chest patch and the cane are filled with the same very dark brown as the outlines. The hair tufts, the eyebrows and the chin beard are not dark: they are filled with pale parchment and drawn with the dark outline. He wears no hat.`
 - 색: `- Main fills and their shadow tones: pale worn linen grey B7AD9A with shadow 9C927F for the padded jacket and the sleeves, parchment E9D8B4 with shadow D2B98C for the hair tufts, the eyebrows and the chin beard, skin EBC49F.` 둘째 줄은 비토리오와 같다.
 - 판정(계획 042 판 S5): 034 작업 4의 굳은 확인(H3 · H4 · H5 · K1 · K2′(부드러움) · K3′ · K5 · K6 · G8, 머리 높이가 클라라·비토리오 평균의 ±15%) + **같은 사람**(검술복 큰 면의 잰 색이 올린 전신의 같은 면과 채널 차 12 안) + 손질본 450×675 · 모서리 알파 0.
+
+# 계획 044b의 줄 (상대 여섯째 베아트리체. 결정 685~692)
+
+영어, ASCII만, 큰따옴표 없이(결정 187). 판 S0(그림 생성 없음, 견본 `samples/044b-sixth-opponent.html`)에서 몸의 값을 굳혔다(선 포함, 골반에서): 목의 자리 −206, 머리 그림(목~틀어 올린 머리 꼭대기) 131.8, 모자 없는 꼭대기 337.8(세라피나 348.4보다 낮다), 정수리(틀어 올린 머리 아래의 머리 윤곽) 314.7, 틀어 올린 머리 23.0, 머리 가운데의 자 271.9, 눈의 줄 266(눈 점이 목 관절 위 60), 모자 쓴 꼭대기 347.8, 발끝(밑단 아랫선) 205.7, 허리 77.4 · 밑단 200.9(밑단 ÷ 허리 2.60, 다섯의 가장 넓은 다리 그림 폭 174.6 + 26), 치마의 채움 0.731, 옆선의 벗어남 0.3, 허리띠 아랫선 골반 아래 12.6 · 앞판 끝 32.6 · 치마 윗선 골반 위 18.7, 모자 상자 가운데 (42.8, 31.7) 53 × 35 · 치마 윤곽 밖으로 16.7, 핀 다섯(지름 11.8 · 머리 윤곽 밖으로 19.6 이상 · 왼쪽 둘 오른쪽 셋 · 가장 높은 핀 머리가 틀어 올린 머리의 꼭대기와 같은 높이). 넣는 그림은 그 견본에서 구운 `generated/in/044b-in-front.png`(전신, 모자 없이)·`044b-in-parts.png`(파츠 배치 — 덩이 열: 끈이 모자 상자를 주먹에 잇는다)·`044b-in-client.png`(허리 위, 두 손으로 모자 상자를 든다)와, 030c의 팔 안내도에서 소매 폭만 0.80배로 줄인 `generated/in/044b-in-arms.png`다(041·042의 길).
+
+다섯 상대와 다른 것 넷:
+
+- **다리가 없다 — 곧은 변의 종 치마**: 본보기 블록의 다리 말(P-FIG 둘째·셋째 항목, P-PARTS의 8번)이 발이 보이지 않는 치마와 부딪힌다. P-FIG 둘째·셋째 항목과 P-PARTS의 8번을 그녀의 것으로 바꾼다. 치마는 둥근 모서리의 사다리꼴이고 부풀지 않는다(바이블 4절 "꼴"). 그녀의 프롬프트에는 `feet apart` · `both legs straight` · `breeches`가 없고, `legs`는 파츠 8번의 `without legs or feet`에만 있다. 화풍 블록의 "큰 머리" 문장(`from the neck to the feet`)은 고치지 않는다.
+- **모자 상자를 든다**(결정 690): 칼을 들지 않은 손이 등 뒤가 아니라 몸 옆으로 곧게 내려 짧은 짙은 끈을 쥐고, 끈 끝에 북 꼴의 모자 상자가 치마 옆구리에 걸친다(P-FIG 다섯째 항목). 게임에서는 팔·주먹·끈·상자가 모두 몸통 파츠다(파츠 4번 — 덩이 열).
+- **틀어 올린 머리와 핀 다섯**: 머리 조각마다 같은 높은 덩이와 핀 다섯이 든다(S-PARTS 둘째 항목의 끝). 핀은 옆과 비스듬히 위로만 뻗어 꼭대기를 올리지 않는다(결정 688). 목 밑동은 머리가 아니라 몸통의 맨 목이 받친다.
+- **전신은 모자를 쓰지 않는다**(041·042와 같다): 전신의 `Subject:`와 색 줄에 모자가 없고 P-FIG 여섯째 항목(깃털)을 뺀다. 모자(틀어 올린 머리의 앞쪽에 비스듬히 얹은 작은 벽돌색 모자)와 깃털은 파츠 시트에서만 그린다. 여자라 `He` · `His`는 `She` · `Her`로만 바꾼다.
+
+**파츠 단계가 굳힌 값**(판 S2·S3, 2026-11-27. 올린 그림 `basis/beatrice-front.png` · `basis/beatrice-parts.png` · `basis/beatrice-arms.png`, 값 파일 `tools/cutparts-beatrice.psd1` · `tools/cutarms-beatrice.psd1`, 그림 데이터 `data/opponents/beatrice_art.tres`): 스케치의 값에서 달라진 것만 적는다. 목의 자리 −206 그대로(머리 셋의 배율 0.746 — 모자 없는 꼭대기 341.6~342.3, 머리 가운데의 자 273.8~274.1, 눈의 줄 260.5), 모자의 원점 (0, −110)(모자 · 깃털 0.624, 모자 쓴 꼭대기 353.5), 어깨 (−48, −192), 팔 100(팔 · 주먹 · 칼 0.657), 몸통 가로 0.85(몸판이 통통하게 나왔다 — 허리 73.2), 치마 가로 0.615 · 세로 0.643(밑단 205.4 · 발끝 206.6, 밑단 ÷ 허리 2.81, 채움 0.696), 허리띠 골반 아래 14.2 · 치마 윗선 골반 위 17.0. 모자 상자는 몸통 파츠에 그려진 대로 골반 아래 98.3 · 치마 밖 33.8(기준 20~45 · ≤ 20을 넘지 못했으나 적고 받았다 — 판 J-11). 팔 시트의 `K` 0.42(소매 1.08 · 주먹 1.09 · 선 3.8단위 — 주먹을 0.85배로 줄인 안내도 `generated/in/044b-in-arms-f85.png`를 넣었다).
+
+## 베아트리체 전신 F1a (바이블 13.3 "새 사람의 전신(상대)")
+
+차례는 브루노 F1a와 같다(계획 035의 줄). P-FIG의 첫째·일곱째 항목과 S-FIG2의 첫째·넷째·여섯째·일곱째 항목, 색 블록의 둘째 줄, 지시 블록·`Image:`·`Background:`는 그대로이고 아래 줄만 바꾼다.
+
+- Subject: `Subject: Beatrice, a milliner who keeps a hat shop in a Renaissance-era Italian town. A woman of about forty with a narrow waist and a bare neck. Her dark hair is wound up high into one tall rounded bun on top of her head, and five long hatpins with round pale heads stick out of the bun in different directions: two to each side and one slanting up. She wears a fitted bodice and narrow sleeves in faded bottle green, with a pale parchment front panel that ends in a point below the waist, over a narrow dark belt. Her skirt is the same green and very wide: it falls from the waist to the ground in straight sides, like a cone with rounded corners, and the flat hem is much wider than her shoulders. Her feet do not show. She holds a rapier.`
+- P-FIG 둘째 항목(자세): `- Front view or a very slight turn. She stands ready for a duel but at ease, her weight hidden under the skirt. Teasing and testing.`
+- P-FIG 셋째 항목(팔과 치마): `- Her arms are simple and straight, like in the reference image, with no bend at the elbow: each arm is one simple straight rounded shape. The skirt is one simple shape with straight sides, not puffed and not curved, with a few straight fold lines from the waist to the hem.`
+- P-FIG 넷째 항목(칼 팔. `His`를 `Her`로만): `- Her sword arm is on the viewer's left. The arm is short and straight, held out a little from the body at a slant, with the hand at waist height. The hand grips the rapier at the ready, with the blade pointing up and leaning outward, away from the body, so the blade crosses neither the body nor the head.`
+- P-FIG 다섯째 항목(등 뒤의 손 대신 모자 상자): `- Her other arm hangs straight down on the viewer's right. Her fist holds a short dark cord, and a small round hatbox hangs from the cord against the side of the skirt, below the waist. The hatbox is a flat drum, wider than it is tall, with a flat lid and a dark band around the lid.`
+- P-FIG 여섯째 항목(깃털): 뺀다.
+- S-FIG2 둘째 항목 끝(표정 떠보기 — "얼굴과 비례" 표의 한쪽은 높이 든 호, 다른 쪽은 낮은 곧은 막대 · 한쪽으로 몰린 점 둘 · 양 끝이 같이 오른 다문 작은 호): `Her eyebrow on the viewer's right is a high arch and the other is a low straight bar. Her eyes are two dots both turned toward the viewer's left, a sidelong look. Her mouth is a small closed curve with both corners turned up. Her character shows in the expression: teasing and testing.`
+- 셋째 항목: `- Keep it as simple as the reference image: the same small number of shapes and the same few inner lines. Do not add details that the reference does not have. A plain fitted bodice with a pale front panel and a few short lacing lines. A narrow plain belt. A plain wide skirt with a few straight fold lines. Five plain straight hatpins with round heads. One plain round hatbox with a lid band. A simple fist with a few short finger lines. No extra seams, folds or wrinkles. Improve only the craft: clean construction, good proportions, parts that join properly and a hand that clearly holds the sword.`
+- 다섯째 항목: `- Fills: flat solid colors, muted and faded. The hair, the belt, the cord, the lid band of the hatbox and the shafts of the pins are filled with the same very dark brown as the outlines. The round heads of the pins, the front panel and the hatbox are pale parchment. She wears no hat.`
+- 색: `- Main fills and their shadow tones: faded bottle green 5E7F72 with shadow 4B665B for the bodice, the sleeves and the skirt, parchment E9D8B4 with shadow D2B98C for the front panel, the pin heads and the hatbox, skin EBC49F, pale warm grey CFC8BA for the blade and guard.` 둘째 줄은 C-FIG2 그대로.
+- 큰 면의 기준(바이블 8절): 옷 `#5E7F72` Y 0.47 · 그림자 `#4B665B` 0.37(칠 ≥ 0.42, 그림자 ≥ 0.30), S 26%, 색조 156°. 판 S0의 ①: 올린 전신에서 잰 다섯 상대의 큰 면 아홉과 색조 차 48°~180°(가장 가까운 것이 바르톨로의 저고리 `#6E7A82` 204° — Y 차 0). 의뢰인 클라라의 올리브 `#6F7F4F`와 76° 차(적기만 — 판 S5에서 나란히).
+
+## 베아트리체 파츠 시트 P1a (바이블 13.3 "파츠 시트")
+
+본보기와 차례는 브루노 P1a와 같다. 넣는 그림 둘: 판 S1에서 올린 그녀의 전신(사람), `generated/in/044b-in-parts.png`(배치). 팔의 길이 말은 본보기 그대로 둔다. 바꾸는 줄(P-PARTS 첫째 항목의 `the same man`은 `the same woman`으로만):
+
+- Subject: `Subject: Beatrice, a milliner who keeps a hat shop in a Renaissance-era Italian town, the same character as in the first referenced image. A woman of about forty with a narrow waist and a bare neck. Her dark hair is wound up high into one tall rounded bun on top of her head, and five long hatpins with round pale heads stick out of the bun in different directions. She wears a fitted bodice and narrow sleeves in faded bottle green, with a pale parchment front panel that ends in a point below the waist, over a narrow dark belt, and a very wide skirt of the same green with straight sides. A short dark cord and a small round hatbox. A small brick red hat with one large feather lying sideways. A rapier.`
+- **F1a를 잰 뒤에 고친 것 넷**(2026-11-27, 판 S1의 재기 `measure-S1.txt` — 자는 틀어 올린 머리 꼭대기~밑단 543.5단위): ① 핀 하나가 거의 곧게 위로 솟아 머리가 틀어 올린 머리 꼭대기보다 19.9 높다(한계 +6 — 모자 없는 꼭대기가 345를 넘는다). 1번에 "핀은 옆으로 뻗거나 조금만 위로 기울고, 어느 핀도 틀어 올린 머리의 꼭대기보다 높지 않다"를 넣었다. ② 모자 상자가 허리띠 아래 73.5에 매달렸다(스케치 19.1. 주먹이 허리띠보다 15 아래로 길게 내려오고 끈이 짧다). 상자는 몸통 파츠라 값 파일로 옮길 수 없다 — 4번에 상자의 높이를 몸의 자리(허리띠 · 앞판 끝)로, 안쪽 끝을 허리띠의 끝으로 적었다(042가 배운 길: 높이는 몸의 자리로). ③ 몸판이 짧고(어깨~허리띠 143) 치마가 길다(244 — 스케치는 202 대 196). 8번에 "치마 조각은 몸통 조각의 어깨~허리띠만큼 높다"를 넣었다(041이 배운 길. 그래도 길면 값 파일의 다리 세로 배율). ④ 틀어 올린 머리는 둥근 공으로 그려졌다(정수리 위 33.0 — 18~32의 끝을 조금 넘는다). 그 꼴을 따르고 높이만 재기로 본다.
+- 파츠 1(목 밑동 없이 — 맨 목은 몸통의 것): `  1. the head three times, without the hat, each with the round bun and all five hatpins drawn complete. The pins point out to the sides or slant only a little upward: no pin rises higher than the top of the bun. No neck is drawn under the head: the bare neck belongs to the torso. The three heads are the same size;`
+- 파츠 2: `  2. the hat alone, without the feather;`
+- 파츠 4(몸통 — 끈과 모자 상자가 이 조각 안): `  4. the torso alone, without the sword arm, the skirt or the head: the long fitted green bodice with the pale pointed front panel and the narrow dark belt, and the bare neck rising above it. The belt is the bottom edge of the bodice, and only the point of the front panel reaches a little below it. Her other arm hangs straight down on the viewer's right and ends in a closed fist above the belt, at the height of the lower lacing line. Below the fist the short dark cord and the small round hatbox hang inside this piece, as in the layout sketch: the top of the lid is a little lower than the belt, level with the point of the front panel, and the inner edge of the hatbox is a little inside the end of the belt, close to the body. The cord touches the fist and the lid and joins them. No arm is attached on the viewer's left;`
+- 파츠 5: `  5. the sword arm alone, from the shoulder to the wrist, as one straight narrow bodice sleeve with a rounded top and a plain hem of the same color at the lower end. It hangs straight down and it is short, as in the layout sketch: no longer than the torso from the shoulder to the waist;`
+- 파츠 8(다리 대신 치마): `  8. the skirt alone, without legs or feet: one very wide green skirt with straight sides, narrow at its top edge and widest at the flat hem, with a few straight fold lines. Its top edge is as narrow as the waist and goes a little higher than where the belt will sit, so that it hides behind the bodice. Nothing shows below the hem. This piece is about as tall as the torso piece is from the shoulders to the belt, as in the layout sketch.`
+- 머리 셋 문장(S-PARTS 둘째 항목의 끝): `The first head is teasing and testing, exactly the face of the first referenced image: the eyebrow on the viewer's right a high arch and the other a low straight bar, eyes drawn as two dots both turned toward the viewer's left, and a small closed curve with both corners turned up for a mouth. The second head is flustered and caught off guard: eyebrows raised high, eyes drawn as small dark dots inside round white eyes, and a small oval mouth. The third head is dizzy and dazed: crooked eyebrows, eyes drawn as two small X marks, and a wavy line for a mouth. The three heads are clearly the same woman. The tall bun and the five hatpins belong to each head piece and are the same in all three heads. The pins do not touch other pieces.`
+- 셋째 항목: `- Keep exactly the amount of detail of the first referenced image: the fitted bodice with its pale pointed front panel and a few short lacing lines, the narrow dark belt, the straight fold lines of the skirt, the five plain hatpins, the plain hatbox with its lid band and the fingers on the fist. The hat is a small brick red hat A5533F with shadow 84422F, set at a tilt on the front of the bun, with one large parchment feather lying sideways. Nothing else is added. No puffy sleeves, no puffed skirt, no curls, no extra wrinkles.`
+- 다섯째 항목: `- Fills: flat solid colors, muted and faded. The hair, the belt, the cord, the lid band of the hatbox and the shafts of the pins are filled with the same very dark brown as the outlines. The round heads of the pins, the front panel and the hatbox are pale parchment.`
+- 색: `- Main fills and their shadow tones: faded bottle green 5E7F72 with shadow 4B665B for the bodice, the sleeves and the skirt, parchment E9D8B4 with shadow D2B98C for the front panel, the pin heads, the hatbox and the feather, skin EBC49F, brick red A5533F with shadow 84422F for the hat, pale warm grey CFC8BA for the blade and guard.` 둘째 줄은 C-FIG2 그대로.
+- 판정에서 다른 것(계획 044b 판 S2): HP1은 **덩이 열**(모자 상자가 끈으로 몸통 덩이에 붙는다 — 따로 떨어진 덩이면 걸린 것이다). 모자 없는 꼭대기(식) ≤ 345, 머리 가운데의 자 ≥ 252, 눈의 줄 ≥ 250, 모자 쓴 꼭대기 ≤ 355, 발끝 195~218, 밑단 ÷ 허리 ≥ 2.2, 치마의 채움 ≥ 0.65, 이음매의 겹침(몸판 ≥ 8 · 치마 ≥ 12)과 얹은 장 둘(0° · −4°)의 이음매의 자. `k`는 몸판의 띠로 잰다.
+
+## 베아트리체 팔 시트 A1a (바이블 13.3 "팔 시트", 본보기 `030c-A2a`)
+
+본보기의 줄 그대로이고 `Subject:`의 이름과 색 블록의 첫 줄(파츠 시트 P1a의 색 줄)만 바꾼다. 넣는 그림 둘: 판 S2에서 올린 그녀의 파츠 시트(사람), `generated/in/044b-in-arms.png`(자세 안내도 — 030c의 안내도에서 세 팔의 소매와 소매 끝만 축을 따라 0.80배로 좁혔다. 주먹·날밑·칼날은 그대로다). 037·041·042처럼 둘을 첫 프롬프트에 미리 넣는다(결정 440):
+
+- Subject: `Subject: Beatrice, the same character as in the first referenced image. Only her sword arm, her sword hand and her rapier, in a few different poses.`
+- 소매의 색(줄 전체): `- Every sleeve is the narrow bodice sleeve of this character, filled with faded bottle green 5E7F72 with shadow 4B665B, the same as the arm in the first referenced image. The sleeve ends in a plain hem of the same color, with no cuff of another color.`
+- 칼자루를 가로지르는 손가락(줄 전체. 041·042와 같다): `- On all three fists, the four fingers wrap around the grip: draw them as four short rounded finger bands lying side by side across the grip, stacked one above the other, with a thin line between the fingers; the thumb lies along the grip. Every fist is one compact closed fist of the same size as the fist in the first image, with the shadow on its right side.`
+- 나머지 줄(`- Part 1:`~`- Part 3:`, 화풍 블록, 바탕)은 `prompts/042-A1a-agostino-arms.txt`와 글자까지 같다(본보기 `030c-A2a`의 줄). 넣는 그림의 차례: 파츠 시트가 첫째, 안내도가 둘째.
+- 판정의 기준(계획 044b 판 S3, 041·042의 임시 기준 그대로): 소매 폭(A-4)은 자기 파츠 시트의 팔 폭의 0.85~1.15, 주먹은 바르톨로 주먹 폭의 0.85~1.15, 선의 단위 3.6~7.8(셋이 함께 넘는 `K`가 없으면 042처럼 선을 적고 받는다).
+
+## 베아트리체 의뢰인 C1a (바이블 13.3 "의뢰인" — 계획 044b의 나에서 채운다)
+
+차례와 줄은 042의 의뢰인 줄(위 "아고스티노 의뢰인 C1a") 그대로이고 아래만 바꾼다. 넣는 그림이 둘이다: 첫째는 허리 위 스케치 `generated/in/044b-in-client.png`(구도), 둘째는 판 S1에서 올린 그녀의 전신(같은 사람). 칼은 들지 않는다. 의뢰에 거는 것은 047이다.
+
+- Subject: `Subject: Beatrice, a milliner who keeps a hat shop in a Renaissance-era Italian town, the same woman as in the second referenced image, shown from the waist up as a customer at a counter. A woman of about forty with a bare neck. Her dark hair is wound up high into one tall rounded bun, and five long hatpins with round pale heads stick out of the bun in different directions. She wears a fitted bodice and narrow sleeves in faded bottle green with a pale parchment front panel. She holds no sword. Both hands hold the small round hatbox in front of her waist. The whole bun and all five pins stay inside the picture.`
+- 구도 셋째(034의 둘째 항목 자리): `- Front view or a slight three-quarter view, head straight, both hands visible above waist level, holding the small round hatbox in front of her (she stands behind a shop counter that is not drawn). The hatbox is a flat drum, wider than it is tall, with a flat lid and a dark band around the lid.`
+- 둘째 항목의 표정 문장: 전신 F1a의 표정 문장(떠보기) 그대로.
+- 셋째 항목: `- Keep it as simple as the second referenced image: the same small number of shapes. Improve the craft: clean construction, good proportions, parts that join properly and hands with fingers that really hold the hatbox. Add only a little detail inside the shapes: a few short lacing lines on the front panel, the lid band of the hatbox, a few short finger lines on the hands. Nothing else is added. No fabric patterns, no curls, no extra wrinkles.`
+- 다섯째 항목: `- Fills: flat solid colors, muted and faded. The hair, the lid band of the hatbox and the shafts of the pins are filled with the same very dark brown as the outlines. The round heads of the pins, the front panel and the hatbox are pale parchment. She wears no hat.`
+- 색: `- Main fills and their shadow tones: faded bottle green 5E7F72 with shadow 4B665B for the bodice and the sleeves, parchment E9D8B4 with shadow D2B98C for the front panel, the pin heads and the hatbox, skin EBC49F.` 둘째 줄은 비토리오와 같다.
+- 판정(계획 044b 판 S5): 042와 같고, 머리 높이는 턱~정수리(틀어 올린 머리 빼고), 위 가장자리 4줄의 불투명 0(핀·틀어 올린 머리가 틀 안), 오르솔라·비토리오·클라라와 나란히.
 
 # 계획 033b의 블록 (그린 질감: 종이·테두리·버튼. 결정 488~493)
 

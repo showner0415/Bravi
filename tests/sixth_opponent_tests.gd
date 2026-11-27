@@ -76,6 +76,7 @@ func list(tree: SceneTree) -> Array:
 		{"id": "T136", "name": "여섯째 상대: 판정 값이 바르톨로와 같다, 기본 셋의 높이, 속임 길의 표(방향·높이·간격·헛손질)와 단·가방, 고유 색 하나, 하루에는 서지 않는다", "fn": t136_sixth_opponent},
 		{"id": "T137", "name": "속임 베기의 판: 속지 않는 손과 속는 손의 빈틈, 타격의 시각, 넷째 고리의 비킴, 같은 씨앗, 봇의 한 판, 실제 베아트리체", "fn": t137_feint_duel},
 		{"id": "T138", "name": "표시와 연습 화면: 빈 고리의 feint 열쇠, 첫 줄·귀띔, 화면 칸의 테두리, 다섯 상대는 그대로, 연습의 둘째 쪽과 막는 법", "fn": t138_marks_and_practice},
+		{"id": "T139", "name": "그림 데이터: 스물한 장과 팔 셋, 모자 없는 꼭대기·머리 가운데의 자·모자 쓴 꼭대기·발끝, 치마 관절과 치마 폭(다섯 가운데 가장 넓다)", "fn": t139_beatrice_art},
 	]
 
 
@@ -729,3 +730,131 @@ func _check_drill_and_help(errs: Array[String], label: String) -> void:
 	var has_beat: bool = _f._help_has(text, DuelHud.HELP_BEAT)
 	if has_sweep or has_dive or has_beat:
 		errs.append("[③ %s] 막는 법에 휩쓸기(%s) · 뛰어들기(%s) · 엇박(%s) 줄이 있다" % [label, has_sweep, has_dive, has_beat])
+
+
+# ================================================================ T139 그림 데이터
+
+const BEA_ART_PATH := "res://data/opponents/beatrice_art.tres"
+const BEA_ART_DIR := "res://assets/art/opponents/beatrice/"
+const BEA_ART_SIZES := {
+	"head": Vector2i(292, 244), "head_oops": Vector2i(291, 245), "head_dizzy": Vector2i(292, 245), "hat": Vector2i(155, 98),
+	"feather": Vector2i(196, 55), "torso": Vector2i(246, 441), "legs": Vector2i(417, 431), "arm": Vector2i(66, 226),
+	"hand": Vector2i(74, 69), "sword": Vector2i(125, 432), "arm_up_sword": Vector2i(158, 552), "arm_up": Vector2i(92, 292),
+	"arm_up_fist": Vector2i(140, 108), "arm_thrust": Vector2i(154, 117), "arm_thrust_fist": Vector2i(154, 238),
+	"arm_thrust_sword": Vector2i(285, 289), "arm_thrust_blade": Vector2i(46, 40), "arm_aim": Vector2i(133, 157),
+	"arm_aim_fist": Vector2i(133, 192), "arm_aim_sword": Vector2i(187, 197), "arm_aim_blade": Vector2i(107, 109),
+}
+## 판 S2의 자(결정 693). 한계 가운데 다른 상대와 견주는 것은 데이터에서 읽는다.
+const BEA_MAX_BARE_TOP := 345.0
+const BEA_MIN_HEAD_MID := 252.0
+const BEA_MAX_HAT_TOP := 355.0
+const BEA_MIN_FOOT := 195.0
+const BEA_MAX_FOOT := 218.0
+## 치마 윗선이 골반 위로 올라와 몸판 뒤에 숨는다.
+const BEA_MIN_SKIRT_JOINT_Y := 12.0
+const BEA_SKIRT_MARGIN := 15.0
+const BEA_MAX_SKIRT_WIDTH := 220.0
+
+
+func t139_beatrice_art() -> String:
+	var errs: Array[String] = []
+	var bartolo := load(BARTOLO_PATH) as OpponentData
+	var bea := load(BEATRICE_PATH) as OpponentData
+	if bea == null or bea.art == null or bartolo == null or bartolo.art == null:
+		return "opponent_06.tres나 그 그림이 없음"
+	var art: OpponentArt = bea.art
+	if art.resource_path != BEA_ART_PATH:
+		errs.append("그림 데이터 %s (기대 %s)" % [art.resource_path, BEA_ART_PATH])
+	if art == bartolo.art:
+		errs.append("바르톨로의 그림을 빌려 쓴다")
+	_bea_check_files(errs, art, bartolo.art)
+	_bea_check_body(errs, art, bartolo.art)
+	var client := "res://assets/art/clients/beatrice.png"
+	if ResourceLoader.exists(client):
+		var tex := load(client) as Texture2D
+		if tex == null or Vector2i(tex.get_size()) != Vector2i(450, 675):
+			errs.append("의뢰인 그림의 크기 %s (기대 450x675)" % (str(Vector2i(tex.get_size())) if tex != null else "읽을 수 없음"))
+	else:
+		print("INFO T139: assets/art/clients/beatrice.png가 아직 없다(위험 R7)")
+	return _ok(errs)
+
+
+func _bea_check_files(errs: Array[String], art: OpponentArt, bartolo_art: OpponentArt) -> void:
+	for part_name: String in Fourth.ART_PARTS:
+		var part := art.get(part_name) as PartArt
+		if part == null or part.texture == null or not part.texture.resource_path.begins_with(BEA_ART_DIR):
+			errs.append("그림 %s: 없거나 베아트리체의 폴더가 아님" % part_name)
+		elif part.units_per_px.x <= 0.0 or part.units_per_px.y <= 0.0:
+			errs.append("그림 %s: units_per_px %s" % [part_name, part.units_per_px])
+	if art.hand != null and art.hand.outline.size() < 6:
+		errs.append("손의 윤곽선이 없음")
+	if art.arm_arts.size() != bartolo_art.arm_arts.size():
+		errs.append("따로 그린 팔 %d개 (바르톨로 %d개)" % [art.arm_arts.size(), bartolo_art.arm_arts.size()])
+	else:
+		for i in art.arm_arts.size():
+			var mine: ArmArt = art.arm_arts[i]
+			var his: ArmArt = bartolo_art.arm_arts[i]
+			if mine.key != his.key or not is_equal_approx(mine.rotation_deg, his.rotation_deg) or mine.layers.size() != his.layers.size():
+				errs.append("팔 %s: 키·회전·층 수가 바르톨로(%s)와 다름" % [mine.key, his.key])
+				continue
+			for k in mine.layers.size():
+				var layer: ArmLayer = mine.layers[k]
+				if layer.part != his.layers[k].part or layer.texture == null or not layer.texture.resource_path.begins_with(BEA_ART_DIR):
+					errs.append("팔 %s 층 %d: part·그림이 어긋남" % [mine.key, k])
+				elif (layer.part == 4) != (layer.outline.size() >= 6):
+					errs.append("팔 %s 층 %d: 주먹의 윤곽선이 없거나 주먹이 아닌데 있음" % [mine.key, k])
+	var keys: Array[StringName] = []
+	for arm_art in art.arm_arts:
+		keys.append(arm_art.key)
+	for want_key: StringName in [&"armUp", &"armThrust", &"armAim"]:
+		if not keys.has(want_key):
+			errs.append("팔 묶음 %s가 없음 (%s)" % [want_key, str(keys)])
+	for file: String in BEA_ART_SIZES:
+		var tex := load(BEA_ART_DIR + file + ".png") as Texture2D
+		if tex == null or Vector2i(tex.get_size()) != BEA_ART_SIZES[file]:
+			errs.append("%s.png의 크기 %s (기대 %s)" % [file, Vector2i(tex.get_size()) if tex != null else Vector2i.ZERO, BEA_ART_SIZES[file]])
+
+
+## 몸의 값(결정 693의 식). 눈의 줄 · 이음매 · 상자는 그림을 봐야 아는 값이라 여기서 재지 않는다(판 S2 · S4).
+func _bea_check_body(errs: Array[String], art: OpponentArt, bartolo_art: OpponentArt) -> void:
+	if art.neck.y < -212.0 or art.neck.y > -198.0:
+		errs.append("neck.y %.1f (기대 -212~-198)" % art.neck.y)
+	if art.legs == null or art.legs.texture == null or art.head == null or art.hat == null:
+		return
+	var serafina := load(SERAFINA_PATH) as OpponentData
+	if serafina == null or serafina.art == null:
+		errs.append("세라피나의 그림이 없음")
+		return
+	var widest: float = 0.0
+	for path: String in [BARTOLO_PATH, BRUNO_PATH, LORENZO_PATH, SERAFINA_PATH, AGOSTINO_PATH]:
+		var other := load(path) as OpponentData
+		if other == null or other.art == null or other.art.legs == null or other.art.legs.texture == null:
+			errs.append("%s의 다리 그림이 없음" % path)
+			continue
+		widest = maxf(widest, float(other.art.legs.texture.get_width()) * other.art.legs.units_per_px.x)
+	var serafina_top: float = _f._bare_top(serafina.art, serafina.art.head)
+	var hat_limit: float = minf(_f._hat_top(bartolo_art), BEA_MAX_HAT_TOP)
+	var hat_top: float = _f._hat_top(art)
+	var foot: float = _f._foot_tip(art)
+	var joint_y: float = art.legs.joint.y * art.legs.units_per_px.y
+	var skirt: float = float(art.legs.texture.get_width()) * art.legs.units_per_px.x
+	print("INFO T139: 모자 쓴 꼭대기 %.1f (바르톨로 %.1f) · 발끝 %.1f · 치마 관절 %.1f · 치마 폭 %.1f (다섯 가운데 가장 넓은 %.1f) · 세라피나 꼭대기 %.1f" % [hat_top, _f._hat_top(bartolo_art), foot, joint_y, skirt, widest, serafina_top])
+	if hat_top > hat_limit + 0.01:
+		errs.append("모자 쓴 꼭대기 %.2f (바르톨로의 값 %.2f와 %.0f 이하여야 한다)" % [hat_top, _f._hat_top(bartolo_art), BEA_MAX_HAT_TOP])
+	for head_part: PartArt in [art.head, art.head_oops, art.head_dizzy]:
+		if head_part == null:
+			errs.append("머리 셋 가운데 빈 것이 있다")
+			continue
+		var top: float = _f._bare_top(art, head_part)
+		var mid: float = top - head_part.joint.y * head_part.units_per_px.y / 2.0
+		print("INFO T139: 모자 없는 꼭대기 %.1f · 머리 가운데 %.1f" % [top, mid])
+		if top >= serafina_top - 0.01 or top > BEA_MAX_BARE_TOP + 0.01:
+			errs.append("모자 없는 꼭대기 %.2f (세라피나 %.2f보다, 그리고 %.0f 이하로 낮아야 한다)" % [top, serafina_top, BEA_MAX_BARE_TOP])
+		if mid < BEA_MIN_HEAD_MID - 0.01:
+			errs.append("머리 가운데의 자 %.2f (%.0f 이상이어야 한다)" % [mid, BEA_MIN_HEAD_MID])
+	if foot < BEA_MIN_FOOT - 0.01 or foot > BEA_MAX_FOOT + 0.01:
+		errs.append("발끝 %.2f (기대 %.0f~%.0f)" % [foot, BEA_MIN_FOOT, BEA_MAX_FOOT])
+	if joint_y < BEA_MIN_SKIRT_JOINT_Y:
+		errs.append("치마 관절의 높이 %.2f (%.0f 이상이어야 윗선이 몸판 뒤에 숨는다)" % [joint_y, BEA_MIN_SKIRT_JOINT_Y])
+	if skirt < widest + BEA_SKIRT_MARGIN - 0.01 or skirt > BEA_MAX_SKIRT_WIDTH + 0.01:
+		errs.append("치마 폭 %.2f (다섯의 가장 넓은 다리 %.2f + %.0f 이상, %.0f 이하여야 한다)" % [skirt, widest, BEA_SKIRT_MARGIN, BEA_MAX_SKIRT_WIDTH])
