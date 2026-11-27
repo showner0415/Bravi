@@ -14,7 +14,8 @@ const SCREEN_MARGIN := 8.0
 const BACKDROP_UP := 42.0
 const BACKDROP_RADIUS := 15.0
 const PLAIN_KEYS := "number,pos,role,time"
-const PATH_KEYS := "dot,points,role"
+const FEINT_KEYS := "feint,number,pos,role,time"
+const PATH_KEYS :="dot,points,role"
 const EM_DASH := 0x2014
 const MIN_LENGTH_GAP := 20.0
 const LONG_BEAT := 1.0
@@ -169,6 +170,7 @@ func _check_plain(errs: Array[String], job: Dictionary) -> void:
 	if marks.is_empty():
 		return
 	_stats["plain_multi"] = int(_stats["plain_multi"]) + 1
+	var strikes: Array[AttackData] = _f._strike_list(solo)
 	for mark in marks:
 		var names: Array[String] = []
 		for key in mark.keys():
@@ -176,6 +178,11 @@ func _check_plain(errs: Array[String], job: Dictionary) -> void:
 		names.sort()
 		var joined := ",".join(names)
 		var want := PATH_KEYS if mark["role"] == &"path" else PLAIN_KEYS
+		# 헛손질인 타격의 고리에만 feint 열쇠가 더 선다(결정 680).
+		if mark["role"] != &"path":
+			var index := int(mark["number"]) - 1
+			if index >= 0 and index < strikes.size() and strikes[index].feint:
+				want = FEINT_KEYS
 		if joined != want:
 			_f._note(errs, "[①] %s: 표시의 키 '%s' (기대 '%s')" % [label, joined, want])
 			return

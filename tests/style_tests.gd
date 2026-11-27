@@ -12,13 +12,14 @@ const BRUNO_PATH := "res://data/opponents/opponent_02.tres"
 const LORENZO_PATH := "res://data/opponents/opponent_03.tres"
 const SERAFINA_PATH := "res://data/opponents/opponent_04.tres"
 const AGOSTINO_PATH := "res://data/opponents/opponent_05.tres"
+const BEATRICE_PATH := "res://data/opponents/opponent_06.tres"
 const FIRST_BLOOD_PATH := "res://data/commissions/first_blood.tres"
 const LEGS_ONLY_PATH := "res://data/commissions/variants/legs_only.tres"
 const USURER_PATH := "res://data/commissions/variants/first_blood_usurer.tres"
 const RULES_PATH := "res://data/duel_rules.tres"
 const WEAPON_PATH := "res://data/weapons/rapier.tres"
 const DUEL_PATH := "res://scenes/duel/duel.tscn"
-const OPPONENT_PATHS: Array[String] = [BARTOLO_PATH, BRUNO_PATH, LORENZO_PATH, SERAFINA_PATH, AGOSTINO_PATH]
+const OPPONENT_PATHS: Array[String] = [BARTOLO_PATH, BRUNO_PATH, LORENZO_PATH, SERAFINA_PATH, AGOSTINO_PATH, BEATRICE_PATH]
 const DELTA := 1.0 / 60.0
 const EPS := 1e-6
 ## 결정 375의 하한과 계획 040의 한 패턴 길이 상한.
@@ -32,9 +33,10 @@ const FROM_DAYS := {
 	LORENZO_PATH: [7, 9, 11, 13, 15],
 	SERAFINA_PATH: [7, 9, 11, 13, 15],
 	AGOSTINO_PATH: [6, 8, 10, 12, 14],
+	BEATRICE_PATH: [7, 9, 11, 13, 15],
 }
 ## 1단의 공격 수(하루의 상대의 목록은 그대로다).
-const FIRST_TIER_SIZES := {BARTOLO_PATH: 5, BRUNO_PATH: 5, LORENZO_PATH: 4, SERAFINA_PATH: 2, AGOSTINO_PATH: 4}
+const FIRST_TIER_SIZES := {BARTOLO_PATH: 5, BRUNO_PATH: 5, LORENZO_PATH: 4, SERAFINA_PATH: 2, AGOSTINO_PATH: 4, BEATRICE_PATH: 4}
 
 var _tree: SceneTree
 
@@ -327,6 +329,7 @@ func _check_route(errs: Array[String], where: String, route: AttackData, gap: fl
 			errs.append("%s: 빈틈 %.2f초 (0이거나 %.2f 이상)" % [where, s.recovery_time, MIN_GAP])
 	if not route.chain.is_empty() and route.needs_raised_guard:
 		errs.append("%s: 패턴의 뿌리가 올려 막기 공격이다" % where)
+	_check_feints(errs, where, route, strikes)
 	if route.sweep:
 		var points: Array[Vector2i] = []
 		for s in strikes:
@@ -342,10 +345,48 @@ func _check_route(errs: Array[String], where: String, route: AttackData, gap: fl
 				errs.append("%s: 휩쓸기의 %d번째 점이 이웃한 한 칸 차가 아니다 (가로 %d · 세로 %d)" % [where, i + 1, dd, dh])
 
 
+## 헛손질의 한계(결정 672 ㄱ~ㄷ). 헛손질이 없는 길에는 아무것도 걸지 않는다.
+func _check_feints(errs: Array[String], where: String, route: AttackData, strikes: Array[AttackData]) -> void:
+	var feints := 0
+	for s in strikes:
+		if s.feint:
+			feints += 1
+	if feints == 0:
+		return
+	if route.sweep or route.dive or route.needs_raised_guard:
+		errs.append("%s: 휩쓸기 · 뛰어들기 · 올려 막기 길에 헛손질이 있다" % where)
+	if strikes.size() < 2:
+		errs.append("%s: 걸음이 없는 길에 헛손질이 있다" % where)
+	if strikes[strikes.size() - 1].feint:
+		errs.append("%s: 길의 마지막 타격이 헛손질이다" % where)
+	if feints >= strikes.size():
+		errs.append("%s: 진짜 타격이 없다" % where)
+	if feints > 2:
+		errs.append("%s: 헛손질 %d개 (상한 2)" % [where, feints])
+	for i in strikes.size():
+		if not strikes[i].feint:
+			continue
+		var real: AttackData = null
+		for j in range(i + 1, strikes.size()):
+			if not strikes[j].feint:
+				real = strikes[j]
+				break
+		if real == null:
+			continue
+		if real.direction != strikes[i].direction:
+			continue
+		var overlap := strikes[i].heights.is_empty() or real.heights.is_empty()
+		for h in strikes[i].heights:
+			if real.heights.has(h):
+				overlap = true
+		if overlap:
+			errs.append("%s: %d번째 헛손질과 그다음 진짜 타격의 칸이 겹친다" % [where, i + 1])
+
+
 ## 공격의 모든 값(걸음과 변주까지). 한 단이 기본과 고유 가운데 어느 쪽을 바꿨는지 가를 때 쓴다.
 func _sig_text(atk: AttackData) -> String:
-	var text := "%s|%d|%.3f|%.3f|%.3f|%s|%s|%s|%s|%s|%s|%s" % [atk.attack_name, atk.direction, atk.tell_time, atk.recovery_time,
-		atk.weight, atk.is_big, atk.needs_raised_guard, atk.sweep, atk.dive, atk.signature, str(atk.heights), str(atk.pose_color)]
+	var text := "%s|%d|%.3f|%.3f|%.3f|%s|%s|%s|%s|%s|%s|%s|%s" % [atk.attack_name, atk.direction, atk.tell_time, atk.recovery_time,
+		atk.weight, atk.is_big, atk.needs_raised_guard, atk.sweep, atk.dive, atk.signature, str(atk.heights), str(atk.pose_color), atk.feint]
 	for c in atk.chain:
 		text += "/" + _sig_text(c as AttackData)
 	text += "~"
@@ -463,8 +504,12 @@ func _near_any(c: Color, colors: Array[Color]) -> bool:
 func _row(route: AttackData) -> String:
 	var text := "%s d%d t%.2f r%.2f b%d h%s" % [route.attack_name, route.direction, route.tell_time, route.recovery_time,
 		1 if route.is_big else 0, str(route.heights)]
+	if route.feint:
+		text += " f"
 	for s: AttackData in route.chain:
 		text += " > d%d t%.2f h%s" % [s.direction, s.tell_time, str(s.heights)]
+		if s.feint:
+			text += " f"
 	return text
 
 
@@ -507,6 +552,11 @@ func _expected_rows(path: String) -> Array[String]:
 			return [
 				"엇박 찌르기 d1 t0.90 r0.55 b0 h[1] > d1 t0.60 h[1] > d1 t1.30 h[1]",
 				"엇박 찌르기 d1 t0.90 r0.55 b0 h[1] > d1 t1.30 h[1] > d1 t0.60 h[1]",
+			]
+		BEATRICE_PATH:
+			return [
+				"속임 베기 d0 t0.90 r1.20 b0 h[0] f > d2 t0.65 h[1, 2]",
+				"속임 베기 d0 t0.90 r1.20 b0 h[0] f > d0 t0.65 h[2]",
 			]
 	return []
 

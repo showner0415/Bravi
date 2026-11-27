@@ -396,8 +396,6 @@ static func tell_texts(core: DuelCore, dive_from_close: bool) -> PackedStringArr
 	# 데이터의 세는 말은 귀띔의 맨 앞이고 패턴 내내 같은 글이다(결정 633).
 	if brain.pattern_root != null and brain.pattern_root.tell_hint != "":
 		hints.append(brain.pattern_root.tell_hint)
-	if brain.feint_bitten:
-		hints.append("속았다")
 	if brain.is_sweep():
 		hints.append("쥐고 끌어라")
 	if atk.dive:
