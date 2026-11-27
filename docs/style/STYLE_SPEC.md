@@ -72,6 +72,7 @@
   | 집중 | 곧은 막대 | 한 눈 감음 | 곧은 선 |
   | 언짢음 | 안쪽이 내려옴 | 점 | 아래로 굽은 짧은 선 |
   | 근심 | 안쪽이 들림 | 점 | 작은 곧은 선 |
+  | 깐깐함 | 곧은 막대 둘, 한쪽만 조금 높음 | 코안경 안의 점 | 곧은 짧은 선 |
 
 - 홍조, 땀방울, 눈물, 눈 하이라이트, 속눈썹, 입술 색, 볼의 빗금은 없다.
 
@@ -120,6 +121,7 @@
 | `--or-bodice` / `-sh` | `#8A5A6E` / `#6F4859` | S35 V54 / S35 V44 | 0.40 / 0.32 | 오르솔라 윗옷(계획 034) |
 | `--or-shawl-sh` | `#B89E74` | S37 V72 | 0.63 | 오르솔라 숄 그림자(숄은 `#D2B98C`, 계획 034) |
 | `--to-shirt` / `-sh` | `#B8A88A` / `#9C8D71` | S25 V72 / S28 V61 | 0.66 / 0.56 | 토마소 셔츠(계획 034) |
+| `--se-gown` / `-sh` | `#8E6E80` / `#765A6A` | S23 V56 / S24 V46 | 0.46 / 0.38 | 세라피나 긴 옷·소매(계획 041) |
 | `--st-shade` | `#3A3027` | S33 V23 | 0.19 | 무대 가운데 그늘 |
 | `--st-sky` | `#3E4A55` | S27 V33 | 0.28 | 밤하늘 |
 | `--st-ground` | `#4E4336` | S31 V31 | 0.27 | 땅 |
@@ -228,11 +230,11 @@
 |---|---|---|---|
 | 본문 | **나눔스퀘어라운드** | **ExtraBold(800) 하나**. 긴 글·흐린 글자·버튼·HUD 모두 같다(사용자 답 "이대로 — 전부 ExtraBold") | 사연 대사, 조건, 장부의 줄, 버튼, HUD의 라벨 |
 | 제목 | **송명** | 400(굵기가 하나다) | 가게 이름, 화면 머리 줄, 큰 수(충족도·손익), 주 버튼 |
-| 결투의 상태 글자 | **Noto Sans KR** | 900 | 상대 머리 위의 한두 줄, 가운데의 엉킴 경고 |
+| 결투의 상태 글자 | **Noto Sans KR** | 900 | 상대 머리 위의 한 줄과 그 첫 줄 오른쪽 곁의 귀띔(`StateHint`), 가운데의 엉킴 경고 |
 
 - HUD의 글자는 본문 글꼴이다(사용자 답 "상태 글자만 고딕". 본문이 둥근 고딕이라 HUD도 고딕 계열이 되었다).
 - 흐린 글자는 굵기가 아니라 색(`#6B5440`)으로 낸다. 강조는 색(붉은 글자)과 크기, 제목 글꼴로 낸다.
-- **상태 글자**: 28, 흰 글자, 검은 테두리 8(지금 게임의 `StateLabel`). 상자는 폭 414(조용한 구역 x 433~847), 윗선 y 62(`STATE_LABEL_Y`), 아래 끝 y 142(G4). Noto Sans KR 900으로 잰 값: 가장 넓은 줄(`막기를 뗐다 다시 올려라`) 285, 두 줄의 아래 끝 79(윗선에서. 80 안), 자연 줄 높이 40.
+- **상태 글자**: 28, 흰 글자, 검은 테두리 8(지금 게임의 `StateLabel`). **한 줄만 쓴다**(계획 041b 결정 624~626): 상자는 폭 414(조용한 구역 x 433~847), 윗선 y 62(`STATE_LABEL_Y`), 한 줄의 높이 42. 둘째 줄이던 귀띔은 따로 선 글 `StateHint`다 — 글자 28 · 흰색 · 테두리 8 · z 9, 첫 줄과 같은 높이에서 첫 줄의 글 끝 + 틈 24에 왼쪽을 맞춘다(조용한 구역 x 433~847 밖, 예비 동작 밖에서는 숨는다). 재기의 상자 아래 끝 y 142(G4·R4)는 그대로 둔다. Noto Sans KR 900으로 잰 값: 가장 넓은 줄(`막기를 뗐다 다시 올려라`) 285, 두 줄의 아래 끝 79(윗선에서. 80 안 — 옛 두 줄 꼴의 값), 자연 줄 높이 40.
 - **가장 작은 글자**: 14. 나눔스퀘어라운드 ExtraBold는 12에서도 세로 획 0.96·가로 획 1.00으로 문턱(0.70·0.50)을 넘는다.
 
 ### 후보의 표 (모두 SIL Open Font License 1.1. 로컬 `generated/fonts/<키>/`에만 두었다)
@@ -1102,6 +1104,59 @@ Colors: The wall parchment E9D8B4 with a slightly darker parchment D2B98C, the h
 
 - 소매의 색: `Every sleeve is the doublet sleeve of this character, filled with muted olive green 6F7F4F with shadow 59663F, the same as the arm in the first referenced image.`
 - 칼자루를 가로지르는 손가락: `On all three fists, the four fingers wrap around the grip: draw them as four short rounded finger bands lying side by side across the grip, stacked one above the other, with a thin line between the fingers; the thumb lies along the grip.`
+
+# 계획 041의 줄 (상대 넷째 세라피나. 결정 618~621)
+
+영어, ASCII만, 큰따옴표 없이(결정 187). 판 S0(그림 생성 없음, 견본 `samples/041-fourth-opponent.html`)에서 몸의 값을 굳혔다: 목의 자리 −212, 머리 그림(목~머리털 꼭대기) 139, 모자 없는 꼭대기 351, 모자 쓴 꼭대기 354, 발끝 216, 기둥의 폭 76 + 선(바르톨로 허리 줄의 0.64, 로렌초의 0.79). 넣는 그림은 그 견본에서 구운 `generated/in/041-in-front.png`(전신, 모자 없이)·`041-in-parts.png`(파츠 배치)와, 030c의 팔 안내도에서 소매 폭만 0.72배로 줄인 `generated/in/041-in-arms.png`다(037 결정 440의 길. 소매 폭이 바르톨로의 0.85보다 가늘다).
+
+세 상대와 다른 것 셋:
+
+- **다리의 줄 넷을 그녀의 것으로 바꾼다**(계획 041 메인의 결정 M-5): 본보기 블록의 다리 말(P-FIG 둘째·셋째 항목, P-PARTS의 4번·8번)이 한 기둥의 긴 옷과 부딪힌다. 아래 "다리의 줄"이라고 적은 넷이다. 세라피나의 프롬프트에는 `breeches` · `feet apart` · `both legs`가 없어야 한다.
+- **전신은 모자를 쓰지 않는다**: 모자는 모자를 노리는 의뢰가 씌울 때만 있다. 전신의 `Subject:`와 색 줄에 모자가 없고 P-FIG 여섯째 항목(깃털)을 뺀다. 모자와 깃털은 파츠 시트에서만 그린다(낮고 납작한 둥근 모자 — 교전 꼭대기 ≥ 142가 되게 머리 꼭대기를 덮어 쓰고 머리털 위로 10 안쪽만 솟는다).
+- **여자다**: 블록의 `He` · `His` · `man`은 그 줄을 옮길 때 `She` · `Her` · `woman`으로만 바꾼다(아래에 그 줄을 다 적었다). 화풍 블록의 "큰 머리" 문장은 고치지 않는다 — 키는 긴 목·긴 옷·목의 자리로 낸다.
+
+## 세라피나 전신 F1a (바이블 13.3 "새 사람의 전신(상대)")
+
+차례는 브루노 F1a와 같다(계획 035의 줄). P-FIG의 첫째·일곱째 항목과 S-FIG2의 첫째·넷째·여섯째·일곱째 항목, 색 블록의 둘째 줄, 지시 블록·`Image:`·`Background:`는 그대로이고 아래 줄만 바꾼다.
+
+- Subject: `Subject: Serafina, the senior duelist and bookkeeper of a rival dueling agency in a Renaissance-era Italian town. A very tall and very thin woman of about fifty, narrow-shouldered, with a long neck. Dark hair parted in the middle and pulled back tight and smooth. Small round spectacles. A long, narrow, straight gown that falls to the ankles as one single column, with long narrow sleeves, a stiff high standing collar and plain cuffs, a thin cord belt, simple shoes. She holds a rapier.`
+- P-FIG 둘째 항목(자세. 다리의 줄 1): `- Front view or a very slight turn. She stands at ease but ready for a duel: a relaxed, confident fencer's stance, upright and still, weight balanced. Calm and unhurried.`
+- P-FIG 셋째 항목(팔다리. 다리의 줄 2): `- Her arms are simple and straight, like in the reference image, with no bend at the elbow: each arm is one simple straight rounded shape. Her legs are hidden: from the waist down the gown is one single straight column with rounded corners, and only the two shoe tips show under the hem.`
+- P-FIG 넷째 항목(칼 팔. `His`를 `Her`로만): `- Her sword arm is on the viewer's left. The arm is short and straight, held out a little from the body at a slant, with the hand at waist height. The hand grips the rapier at the ready, with the blade pointing up and leaning outward, away from the body, so the blade crosses neither the body nor the head.`
+- P-FIG 다섯째 항목(등 뒤의 손 대신 장부): `- Her other arm clamps one thick closed account book against her side, on the viewer's right. The book sticks out past the outline of the body.`
+- P-FIG 여섯째 항목(깃털): 뺀다.
+- S-FIG2 둘째 항목 끝(표정 깐깐함 — "얼굴과 비례" 표의 곧은 막대 둘, 한쪽만 조금 높음 · 코안경 안의 점 · 곧은 짧은 선): `Her eyebrows are two short straight bars, and the one on the viewer's right sits a little higher than the other. Her eyes are two small solid dots, each inside a small round spectacle lens drawn as a thin line circle. Her mouth is a short straight line. Her character shows in the expression: strict, exacting and unimpressed.`
+- 셋째 항목: `- Keep it as simple as the reference image: the same small number of shapes and the same few inner lines. Do not add details that the reference does not have. A plain stiff standing collar that reaches the chin. A plain narrow gown with straight edges, no folds and no visible legs. A thin plain cord belt. Plain cuffs. Plain simple shoes, only the tips show under the hem. One thick closed book with a plain cover. Small round spectacles without a chain. A simple fist with a few short finger lines. No extra seams, folds or wrinkles. Improve only the craft: clean construction, good proportions, parts that join properly and a hand that clearly holds the sword.`
+- 다섯째 항목: `- Fills: flat solid colors, muted and faded. The hair, the eyebrows, the cord belt, the shoes and the cover of the book are filled with the same very dark brown as the outlines. She wears no hat.`
+- 색: `- Main fills and their shadow tones: dusty greyish plum 8E6E80 with shadow 765A6A for the gown and the sleeves, parchment E9D8B4 with shadow D2B98C for the collar, the cuffs and the page edges of the book, skin EBC49F, pale warm grey CFC8BA for the blade and guard.` 둘째 줄은 C-FIG2 그대로.
+- 큰 면의 기준(바이블 8절): 긴 옷 `#8E6E80` Y 0.46 · 그림자 `#765A6A` 0.38(칠 ≥ 0.42, 그림자 ≥ 0.30), S 23%. 색조 326° — 올린 전신에서 잰 세 상대의 큰 면 여섯과 색조 차 63°~122°(판 S0의 ①).
+
+## 세라피나 파츠 시트 P1a (바이블 13.3 "파츠 시트")
+
+본보기와 차례는 브루노 P1a와 같다. 넣는 그림 둘: 판 S1에서 올린 그녀의 전신(사람), `generated/in/041-in-parts.png`(배치). 팔의 길이 말은 본보기 그대로 둔다(시트의 팔은 틀보다 길게 나오는 버릇이 있다 — 긴 팔은 그 버릇에 맡기고 넘치면 값 파일의 배율로 줄인다). 바꾸는 줄:
+
+- Subject: `Subject: Serafina, the senior duelist and bookkeeper of a rival dueling agency in a Renaissance-era Italian town, the same character as in the first referenced image. A very tall and very thin woman of about fifty, narrow-shouldered, with a long neck. Dark hair parted in the middle and pulled back tight and smooth. Small round spectacles. A long, narrow, straight gown that falls to the ankles as one single column, with long narrow sleeves, a stiff high standing collar and plain cuffs, a thin cord belt, simple shoes, a low flat round cap with one small feather lying sideways. A rapier.`
+- P-PARTS 첫째 항목(`the same man`을 `the same woman`으로만): `- The first referenced image is our own drawing of this character and it is the character reference: draw exactly the same woman, with the same drawing style, the same shapes, the same face, the same clothes, the same colors and the same line weight.`
+- **이음선의 자리**(F1a를 잰 뒤에 더했다, 2026-11-27): 전신 F1a는 허리끈을 스케치보다 약 14단위 높게 그렸다(전체 키는 같다). 허리끈은 몸통 파츠와 옷 기둥의 이음선이라, 시트가 전신을 따르면 옷 기둥이 길어져 발끝(식)이 221을 넘는다. 그래서 4번에 "허리끈이 이 조각의 맨 아래 가장자리다"를, 8번에 "이 조각은 몸통 조각의 어깨~허리끈보다 길지 않다"를 넣었다(배치도 `041-in-parts`의 비례: 몸통의 어깨~허리끈 210, 옷 기둥 213). 그래도 길게 나오면 값 파일의 다리 세로 배율로 맞춘다.
+- 파츠 1: `  1. the head three times, without the cap, each with a short neck stub and with the top of the hair drawn complete. The three heads are the same size;`
+- 파츠 2: `  2. the cap alone, without the feather;`
+- 파츠 4(다리의 줄 3): `  4. the torso alone, without the sword arm, the lower gown or the head: the upper gown with its cord belt and standing collar, with the shoulders and the base of the neck drawn complete, and with her other arm clamping the closed account book against her side on the viewer's right. The book is part of this piece. The cord belt is the very bottom edge of this piece. No arm is attached on the viewer's left;`
+- 파츠 5: `  5. the sword arm alone, from the shoulder to the wrist, as one straight narrow gown sleeve with a rounded top and the cuff at the lower end. It hangs straight down and it is short, as in the layout sketch: no longer than the torso from the shoulder to the belt;`
+- 파츠 8(다리의 줄 4): `  8. the lower gown alone, from the waist down: one single straight column of cloth with rounded corners, with two shoe tips under the hem. No separate legs. This piece starts right under the cord belt and it is no taller than the torso piece is from the shoulders to the cord belt, as in the layout sketch.`
+- 머리 셋 문장(S-PARTS 둘째 항목의 끝): `The first head is strict and exacting, exactly the face of the first referenced image: two short straight eyebrow bars, the one on the viewer's right a little higher, eyes drawn as two small solid dots inside small round spectacle lenses, and a short straight line for a mouth. The second head is flustered and caught off guard: eyebrows raised high, eyes drawn as small dark dots inside the round spectacle lenses, which are filled with a plain light parchment color, and a small oval mouth. The third head is dizzy and dazed: crooked eyebrows, eyes drawn as two small X marks, the spectacles knocked crooked, and a wavy line for a mouth. The three heads are clearly the same woman.`
+- 셋째 항목: `- Keep exactly the amount of detail of the first referenced image: the same stiff standing collar, the straight edges of the gown, the thin cord belt, the plain cuffs, the closed book with its plain cover, the small round spectacles and the fingers on the fist. The cap is a low flat round cap, dark brown 5E4C39 with shadow 4A3F34, with one small parchment feather lying sideways. Nothing else is added. No puffy sleeves, no folds on the gown, no curls, no extra wrinkles.`
+- 다섯째 항목: `- Fills: flat solid colors, muted and faded. The hair, the eyebrows, the cord belt, the shoes and the cover of the book are filled with the same very dark brown as the outlines.`
+- 색: `- Main fills and their shadow tones: dusty greyish plum 8E6E80 with shadow 765A6A for the gown and the sleeves, parchment E9D8B4 with shadow D2B98C for the collar, the cuffs, the page edges of the book and the feather, skin EBC49F, dark brown 5E4C39 with shadow 4A3F34 for the cap, pale warm grey CFC8BA for the blade and guard.` 둘째 줄은 C-FIG2 그대로.
+
+## 세라피나 팔 시트 A1a (바이블 13.3 "팔 시트", 본보기 `030c-A2a`)
+
+본보기의 줄 그대로이고 `Subject:`의 이름과 색 블록의 첫 줄(파츠 시트 P1a의 색 줄)만 바꾼다. 넣는 그림 둘: 판 S2에서 올린 그녀의 파츠 시트(사람), `generated/in/041-in-arms.png`(자세 안내도 — 030c의 안내도에서 세 팔의 소매와 소매 끝만 축을 따라 0.72배로 좁혔다. 주먹·날밑·칼날은 그대로다). 037처럼 둘을 첫 프롬프트에 미리 넣는다(결정 440):
+
+- Subject: `Subject: Serafina, the same character as in the first referenced image. Only her sword arm, her sword hand and her rapier, in a few different poses.`
+- 소매의 색(줄 전체): `- Every sleeve is the narrow gown sleeve of this character, filled with dusty greyish plum 8E6E80 with shadow 765A6A, the same as the arm in the first referenced image. The cuff at the end of every sleeve is parchment colored, as in the first image.`
+- 칼자루를 가로지르는 손가락(줄 전체. 037의 프롬프트가 쓴 꼴 그대로 — 끝의 주먹 크기 문장까지): `- On all three fists, the four fingers wrap around the grip: draw them as four short rounded finger bands lying side by side across the grip, stacked one above the other, with a thin line between the fingers; the thumb lies along the grip. Every fist is one compact closed fist of the same size as the fist in the first image, with the shadow on its right side.`
+- 나머지 줄(`- Part 1:`~`- Part 3:`, 화풍 블록, 바탕)은 `prompts/037-A1a-lorenzo-arms.txt`와 글자까지 같다(본보기 `030c-A2a`의 줄). 넣는 그림의 차례: 파츠 시트가 첫째, 안내도가 둘째.
+- 판정의 기준 둘은 그녀의 것이다(메인이 대신 고른 임시 기준, 계획 041 판 S3): 소매 폭(A-4)은 자기 파츠 시트의 팔 폭의 0.85~1.15, 주먹은 바르톨로 주먹 폭의 0.85~1.15(칼자루·날밑과 맞아야 한다).
 
 # 계획 033b의 블록 (그린 질감: 종이·테두리·버튼. 결정 488~493)
 

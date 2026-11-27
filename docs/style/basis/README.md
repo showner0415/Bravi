@@ -32,6 +32,9 @@
 | `ui-frame.png` | UI 장식 테두리(바깥 선·안쪽 선·모서리 마름모). 계획 033b | 1536×1024 | `prompts/033b-FR1a-ui-frame.txt` | `in/033b-in-frame` | 판 U1 "쓴다" — 손질본 `assets/ui/panel_frame.png`(`-OnPaper`)와 작은 판용 `panel_frame_plain.png`(`-Plain`) |
 | `ui-button.png` | UI 제비꼬리 버튼 띠. 계획 033b | 1536×1024 | `prompts/033b-BT1a-ui-button.txt` | `in/033b-in-button` | 판 U2-4 "쓴다 — 다" — 손질본 `assets/ui/button.png`(`-Mean 0.697`) |
 | `lorenzo-arms.png` | 로렌초의 따로 그린 칼 팔 셋(큰 베기의 든 팔, 찌르기의 펜싱 런지, 대기의 펜싱 겨누기) | 1536×1024 | `prompts/037-A1a-lorenzo-arms.txt` | `lorenzo-parts`, `in/030c-in-arms` | `01a212e0-f578-7783-ba9b-e15bf2c62fdd` | 2026-11-25 판 Y3 "맞다" |
+| `serafina-front.png` | 결투 상대 넷째 세라피나 전신(아주 크고 가는 여자, 한 기둥의 긴 옷, 선 깃, 코안경, 옆구리의 장부, 깐깐함. 모자 없이). 계획 041 | 1024×1536 | `prompts/041-F1a-serafina-front.txt` | `in/041-in-front`(그 사람의 섞은 SVG 스케치, 견본 `samples/041-fourth-opponent.html`) | `01a21a74-54cf-7982-810f-56dada0457e8` | 2026-11-27 판 S1 "맞다" — 메인이 대신 판정(사용자 위임 2026-11-27) — 판 G-1에서 사용자가 본다. 허리끈이 스케치보다 약 14단위 높게 그려졌다(전신은 자르지 않는다) |
+| `serafina-parts.png` | 세라피나 파츠 시트(머리 셋, 모자, 깃털, 장부와 낀 팔이 붙은 몸통, 팔, 주먹, 칼, 허리 아래의 옷 한 기둥) | 1536×1024 | `prompts/041-P1a-serafina-parts.txt` | `serafina-front`(사람), `in/041-in-parts`(배치) | `01a21a7d-665d-79e3-9038-c04e9ae9c0c0` | 2026-11-27 판 S2 "맞다" — 메인이 대신 판정(사용자 위임 2026-11-27) — 판 G-1에서 사용자가 본다 |
+| `serafina-arms.png` | 세라피나의 따로 그린 칼 팔 셋(큰 베기의 든 팔, 찌르기의 펜싱 런지, 대기의 펜싱 겨누기). 가는 자두색 소매 | 1536×1024 | `prompts/041-A1a-serafina-arms.txt` | `serafina-parts`, `in/041-in-arms`(030c 안내도에서 소매 폭만 0.72배) | `01a21a8c-51b8-7032-bc3a-23cc71e5a720` | 2026-11-27 판 S3 "맞다" — 메인이 대신 판정(사용자 위임 2026-11-27) — 판 G-1에서 사용자가 본다 |
 
 ## 손질 값 (견본 `samples/024-widen.html`에서 쓴 것)
 
@@ -110,3 +113,9 @@
 - **`lorenzo-parts`** → `assets/art/opponents/lorenzo/` 열 장(`docs/style/tools/cutparts.ps1 -Layout docs/style/tools/cutparts-lorenzo.psd1`): k 0.6061. 머리 셋·몸통·다리·칼은 배율 1, 팔 0.8, 손 0.84, 모자·깃털 0.85.
 - **관절 자리**(`data/opponents/lorenzo_art.tres`): `shoulder` (−51.7, −180) = 바르톨로 −65 × 몸통 폭의 비. `hat_at` (0, −108) — 머리 배율 1.0이라 머리털 꼭대기가 기본 자리(−104)의 모자 꼭대기보다 약 4단위 높아 4만큼 올렸다. `neck`·`hand_at`은 기본값, `sword_at` (0, 19)은 바르톨로와 같다.
 - **`lorenzo-arms`** → 열하나(`docs/style/tools/cutarms.ps1 -Sheet docs/style/basis/lorenzo-arms.png -Layout docs/style/tools/cutarms-lorenzo.psd1`): `K` 0.418로 덮었다(주먹이 소매에 비해 크게 그려져 어느 K로도 둘이 1.00이 되지 않아 둘 다 0.85~1.15 안에 두는 값).
+
+## 손질 값 (계획 041, 세라피나)
+
+- **`serafina-parts`** → `assets/art/opponents/serafina/` 열 장(`docs/style/tools/cutparts.ps1 -Layout docs/style/tools/cutparts-serafina.psd1`): k 0.5723(= 215.2 ÷ (몸통 아랫선 894 − 어깨 윗선 519 + 1). 목의 자리가 −212라 어깨 윗선~몸통 아랫선이 215.2단위다). 머리 셋·몸통·팔·손·칼은 배율 1, 모자·깃털 0.88(모자가 41.8단위로 높게 그려졌다), 다리(허리 아래의 옷 한 기둥)는 가로 1.057 · 세로 1(옷 기둥 140화소를 몸통 기둥 148화소와 같은 84.7단위로 — 허리끈에서 이어진다). 발끝(식) 219.8 — 넘치면 다리의 세로 배율만 내린다.
+- **관절 자리**(`data/opponents/serafina_art.tres`): `neck` (0, −212) — 기본값과 다르게 쓰는 첫 상대(긴 몸통). 머리의 관절은 턱(시트 y 304) 아래 18단위(긴 목 — 머리 조각의 깃 밑동 안). `hat_at` (0, −113) — 낮은 모자를 이마 위까지 눌러써 모자 쓴 꼭대기(식) 355.7(교전 꼭대기 y 144.0). `shoulder` (−36.2, −192) = 바르톨로 −65 × 몸통 폭의 비(84.7 ÷ 152), y는 목보다 20 아래. `hand_at` (0, 116) — 긴 팔(어깨 관절~소매 끝 116). `sword_at` (0, 19)는 바르톨로와 같다.
+- **`serafina-arms`** → 열하나(`docs/style/tools/cutarms.ps1 -Sheet docs/style/basis/serafina-arms.png -Layout docs/style/tools/cutarms-serafina.psd1 -Out assets/art/opponents/serafina` — `-Out`을 빼면 바르톨로의 폴더에 쓴다): `K` 0.42. 든 팔의 소매 72화소 = 자기 파츠 팔의 1.00, 주먹 103화소 = 바르톨로 주먹의 1.02, 선 3.8단위(자를 넓히지 않았다. 셋이 함께 넘는 K 0.400~0.473). 나를 향한 두 팔의 소매는 굵게 그려졌다(1.25 · 1.19). 3번 팔은 칼날이 엄지 옆에서 날밑을 떠나 `BladeLine`으로 주먹 조각과 가른다.

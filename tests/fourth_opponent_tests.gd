@@ -1,6 +1,6 @@
 extends RefCounted
 ## T120~T122: 넷째 상대 세라피나(계획 041). 데이터의 틀과 층층 찌르기의 길(결정 609~614), 판에서 도는 모습, 고리가 제 칸에 드는 불변(결정 615).
-## T123(그림 데이터)은 2부의 몫이다. 층층의 길·가방·가중치의 기대는 결정 613·614의 표를 손으로 적은 것이다(결정 622의 고침이 함께 옮긴다).
+## T123은 세라피나의 그림 데이터(2부, 결정 619). 층층의 길·가방·가중치의 기대는 결정 613·614의 표를 손으로 적은 것이다(결정 622의 고침이 함께 옮긴다).
 
 const Plain := preload("res://tests/plain_opponent.gd")
 const Bot := preload("res://tests/duel_bots.gd")
@@ -11,7 +11,22 @@ const Session := preload("res://scripts/game_session.gd")
 const BARTOLO_PATH := "res://data/opponents/opponent_01.tres"
 const LORENZO_PATH := "res://data/opponents/opponent_03.tres"
 const SERAFINA_PATH := "res://data/opponents/opponent_04.tres"
+const BRUNO_PATH := "res://data/opponents/opponent_02.tres"
 const STAIR_THRUST_PATH := "res://data/attacks/stair_thrust.tres"
+const SERAFINA_ART_PATH := "res://data/opponents/serafina_art.tres"
+const SERAFINA_ART_DIR := "res://assets/art/opponents/serafina/"
+const ART_PARTS := ["legs", "torso", "head", "head_oops", "head_dizzy", "hat", "feather", "arm", "hand", "sword"]
+## 자른 그림의 크기(2부 작업의 출력).
+const ART_SIZES := {
+	"head": Vector2i(189, 254), "head_oops": Vector2i(189, 254), "head_dizzy": Vector2i(189, 254), "hat": Vector2i(224, 79),
+	"feather": Vector2i(160, 55), "torso": Vector2i(224, 455), "legs": Vector2i(146, 402), "arm": Vector2i(59, 238),
+	"hand": Vector2i(74, 66), "sword": Vector2i(119, 403), "arm_up_sword": Vector2i(150, 552), "arm_up": Vector2i(84, 288),
+	"arm_up_fist": Vector2i(109, 116), "arm_thrust": Vector2i(153, 123), "arm_thrust_fist": Vector2i(153, 238),
+	"arm_thrust_sword": Vector2i(277, 297), "arm_thrust_blade": Vector2i(75, 59), "arm_aim": Vector2i(123, 167),
+	"arm_aim_fist": Vector2i(123, 169), "arm_aim_sword": Vector2i(183, 203), "arm_aim_blade": Vector2i(106, 101),
+}
+## 밀착의 발끝 y = 476.4 + 1.1 × 발끝이 화면(720)을 넘지 않는 한계.
+const MAX_FOOT := (720.0 - 476.4) / 1.1
 const COMMISSION_DIR := "res://data/commissions"
 const RULES_PATH := "res://data/duel_rules.tres"
 const WEAPON_PATH := "res://data/weapons/rapier.tres"
@@ -44,6 +59,7 @@ func list(tree: SceneTree) -> Array:
 		{"id": "T120", "name": "넷째 상대: 판정 값이 바르톨로와 같다, 기본은 가운데 찌르기뿐, 층층 찌르기의 길·가방, 하루에는 서지 않는다", "fn": t120_fourth_opponent},
 		{"id": "T121", "name": "층층의 판: 높이를 따라 막으면 빈틈이 열리고 틀리면 한 번만 맞는다, 새 길과 옆 베기, 같은 씨앗, 봇의 한 판", "fn": t121_stair_duel},
 		{"id": "T122", "name": "고리의 자리와 연습 화면: 모든 길의 번호 고리가 교전·밀착에서 제 칸 안에 들고, 세라피나의 칸이 선다", "fn": t122_rings_and_practice},
+		{"id": "T123", "name": "세라피나의 그림 데이터: 스물한 장과 팔 셋, 몸의 높이(모자 쓴 꼭대기는 바르톨로 이하, 가장 키 큰 상대)·발끝·가는 몸통", "fn": t123_serafina_art},
 	]
 
 
@@ -799,3 +815,115 @@ func _check_drill_and_help(errs: Array[String], label: String) -> void:
 		errs.append("[연습 %s] 막는 법에 이어 치기 줄(%s)이나 높이 줄(%s)이 없다" % [label, _help_has(text, DuelHud.HELP_CHAIN), _help_has(text, DuelHud.HELP_HEIGHT)])
 	if _help_has(text, DuelHud.HELP_SWEEP) or _help_has(text, DuelHud.HELP_DIVE):
 		errs.append("[연습 %s] 막는 법에 휩쓸기(%s)나 뛰어들기(%s) 줄이 있다" % [label, _help_has(text, DuelHud.HELP_SWEEP), _help_has(text, DuelHud.HELP_DIVE)])
+
+
+# ================================================================ T123 그림 데이터
+
+## 뷰의 노드 사슬 그대로의 식(몸통 원점 기준): 머리의 원점은 neck, 모자의 원점은 머리 원점에서 hat_at이다.
+func _bare_top(art: OpponentArt, head: PartArt) -> float:
+	return -art.neck.y + head.joint.y * head.units_per_px.y
+
+
+func _hat_top(art: OpponentArt) -> float:
+	return -art.neck.y - art.hat_at.y + art.hat.joint.y * art.hat.units_per_px.y
+
+
+## 다리 그림의 높이는 가로·세로 배율이 다를 수 있어 .y만 쓴다.
+func _foot_tip(art: OpponentArt) -> float:
+	return (float(art.legs.texture.get_height()) - art.legs.joint.y) * art.legs.units_per_px.y
+
+
+func _torso_width(art: OpponentArt) -> float:
+	return float(art.torso.texture.get_width()) * art.torso.units_per_px.x
+
+
+func t123_serafina_art() -> String:
+	var errs: Array[String] = []
+	var bartolo := load(BARTOLO_PATH) as OpponentData
+	var serafina := load(SERAFINA_PATH) as OpponentData
+	if serafina == null or serafina.art == null or bartolo == null or bartolo.art == null:
+		return "opponent_04.tres나 그 그림이 없음"
+	var art := serafina.art
+	if art.resource_path != SERAFINA_ART_PATH:
+		errs.append("그림 데이터 %s (기대 %s)" % [art.resource_path, SERAFINA_ART_PATH])
+	if art == bartolo.art:
+		errs.append("바르톨로의 그림을 빌려 쓴다")
+	_art_files(errs, art, bartolo.art)
+	_art_body(errs, art, bartolo.art)
+	return _ok(errs)
+
+
+## 파츠 열 장과 팔 셋의 층, 윤곽선, 스물한 장의 크기.
+func _art_files(errs: Array[String], art: OpponentArt, bartolo_art: OpponentArt) -> void:
+	for part_name: String in ART_PARTS:
+		var part := art.get(part_name) as PartArt
+		if part == null or part.texture == null or not part.texture.resource_path.begins_with(SERAFINA_ART_DIR):
+			errs.append("그림 %s: 없거나 세라피나의 폴더가 아님" % part_name)
+		elif part.units_per_px.x <= 0.0 or part.units_per_px.y <= 0.0:
+			errs.append("그림 %s: units_per_px %s" % [part_name, part.units_per_px])
+	if art.hand != null and art.hand.outline.size() < 6:
+		errs.append("손의 윤곽선이 없음")
+	if art.arm_arts.size() != bartolo_art.arm_arts.size():
+		errs.append("따로 그린 팔 %d개 (바르톨로 %d개)" % [art.arm_arts.size(), bartolo_art.arm_arts.size()])
+	else:
+		for i in art.arm_arts.size():
+			var mine := art.arm_arts[i]
+			var his := bartolo_art.arm_arts[i]
+			if mine.key != his.key or not is_equal_approx(mine.rotation_deg, his.rotation_deg) or mine.layers.size() != his.layers.size():
+				errs.append("팔 %s: 키·회전·층 수가 바르톨로(%s)와 다름" % [mine.key, his.key])
+				continue
+			for k in mine.layers.size():
+				var layer := mine.layers[k]
+				if layer.part != his.layers[k].part or layer.texture == null or not layer.texture.resource_path.begins_with(SERAFINA_ART_DIR):
+					errs.append("팔 %s 층 %d: part·그림이 어긋남" % [mine.key, k])
+				elif (layer.part == 4) != (layer.outline.size() >= 6):
+					errs.append("팔 %s 층 %d: 주먹의 윤곽선이 없거나 주먹이 아닌데 있음" % [mine.key, k])
+	# 포즈 데이터가 부르는 팔의 키가 모두 있다(바르톨로의 포즈를 쓴다).
+	var keys: Array[StringName] = []
+	for arm_art in art.arm_arts:
+		keys.append(arm_art.key)
+	for want_key: StringName in [&"armUp", &"armThrust", &"armAim"]:
+		if not keys.has(want_key):
+			errs.append("팔 묶음 %s가 없음 (%s)" % [want_key, str(keys)])
+	for file: String in ART_SIZES:
+		var tex := load(SERAFINA_ART_DIR + file + ".png") as Texture2D
+		if tex == null or Vector2i(tex.get_size()) != ART_SIZES[file]:
+			errs.append("%s.png의 크기 %s (기대 %s)" % [file, Vector2i(tex.get_size()) if tex != null else Vector2i.ZERO, ART_SIZES[file]])
+
+
+## 몸의 값: 목 자리, 모자 쓴/없는 꼭대기, 발끝, 몸통 폭(결정 619). 한계는 바르톨로의 같은 식 값에서 읽는다 — 자른 상자의 여백이 식에 들어 있어 고정 수를 쓰지 않는다.
+func _art_body(errs: Array[String], art: OpponentArt, bartolo_art: OpponentArt) -> void:
+	if art.neck.y < -212.0 or art.neck.y > -200.0:
+		errs.append("neck.y %.1f (기대 -212~-200)" % art.neck.y)
+	if art.legs == null or art.legs.texture == null or art.head == null or art.hat == null or art.torso == null or art.torso.texture == null:
+		return
+	var hat_limit := _hat_top(bartolo_art)
+	var hat_top := _hat_top(art)
+	if hat_top > hat_limit + 0.01:
+		errs.append("모자 쓴 꼭대기 %.2f (바르톨로의 같은 식 값 %.2f 이하여야 한다)" % [hat_top, hat_limit])
+	var others: Array[OpponentArt] = [bartolo_art]
+	for path: String in [BRUNO_PATH, LORENZO_PATH]:
+		var other := load(path) as OpponentData
+		if other != null and other.art != null:
+			others.append(other.art)
+	var tallest := 0.0
+	for other_art in others:
+		tallest = maxf(tallest, _bare_top(other_art, other_art.head))
+	for head_part: PartArt in [art.head, art.head_oops, art.head_dizzy]:
+		if head_part == null:
+			errs.append("머리 셋 가운데 빈 것이 있다")
+			continue
+		var top := _bare_top(art, head_part)
+		if top > hat_limit + 0.01:
+			errs.append("모자 없는 꼭대기 %.2f (바르톨로의 모자 쓴 꼭대기 %.2f 이하여야 한다)" % [top, hat_limit])
+	var bare := _bare_top(art, art.head)
+	if bare < tallest - 0.01:
+		errs.append("모자 없는 꼭대기 %.2f가 기존 세 상대의 가장 높은 값 %.2f보다 낮다 (넷 가운데 가장 키 큰 상대여야 한다)" % [bare, tallest])
+	var foot := _foot_tip(art)
+	if foot > MAX_FOOT + 0.01:
+		errs.append("발끝 %.2f (밀착에서 화면 밖: %.2f 이하여야 한다)" % [foot, MAX_FOOT])
+	# 갈림 규칙(035 결정 358): 몸의 기둥 폭이 다른 셋의 몸통 폭 각각의 0.85 이하. 그녀의 몸통 그림에는 장부와 낀 팔이 붙어 있어(결정 608) 기둥은 허리 아래의 옷 한 기둥으로 잰다(판 S0의 자).
+	var width := float(art.legs.texture.get_width()) * art.legs.units_per_px.x
+	for other_art in others:
+		if other_art.torso != null and other_art.torso.texture != null and width > _torso_width(other_art) * 0.85 + 0.01:
+			errs.append("몸의 기둥 폭 %.1f가 다른 상대의 몸통 폭 %.1f의 0.85를 넘는다" % [width, _torso_width(other_art)])
