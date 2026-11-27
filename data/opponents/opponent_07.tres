@@ -4,7 +4,7 @@
 [ext_resource type="Script" path="res://scripts/ai/habit_data.gd" id="2_habit"]
 [ext_resource type="Script" path="res://scripts/ai/opponent_data.gd" id="3_opponent"]
 [ext_resource type="Script" path="res://scripts/duel/pose_data.gd" id="4_pose"]
-[ext_resource type="Resource" path="res://data/opponents/bartolo_art.tres" id="5_art"]
+[ext_resource type="Resource" path="res://data/opponents/guglielmo_art.tres" id="5_art"]
 [ext_resource type="Script" path="res://scripts/ai/style_tier.gd" id="6_tier"]
 
 [sub_resource type="Resource" id="pose_thrust_tell"]

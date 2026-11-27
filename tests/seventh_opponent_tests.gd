@@ -1,5 +1,5 @@
 extends RefCounted
-## T141~T143: 일곱째 상대 굴리엘모(계획 045, 결정 697~715). 데이터의 틀·치고 빠지는 길의 표·가방, 치고 빠지기의 판, 표시와 연습 화면.
+## T141~T144: 일곱째 상대 굴리엘모(계획 045, 결정 697~715 · T144는 계획 045b의 그림). 데이터의 틀·치고 빠지는 길의 표·가방, 치고 빠지기의 판, 표시와 연습 화면.
 ## 값(길의 칸·간격·빈틈·단·가방·가중치)은 결정 705·706·707의 표를 손으로 적은 기대다. 로드한 자원은 고치지 않는다(사본만).
 ## 결정 709의 고치는 차례가 옮길 수 있는 값(찌르기의 가중치·좌우 베기의 빈틈·치고 빠지기의 가중치·빠지는 길의 빈틈·서는 길)은 아래 상수와 표가 함께 옮기는 기대다.
 ## 도우미는 sixth_opponent_tests.gd의 것을 옮겨 썼다(그 파일은 고치지 않는다. fourth_opponent_tests.gd의 도우미는 sixth와 같이 빌린다).
@@ -79,6 +79,7 @@ func list(tree: SceneTree) -> Array:
 		{"id": "T141", "name": "일곱째 상대: 판정 값이 바르톨로와 같다, 기본 셋의 높이, 치고 빠지는 길의 표(방향·높이·간격·빠짐·빈틈)와 단·가방, 고유 색 하나, 하루에는 서지 않는다, 갈래 글", "fn": t141_seventh_opponent},
 		{"id": "T142", "name": "치고 빠지기의 판: 빠지는 길은 한 번 물러나 따라붙어야 닿고 서는 길은 그 자리에서 닿는다, 타격의 시각, 꺾쇠의 열쇠, 같은 씨앗, 봇의 한 판, 실제 굴리엘모", "fn": t142_withdraw_duel},
 		{"id": "T143", "name": "표시와 연습 화면: 단발·두 번·서는 길의 꺾쇠, 첫 줄·귀띔, 여섯 상대는 그대로, 결투 중 도움말, 연습의 둘째 쪽과 막는 법", "fn": t143_marks_and_practice},
+		{"id": "T144", "name": "그림 데이터: 스물한 장과 팔 셋, 모자 없는 꼭대기·머리 가운데의 자·모자 쓴 꼭대기·발끝, 다리 관절·다리 폭·몸통 폭(달걀), 의뢰인 그림", "fn": t144_guglielmo_art},
 	]
 
 
@@ -734,3 +735,121 @@ func _check_drill_and_help(errs: Array[String], label: String, want_chain: bool)
 		errs.append("[③ %s] 막는 법에 휩쓸기(%s) · 뛰어들기(%s) · 엇박(%s) · 헛손질(%s) 줄이 있다" % [label, has_sweep, has_dive, has_beat, has_feint])
 	if want_chain and not _f._help_has(text, DuelHud.HELP_CHAIN):
 		errs.append("[③ %s] 막는 법에 이어 치기 줄이 없다 (이어지는 길이 있는 단)" % label)
+
+
+# ================================================================ T144 그림 데이터(계획 045b, 결정 728)
+
+const GUL_ART_PATH := "res://data/opponents/guglielmo_art.tres"
+const GUL_ART_DIR := "res://assets/art/opponents/guglielmo/"
+## 작업 6이 자른 스물한 장의 크기.
+const GUL_ART_SIZES := {
+	"head": Vector2i(236, 214), "head_oops": Vector2i(238, 214), "head_dizzy": Vector2i(239, 214), "hat": Vector2i(272, 145),
+	"feather": Vector2i(249, 78), "torso": Vector2i(413, 492), "legs": Vector2i(161, 393), "arm": Vector2i(87, 258),
+	"hand": Vector2i(94, 86), "sword": Vector2i(134, 410), "arm_up_sword": Vector2i(154, 553), "arm_up": Vector2i(105, 299),
+	"arm_up_fist": Vector2i(140, 107), "arm_thrust": Vector2i(156, 111), "arm_thrust_fist": Vector2i(156, 232),
+	"arm_thrust_sword": Vector2i(283, 295), "arm_thrust_blade": Vector2i(61, 48), "arm_aim": Vector2i(137, 184),
+	"arm_aim_fist": Vector2i(137, 177), "arm_aim_sword": Vector2i(187, 195), "arm_aim_blade": Vector2i(140, 113),
+}
+## 몸의 값의 한계(계획 045b "몸의 값" 표).
+const GUL_MIN_NECK_Y := -206.0
+const GUL_MAX_NECK_Y := -196.0
+const GUL_MIN_BARE_TOP := 315.0
+const GUL_MAX_BARE_TOP := 335.0
+const GUL_MIN_HEAD_MID := 252.0
+const GUL_MAX_HAT_TOP := 355.0
+const GUL_MIN_FOOT := 195.0
+const GUL_MAX_FOOT := 215.0
+## 다리 윗선이 앞치마 뒤에 숨는다.
+const GUL_MIN_LEGS_JOINT_Y := 12.0
+## 붙은 두 다리(아고스티노의 약 175와 갈린다).
+const GUL_MAX_LEGS_WIDTH := 120.0
+## 달걀이 데이터에서도 보인다: 몸통 그림의 폭이 다리 그림의 폭의 1.6배 이상.
+const GUL_MIN_TORSO_PER_LEGS := 1.6
+
+
+func t144_guglielmo_art() -> String:
+	var errs: Array[String] = []
+	var bartolo := load(BARTOLO_PATH) as OpponentData
+	var gul := load(GUGLIELMO_PATH) as OpponentData
+	if gul == null or gul.art == null or bartolo == null or bartolo.art == null:
+		return "opponent_07.tres나 그 그림이 없음"
+	var art: OpponentArt = gul.art
+	if art.resource_path != GUL_ART_PATH:
+		errs.append("그림 데이터 %s (기대 %s)" % [art.resource_path, GUL_ART_PATH])
+	if art == bartolo.art:
+		errs.append("바르톨로의 그림을 빌려 쓴다")
+	_gul_check_files(errs, art, bartolo.art)
+	_gul_check_body(errs, art, bartolo.art)
+	var client := "res://assets/art/clients/guglielmo.png"
+	if ResourceLoader.exists(client):
+		var tex := load(client) as Texture2D
+		if tex == null or Vector2i(tex.get_size()) != Vector2i(450, 675):
+			errs.append("의뢰인 그림의 크기 %s (기대 450x675)" % (str(Vector2i(tex.get_size())) if tex != null else "읽을 수 없음"))
+	else:
+		print("INFO T144: assets/art/clients/guglielmo.png가 아직 없다(위험 R7)")
+	return _ok(errs)
+
+
+func _gul_check_files(errs: Array[String], art: OpponentArt, bartolo_art: OpponentArt) -> void:
+	for part_name: String in Fourth.ART_PARTS:
+		var part := art.get(part_name) as PartArt
+		if part == null or part.texture == null or not part.texture.resource_path.begins_with(GUL_ART_DIR):
+			errs.append("그림 %s: 없거나 굴리엘모의 폴더가 아님" % part_name)
+		elif part.units_per_px.x <= 0.0 or part.units_per_px.y <= 0.0:
+			errs.append("그림 %s: units_per_px %s" % [part_name, part.units_per_px])
+	if art.hand != null and art.hand.outline.size() < 6:
+		errs.append("손의 윤곽선이 없음")
+	if art.arm_arts.size() != bartolo_art.arm_arts.size():
+		errs.append("따로 그린 팔 %d개 (바르톨로 %d개)" % [art.arm_arts.size(), bartolo_art.arm_arts.size()])
+	else:
+		for i in art.arm_arts.size():
+			var mine: ArmArt = art.arm_arts[i]
+			var his: ArmArt = bartolo_art.arm_arts[i]
+			if mine.key != his.key or not is_equal_approx(mine.rotation_deg, his.rotation_deg) or mine.layers.size() != his.layers.size():
+				errs.append("팔 %s: 키·회전·층 수가 바르톨로(%s)와 다름" % [mine.key, his.key])
+				continue
+			for k in mine.layers.size():
+				var layer: ArmLayer = mine.layers[k]
+				if layer.part != his.layers[k].part or layer.texture == null or not layer.texture.resource_path.begins_with(GUL_ART_DIR):
+					errs.append("팔 %s 층 %d: part·그림이 어긋남" % [mine.key, k])
+				elif (layer.part == 4) != (layer.outline.size() >= 6):
+					errs.append("팔 %s 층 %d: 주먹의 윤곽선이 없거나 주먹이 아닌데 있음" % [mine.key, k])
+	for file: String in GUL_ART_SIZES:
+		var tex := load(GUL_ART_DIR + file + ".png") as Texture2D
+		if tex == null or Vector2i(tex.get_size()) != GUL_ART_SIZES[file]:
+			errs.append("%s.png의 크기 %s (기대 %s)" % [file, Vector2i(tex.get_size()) if tex != null else Vector2i.ZERO, GUL_ART_SIZES[file]])
+
+
+## 달걀 · 다리 · 밀대 · 모자의 덮음은 그림을 봐야 아는 값이라 판 S2 · S4의 몫이다.
+func _gul_check_body(errs: Array[String], art: OpponentArt, bartolo_art: OpponentArt) -> void:
+	if art.neck.y < GUL_MIN_NECK_Y or art.neck.y > GUL_MAX_NECK_Y:
+		errs.append("neck.y %.1f (기대 %.0f~%.0f)" % [art.neck.y, GUL_MIN_NECK_Y, GUL_MAX_NECK_Y])
+	if art.legs == null or art.legs.texture == null or art.torso == null or art.torso.texture == null or art.hat == null:
+		return
+	var hat_limit: float = minf(_f._hat_top(bartolo_art), GUL_MAX_HAT_TOP)
+	var hat_top: float = _f._hat_top(art)
+	var foot: float = _f._foot_tip(art)
+	var joint_y: float = art.legs.joint.y * art.legs.units_per_px.y
+	var legs_w: float = float(art.legs.texture.get_width()) * art.legs.units_per_px.x
+	var torso_w: float = _f._torso_width(art)
+	print("INFO T144: 모자 쓴 꼭대기 %.1f (바르톨로 %.1f) · 발끝 %.1f · 다리 관절 %.1f · 다리 폭 %.1f · 몸통 폭 %.1f" % [hat_top, _f._hat_top(bartolo_art), foot, joint_y, legs_w, torso_w])
+	if hat_top > hat_limit + 0.01:
+		errs.append("모자 쓴 꼭대기 %.2f (바르톨로의 값 %.2f와 %.0f 이하여야 한다)" % [hat_top, _f._hat_top(bartolo_art), GUL_MAX_HAT_TOP])
+	for head_part: PartArt in [art.head, art.head_oops, art.head_dizzy]:
+		if head_part == null:
+			errs.append("머리 셋 가운데 빈 것이 있다")
+			continue
+		var top: float = _f._bare_top(art, head_part)
+		var mid: float = top - head_part.joint.y * head_part.units_per_px.y / 2.0
+		if top < GUL_MIN_BARE_TOP - 0.01 or top > GUL_MAX_BARE_TOP + 0.01:
+			errs.append("모자 없는 꼭대기 %.2f (기대 %.0f~%.0f)" % [top, GUL_MIN_BARE_TOP, GUL_MAX_BARE_TOP])
+		if mid < GUL_MIN_HEAD_MID - 0.01:
+			errs.append("머리 가운데의 자 %.2f (%.0f 이상이어야 한다)" % [mid, GUL_MIN_HEAD_MID])
+	if foot < GUL_MIN_FOOT - 0.01 or foot > GUL_MAX_FOOT + 0.01:
+		errs.append("발끝 %.2f (기대 %.0f~%.0f)" % [foot, GUL_MIN_FOOT, GUL_MAX_FOOT])
+	if joint_y < GUL_MIN_LEGS_JOINT_Y:
+		errs.append("다리 관절의 높이 %.2f (%.0f 이상이어야 윗선이 앞치마 뒤에 숨는다)" % [joint_y, GUL_MIN_LEGS_JOINT_Y])
+	if legs_w > GUL_MAX_LEGS_WIDTH + 0.01:
+		errs.append("다리 그림의 폭 %.2f (%.0f 이하 — 붙은 두 다리)" % [legs_w, GUL_MAX_LEGS_WIDTH])
+	if torso_w < legs_w * GUL_MIN_TORSO_PER_LEGS - 0.01:
+		errs.append("몸통 그림의 폭 %.2f (다리 %.2f의 %.1f배 이상 — 달걀)" % [torso_w, legs_w, GUL_MIN_TORSO_PER_LEGS])

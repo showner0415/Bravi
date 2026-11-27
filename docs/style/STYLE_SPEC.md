@@ -75,6 +75,7 @@
   | 깐깐함 | 곧은 막대 둘, 한쪽만 조금 높음 | 코안경 안의 점 | 곧은 짧은 선 |
   | 능청 | 눈 위로 늘어진 흰 덩이 둘 | 위로 굽은 짧은 선 둘 | 한쪽 꼬리만 올라간 짧은 선 |
   | 떠보기 | 한쪽은 높이 든 호, 다른 쪽은 낮은 곧은 막대 | 한쪽으로 몰린 점 둘(곁눈) | 양 끝이 같이 오른 다문 작은 호 |
+  | 들뜸 | 둘 다 높이 든 호 | 점 | 크게 벌린 반달(아래가 둥글고 안은 선 색) |
 
 - 홍조, 땀방울, 눈물, 눈 하이라이트, 속눈썹, 입술 색, 볼의 빗금은 없다.
 
@@ -127,6 +128,8 @@
 | `--ag-jacket` / `-sh` | `#B7AD9A` / `#9C927F` | S16 V72 / S19 V61 | 0.68 / 0.58 | 아고스티노 누빔 검술복·소매(계획 042) |
 | `--ag-hose` / `-sh` | `#857868` / `#6F6457` | S22 V52 / S22 V44 | 0.48 / 0.40 | 아고스티노 양말(계획 042) |
 | `--be-dress` / `-sh` | `#5E7F72` / `#4B665B` | S26 V50 / S26 V40 | 0.47 / 0.37 | 베아트리체 몸판·소매·치마(계획 044b) |
+| `--gu-shirt` / `-sh` | `#9AA7AE` / `#7F8B92` | S11 V68 / S13 V57 | 0.65 / 0.54 | 굴리엘모 윗옷·소매·바지(계획 045b) |
+| `--gu-apron` / `-sh` | `#F0ECE2` / `#D8D2C4` | S6 V94 / S9 V85 | 0.93 / 0.82 | 굴리엘모 앞치마·천 모자(계획 045b) |
 | `--st-shade` | `#3A3027` | S33 V23 | 0.19 | 무대 가운데 그늘 |
 | `--st-sky` | `#3E4A55` | S27 V33 | 0.28 | 밤하늘 |
 | `--st-ground` | `#4E4336` | S31 V31 | 0.27 | 땅 |
@@ -1305,6 +1308,74 @@ Colors: The wall parchment E9D8B4 with a slightly darker parchment D2B98C, the h
 - 다섯째 항목: `- Fills: flat solid colors, muted and faded. The hair, the lid band of the hatbox and the shafts of the pins are filled with the same very dark brown as the outlines. The round heads of the pins, the front panel and the hatbox are pale parchment. She wears no hat.`
 - 색: `- Main fills and their shadow tones: faded bottle green 5E7F72 with shadow 4B665B for the bodice and the sleeves, parchment E9D8B4 with shadow D2B98C for the front panel, the pin heads and the hatbox, skin EBC49F.` 둘째 줄은 비토리오와 같다.
 - 판정(계획 044b 판 S5): 042와 같고, 머리 높이는 턱~정수리(틀어 올린 머리 빼고), 위 가장자리 4줄의 불투명 0(핀·틀어 올린 머리가 틀 안), 오르솔라·비토리오·클라라와 나란히.
+
+# 계획 045b의 줄 (상대 일곱째 굴리엘모. 결정 716~726)
+
+영어, ASCII만, 큰따옴표 없이(결정 187). 판 S0(그림 생성 없음, 견본 `samples/045b-seventh-opponent.html`)에서 몸의 값을 굳혔다(선 포함, 골반에서): 목의 자리 −200, 머리 그림(목~천 모자 윗면) 125.7, 모자 없는 꼭대기 325.7, 정수리(천 모자 아래의 머리 윤곽) 315.7, 천 모자의 솟음 10.0(107.8 × 24.8), 머리 가운데의 자 262.8, 눈의 줄 262.2, 모자의 원점 (0, −104), 모자 쓴 꼭대기 349.6, 발끝 203.9, 배 164.6(골반 위 53) · 어깨 122.9 — 배 ÷ 어깨 1.34, 넓은 줄의 자리 0.75, 어깨의 기울기 35.9°(브루노 12.8°), 옆선의 벗어남 1.6 / 4.5, 앞치마 끝 골반 아래 26.5(폭 102.6) · 다리 윗선 골반 위 13.9(폭 84.3), 다리 사이의 빈 곳 0, 발목 바깥 56.3(배 ÷ 발목 2.92), 발끝 띠 0.45 · 0.45, 밀대 가운데 골반 위 62.5 · 길이 135.2 · 굵기 16.1 · 끝 −6.1 ~ +129.1(선 포함), 바깥 끝이 몸 윤곽 밖으로 49.1 · 주먹 밖으로 11.3. 넣는 그림은 그 견본에서 구운 `generated/in/045b-in-front.png`(전신, 모자 없이)·`045b-in-parts.png`(파츠 배치 — 덩이 열: 주먹이 밀대를 쥐어 몸통 덩이에 붙는다)·`045b-in-client.png`(허리 위, 두 손으로 밀대를 가로로 든다)와, 030c의 팔 안내도에서 소매는 그대로(1.00배 — 통통한 팔) 두고 세 주먹만 0.85배로 줄인 `generated/in/045b-in-arms-f85.png`다(044b의 배운 것). 밀대의 칠은 팔레트의 `--parch-3` / `--vi-fur-sh`(`#A8895E` / `#8C7050`)다.
+
+여섯 상대와 다른 것 넷:
+
+- **달걀 몸과 붙은 다리**: 본보기 블록의 팔다리 말(P-FIG 둘째·셋째 항목)을 그의 것으로 바꾼다 — 처진 어깨에서 배로 곧게 넓어지고 앞치마 끝으로 곧게 좁아지는 몸(둥근 모서리, 부풀지 않는다 — 바이블 4절 "꼴"), 붙어 선 곧은 두 다리, 발꿈치를 든 발끝(`tapered toe tip`). 그의 프롬프트에서 바꾸는 줄에는 `feet apart` · `legs apart` · `curly` · `blush` · `rosy` · `flour` · `rolled` · `round belly`가 없다(배는 `widest part` · `straight sides`로만 말한다). 바꾸지 않는 화풍 블록의 `curly`(첫째 항목 "no ... curly shapes")와 `blush or rosy cheeks`(Do not add)는 그대로 둔다 — 둘 다 막는 말이다.
+- **가로 밀대**: 칼을 들지 않은 손이 등 뒤가 아니라 배의 옆선을 따라 내려와 배 줄 높이에서 밀대를 가로로 쥔다(P-FIG 다섯째 항목). 밀대의 자리는 몸의 표지(배 줄 · 앞치마 끈 · 앞치마 가운데)로 적는다 — 044b가 배운 길(다른 조각에 걸친 소품의 높이는 전신에서 잡는다). 게임에서는 팔·주먹·밀대가 모두 몸통 파츠다(파츠 4번 — 덩이 열).
+- **천 모자는 머리의 일부, 제빵사 모자는 그 위를 다 덮는다**(결정 723): 머리 조각마다 같은 낮고 납작한 흰 천 모자가 든다(S-PARTS 둘째 항목의 끝). 의뢰가 씌우는 모자는 주름 잡힌 조금 높은 제빵사 모자이고 천 모자보다 넓다.
+- **바이블과 걸려 바꾼 셋**(결정 718 · 726): 곱슬머리 → 짧은 곧은 머리 덩이, 볼의 붉은 점 · 코끝의 밀가루 → 없음, 걷은 소매 → 손목까지 내린 소매.
+
+## 굴리엘모 전신 F1a (바이블 13.3 "새 사람의 전신(상대)")
+
+차례는 브루노 F1a와 같다(계획 035의 줄). P-FIG의 첫째·넷째·일곱째 항목과 S-FIG2의 첫째·넷째·여섯째·일곱째 항목, 색 블록의 둘째 줄, 지시 블록·`Image:`·`Background:`는 그대로이고 아래 줄만 바꾼다.
+
+- Subject: `Subject: Guglielmo, a baker who keeps a bakery by the river gate in a Renaissance-era Italian town. A clean-shaven man of about fifty with a full face that is widest at the cheeks. His body is shaped like an egg: narrow sloping shoulders, then the body grows wider down to the belly, which is the widest part of him, then it narrows again to the bottom of his apron. Below it two short straight legs stand pressed together with no gap between them, and he stands up on the tapered tips of his toes with his heels lifted. His short straight dark hair shows only beside the ears, under a low flat white cloth cap: a band around the forehead with a flat top, much wider than it is tall, that does not rise above his head. He wears a pale grey-blue shirt with sleeves down to the wrists and pale grey-blue breeches, and a long white baker's apron with a bib that covers almost all of his front, tied with a narrow dark cord around the belly. He holds a rapier.`
+- P-FIG 둘째 항목(자세): `- Front view or a very slight turn, so that the lifted heels can be seen. He stands ready for a duel, eager and in a hurry, up on his toes.`
+- P-FIG 셋째 항목(팔다리와 달걀 몸, 발끝): `- His arms are simple and straight, like in the reference image, with no bend at the elbow: each arm is one simple straight rounded shape. His legs are straight with no bend at the knee. His body is one simple shape with straight sides and large rounded corners: it widens in a straight line from the shoulders to the belly and narrows in a straight line from the belly to the bottom of the apron, not puffed and not like a balloon. His dark shoes end in a tapered toe tip, and only the toe tips touch the ground.`
+- P-FIG 다섯째 항목(등 뒤의 손 대신 가로 밀대 — 자리는 몸의 표지로): `- His other arm hangs straight down on the viewer's right along the side of his belly, and his fist is at the height of the belly. The fist holds a wooden rolling pin level, crossing in front of the apron: most of the pin lies across the front of the white apron, and only a short end with a small handle sticks out past the fist on the outside. The pin is thin and long, like one straight bar. The rolling pin is held level across the belly, just above the apron cord, at the widest part of his body, and its inner end reaches the middle of the apron.`
+- P-FIG 여섯째 항목(깃털): 뺀다.
+- S-FIG2 둘째 항목 끝(표정 들뜸 — "얼굴과 비례" 표의 둘 다 높이 든 호 · 점 · 크게 벌린 반달): `Both of his eyebrows are high arches. His eyes are two dots. His mouth is wide open in a half-moon smile, rounded at the bottom and filled with the same dark brown as the outlines. His character shows in the expression: excited and in a hurry.`
+- 셋째 항목: `- Keep it as simple as the reference image: the same small number of shapes and the same few inner lines. Do not add details that the reference does not have. A plain shirt with a simple collar. A plain long apron with a bib and a few straight fold lines. A narrow plain cord. A plain flat cloth cap with one seam line. One plain wooden rolling pin with two small handles. A simple fist with a few short finger lines. No extra seams, folds or wrinkles. Improve only the craft: clean construction, good proportions, parts that join properly and a hand that clearly holds the sword.`
+- 다섯째 항목: `- Fills: flat solid colors, muted and faded. The hair, the apron cord and the shoes are filled with the same very dark brown as the outlines. The apron and the cloth cap are white cloth, not parchment. Apart from the flat cloth cap he wears no hat.`
+- 색: `- Main fills and their shadow tones: pale grey-blue 9AA7AE with shadow 7F8B92 for the shirt, the sleeves and the breeches, white F0ECE2 with shadow D8D2C4 for the apron and the cloth cap, wood A8895E with shadow 8C7050 for the rolling pin, skin EBC49F, pale warm grey CFC8BA for the blade and guard.` 둘째 줄은 C-FIG2 그대로(`pure white`를 피하라는 말 — 앞치마 `#F0ECE2`는 순백이 아니다).
+- 큰 면의 기준(바이블 8절): 앞치마 `#F0ECE2` Y 0.93 · 그림자 `#D8D2C4` 0.82, 윗옷·바지 `#9AA7AE` Y 0.65 · 그림자 `#7F8B92` 0.54(칠 ≥ 0.42, 그림자 ≥ 0.30), S 6% · 11%. 판 S0의 ①: 올린 전신에서 잰 여섯 상대의 큰 면 열과 앞치마는 Y 차 0.23(아고스티노의 검술복)~0.46, 윗옷은 색조 차 52°~171° 또는 Y 차 0.18(바르톨로의 저고리 — 색조 3°뿐이라 밝기가 가른다).
+
+## 굴리엘모 파츠 시트 P1a (바이블 13.3 "파츠 시트")
+
+본보기와 차례는 브루노 P1a와 같다(`prompts/044b-P1a-beatrice-parts.txt`의 틀). 넣는 그림 둘: 판 S1에서 올린 그의 전신(사람), `generated/in/045b-in-parts.png`(배치). 팔의 길이 말은 본보기 그대로 둔다. P-PARTS 첫째 항목의 `the same woman`은 `the same man`으로만 바꾼다. 바꾸는 줄:
+
+- **F1a를 잰 뒤에 고친 것 넷**(2026-11-28, 판 S1의 재기 `measure-S1.txt` · `measure-S1-pin.txt` — 자는 천 모자 윗면~발끝 529.6단위, ppu 2.315): ① 몸통이 길고 다리가 짧다(목깃~앞치마 끝 273 대 앞치마 끝~발끝 111, 스케치 220 대 178) — 8번에 "다리 조각은 몸통 조각의 목깃~앞치마 끝만큼 높다"를 넣었다(044b가 배운 길. 그래도 짧으면 값 파일의 다리 세로 배율). ② 앞치마의 끈 아래가 길다(끈 위 161 대 끈 아래 112, 스케치 141 대 80) — 4번에 "끈 아래의 앞치마는 끈 위 몸의 절반쯤"을 넣었다(넓은 줄의 자리는 어느 쪽이든 0.60을 넘는다 — S1에서 0.65~0.75). ③ 밀대는 S1의 굳은 확인을 넘었다(끈 위 21 · 안 끝이 앞치마 가운데를 지나 −26 · 바깥 끝이 몸 윤곽 밖으로 37 · 주먹 밖으로 17) — 4번에 그 자리를 몸의 표지(끈 바로 위, 안 끝이 앞치마 가운데, 주먹 밖으로 짧은 끝)로 그대로 적어 전신을 따르게 했다. ④ 머리가 크다(천 모자 윗면~턱 134, 스케치 118)와 밀대가 굵다(21.6, 스케치 16.1)는 값 파일의 배율이 맞춘다. 목은 몸통 조각의 것이다(1번·4번 — 리그에서 머리가 몸통 위에 그려진다).
+- Subject: `Subject: Guglielmo, a baker who keeps a bakery by the river gate in a Renaissance-era Italian town, the same character as in the first referenced image. A clean-shaven man of about fifty with a full face that is widest at the cheeks. His body is shaped like an egg: narrow sloping shoulders, then the body grows wider down to the belly, which is the widest part of him, then it narrows again to the bottom of his apron. Two short straight legs pressed together, standing on the tapered tips of his toes. His short straight dark hair shows only beside the ears, under a low flat white cloth cap. He wears a pale grey-blue shirt with sleeves down to the wrists, pale grey-blue breeches and a long white baker's apron with a bib, tied with a narrow dark cord around the belly. A wooden rolling pin. A taller pleated baker's cap with one large feather lying sideways. A rapier.`
+- P-PARTS 첫째 항목: `- The first referenced image is our own drawing of this character and it is the character reference: draw exactly the same man, with the same drawing style, the same shapes, the same face, the same clothes, the same colors and the same line weight.`
+- 파츠 1(목 밑동 없이 — 목은 몸통의 것): `  1. the head three times, without the baker's cap, each with the low flat white cloth cap drawn complete on top of the head. No neck is drawn under the head: the neck belongs to the torso. The three heads are the same size;`
+- 파츠 2: `  2. the baker's cap alone, without the feather;`
+- 파츠 4(몸통 — 목 · 팔 · 주먹 · 밀대가 이 조각 안): `  4. the torso alone, without the sword arm, the legs or the head: the short bare neck rising above the collar, the narrow sloping shoulders, the pale grey-blue shirt and the white apron with its bib, widest at the belly with the narrow dark cord around it, ending at the bottom of the apron a little below the hips. The part of the apron below the cord is about half as tall as the body above the cord, as in the layout sketch. His other arm hangs straight down on the viewer's right along the side of the belly, and the fist at belly height holds the level rolling pin inside this piece, as in the first referenced image: the pin lies just above the cord, crossing the front of the apron, its inner end reaches the middle of the apron, and only a short end with a small handle sticks out past the fist on the outside. The fist touches the pin. No arm is attached on the viewer's left;`
+- 파츠 5: `  5. the sword arm alone, from the shoulder to the wrist, as one straight shirt sleeve with a rounded top and a plain hem of the same color at the wrist. It hangs straight down and it is short, as in the layout sketch: no longer than the torso from the shoulder to the waist;`
+- 파츠 8(붙은 두 다리): `  8. the two legs alone, without the apron: two short straight pale grey-blue legs pressed together with no gap between them, in dark shoes with a tapered toe tip, standing on the tips of the toes with the heels lifted, so that only the narrow toe tips touch the ground. Their top edge goes a little higher than where the bottom of the apron will sit, so that it hides behind the apron. This piece is about as tall as the torso piece is from the collar to the bottom of the apron, as in the layout sketch.`
+- 머리 셋 문장(S-PARTS 둘째 항목의 끝): `The first head is excited and in a hurry, exactly the face of the first referenced image: both eyebrows high arches, eyes drawn as two dots, and a mouth wide open in a half-moon smile filled with dark brown. The second head is flustered and caught off guard: eyebrows raised high, eyes drawn as small dark dots inside round white eyes, and a small oval mouth. The third head is dizzy and dazed: crooked eyebrows, eyes drawn as two small X marks, and a wavy line for a mouth. The three heads are clearly the same clean-shaven man. The low flat white cloth cap belongs to each head piece and is the same in all three heads.`
+- 셋째 항목: `- Keep exactly the amount of detail of the first referenced image: the plain shirt, the white apron with its bib and a few straight fold lines, the narrow dark cord, the flat cloth cap with one seam line, the plain rolling pin with two small handles and the fingers on the fist. The baker's cap is a taller pleated baker's cap in parchment E9D8B4 with shadow D2B98C and a brick red band A5533F, wider than the flat cloth cap so that it covers it completely, with one large parchment feather lying sideways. Nothing else is added. No puffy sleeves, no folds, no extra wrinkles.`
+- 다섯째 항목: `- Fills: flat solid colors, muted and faded. The hair, the apron cord and the shoes are filled with the same very dark brown as the outlines. The apron and the cloth cap are white cloth, not parchment.`
+- 색: `- Main fills and their shadow tones: pale grey-blue 9AA7AE with shadow 7F8B92 for the shirt, the sleeves and the breeches, white F0ECE2 with shadow D8D2C4 for the apron and the cloth cap, wood A8895E with shadow 8C7050 for the rolling pin, parchment E9D8B4 with shadow D2B98C for the baker's cap and the feather, brick red A5533F for the cap band, skin EBC49F, pale warm grey CFC8BA for the blade and guard.` 둘째 줄은 C-FIG2 그대로.
+- 판정에서 다른 것(계획 045b 판 S2): HP1은 **덩이 열**(밀대는 주먹으로 몸통 덩이에 붙는다). 모자 없는 꼭대기(식) 315~335, 머리 가운데의 자 ≥ 252, 눈의 줄 ≥ 250, 천 모자의 대리 자(높이 ≤ 30, 폭 ÷ 높이 ≥ 3.0), 모자 쓴 꼭대기 ≤ 355, 발끝 195~215, 달걀 · 다리 · 밀대 ⓐ~ⓗ · 이음매 · 모자의 덮음(재는 법 ①~④). `k`는 몸통의 어깨 줄 폭으로 잰다.
+
+## 굴리엘모 팔 시트 A1a (바이블 13.3 "팔 시트", 본보기 `030c-A2a`)
+
+본보기의 줄 그대로이고 `Subject:`의 이름과 소매의 색 줄, 색 블록의 첫 줄(파츠 시트 P1a의 색 줄)만 바꾼다. 넣는 그림 둘: 판 S2에서 올린 그의 파츠 시트(사람), `generated/in/045b-in-arms-f85.png`(자세 안내도 — 소매 1.00배, 주먹 0.85배). 둘을 첫 프롬프트에 미리 넣는다(결정 440):
+
+- Subject: `Subject: Guglielmo, the same character as in the first referenced image. Only his sword arm, his sword hand and his rapier, in a few different poses.`
+- 소매의 색(줄 전체 — 손목까지의 소매, 커프 · 맨살 팔뚝 없음 — 결정 726): `- Every sleeve is the plain shirt sleeve of this character, down to the wrist, filled with pale grey-blue 9AA7AE with shadow 7F8B92, the same as the arm in the first referenced image. The sleeve ends in a plain hem of the same color at the wrist, with no cuff of another color and no bare forearm.`
+- 칼자루를 가로지르는 손가락(줄 전체): 044b의 줄 그대로.
+- 나머지 줄(`- Part 1:`~`- Part 3:`, 화풍 블록, 바탕)은 `prompts/044b-A1a-beatrice-arms.txt`와 글자까지 같다. 넣는 그림의 차례: 파츠 시트가 첫째, 안내도가 둘째.
+- 판정의 기준(계획 045b 판 S3): 044b와 같다.
+
+## 굴리엘모 의뢰인 C1a (바이블 13.3 "의뢰인" — 계획 045b의 나에서 채운다)
+
+차례와 줄은 044b의 의뢰인 줄 그대로이고 아래만 바꾼다. 넣는 그림이 둘이다: 첫째는 허리 위 스케치 `generated/in/045b-in-client.png`(구도), 둘째는 판 S1에서 올린 그의 전신(같은 사람). 칼은 들지 않는다. 의뢰에 거는 것은 047이다.
+
+- Subject: `Subject: Guglielmo, a baker who keeps a bakery by the river gate in a Renaissance-era Italian town, the same man as in the second referenced image, shown from the waist up as a customer at a counter. A clean-shaven man of about fifty with a full face that is widest at the cheeks, short straight dark hair beside the ears and a low flat white cloth cap. He wears a pale grey-blue shirt with sleeves down to the wrists and a long white baker's apron with a bib. He holds no sword. Both hands hold the wooden rolling pin level in front of his belly. The whole cloth cap and both ends of the rolling pin stay inside the picture.`
+- 구도 셋째(034의 둘째 항목 자리): `- Front view or a slight three-quarter view, head straight, both hands visible above waist level, holding the wooden rolling pin level in front of his belly (he stands behind a shop counter that is not drawn). The pin is thin and long, like one straight bar, with a small handle at each end.`
+- 구도 둘째(올린 전신 — 같은 사람. 042의 줄 그대로): `- The second referenced image is our own finished drawing of this same man. It is the character and style reference: draw exactly the same man, with the same drawing style, the same shapes, the same face, the same clothes, the same colors and the same line weight.`
+- 둘째 항목 끝(표정 들뜸): 전신의 표정 문장 그대로.
+- 셋째 항목: `- Keep it as simple as the second referenced image: the same small number of shapes. Improve the craft: clean construction, good proportions, parts that join properly and hands with fingers that really hold the rolling pin. Add only a little detail inside the shapes: a few straight fold lines on the apron, the narrow dark cord, the two small handles of the rolling pin, a few short finger lines on the hands. Nothing else is added. No fabric patterns, no extra wrinkles.`
+- 넷째 항목: `- Nothing covers the face. The whole figure from the waist up is inside the image with a margin, including the whole cloth cap and both ends of the rolling pin.`
+- 다섯째 항목: `- Fills: flat solid colors, muted and faded. The hair is filled with the same very dark brown as the outlines. The apron and the cloth cap are white cloth, not parchment. Apart from the flat cloth cap he wears no hat.`
+- 색: `- Main fills and their shadow tones: pale grey-blue 9AA7AE with shadow 7F8B92 for the shirt and the sleeves, white F0ECE2 with shadow D8D2C4 for the apron and the cloth cap, wood A8895E with shadow 8C7050 for the rolling pin, skin EBC49F.` 둘째 줄은 비토리오와 같다.
+- 판정(계획 045b 판 S5): 044b와 같고, 머리 높이는 턱~천 모자 윗면, 왼 · 오른 가장자리 4열의 불투명 0(밀대의 양 끝이 틀 안), 에밀리오 · 토마소 · 클라라와 나란히.
 
 # 계획 033b의 블록 (그린 질감: 종이·테두리·버튼. 결정 488~493)
 
