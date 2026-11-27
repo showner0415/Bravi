@@ -1,5 +1,5 @@
 extends SceneTree
-## 지킴의 골든(계획 044 결정 679): 다섯 상대 x 단 {1, 마지막} x 봇 둘 = 20판의 이벤트 줄을 SHA-256으로 줄여 골든 파일과 견준다.
+## 지킴의 골든(계획 044 결정 679): 여섯 상대 x 단 {1, 마지막} x 봇 둘 = 24판의 이벤트 줄을 SHA-256으로 줄여 골든 파일과 견준다.
 ## 실행: tests/run_event_digest.ps1 [-Write]. -Write면 골든을 쓰고(코드를 고치기 전 커밋에서만), 아니면 견줘서 줄을 낸다.
 ## 셈은 정적 함수 digest_row 하나다. T134(feint_tests.gd)가 같은 함수를 부른다.
 
@@ -14,6 +14,7 @@ const OPPONENT_PATHS: Array[String] = [
 	"res://data/opponents/opponent_03.tres",
 	"res://data/opponents/opponent_04.tres",
 	"res://data/opponents/opponent_05.tres",
+	"res://data/opponents/opponent_06.tres",
 ]
 const TIERS: Array[String] = ["1", "last"]
 const BOTS: Array[String] = ["first_blood", "parry"]
