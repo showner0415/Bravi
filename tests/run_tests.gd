@@ -51,6 +51,7 @@ const TEST_FILES: Array[String] = [
 	"res://tests/spar_tests.gd",
 	"res://tests/feint_tests.gd",
 	"res://tests/sixth_opponent_tests.gd",
+	"res://tests/withdraw_tests.gd",
 ]
 
 var _started := false

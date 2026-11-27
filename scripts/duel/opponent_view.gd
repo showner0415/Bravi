@@ -8,6 +8,7 @@ extends Node2D
 ## 이 스크립트는 파츠를 Node2D 이상의 타입으로 가정하지 않는다(나중에 Bone2D로 바꿀 수 있게).
 
 const DT := preload("res://scripts/duel/duel_types.gd")
+const Controls := preload("res://scripts/controls.gd")
 const PART_SHADER := preload("res://scenes/duel/opponent_part.gdshader")
 
 const PART_PATHS := {
@@ -41,6 +42,13 @@ const DISTANCE_SCALE: Array[float] = [0.55, 0.85, 1.1]
 const DISTANCE_SHIFT: Array[float] = [-40.0, 0.0, 30.0]
 const DIVE_PULL_SCALE := 0.85
 const DIVE_PULL_SHIFT := -25.0
+## 치고 빠지기(결정 702): 물러나는 순간의 뜀(초, px)과 고리 밑 꺾쇠(폭, 두 줄 사이, 굵기, 고리 가장자리에서의 간격).
+const HOP_TIME := 0.25
+const HOP_HEIGHT := 28.0
+const WITHDRAW_CHEVRON_WIDTH := 24.0
+const WITHDRAW_CHEVRON_GAP := 7.0
+const WITHDRAW_CHEVRON_THICK := 3.0
+const WITHDRAW_CHEVRON_OFFSET := 8.0
 
 ## 줄어드는 고리: 일정한 속도(px/초)로 줄어 0이 되는 순간이 타격이다.
 ## 패리 창에 해당하는 고정 띠(반지름 = 속도 x 패리 창)를 예비 동작 시작부터 그려 둔다.
@@ -131,6 +139,9 @@ var _marks: Array[Dictionary] = []
 var _ring_sweep := false
 ## 지금 타격이 헛손질인가(결정 670): 패리의 띠를 그리지 않고 줄어드는 고리가 점선이다.
 var _ring_feint := false
+## 지금 타격이 빠지는 길의 마지막인가(결정 702): 지금 고리의 띠 아래에 꺾쇠를 그린다.
+var _ring_withdraw := false
+var _hop_start := -INF
 var _height_shift := 0.0
 var _dive_start := -INF
 var _dive_from_close := false
@@ -184,6 +195,7 @@ func setup(opponent: OpponentData, weapon: WeaponData, has_hat := false) -> void
 	_touched_until = -INF
 	_deflect_until = -INF
 	_dodge_until = -INF
+	_hop_start = -INF
 	_ring_active = false
 	_snap = true
 	_dodge_k = 0.0
@@ -247,6 +259,9 @@ func on_event(ev: Dictionary) -> void:
 				# 막았는데 빈틈을 주지 않았다(결정 404). 상한에 닿았으면 다음은 열린다고 알린다.
 				_deflect_text = "틈을 안 준다" + (" — 다음은 열린다" if _limit_reached(ev) else "")
 				_deflect_until = _clock + DEFLECT_TEXT_TIME
+		DuelRecord.DISTANCE:
+			if ev.get("by", "") == "withdraw":
+				_hop_start = _clock
 		DuelRecord.ATTACK:
 			var result: int = ev["result"]
 			if result == DT.AttackResult.GRAZE or result == DT.AttackResult.HIT:
@@ -283,6 +298,9 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 		dive_pull = OpponentMotion.ease_out(clampf((display_time - brain.state_start) / maxf(brain.tell_duration * core.opponent_data.tell_in, 0.001), 0.0, 1.0))
 	var target_scale := DISTANCE_SCALE[core.distance] * lerpf(1.0, DIVE_PULL_SCALE, dive_pull)
 	var target_pos := anchor + Vector2(0, DISTANCE_SHIFT[core.distance] + DIVE_PULL_SHIFT * dive_pull)
+	var hop_k := (_clock - _hop_start) / HOP_TIME
+	if hop_k >= 0.0 and hop_k < 1.0:
+		target_pos.y -= 4.0 * hop_k * (1.0 - hop_k) * HOP_HEIGHT
 	scale = scale.lerp(Vector2.ONE * target_scale, smooth)
 	position = position.lerp(target_pos, smooth)
 	var inverse := 1.0 / maxf(scale.x, 0.01)
@@ -295,6 +313,7 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 	_marks = []
 	_ring_sweep = false
 	_ring_feint = false
+	_ring_withdraw = false
 	# 머리를 지키는 상대의 머리는 크게 열린 회수에서만 빈틈 색으로 물든다("파랗게 물든 부위가 열린 부위").
 	var head_closed := false
 	var head_art: PartArt = _art.head if _art != null else null
@@ -309,6 +328,7 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 			_marks = pattern_marks(brain, display_time)
 			_ring_sweep = brain.is_sweep()
 			_ring_feint = atk.feint
+			_ring_withdraw = ring_withdraw_of(brain)
 			var tell_parts := tell_texts(core, _dive_from_close)
 			text = tell_parts[0]
 			hint = tell_parts[1]
@@ -318,6 +338,7 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 		DT.OpponentState.RECOVERY:
 			tint = COLOR_RECOVERY
 			text = "빈틈"
+			hint = recovery_hint_of(core)
 			if _art != null:
 				head_art = _art.head_oops
 			if core.opponent_data.guards_head:
@@ -686,6 +707,22 @@ func _new_material() -> ShaderMaterial:
 	return mat
 
 
+## 지금 타격이 빠지는 길의 마지막 타격인가(결정 702). 단발이면 그 타격이다.
+static func ring_withdraw_of(brain: OpponentBrain) -> bool:
+	if brain.state != DT.OpponentState.TELL or brain.current_attack == null:
+		return false
+	var root := brain.pattern_root if brain.pattern_root != null else brain.current_attack
+	return root.withdraw and brain.step_index == brain.pattern_count() - 1
+
+
+## 물러난 판정에서 시작된 멀리의 빈틈이면 따라붙는 길의 귀띔, 아니면 빈 글(결정 702).
+static func recovery_hint_of(core: DuelCore) -> String:
+	var brain := core.brain
+	if brain.state == DT.OpponentState.RECOVERY and core.distance == DT.Distance.FAR and core.withdrew_at == brain.state_start:
+		return "막기 떼고 %s" % Controls.help_name(&"step_forward")
+	return ""
+
+
 ## 패턴의 표시 목록(결정 374). 타격마다 {"role": &"now"·&"next"·&"later", "number", "pos", "time"}이고,
 ## 휩쓸기면 끝에 {"role": &"path", "points", "dot"}가 붙는다. 자리는 RING_POSITION의 좌표다(같은 방향이 되풀이되면 아래로 비킨다).
 ## 지난 타격은 넣지 않는다. 패턴이 아니거나 예비 동작 중이 아니면 빈 배열이다.
@@ -712,6 +749,8 @@ static func pattern_marks(brain: OpponentBrain, display_time: float) -> Array[Di
 		var mark := {"role": role, "number": i + 1, "pos": pos, "time": times[i]}
 		if atk.feint:
 			mark["feint"] = true
+		if root.withdraw and i == times.size() - 1:
+			mark["withdraw"] = true
 		if root.mark_shape != &"":
 			# 막대는 칼 든 팔의 반대쪽으로 뻗는다(예비 동작을 보이는 팔과 칼을 가리지 않게. 결정 632).
 			mark["shape"] = root.mark_shape
@@ -784,6 +823,8 @@ func _draw_marks() -> void:
 				bar.position -= origin
 				_ring.draw_rect(bar, Color(0.12, 0.1, 0.08, 0.55 * alpha))
 				_ring.draw_rect(bar.grow(-BEAT_BAR_INSET), Color(1.0, 1.0, 1.0, alpha))
+			if mark.get("withdraw", false):
+				_draw_chevrons(at + Vector2(0, MARK_RADIUS + WITHDRAW_CHEVRON_OFFSET), alpha)
 		var label := str(mark["number"])
 		var width := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, MARK_FONT_SIZE).x
 		var base := at + Vector2(-width * 0.5, -MARK_RADIUS - 8.0)
@@ -791,6 +832,16 @@ func _draw_marks() -> void:
 		_ring.draw_circle(at + Vector2(0, -MARK_RADIUS - 16.0), 15.0, Color(0.12, 0.1, 0.08, 0.75 * alpha))
 		_ring.draw_string_outline(font, base, label, HORIZONTAL_ALIGNMENT_LEFT, -1, MARK_FONT_SIZE, 6, Color(0, 0, 0, alpha))
 		_ring.draw_string(font, base, label, HORIZONTAL_ALIGNMENT_LEFT, -1, MARK_FONT_SIZE, Color(1, 1, 1, alpha))
+
+
+## 위로 향한 겹 꺾쇠(︽): 치고 빠지는 길의 표지(결정 702). top은 윗꺾쇠의 가운데 위 끝이다.
+func _draw_chevrons(top: Vector2, alpha: float) -> void:
+	var half := WITHDRAW_CHEVRON_WIDTH * 0.5
+	for k in 2:
+		var tip := top + Vector2(0, WITHDRAW_CHEVRON_GAP * k)
+		var line := PackedVector2Array([tip + Vector2(-half, half * 0.5), tip, tip + Vector2(half, half * 0.5)])
+		_ring.draw_polyline(line, Color(0.12, 0.1, 0.08, alpha), WITHDRAW_CHEVRON_THICK + 3.0, true)
+		_ring.draw_polyline(line, Color(1.0, 1.0, 1.0, alpha), WITHDRAW_CHEVRON_THICK, true)
 
 
 ## 점선 원: 짧은 호 열둘(결정 670).
@@ -810,6 +861,8 @@ func _draw_ring() -> void:
 	if not _ring_sweep and not _ring_feint:
 		_ring.draw_circle(Vector2.ZERO, band, Color(0.3, 1.0, 0.5, 0.22))
 		_ring.draw_arc(Vector2.ZERO, band, 0.0, TAU, 48, Color(0.3, 1.0, 0.5, 0.95), 3.0)
+	if _ring_withdraw:
+		_draw_chevrons(Vector2(0, maxf(band, MARK_RADIUS) + WITHDRAW_CHEVRON_OFFSET), 0.95)
 	# 줄어드는 고리: 0이 되는 순간이 타격.
 	var radius := _ring_remaining * RING_SPEED
 	if radius > 1.0:

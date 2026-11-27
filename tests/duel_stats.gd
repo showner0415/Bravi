@@ -10,6 +10,7 @@ extends SceneTree
 ## 박자 봇(guard): --guard=hold|parry(안 주면 지금의 봇), parry는 모든 타격을 패리하려 하고 --jitter=<비율>이 누르는 때를 흔든다(어긋남 = 비율 x 기다린 시간 x -1~+1. 계획 042 결정 644). 준 줄에는 ",guard=..,jitter=.."가 붙는다.
 ## 의뢰(commission): --commission=<res 경로> 그 의뢰의 조건·모자·fit_opponent로 돈다(상대를 안 주면 의뢰의 상대 하나). --finisher=off 무너진 상대를 치지 않는 봇(계획 043 결정 662). 준 줄에는 ",commission=..,finisher=.."가 붙고, --commission이면 설정마다 "score," 줄이 하나 더 나온다.
 ## 헛손질(bite): --bite=<확률> 속는 봇 — 헛손질마다 그 확률로 그 칸을 막는다(안 주면 속지 않는다). 준 줄에는 ",bite=.."가 붙고, 헛손질이 있는 상대는 "feint," 줄이 하나 더 나온다(계획 044 결정 677).
+## 따라붙기(chase): --chase=<확률> 상대가 치고 빠진 빈틈마다 그 확률로 막기를 떼고 걸어 들어가 친다(안 주면 늘 따라붙는다, 1과 같다). 준 줄에는 ",chase=.."가 붙고, 빠지는 상대는 "withdraw," 줄이 하나 더 나온다(계획 045 결정 708).
 ## 줄: "stat,<상대>,<9칸|가로만>,<counter>,..." 하나가 설정 하나. 판정이 아니라 견줄 수다(통과 기준은 줄이 다 나오는 것뿐).
 
 const DT := preload("res://scripts/duel/duel_types.gd")
@@ -56,6 +57,8 @@ func _initialize() -> void:
 	var finisher_arg := ""
 	# 안 주면(-1) 줄 꼴이 옛 그대로다(계획 044 결정 677).
 	var bite := -1.0
+	# 안 주면(-1) 줄 꼴이 옛 그대로다(계획 045 결정 708).
+	var chase := -1.0
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--runs="):
 			runs = int(arg.trim_prefix("--runs="))
@@ -83,6 +86,8 @@ func _initialize() -> void:
 			commission_path = arg.trim_prefix("--commission=")
 		elif arg.begins_with("--bite="):
 			bite = float(arg.trim_prefix("--bite="))
+		elif arg.begins_with("--chase="):
+			chase = float(arg.trim_prefix("--chase="))
 		elif arg.begins_with("--finisher="):
 			finisher_arg = arg.trim_prefix("--finisher=")
 		elif arg == "--nine":
@@ -135,6 +140,8 @@ func _initialize() -> void:
 				guard_tag += comm_tag
 			if bite >= 0.0:
 				guard_tag += ",bite=%.2f" % bite
+			if chase >= 0.0:
+				guard_tag += ",chase=%.2f" % chase
 			var variants: Array = [["9칸", opponent]] if DuelHud.uses_heights(opponent) else []
 			if not nine_only or variants.is_empty():
 				variants.append(["가로만", opponent.flat()])
@@ -153,7 +160,7 @@ func _initialize() -> void:
 							_feint_patterns = 0
 							_bitten_patterns = 0
 							for i in runs:
-								summaries.append(_play(with_effects, i + 1, delay, miss, counter, dive, guard_mode, jitter, bite))
+								summaries.append(_play(with_effects, i + 1, delay, miss, counter, dive, guard_mode, jitter, bite, chase))
 							_print(name_tag, variant[0], label, counter, delay, miss, Summary.merge(summaries), "새" if effect == "on" else "옛", guard_tag)
 							lines += 1
 							if commission != null:
@@ -162,7 +169,7 @@ func _initialize() -> void:
 	quit(0)
 
 
-func _play(opponent: OpponentData, seed_value: int, delay: float, miss: float, counter: String, dive: String, guard_mode: String, jitter: float, bite := -1.0) -> Dictionary:
+func _play(opponent: OpponentData, seed_value: int, delay: float, miss: float, counter: String, dive: String, guard_mode: String, jitter: float, bite := -1.0, chase := -1.0) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_value
 	# 봇의 실수는 판의 난수와 따로 뽑는다(판의 차례를 건드리지 않게).
@@ -212,6 +219,12 @@ func _play(opponent: OpponentData, seed_value: int, delay: float, miss: float, c
 		bite_rng.seed = 3000 + seed_value
 		cfg["bite_fn"] = func(_atk: AttackData) -> bool:
 			return bite_rng.randf() < bite
+	if chase >= 0.0:
+		# 따라붙음의 난수는 빠진 빈틈에서만 뽑고 손·박자·속음·판의 난수와 따로 둔다(결정 708).
+		var chase_rng := RandomNumberGenerator.new()
+		chase_rng.seed = 4000 + seed_value
+		cfg["chase_fn"] = func(_ev: Dictionary) -> bool:
+			return chase_rng.randf() < chase
 	var bot := Bot.new(core, cfg)
 	while not core.ended and core.time < HARD_STOP:
 		core.tick(DELTA)
@@ -288,6 +301,12 @@ func _print(name: String, kind: String, opening: String, counter: String, delay:
 		print("feint,%s,%s,opening=%s%s | 판당 헛손질 %.2f · 속음 %.2f · 잃은 빈틈 %.2f | 속임 패턴 %d · 속은 몫 %.2f" % [
 			name, kind, opening, guard_tag, int(feints["헛손질"]) / runs, int(feints["속음"]) / runs, int(feints["잃은 빈틈"]) / runs,
 			_feint_patterns, float(_bitten_patterns) / maxf(1.0, _feint_patterns)])
+	# 치고 빠지는 상대에만 한 줄 더한다(다른 상대의 출력이 그대로이게. 결정 708). 닿은 몫 = 따라붙어 닿음 ÷ 열린 빠짐.
+	if m.has("withdraws"):
+		var wd: Dictionary = m["withdraws"]
+		print("withdraw,%s,%s,opening=%s%s | 판당 빠짐 %.2f · 열린 빠짐 %.2f · 따라붙어 닿음 %.2f | 닿은 몫 %.2f" % [
+			name, kind, opening, guard_tag, int(wd["빠짐"]) / runs, int(wd["열린 빠짐"]) / runs, int(wd["따라붙어 닿음"]) / runs,
+			float(int(wd["따라붙어 닿음"])) / maxf(1.0, int(wd["열린 빠짐"]))])
 
 
 ## 의뢰의 충족도 갈림. 부분 점수는 100도 0도 아닌 판이다.

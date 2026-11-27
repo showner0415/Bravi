@@ -40,6 +40,8 @@ const HELP_OPENING := " · 막아도 틈을 안 줄 때가 있다(낮은 소리)
 const HELP_HEIGHT := " · 고리가 뜬 칸(방향과 높이)에 마우스를 두고 막는다"
 ## 뛰어드는 찌르기(결정 451·454). 연습 화면도 같은 글을 쓴다.
 const HELP_DIVE := " · 뛰어드는 찌르기는 막기를 떼고 멀리까지 물러서면 헛친다(막으면 밀착으로 밀고 온다)"
+## 치고 빠지기(계획 045 결정 702). %s는 전진 키 이름. 연습 화면도 같은 글을 쓴다.
+const HELP_WITHDRAW := " · 꺾쇠(︽) 고리 뒤에는 물러난다 — 막고 나서 막기를 떼고 %s로 따라붙어 친다(꺾쇠가 없으면 그 자리에서. 방심한 판이면 런지가 한 번 닿는다)"
 ## 박자 고리(계획 042a 결정 635). 연습 화면의 막는 법만 쓴다. 칸 안에 들게 줄인 글이다(계획의 줄인 글).
 const HELP_BEAT := " · 엇박은 막대가 길수록 늦게 온다(쥐면 틈이 짧고, 마지막 박에 새로 누르면 크게 열린다)"
 ## 부위별 반격(계획 R02). 연습 화면의 "반격 실험"도 같은 글을 쓴다.
@@ -145,6 +147,8 @@ static func help_text(opponent: OpponentData, p_day_mode := false, has_hat := fa
 		if atk.dive:
 			text += HELP_DIVE
 			break
+	if has_withdraw(opponent.attacks):
+		text += HELP_WITHDRAW % Controls.help_name(&"step_forward")
 	if opponent.part_effects != null:
 		text += HELP_PART
 	if opponent.close_hit_posture_loss > 1:
@@ -171,6 +175,17 @@ static func help_text(opponent: OpponentData, p_day_mode := false, has_hat := fa
 			count = "(한 판에 %d번)" % opponent.complacent_limit
 		text += "\n" + HELP_LUNGE % [Controls.help_name(&"step_back"), Controls.help_name(&"attack"), count]
 	return text
+
+
+## 공격 목록의 뿌리나 변주에 치고 빠지는 길이 있는가(결정 702).
+static func has_withdraw(attacks: Array) -> bool:
+	for atk: AttackData in attacks:
+		if atk.withdraw:
+			return true
+		for variant in atk.variants:
+			if variant is AttackData and (variant as AttackData).withdraw:
+				return true
+	return false
 
 
 ## 이 판에서 노릴 수 있는 부위 가운데 스치면 2칸 이상 깎이는 것. {칸 수: [부위 이름, …]}
@@ -667,6 +682,9 @@ static func _hit_reason(ev: Dictionary) -> String:
 
 func _describe(ev: Dictionary) -> String:
 	match ev["type"]:
+		DuelRecord.DISTANCE:
+			if ev.get("by", "") == "withdraw":
+				return "상대가 물러났다 — 막기 떼고 따라붙어라"
 		DuelRecord.FEINT:
 			return "속았다 — 헛손질을 막았다" if ev["bitten"] else "헛손질 — 흘렸다"
 		DuelRecord.PATTERN_STEP:

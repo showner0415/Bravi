@@ -3,6 +3,7 @@ extends Control
 ## 데이터 폴더의 파일을 더하면 코드 없이 목록에 나온다. Esc로 처음 화면에 돌아간다.
 
 const Ui := preload("res://scripts/day_ui.gd")
+const Controls := preload("res://scripts/controls.gd")
 
 const COMMISSION_DIR := "res://data/commissions"
 const DUEL_PATH := "res://scenes/duel/duel.tscn"
@@ -561,7 +562,9 @@ static func help_text(opponent: OpponentData, attacks: Array) -> String:
 	var has_dive := false
 	var has_beat := false
 	var has_feint := false
+	var has_withdraw := false
 	for atk in flat:
+		has_withdraw = has_withdraw or atk.withdraw
 		has_feint = has_feint or atk.feint
 		for step: Resource in atk.chain:
 			has_feint = has_feint or (step as AttackData).feint
@@ -579,6 +582,8 @@ static func help_text(opponent: OpponentData, attacks: Array) -> String:
 	if has_feint:
 		lines.append(DuelHud.HELP_FEINT.trim_prefix(" · "))
 	lines.append(DuelHud.HELP_HEIGHT.trim_prefix(" · ") + DuelHud.opening_help(opponent))
+	if has_withdraw:
+		lines.append(DuelHud.HELP_WITHDRAW.trim_prefix(" · ") % Controls.help_name(&"step_forward"))
 	if has_dive:
 		lines.append(DuelHud.HELP_DIVE.trim_prefix(" · "))
 	return "\n".join(lines)

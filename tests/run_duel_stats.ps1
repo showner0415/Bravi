@@ -19,6 +19,7 @@
 # -Guard: hold (default, the bot holds the guard) or parry (the beat bot: tries to parry every strike). -Jitter: the beat bot press error as a share of the wait, e.g. -Guard parry -Jitter 0.15 (error = jitter * wait * random -1..1 seconds). Given, the stat line gets ",guard=..,jitter=.." after miss; not given, lines are as before.
 # -Commission: a commission .tres (res:// path); the bot plays by its conditions, hat and opponent fit (without -Opponent, the commission opponent only). -Finisher off: the bot does not strike a staggered opponent (plan 043). Given, the stat line gets ",commission=..,finisher=.." after miss, and each setting adds a "score," line (full / partial / zero scores, mean, topples per duel); not given, lines are as before.
 # -Bite: the bite bot (plan 044): chance to guard the cell of a feint (a hollow dotted ring) and be fooled, e.g. -Bite 0.3 (0 = never, 1 = always). Given, the stat line gets ",bite=.." after miss; opponents with feints also print a "feint," line (feints, bitten, lost openings per duel; share of feint patterns that fooled the bot). Not given, lines are as before.
+# -Chase: the chase bot (plan 045): chance to follow an opponent that struck and stepped back (release the guard, step in, strike inside the opening), per withdraw opening, e.g. -Chase 0 (never) -Chase 0.5. Default: always follows. Given, the stat line gets ",chase=.." after miss; opponents that withdraw also print a "withdraw," line (withdraws, open withdraws, reached by the chase per duel; reach share). Not given, lines are as before.
 # The stat line ends with ",<label> <sum>" after the effects{...}: the label is the Korean word for "hit total" and the sum is total hits taken per duel (two decimals).
 # Without -Opponent it plays every opponent in data/opponents, 9-cell and flat.
 # Judges the run: exit code 0, one "DUEL STATS OK <n>" line, no ERROR lines. The numbers are not judged.
@@ -40,7 +41,8 @@ param(
 	[string]$Jitter = '',
 	[string]$Commission = '',
 	[string]$Finisher = '',
-	[string]$Bite = ''
+	[string]$Bite = '',
+	[string]$Chase = ''
 )
 
 . "$PSScriptRoot\godot_path.ps1"
@@ -74,10 +76,11 @@ if ($Jitter) { $userArgs += " --jitter=$Jitter" }
 if ($Commission) { $userArgs += " --commission=$Commission" }
 if ($Finisher) { $userArgs += " --finisher=$Finisher" }
 if ($Bite) { $userArgs += " --bite=$Bite" }
+if ($Chase) { $userArgs += " --chase=$Chase" }
 foreach ($path in $Opponent) { $userArgs += " --opponent=$path" }
 $out = cmd /c "`"$Godot`" --headless --path `"$project`" --script res://tests/duel_stats.gd -- $userArgs 2>&1"
 $runExit = $LASTEXITCODE
-$out | Where-Object { $_ -match '^(stat|routes|score|feint),|^DUEL STATS|ERROR|WARNING' } | ForEach-Object { Write-Output $_ }
+$out | Where-Object { $_ -match '^(stat|routes|score|feint|withdraw),|^DUEL STATS|ERROR|WARNING' } | ForEach-Object { Write-Output $_ }
 
 $errors = @($out | Where-Object { $_ -match $errorPattern })
 $ok = @($out | Where-Object { $_ -match '^DUEL STATS OK \d+$' })

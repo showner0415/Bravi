@@ -84,6 +84,8 @@ var shoved := false
 # 게이지(0~1)는 값과 그 값을 잰 시각으로 가진다. 매 tick 더하지 않는다(delta에 따라 달라지지 않게).
 ## 안 열린 막기 뒤 섣부른 공격으로 치지 않는 끝 시각(결정 402). 안 열린 타격이 없으면 -INF라 is_rash_now가 전과 같다.
 var _closed_until := -INF
+## 마지막으로 상대가 물러난(치고 빠지기) 판정의 시각. 없으면 -INF(결정 700).
+var withdrew_at := -INF
 var _bind_value := 0.0
 var _bind_since := 0.0
 var _bind_mode: int = _Bind.HOLD
@@ -112,6 +114,7 @@ func setup(p_rules: DuelRules, p_weapon: WeaponData, p_opponent: OpponentData,
 	brain.opening_chance = rules.opening_chance_for(opponent_data.opening_chance, rules.stage_day)
 	brain.parry_opening_bonus = rules.parry_opening_bonus
 	player_posture = rules.player_posture_max
+	withdrew_at = -INF
 	distance = Dist.FAR
 	brain.start_idle(0.0)
 	_refresh_approach(0.0)
@@ -456,6 +459,7 @@ func _resolve_strike() -> void:
 		_pass_feint()
 		return
 	var dive: bool = (brain.pattern_root if brain.pattern_root != null else atk).dive
+	var withdraw: bool = (brain.pattern_root if brain.pattern_root != null else atk).withdraw
 	# 걸음이 넘어가기 전에 이 타격의 높이를 잡아 둔다. -1이면 높이가 없어 방향만 본다(결정 386).
 	var height := brain.current_height()
 	var height_ok := height < 0 or aim_height == height
@@ -521,6 +525,10 @@ func _resolve_strike() -> void:
 	# 내 걸음이 간격을 정하고, 유효타로 판이 끝나면 좁히지 않는다(결정 450).
 	if dive and result != SR.HIT and player_state != PlS.STEPPING and distance != Dist.CLOSE:
 		_set_distance(distance + 1, "dive")
+	# 쳤으면 빠진다: 길이 끝난 판정 뒤. 내 걸음이 간격을 정한다(결정 450 · 700).
+	if withdraw and not chained and result != SR.HIT and player_state != PlS.STEPPING and distance != Dist.FAR:
+		withdrew_at = time
+		_set_distance(distance - 1, "withdraw")
 	if result == SR.HIT:
 		_end(End.PLAYER_DEFEATED, "유효타를 맞음")
 

@@ -30,7 +30,7 @@ const ATTACK_START := &"attack_start"
 ## dodged(머리를 노렸는데 상대가 피했는가. 피했으면 result는 BLOCKED다),
 ## lunge(런지인가. 런지는 멀리에서 눌러 교전에 닿으며 판정한다: pressed_distance는 멀리, distance는 교전이다)
 const ATTACK := &"attack"
-## 간격 변경. distance, by("player"/"opponent"/"bind" — bind는 엉킴으로 밀려난 것)
+## 간격 변경. distance, by("player"/"opponent"/"bind" — bind는 엉킴으로 밀려난 것, "withdraw"는 치고 빠지기)
 const DISTANCE := &"distance"
 ## 엉킴이 다 차서 밀려나기 시작함. end_time(교전에 닿는 시각),
 ## cancelled_attack(예비 중이던 공격이 판정 없이 사라졌는가)

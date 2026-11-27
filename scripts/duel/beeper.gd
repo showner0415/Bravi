@@ -20,6 +20,8 @@ const TONES := {
 	## 헛손질: 막힘보다 낮고 짧은 바람 소리. 속았으면 안 열림보다 낮고 긴 소리(결정 670).
 	&"feint": [400.0, 0.04],
 	&"bitten": [170.0, 0.18],
+	## 치고 빠지기로 물러나는 순간: 막힘보다 높고 짧다(결정 702).
+	&"hop": [660.0, 0.05],
 	&"graze": [660.0, 0.09],
 	&"stagger": [220.0, 0.30],
 	&"hit": [990.0, 0.35],
@@ -46,6 +48,9 @@ func on_event(ev: Dictionary) -> void:
 			_play(&"dive" if (ev["attack"] as AttackData).dive else &"tell")
 		DuelRecord.FEINT:
 			_play(&"bitten" if ev["bitten"] else &"feint")
+		DuelRecord.DISTANCE:
+			if ev.get("by", "") == "withdraw":
+				_play(&"hop")
 		DuelRecord.PATTERN_STEP:
 			_play(&"tell")
 		DuelRecord.STRIKE:

@@ -46,6 +46,8 @@ extends RefCounted
 ##       +면 늦게(늦으면 맞는다), -면 일찍(막힘이지 패리가 아니다). 없으면 0과 같다(계획 042 결정 644).
 ##   bite_fn(attack: AttackData) -> bool — 헛손질(attack.feint)의 예비 동작·걸음마다 한 번 부른다. 참이면 헛손질의 칸을 막는다(속는 손).
 ##       없거나 거짓이면 속지 않고 그다음 진짜 타격의 칸을 막는다(패리는 막기를 떼고 조준만, 누르기는 진짜의 걸음이 예약한다). 계획 044 결정 677.
+##   chase_fn(strike_ev: Dictionary) -> bool — 상대가 치고 빠진 빈틈(core.withdrew_at == 그 STRIKE의 t, 간격 멀리)에서 받아치기 전에 한 번 부른다.
+##       참이면(없으면 참) 막기를 떼고 한 걸음 들어가 친다. 거짓이면 받아치지 않는다. 빠지는 일이 없으면 불리지 않는다(계획 045 결정 708).
 
 const DT := preload("res://scripts/duel/duel_types.gd")
 
@@ -64,6 +66,7 @@ var _regrip_at := INF
 var _delayed_counter_at := INF
 var _delayed_counter_aim: Array = []
 var _delayed_counter_release := false
+var _delayed_chase := false
 var _timed_attack_at := INF
 var _timed_attack_aim: Array = []
 var _pending_steps: Array[int] = []
@@ -111,6 +114,11 @@ func update() -> void:
 	var can_attack := core.player_state == DT.PlayerState.READY or core.player_state == DT.PlayerState.GUARD
 	if _delayed_counter_at <= core.time and can_attack:
 		_delayed_counter_at = INF
+		if _delayed_chase and core.distance == DT.Distance.FAR:
+			_delayed_chase = false
+			_chase(_delayed_counter_aim)
+			return
+		_delayed_chase = false
 		_attack(_delayed_counter_aim)
 		if _delayed_counter_release:
 			core.set_guard(false)
@@ -321,6 +329,10 @@ func _on_strike(ev: Dictionary) -> void:
 		var aim: Variant = cfg["counter_fn"].call(ev)
 		if aim == null:
 			return
+		# 치고 빠진 빈틈이면 따라붙을지 정한다(빠지는 일이 없으면 늘 거짓이라 아래가 전과 같다).
+		var chasing := core.withdrew_at == float(ev["t"]) and core.distance == DT.Distance.FAR
+		if chasing and cfg.has("chase_fn") and not bool(cfg["chase_fn"].call(ev)):
+			return
 		counters_done += 1
 		var parrying := result == DT.StrikeResult.PARRIED
 		var delay := float(cfg.get("counter_delay", 0.0))
@@ -328,6 +340,10 @@ func _on_strike(ev: Dictionary) -> void:
 			_delayed_counter_at = float(ev["t"]) + delay
 			_delayed_counter_aim = aim
 			_delayed_counter_release = parrying
+			_delayed_chase = chasing
+			return
+		if chasing:
+			_chase(aim)
 			return
 		_attack(aim)
 		if parrying:
@@ -378,6 +394,13 @@ func _lunge_retreat() -> void:
 	core.set_guard(false)
 	_pending_steps = [-1]
 	_lunge_armed = true
+
+
+## 따라붙기: 막기를 먼저 떼고(걸음은 READY에서만 나간다) 한 걸음 들어간 뒤 친다.
+func _chase(aim: Array) -> void:
+	core.set_guard(false)
+	_pending_steps = [1]
+	_pending_attack = aim
 
 
 func _attack(aim: Array) -> void:

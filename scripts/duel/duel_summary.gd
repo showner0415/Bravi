@@ -27,17 +27,30 @@ static func summarize(record: DuelRecord) -> Dictionary:
 	# 빈틈 하나의 끝: 열린 뒤 다음 예비 동작 전의 내 첫 공격으로 정한다.
 	var opening := false
 	var staggered := false
+	# 치고 빠지기(결정 708): 직전 타격의 빈틈과, 열린 빠짐의 빈틈 안에서 아직 닿지 않았는가.
+	var last_recovery := 0.0
+	var chasing := false
 	for ev in record.events:
 		match ev["type"]:
 			DuelRecord.TELL_START:
 				if opening:
 					out["openings"]["안 침"] += 1
 					opening = false
+				chasing = false
 				out["tells"] += 1
 				var atk := ev["attack"] as AttackData
 				if not atk.chain.is_empty():
 					_bump(out["patterns"], atk.attack_name)
 					_bump(out["routes"], "%s %s" % [atk.attack_name, _route(atk, ev.get("heights", []))])
+			DuelRecord.DISTANCE:
+				# 물러남이 하나라도 있는 판에만 열쇠를 만든다(다른 상대의 요약이 그대로이게).
+				if ev.get("by", "") == "withdraw":
+					if not out.has("withdraws"):
+						out["withdraws"] = {"빠짐": 0, "열린 빠짐": 0, "따라붙어 닿음": 0}
+					out["withdraws"]["빠짐"] += 1
+					if last_recovery > 0.0:
+						out["withdraws"]["열린 빠짐"] += 1
+						chasing = true
 			DuelRecord.FEINT:
 				# 헛손질이 하나라도 있는 판에만 열쇠를 만든다(다른 상대의 요약이 그대로이게. 결정 677).
 				if not out.has("feints"):
@@ -47,6 +60,7 @@ static func summarize(record: DuelRecord) -> Dictionary:
 					out["feints"]["속음"] += 1
 			DuelRecord.STRIKE:
 				out["strikes"][strike_keys[ev["result"]]] += 1
+				last_recovery = float(ev.get("recovery", 0.0))
 				if ev.get("bitten", false):
 					out["feints"]["잃은 빈틈"] += 1
 				if ev.get("closed", false):
@@ -70,6 +84,9 @@ static func summarize(record: DuelRecord) -> Dictionary:
 				if ev.get("rash", false):
 					out["rash"] += 1
 				var reached: bool = ev["result"] == DT.AttackResult.GRAZE or ev["result"] == DT.AttackResult.HIT
+				if chasing and (reached or ev.get("dodged", false)):
+					chasing = false
+					out["withdraws"]["따라붙어 닿음"] += 1
 				if ev.get("effect", &"") == &"arm_slow":
 					out["effects"]["팔 둔함"] += 1
 				if ev["result"] == DT.AttackResult.GRAZE and ev["part"] == DT.Part.HEAD:
@@ -121,7 +138,7 @@ static func _reason(ev: Dictionary) -> String:
 	return DT.SITUATION_NAMES[situation] if situation >= 0 else "?"
 
 
-## 패턴의 길: "오상>왼중>중하". 높이가 없으면 방향만.
+## 패턴의 길: "오상>왼중>중하". 높이가 없으면 방향만. 치고 빠지는 길의 끝은 "^".
 static func _route(root: AttackData, heights: Array) -> String:
 	var points: Array[AttackData] = [root]
 	for step: AttackData in root.chain:
@@ -129,5 +146,5 @@ static func _route(root: AttackData, heights: Array) -> String:
 	var parts: PackedStringArray = []
 	for i in points.size():
 		var h := int(heights[i]) if i < heights.size() else -1
-		parts.append(DIR_LETTERS[points[i].direction] + (HEIGHT_LETTERS[h] if h >= 0 else "") + ("~" if points[i].feint else ""))
+		parts.append(DIR_LETTERS[points[i].direction] + (HEIGHT_LETTERS[h] if h >= 0 else "") + ("~" if points[i].feint else "") + ("^" if root.withdraw and i == points.size() - 1 else ""))
 	return ">".join(parts)
