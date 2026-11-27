@@ -15,6 +15,7 @@ const BACKDROP_UP := 42.0
 const BACKDROP_RADIUS := 15.0
 const PLAIN_KEYS := "number,pos,role,time"
 const FEINT_KEYS := "feint,number,pos,role,time"
+const WITHDRAW_KEYS := "number,pos,role,time,withdraw"
 const PATH_KEYS :="dot,points,role"
 const EM_DASH := 0x2014
 const MIN_LENGTH_GAP := 20.0
@@ -183,6 +184,9 @@ func _check_plain(errs: Array[String], job: Dictionary) -> void:
 			var index := int(mark["number"]) - 1
 			if index >= 0 and index < strikes.size() and strikes[index].feint:
 				want = FEINT_KEYS
+			# 빠지는 길의 마지막 고리에만 withdraw 열쇠가 선다(결정 711).
+			if index == strikes.size() - 1 and solo.withdraw:
+				want = WITHDRAW_KEYS
 		if joined != want:
 			_f._note(errs, "[①] %s: 표시의 키 '%s' (기대 '%s')" % [label, joined, want])
 			return

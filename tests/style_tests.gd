@@ -13,13 +13,14 @@ const LORENZO_PATH := "res://data/opponents/opponent_03.tres"
 const SERAFINA_PATH := "res://data/opponents/opponent_04.tres"
 const AGOSTINO_PATH := "res://data/opponents/opponent_05.tres"
 const BEATRICE_PATH := "res://data/opponents/opponent_06.tres"
+const GUGLIELMO_PATH := "res://data/opponents/opponent_07.tres"
 const FIRST_BLOOD_PATH := "res://data/commissions/first_blood.tres"
 const LEGS_ONLY_PATH := "res://data/commissions/variants/legs_only.tres"
 const USURER_PATH := "res://data/commissions/variants/first_blood_usurer.tres"
 const RULES_PATH := "res://data/duel_rules.tres"
 const WEAPON_PATH := "res://data/weapons/rapier.tres"
 const DUEL_PATH := "res://scenes/duel/duel.tscn"
-const OPPONENT_PATHS: Array[String] = [BARTOLO_PATH, BRUNO_PATH, LORENZO_PATH, SERAFINA_PATH, AGOSTINO_PATH, BEATRICE_PATH]
+const OPPONENT_PATHS: Array[String] = [BARTOLO_PATH, BRUNO_PATH, LORENZO_PATH, SERAFINA_PATH, AGOSTINO_PATH, BEATRICE_PATH, GUGLIELMO_PATH]
 const DELTA := 1.0 / 60.0
 const EPS := 1e-6
 ## 결정 375의 하한과 계획 040의 한 패턴 길이 상한.
@@ -34,9 +35,10 @@ const FROM_DAYS := {
 	SERAFINA_PATH: [7, 9, 11, 13, 15],
 	AGOSTINO_PATH: [6, 8, 10, 12, 14],
 	BEATRICE_PATH: [7, 9, 11, 13, 15],
+	GUGLIELMO_PATH: [8, 10, 12, 14, 16],
 }
 ## 1단의 공격 수(하루의 상대의 목록은 그대로다).
-const FIRST_TIER_SIZES := {BARTOLO_PATH: 5, BRUNO_PATH: 5, LORENZO_PATH: 4, SERAFINA_PATH: 2, AGOSTINO_PATH: 4, BEATRICE_PATH: 4}
+const FIRST_TIER_SIZES := {BARTOLO_PATH: 5, BRUNO_PATH: 5, LORENZO_PATH: 4, SERAFINA_PATH: 2, AGOSTINO_PATH: 4, BEATRICE_PATH: 4, GUGLIELMO_PATH: 4}
 
 var _tree: SceneTree
 
@@ -330,6 +332,7 @@ func _check_route(errs: Array[String], where: String, route: AttackData, gap: fl
 	if not route.chain.is_empty() and route.needs_raised_guard:
 		errs.append("%s: 패턴의 뿌리가 올려 막기 공격이다" % where)
 	_check_feints(errs, where, route, strikes)
+	_check_withdraw(errs, where, route, strikes)
 	if route.sweep:
 		var points: Array[Vector2i] = []
 		for s in strikes:
@@ -383,10 +386,27 @@ func _check_feints(errs: Array[String], where: String, route: AttackData, strike
 			errs.append("%s: %d번째 헛손질과 그다음 진짜 타격의 칸이 겹친다" % [where, i + 1])
 
 
+## 빠지기의 한계(결정 703 ㄱ~ㄷ). 빠지는 길이 없으면 아무것도 걸지 않는다.
+func _check_withdraw(errs: Array[String], where: String, route: AttackData, strikes: Array[AttackData]) -> void:
+	for i in range(1, strikes.size()):
+		if strikes[i].withdraw:
+			errs.append("%s: 걸음 %d번째에 withdraw가 있다 (길에만)" % [where, i + 1])
+	if not route.withdraw:
+		return
+	if route.sweep or route.dive or route.needs_raised_guard or route.is_big or route.mark_shape != &"":
+		errs.append("%s: 빠지는 길이 휩쓸기 · 뛰어들기 · 올려 막기 · 큰 공격 · 고리의 꼴을 갖는다" % where)
+	for s in strikes:
+		if s.feint:
+			errs.append("%s: 빠지는 길에 헛손질이 있다" % where)
+			break
+	if route.recovery_time < 1.2 - EPS:
+		errs.append("%s: 빠지는 길의 빈틈 %.2f초 (1.2 이상)" % [where, route.recovery_time])
+
+
 ## 공격의 모든 값(걸음과 변주까지). 한 단이 기본과 고유 가운데 어느 쪽을 바꿨는지 가를 때 쓴다.
 func _sig_text(atk: AttackData) -> String:
-	var text := "%s|%d|%.3f|%.3f|%.3f|%s|%s|%s|%s|%s|%s|%s|%s" % [atk.attack_name, atk.direction, atk.tell_time, atk.recovery_time,
-		atk.weight, atk.is_big, atk.needs_raised_guard, atk.sweep, atk.dive, atk.signature, str(atk.heights), str(atk.pose_color), atk.feint]
+	var text := "%s|%d|%.3f|%.3f|%.3f|%s|%s|%s|%s|%s|%s|%s|%s|%s" % [atk.attack_name, atk.direction, atk.tell_time, atk.recovery_time,
+		atk.weight, atk.is_big, atk.needs_raised_guard, atk.sweep, atk.dive, atk.signature, str(atk.heights), str(atk.pose_color), atk.feint, atk.withdraw]
 	for c in atk.chain:
 		text += "/" + _sig_text(c as AttackData)
 	text += "~"
@@ -510,6 +530,8 @@ func _row(route: AttackData) -> String:
 		text += " > d%d t%.2f h%s" % [s.direction, s.tell_time, str(s.heights)]
 		if s.feint:
 			text += " f"
+	if route.withdraw:
+		text += " w"
 	return text
 
 
@@ -557,6 +579,11 @@ func _expected_rows(path: String) -> Array[String]:
 			return [
 				"속임 베기 d0 t0.90 r1.20 b0 h[0] f > d2 t0.65 h[1, 2]",
 				"속임 베기 d0 t0.90 r1.20 b0 h[0] f > d0 t0.65 h[2]",
+			]
+		GUGLIELMO_PATH:
+			return [
+				"치고 빠지기 d0 t0.90 r1.30 b0 h[0, 2] w",
+				"치고 빠지기 d2 t0.90 r1.30 b0 h[0, 2] w",
 			]
 	return []
 
@@ -616,6 +643,26 @@ func t114_style_colors() -> String:
 			gaps.append("%s %.3f" % [pair[0], gap_value])
 			if gap_value < 0.06:
 				errs.append("%s: 고유 색의 색상이 %s와 %.3f (0.06 이상)" % [label, pair[0], gap_value])
+		# 둘째 표지의 규칙(결정 704): 기본 색 셋 가운데 하나와 색상 차 0.06 미만이면 1단 고유 검술의 모든 길이 둘째 표지를 가진다.
+		var base_gaps: Array[String] = []
+		var near_base := false
+		for other in base_set:
+			var base_gap := _hue_gap(mine, other)
+			base_gaps.append("%.3f" % base_gap)
+			if base_gap < 0.06:
+				near_base = true
+		print("  INFO 기본 색과의 색상 차 %s: %s%s" % [label, " · ".join(PackedStringArray(base_gaps)), " (둘째 표지 필요)" if near_base else ""])
+		if near_base:
+			for atk: AttackData in opp.attacks:
+				if not atk.signature:
+					continue
+				for route in _routes(atk):
+					var marked := route.mark_shape != &"" or route.withdraw
+					for s in _strike_list(route):
+						if s.feint:
+							marked = true
+					if not marked:
+						errs.append("%s 1단 '%s': 고유 색이 기본 색과 같은 줄기인데 둘째 표지(mark_shape · feint · withdraw)가 없는 길" % [label, route.attack_name])
 		print("  INFO 색상 차 %s(%s): %s" % [label, opp.style_name, " · ".join(PackedStringArray(gaps))])
 		for i in own_colors.size():
 			if _rgb_dist(mine, own_colors[i]) < 0.25:
