@@ -129,6 +129,8 @@ var _ring_remaining := 0.0
 ## 패턴의 번호 고리와 휩쓸기의 길(pattern_marks의 결과). 단발이면 비어 있다.
 var _marks: Array[Dictionary] = []
 var _ring_sweep := false
+## 지금 타격이 헛손질인가(결정 670): 패리의 띠를 그리지 않고 줄어드는 고리가 점선이다.
+var _ring_feint := false
 var _height_shift := 0.0
 var _dive_start := -INF
 var _dive_from_close := false
@@ -237,6 +239,10 @@ func on_event(ev: Dictionary) -> void:
 				# 들고만 있던 막기로 표시된 공격을 버텼다: 빈틈이 없다는 것을 상태 글자 자리에 잠깐 띄운다.
 				_deflect_text = "밀어붙임"
 				_deflect_until = _clock + DEFLECT_TEXT_TIME
+			elif ev.get("bitten", false):
+				# 헛손질에 속아 막고도 빈틈이 없다(결정 671).
+				_deflect_text = "속았다"
+				_deflect_until = _clock + DEFLECT_TEXT_TIME
 			elif ev.get("closed", false):
 				# 막았는데 빈틈을 주지 않았다(결정 404). 상한에 닿았으면 다음은 열린다고 알린다.
 				_deflect_text = "틈을 안 준다" + (" — 다음은 열린다" if _limit_reached(ev) else "")
@@ -288,6 +294,7 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 	_ring_active = false
 	_marks = []
 	_ring_sweep = false
+	_ring_feint = false
 	# 머리를 지키는 상대의 머리는 크게 열린 회수에서만 빈틈 색으로 물든다("파랗게 물든 부위가 열린 부위").
 	var head_closed := false
 	var head_art: PartArt = _art.head if _art != null else null
@@ -301,6 +308,7 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 			tint = atk.pose_color
 			_marks = pattern_marks(brain, display_time)
 			_ring_sweep = brain.is_sweep()
+			_ring_feint = atk.feint
 			var tell_parts := tell_texts(core, _dive_from_close)
 			text = tell_parts[0]
 			hint = tell_parts[1]
@@ -379,12 +387,17 @@ static func tell_texts(core: DuelCore, dive_from_close: bool) -> PackedStringArr
 	var tell_height := brain.current_height()
 	if tell_height >= 0:
 		text += " · %s %s" % [DT.GUARD_NAMES[atk.direction], DT.HEIGHT_NAMES[tell_height]]
+	# 헛손질은 칸 이름 대신 알린다(결정 670).
+	if atk.feint:
+		text = text.get_slice(" · ", 0) + " · 헛손질"
 	if brain.pattern_slowed:
 		text += " (둔함)"
 	var hints := PackedStringArray()
 	# 데이터의 세는 말은 귀띔의 맨 앞이고 패턴 내내 같은 글이다(결정 633).
 	if brain.pattern_root != null and brain.pattern_root.tell_hint != "":
 		hints.append(brain.pattern_root.tell_hint)
+	if brain.feint_bitten:
+		hints.append("속았다")
 	if brain.is_sweep():
 		hints.append("쥐고 끌어라")
 	if atk.dive:
@@ -699,6 +712,8 @@ static func pattern_marks(brain: OpponentBrain, display_time: float) -> Array[Di
 			continue
 		var role := &"now" if i == brain.step_index else (&"next" if i == brain.step_index + 1 else &"later")
 		var mark := {"role": role, "number": i + 1, "pos": pos, "time": times[i]}
+		if atk.feint:
+			mark["feint"] = true
 		if root.mark_shape != &"":
 			# 막대는 칼 든 팔의 반대쪽으로 뻗는다(예비 동작을 보이는 팔과 칼을 가리지 않게. 결정 632).
 			mark["shape"] = root.mark_shape
@@ -760,8 +775,12 @@ func _draw_marks() -> void:
 		var at: Vector2 = mark["pos"] - origin
 		var alpha := 0.95 if mark["role"] == &"now" else (0.8 if mark["role"] == &"next" else 0.4)
 		if mark["role"] != &"now":
-			_ring.draw_circle(at, MARK_RADIUS, Color(0.12, 0.1, 0.08, 0.55 * alpha))
-			_ring.draw_arc(at, MARK_RADIUS, 0.0, TAU, 40, Color(1.0, 1.0, 1.0, alpha), 3.0)
+			if mark.get("feint", false):
+				# 헛손질은 빈 고리: 어두운 바탕 없이 점선 테두리(결정 670).
+				_draw_dashed_circle(at, MARK_RADIUS, Color(1.0, 1.0, 1.0, alpha), 3.0)
+			else:
+				_ring.draw_circle(at, MARK_RADIUS, Color(0.12, 0.1, 0.08, 0.55 * alpha))
+				_ring.draw_arc(at, MARK_RADIUS, 0.0, TAU, 40, Color(1.0, 1.0, 1.0, alpha), 3.0)
 			if mark.has("shape") and MARK_SHAPES.has(mark["shape"]) and float(mark["wait"]) > 0.0:
 				var bar := beat_bar_rect(mark)
 				bar.position -= origin
@@ -776,19 +795,30 @@ func _draw_marks() -> void:
 		_ring.draw_string(font, base, label, HORIZONTAL_ALIGNMENT_LEFT, -1, MARK_FONT_SIZE, Color(1, 1, 1, alpha))
 
 
+## 점선 원: 짧은 호 열둘(결정 670).
+func _draw_dashed_circle(center: Vector2, radius: float, color: Color, width: float) -> void:
+	var step := TAU / 12.0
+	for k in 12:
+		_ring.draw_arc(center, radius, step * k, step * k + step * 0.5, 8, color, width)
+
+
 func _draw_ring() -> void:
 	if not _ring_active:
 		return
 	_draw_marks()
 	var band := RING_SPEED * _parry_window
 	# 고정 띠(목표 고리): 줄어드는 고리가 이 안에 들어와 있을 때 새로 누르면 패리다. 휩쓸기에는 패리가 없어 그리지 않는다.
-	if not _ring_sweep:
+	# 헛손질에도 그리지 않는다: 받아낼 것이 없다(결정 670).
+	if not _ring_sweep and not _ring_feint:
 		_ring.draw_circle(Vector2.ZERO, band, Color(0.3, 1.0, 0.5, 0.22))
 		_ring.draw_arc(Vector2.ZERO, band, 0.0, TAU, 48, Color(0.3, 1.0, 0.5, 0.95), 3.0)
 	# 줄어드는 고리: 0이 되는 순간이 타격.
 	var radius := _ring_remaining * RING_SPEED
 	if radius > 1.0:
-		_ring.draw_arc(Vector2.ZERO, radius, 0.0, TAU, 64, Color(1.0, 1.0, 1.0, 0.95), 5.0)
+		if _ring_feint:
+			_draw_dashed_circle(Vector2.ZERO, radius, Color(1.0, 1.0, 1.0, 0.95), 5.0)
+		else:
+			_ring.draw_arc(Vector2.ZERO, radius, 0.0, TAU, 64, Color(1.0, 1.0, 1.0, 0.95), 5.0)
 	_ring.draw_circle(Vector2.ZERO, 4.0, Color(1.0, 1.0, 1.0, 0.9))
 
 

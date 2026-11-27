@@ -97,8 +97,11 @@ func _process(_delta: float) -> bool:
 		else:
 			settings.set("path", "")
 
+	var only := _only_tokens()
 	var tests: Array = []
 	for path in TEST_FILES:
+		if not only.is_empty() and not _matches(path, only):
+			continue
 		if not ResourceLoader.exists(path):
 			continue
 		var script: GDScript = load(path)
@@ -143,4 +146,19 @@ func _process(_delta: float) -> bool:
 		_exit_code = 1
 	# 종료는 다음 _process 호출들이 한다(위의 QUIT_DELAY_MSEC 참고).
 	_quit_at_msec = Time.get_ticks_msec() + QUIT_DELAY_MSEC
+	return false
+
+
+## --only=a,b: 파일 이름에 그 조각이 든 테스트 파일만 돈다(메모리가 모자랄 때 나눠 돌리려고. 없으면 전부).
+func _only_tokens() -> PackedStringArray:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--only="):
+			return arg.trim_prefix("--only=").split(",", false)
+	return PackedStringArray()
+
+
+func _matches(path: String, tokens: PackedStringArray) -> bool:
+	for token in tokens:
+		if path.get_file().contains(token):
+			return true
 	return false

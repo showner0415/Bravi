@@ -33,6 +33,8 @@ const HELP_BIND := " · 밀착은 엉킴이 차면 밀려난다 — 차기 전�
 ## 패턴의 막는 법(결정 377). 연습 화면도 같은 글을 쓴다.
 const HELP_CHAIN := " · 이어 치기는 번호 차례대로 막기를 옮긴다(누른 채 옮기면 막고, 박자마다 새로 누르면 패리)"
 const HELP_SWEEP := " · 휩쓸기는 막기를 쥔 채 점을 따라 끈다(떼면 뚫리고 패리는 없다)"
+## 헛손질이 있는 상대에만 붙는다(결정 669). 연습 화면도 같은 글을 쓴다.
+const HELP_FEINT := " · 점선 고리는 헛손질 — 그 칸을 막고 있으면 속아서 틈이 없다"
 ## 빈틈의 확률이 있는 상대에만 붙는다(결정 404). %s는 상한의 글.
 const HELP_OPENING := " · 막아도 틈을 안 줄 때가 있다(낮은 소리)%s"
 const HELP_HEIGHT := " · 고리가 뜬 칸(방향과 높이)에 마우스를 두고 막는다"
@@ -121,14 +123,20 @@ static func help_text(opponent: OpponentData, p_day_mode := false, has_hat := fa
 	# 패턴이 있는 상대만 막는 법을 덧붙인다(결정 377).
 	var has_chain := false
 	var has_sweep := false
+	var has_feint := false
 	for atk in opponent.attacks:
 		if not atk.chain.is_empty():
 			has_sweep = has_sweep or atk.sweep
 			has_chain = has_chain or not atk.sweep
+		has_feint = has_feint or atk.feint
+		for step: Resource in atk.chain:
+			has_feint = has_feint or (step as AttackData).feint
 	if has_chain:
 		text += HELP_CHAIN
 	if has_sweep:
 		text += HELP_SWEEP
+	if has_feint:
+		text += HELP_FEINT
 	if uses_heights(opponent):
 		text += HELP_HEIGHT
 	if opponent.opening_chance < 1.0:
@@ -659,6 +667,8 @@ static func _hit_reason(ev: Dictionary) -> String:
 
 func _describe(ev: Dictionary) -> String:
 	match ev["type"]:
+		DuelRecord.FEINT:
+			return "속았다 — 헛손질을 막았다" if ev["bitten"] else "헛손질 — 흘렸다"
 		DuelRecord.PATTERN_STEP:
 			var step_atk := ev["attack"] as AttackData
 			var step_height := int(ev.get("height", -1))
@@ -671,6 +681,8 @@ func _describe(ev: Dictionary) -> String:
 				return "%s — 틈을 안 줬다%s" % ["헛침" if ev["result"] == DT.StrikeResult.WHIFF \
 						else "패리" if ev["result"] == DT.StrikeResult.PARRIED else "막음",
 					" (다음은 열린다)" if OpponentView._limit_reached(ev) else ""]
+			if ev.get("bitten", false):
+				return "%s — 속아서 틈이 없다" % ("패리" if ev["result"] == DT.StrikeResult.PARRIED else "막음")
 			match ev["result"]:
 				DT.StrikeResult.BLOCKED:
 					if ev["braced"]:

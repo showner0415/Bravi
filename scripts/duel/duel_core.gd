@@ -452,6 +452,9 @@ func _on_opponent_state_end() -> void:
 ## 순서: ① 멀리면 헛침 ② GUARD이고 방향이 맞으면 막힘/패리 ③ 그 밖에는 닿음.
 func _resolve_strike() -> void:
 	var atk := brain.current_attack
+	if atk.feint:
+		_pass_feint()
+		return
 	var dive: bool = (brain.pattern_root if brain.pattern_root != null else atk).dive
 	# 걸음이 넘어가기 전에 이 타격의 높이를 잡아 둔다. -1이면 높이가 없어 방향만 본다(결정 386).
 	var height := brain.current_height()
@@ -493,7 +496,7 @@ func _resolve_strike() -> void:
 	var recovery := brain.resolve_strike(time, result, braced)
 	# 걸음이 남아 상대가 TELL에 머물면 패턴이 이어진다(결정 371·376).
 	var chained := brain.state == OpS.TELL
-	if brain.last_closed:
+	if brain.last_closed or brain.last_bitten:
 		_closed_until = time + rules.closed_counter_grace
 	var strike := {
 		"attack": atk, "result": result, "situation": situation,
@@ -506,6 +509,8 @@ func _resolve_strike() -> void:
 	if brain.last_leg_bonus != &"":
 		strike["leg_bonus"] = brain.last_leg_bonus
 		strike["leg_time"] = brain.last_leg_time
+	if brain.last_bitten:
+		strike["bitten"] = true
 	_emit(DuelRecord.STRIKE, strike)
 	if chained:
 		_emit(DuelRecord.PATTERN_STEP, {
@@ -518,6 +523,27 @@ func _resolve_strike() -> void:
 		_set_distance(distance + 1, "dive")
 	if result == SR.HIT:
 		_end(End.PLAYER_DEFEATED, "유효타를 맞음")
+
+
+## 헛손질의 시각(결정 669): 판정 없이 다음 걸음으로 넘어간다. 그 칸을 막고 있으면(방향·높이) 속은 것이다. 난수를 부르지 않는다.
+func _pass_feint() -> void:
+	var atk := brain.current_attack
+	var height := brain.current_height()
+	var index := brain.step_index
+	var bitten: bool = distance != Dist.FAR and player_state == PlS.GUARD and aim_direction == atk.direction \
+			and (height < 0 or aim_height == height)
+	brain.pass_feint(time, bitten)
+	var chained := brain.state == OpS.TELL
+	_emit(DuelRecord.FEINT, {
+		"attack": atk, "root": brain.pattern_root, "index": index, "bitten": bitten, "height": height,
+		"next_strike": brain.state_end if chained else -1.0,
+	})
+	if chained:
+		_emit(DuelRecord.PATTERN_STEP, {
+			"attack": brain.current_attack, "root": brain.pattern_root, "index": brain.step_index,
+			"count": brain.pattern_count(), "strike_time": brain.state_end, "duration": brain.tell_duration,
+			"height": brain.current_height(),
+		})
 
 
 ## 스침이 부위에 건 지속 효과를 걸고 이름을 돌려준다(계획 R02 D4·D5). 유효타에는 걸지 않는다(호출이 스침에서만이다).

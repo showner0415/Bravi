@@ -17,6 +17,9 @@ const TONES := {
 	&"parry": [880.0, 0.12],
 	## 막았는데 빈틈을 주지 않았다: 막힘보다 한 옥타브 낮고 길다(결정 404).
 	&"closed": [260.0, 0.10],
+	## 헛손질: 막힘보다 낮고 짧은 바람 소리. 속았으면 안 열림보다 낮고 긴 소리(결정 670).
+	&"feint": [400.0, 0.04],
+	&"bitten": [170.0, 0.18],
 	&"graze": [660.0, 0.09],
 	&"stagger": [220.0, 0.30],
 	&"hit": [990.0, 0.35],
@@ -41,6 +44,8 @@ func on_event(ev: Dictionary) -> void:
 	match ev["type"]:
 		DuelRecord.TELL_START:
 			_play(&"dive" if (ev["attack"] as AttackData).dive else &"tell")
+		DuelRecord.FEINT:
+			_play(&"bitten" if ev["bitten"] else &"feint")
 		DuelRecord.PATTERN_STEP:
 			_play(&"tell")
 		DuelRecord.STRIKE:

@@ -560,7 +560,11 @@ static func help_text(opponent: OpponentData, attacks: Array) -> String:
 	var has_sweep := false
 	var has_dive := false
 	var has_beat := false
+	var has_feint := false
 	for atk in flat:
+		has_feint = has_feint or atk.feint
+		for step: Resource in atk.chain:
+			has_feint = has_feint or (step as AttackData).feint
 		has_beat = has_beat or atk.mark_shape == &"beat"
 		has_chain = has_chain or (not atk.chain.is_empty() and not atk.sweep)
 		has_sweep = has_sweep or atk.sweep
@@ -572,6 +576,8 @@ static func help_text(opponent: OpponentData, attacks: Array) -> String:
 		lines.append(DuelHud.HELP_BEAT.trim_prefix(" · "))
 	if has_sweep:
 		lines.append(DuelHud.HELP_SWEEP.trim_prefix(" · "))
+	if has_feint:
+		lines.append(DuelHud.HELP_FEINT.trim_prefix(" · "))
 	lines.append(DuelHud.HELP_HEIGHT.trim_prefix(" · ") + DuelHud.opening_help(opponent))
 	if has_dive:
 		lines.append(DuelHud.HELP_DIVE.trim_prefix(" · "))

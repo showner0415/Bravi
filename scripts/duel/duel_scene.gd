@@ -412,13 +412,29 @@ func _draw() -> void:
 		if DuelHud.forecast_on(core):
 			_draw_forecast_frame(rect.grow(-10.0), core.attack_forecast()["verdict"])
 		# 높이를 가진 타격이 오는 칸: 예비 색 테두리, 내 막기가 그 칸에 있으면 초록(결정 388).
-		var strike_height := core.brain.current_height()
-		if core.brain.state == DuelTypes.OpponentState.TELL and strike_height >= 0:
-			var strike_dir: int = core.brain.current_attack.direction
-			var guarded := core.player_state == DuelTypes.PlayerState.GUARD and core.aim_direction == strike_dir \
-					and core.aim_height == strike_height
-			var target := Rect2(Vector2(cell.x * strike_dir, cell.y * strike_height), cell).grow(-4.0)
-			draw_rect(target, Color(0.3, 1.0, 0.5, 0.75) if guarded else Color(1.0, 0.9, 0.25, 0.5), false, 4.0)
+		var frame := strike_cell_frame(core)
+		if not frame.is_empty():
+			var unit: Rect2 = frame["rect"]
+			var target := Rect2(unit.position * cell, unit.size * cell).grow(-4.0)
+			draw_rect(target, Color(0.3, 1.0, 0.5, 0.75) if frame["guarded"] else Color(1.0, 0.9, 0.25, 0.5), false, 4.0)
+
+
+## 높이를 가진 타격이 오는 칸의 테두리 값. 빈 사전이면 긋지 않는다. rect는 칸 단위(위치 = 방향·높이, 크기 1x1)이고
+## 헛손질의 예비 동작에는 긋지 않는다: 초록이 속는 손에 "맞게 막았다"를 띄우지 않게(결정 670).
+static func strike_cell_frame(p_core: DuelCore) -> Dictionary:
+	var brain := p_core.brain
+	var strike_height := brain.current_height()
+	if brain.state != DuelTypes.OpponentState.TELL or strike_height < 0:
+		return {}
+	if brain.current_attack.feint:
+		return {}
+	var strike_dir: int = brain.current_attack.direction
+	var guarded := p_core.player_state == DuelTypes.PlayerState.GUARD and p_core.aim_direction == strike_dir \
+			and p_core.aim_height == strike_height
+	return {
+		"rect": Rect2(Vector2(strike_dir, strike_height), Vector2.ONE), "guarded": guarded,
+		"direction": strike_dir, "height": strike_height,
+	}
 
 
 ## 조준 칸의 미리보기 테두리. 색만이 아니라 꼴로 가른다: 닿는다 굵은 실선, 늦다 점선, 멀다 꺾쇠, 피한다 실선과 가위표, 엉킴 잔 점선.

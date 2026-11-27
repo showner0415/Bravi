@@ -50,6 +50,10 @@ var opening_roll := 0.0
 var closed_streak := 0
 ## 바로 앞 resolve_strike가 막혔는데 빈틈을 주지 않았는가.
 var last_closed := false
+## 이 패턴에서 헛손질에 속았는가(결정 669). 예비 동작이 시작되면 거짓으로 돌아온다.
+var feint_bitten := false
+## 바로 앞 resolve_strike가 속은 패턴이라 빈틈을 지웠는가.
+var last_bitten := false
 ## 칼 든 팔을 스쳐 앞으로 길어질 예비 동작의 남은 횟수(계획 R02 D4). 패턴 하나가 1회다.
 var slow_tells_left := 0
 ## 지금 패턴이 길어진 예비 동작인가. 공격이 끝나면 지워진다.
@@ -86,6 +90,7 @@ func start_idle(now: float) -> void:
 	pattern_root = null
 	step_index = 0
 	strike_heights = []
+	feint_bitten = false
 
 
 ## 멀리라서 예비 동작을 시작하지 못하고 기다린다.
@@ -114,6 +119,7 @@ func start_tell(now: float, is_close: bool) -> void:
 	state_end = now + tell_duration
 	pattern_root = current_attack
 	step_index = 0
+	feint_bitten = false
 	first_strike_time = state_end
 	var drawn: Array[int] = [_draw_height(current_attack)]
 	for step: AttackData in current_attack.chain:
@@ -124,10 +130,26 @@ func start_tell(now: float, is_close: bool) -> void:
 		opening_roll = rng.randf()
 
 
+## 헛손질의 시각을 판정 없이 넘긴다(결정 669). 다음 걸음으로 빈틈 없이 간다. 난수를 부르지 않는다.
+## 길의 마지막은 헛손질이 아니다(결정 672). 혹시 마지막이면 이 함수는 대기로 돌아간다.
+func pass_feint(now: float, bitten: bool) -> void:
+	feint_bitten = feint_bitten or bitten
+	var root := pattern_root if pattern_root != null else current_attack
+	if step_index < root.chain.size():
+		current_attack = root.chain[step_index] as AttackData
+		step_index += 1
+		tell_duration = _step_tell(current_attack)
+		state_start = now
+		state_end = now + tell_duration
+	else:
+		start_idle(now)
+
+
 ## 타격 결과를 받아 회수(또는 대기)로 넘어간다. 회수 시간을 돌려준다.
 ## braced: 막혔지만 버티기였다(표시된 공격을 들고만 있던 막기로 받음). 막힘으로 세되 빈틈이 없다.
 func resolve_strike(now: float, result: int, braced := false) -> float:
 	last_closed = false
+	last_bitten = false
 	last_leg_bonus = &""
 	last_leg_time = 0.0
 	# 단발이면 뿌리가 곧 지금 공격이라 아래 셈이 전과 같다.
@@ -155,6 +177,10 @@ func resolve_strike(now: float, result: int, braced := false) -> float:
 			# 플레이어에게 닿은 공격 뒤에는 빈틈이 없고, 연속 막힘도 끊긴다.
 			recovery = 0.0
 			blocked_streak = 0
+	# 속은 패턴은 막아도 빈틈이 없다: 확률보다 앞이라 "안 열림"이 아니다(결정 671).
+	if feint_bitten and (result == R.BLOCKED or result == R.PARRIED) and recovery > 0.0:
+		recovery = 0.0
+		last_bitten = true
 	# 헛친 뛰어들기도 확률을 굴린다(결정 451).
 	if recovery > 0.0 and (result == R.BLOCKED or result == R.PARRIED or (root.dive and result == R.WHIFF)):
 		if _opens_with_legs(result, recovery):

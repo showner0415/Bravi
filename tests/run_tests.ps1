@@ -12,7 +12,9 @@
 param(
 	# verify.ps1 imports once and passes this.
 	[switch]$SkipImport,
-	[string]$Godot
+	[string]$Godot,
+	# Comma list of file-name fragments: run only those test files (split a run when memory is short).
+	[string]$Only = ''
 )
 
 . "$PSScriptRoot\godot_path.ps1"
@@ -41,7 +43,9 @@ if ($importExit -ne 0 -or $importErrors.Count -gt 0) {
 	exit 1
 }
 
-$out = cmd /c "`"$Godot`" --headless --path `"$project`" --script res://tests/run_tests.gd --quit-after 6000 2>&1"
+$userArgs = ''
+if ($Only -ne '') { $userArgs = " -- --only=$Only" }
+$out = cmd /c "`"$Godot`" --headless --path `"$project`" --script res://tests/run_tests.gd --quit-after 6000$userArgs 2>&1"
 $testExit = $LASTEXITCODE
 $out | ForEach-Object { Write-Output $_ }
 

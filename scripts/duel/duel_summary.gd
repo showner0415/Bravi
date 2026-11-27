@@ -38,8 +38,17 @@ static func summarize(record: DuelRecord) -> Dictionary:
 				if not atk.chain.is_empty():
 					_bump(out["patterns"], atk.attack_name)
 					_bump(out["routes"], "%s %s" % [atk.attack_name, _route(atk, ev.get("heights", []))])
+			DuelRecord.FEINT:
+				# 헛손질이 하나라도 있는 판에만 열쇠를 만든다(다른 상대의 요약이 그대로이게. 결정 677).
+				if not out.has("feints"):
+					out["feints"] = {"헛손질": 0, "속음": 0, "잃은 빈틈": 0}
+				out["feints"]["헛손질"] += 1
+				if ev["bitten"]:
+					out["feints"]["속음"] += 1
 			DuelRecord.STRIKE:
 				out["strikes"][strike_keys[ev["result"]]] += 1
+				if ev.get("bitten", false):
+					out["feints"]["잃은 빈틈"] += 1
 				if ev.get("closed", false):
 					# 헛친 뛰어들기의 안 열림은 막힘·패리의 셈에 넣지 않는다(결정 451).
 					if ev["result"] == DT.StrikeResult.BLOCKED or ev["result"] == DT.StrikeResult.PARRIED:
@@ -120,5 +129,5 @@ static func _route(root: AttackData, heights: Array) -> String:
 	var parts: PackedStringArray = []
 	for i in points.size():
 		var h := int(heights[i]) if i < heights.size() else -1
-		parts.append(DIR_LETTERS[points[i].direction] + (HEIGHT_LETTERS[h] if h >= 0 else ""))
+		parts.append(DIR_LETTERS[points[i].direction] + (HEIGHT_LETTERS[h] if h >= 0 else "") + ("~" if points[i].feint else ""))
 	return ">".join(parts)
