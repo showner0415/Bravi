@@ -222,6 +222,11 @@ func held_contact() -> Vector2:
 	return _hold_plan.get("contact", Vector2.INF)
 
 
+## 칼날 위의 화면 자리: 0은 손잡이 쪽 원점, 1은 칼끝(계획 H03 결정 945의 날밑 25%·55%).
+func blade_point(ratio: float) -> Vector2:
+	return _sword.get_global_transform() * (_tip_local * ratio)
+
+
 ## 멈칫 동안의 떨림(결정 935)을 곧바로 자리에 놓는다. 0이면 거둔다.
 func set_shake(x: float) -> void:
 	position.x += x - _shake_x

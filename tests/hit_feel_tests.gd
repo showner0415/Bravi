@@ -6,6 +6,7 @@ const Bot := preload("res://tests/duel_bots.gd")
 const Digest := preload("res://tests/event_digest.gd")
 const Plain := preload("res://tests/plain_opponent.gd")
 const DT := preload("res://scripts/duel/duel_types.gd")
+const StyleScript := preload("res://tests/style_tests.gd")
 
 const DUEL_PATH := "res://scenes/duel/duel.tscn"
 const DELTA := 1.0 / 60.0
@@ -21,8 +22,10 @@ func list(tree: SceneTree) -> Array:
 	return [
 		{"id": "T210", "name": "타격감의 값과 고르기·소리: 순간의 표 아홉과 그 밖(안 열린 것·가운데·헛침은 비움), 손으로 만든 이벤트, 위계, 새 음", "fn": t210_values},
 		{"id": "T211", "name": "멈칫과 움찔: 살아 있는 판에서만 서고, 멈칫은 시간을 멈추고 누르면 끝나고, 움찔은 거둬지고 읽기 층은 그대로", "fn": t211_stop_and_flinch},
-		{"id": "T212", "name": "멈칫의 합: 여덟 상대 1단 봇 한 판마다 판 길이의 6% 이하", "fn": t212_stop_budget},
+		{"id": "T212", "name": "멈칫의 합: 여덟 상대 1단 봇 한 판마다 판 길이의 10% 이하", "fn": t212_stop_budget},
 		{"id": "T218", "name": "떨림: 멈칫의 tick마다 맞은 쪽 그림만 부호를 뒤집으며 0까지 줄고 읽기 층은 그대로, 내가 맞으면 내 손이 떤다, advance·pause·start_duel에서는 0", "fn": t218_shake},
+		{"id": "T219", "name": "맞음의 화면: 킥·비네트(맞은 쪽이 짙고 0.35초 뒤 꺼지고 TELL_START가 지움, advance에서는 0), 결과 패널 늦춤(멈칫 + 21번, 그동안 ui_accept·R 무시, 시간 초과·advance는 곧바로)", "fn": t219_hit_screen},
+		{"id": "T220", "name": "작은 것: 자세 칸의 번쩍임, 불꽃의 줄 수와 앞·뒤 반평면, 0.12초 뒤 0줄, 층의 차례, 상아색의 떨어짐", "fn": t220_small_things},
 	]
 
 
@@ -136,25 +139,25 @@ func t210_values() -> String:
 
 	# 내 공격이 닿음
 	var hit := _attack(Ar.HIT)
-	_expect(errs, HitFeel.moment_of(hit, null) == HitFeel.HIT_DEALT and HitFeel.stop_msec(HitFeel.HIT_DEALT) == 120, "유효타 넣음 120ms")
+	_expect(errs, HitFeel.moment_of(hit, null) == HitFeel.HIT_DEALT and HitFeel.stop_msec(HitFeel.HIT_DEALT) == 180, "유효타 넣음 180ms")
 	# 넣은 쪽의 평행이동은 0이다: 맞은 포즈·떨림이 갈음한다(계획 H03 결정 938).
 	_expect(errs, HitFeel.flinch(HitFeel.HIT_DEALT, hit) == Vector2.ZERO, "유효타 넣음의 움찔은 0")
 	_expect(errs, HitFeel.flinch(HitFeel.HIT_DEALT, _attack(Ar.HIT, {"direction": DT.Direction.LEFT})) == Vector2.ZERO, "왼쪽 베기도 0")
 	var graze1 := _attack(Ar.GRAZE)
 	var graze2 := _attack(Ar.GRAZE, {"cells": 2})
 	_expect(errs, HitFeel.moment_of(graze1, null) == HitFeel.GRAZE_DEALT, "스침 넣음")
-	_expect(errs, HitFeel.stop_msec(HitFeel.GRAZE_DEALT, graze1) == 50 and HitFeel.stop_msec(HitFeel.GRAZE_DEALT, graze2) == 70, "스침 멈칫 1칸 50 · 2칸 70")
+	_expect(errs, HitFeel.stop_msec(HitFeel.GRAZE_DEALT, graze1) == 80 and HitFeel.stop_msec(HitFeel.GRAZE_DEALT, graze2) == 100, "스침 멈칫 1칸 80 · 2칸 100")
 	_expect(errs, HitFeel.flinch(HitFeel.GRAZE_DEALT, graze2) == Vector2.ZERO and HitFeel.flinch(HitFeel.GRAZE_DEALT, graze1) == Vector2.ZERO, "스침 넣음의 움찔은 0")
 	_expect(errs, absf(HitFeel.shake_px(HitFeel.GRAZE_DEALT, 3, 3, graze1)) == 4.0 and absf(HitFeel.shake_px(HitFeel.GRAZE_DEALT, 4, 4, graze2)) == 5.0, "떨림 폭 스침 1칸 4 · 2칸 5")
 	for flag in ["spiked", "rash", "dodged"]:
 		var skipped := _attack(Ar.GRAZE, {flag: true})
 		_expect(errs, HitFeel.moment_of(skipped, null) == &"", "%s ATTACK은 비움" % flag)
-	_expect(errs, HitFeel.moment_of({"type": DuelRecord.STAGGER_START}, null) == HitFeel.STAGGER and HitFeel.stop_msec(HitFeel.STAGGER) == 90, "무너뜨림 90ms")
+	_expect(errs, HitFeel.moment_of({"type": DuelRecord.STAGGER_START}, null) == HitFeel.STAGGER and HitFeel.stop_msec(HitFeel.STAGGER) == 130, "무너뜨림 130ms")
 	_expect(errs, HitFeel.flinch(HitFeel.STAGGER, {}) == Vector2.ZERO, "무너뜨림 움찔은 스침의 것")
 
 	# 열린 패리와 읽어 연 끝
 	var parry := _strike(Sr.PARRIED)
-	_expect(errs, HitFeel.moment_of(parry, plain) == HitFeel.PARRY_OPEN and HitFeel.stop_msec(HitFeel.PARRY_OPEN) == 90, "열린 패리 90ms")
+	_expect(errs, HitFeel.moment_of(parry, plain) == HitFeel.PARRY_OPEN and HitFeel.stop_msec(HitFeel.PARRY_OPEN) == 130, "열린 패리 130ms")
 	_expect(errs, HitFeel.flinch(HitFeel.PARRY_OPEN, parry) == Vector2.ZERO and absf(HitFeel.shake_px(HitFeel.PARRY_OPEN, 5, 5)) == 5.0, "패리 움찔 0 · 떨림 5")
 	var mid := _strike(Sr.PARRIED, 3.0)
 	_expect(errs, HitFeel.moment_of(mid, plain) == HitFeel.PARRY_MID and HitFeel.stop_msec(HitFeel.PARRY_MID) == 0 \
@@ -163,19 +166,19 @@ func t210_values() -> String:
 	_expect(errs, HitFeel.moment_of(_strike(Sr.PARRIED, -1.0, {"bitten": true}), plain) == &"", "속은 패리는 비움")
 	_expect(errs, HitFeel.moment_of(_strike(Sr.BLOCKED), sweep) == HitFeel.SWEEP_OPEN, "휩쓸기 끝의 막기")
 	_expect(errs, HitFeel.moment_of(_strike(Sr.BLOCKED), dive) == HitFeel.DIVE_OPEN, "뛰어들기 막아 엶")
-	_expect(errs, HitFeel.flinch(HitFeel.SWEEP_OPEN, {}) == Vector2.ZERO and HitFeel.stop_msec(HitFeel.DIVE_OPEN) == 70, "막아 엶: 70ms, 움찔 0")
+	_expect(errs, HitFeel.flinch(HitFeel.SWEEP_OPEN, {}) == Vector2.ZERO and HitFeel.stop_msec(HitFeel.DIVE_OPEN) == 100, "막아 엶: 100ms, 움찔 0")
 	_expect(errs, HitFeel.moment_of(_strike(Sr.BLOCKED), plain) == &"" and HitFeel.moment_of(_strike(Sr.BLOCKED), null) == &"", "보통 뿌리·뿌리 없음의 막기는 비움")
 	_expect(errs, HitFeel.moment_of(_strike(Sr.BLOCKED, 3.0), sweep) == &"", "패턴 가운데의 막기는 비움")
 	_expect(errs, HitFeel.moment_of(_strike(Sr.BLOCKED, -1.0, {"braced": true}), sweep) == &"", "버티기는 비움")
 	_expect(errs, HitFeel.moment_of(_strike(Sr.BLOCKED, -1.0, {"closed": true}), sweep) == &"", "안 열린 막기는 비움")
-	_expect(errs, HitFeel.moment_of(_strike(Sr.WHIFF), dive) == HitFeel.DIVE_WHIFF and HitFeel.stop_msec(HitFeel.DIVE_WHIFF) == 70, "뛰어들기 헛치게 함")
+	_expect(errs, HitFeel.moment_of(_strike(Sr.WHIFF), dive) == HitFeel.DIVE_WHIFF and HitFeel.stop_msec(HitFeel.DIVE_WHIFF) == 100, "뛰어들기 헛치게 함")
 	_expect(errs, HitFeel.flinch(HitFeel.DIVE_WHIFF, {}) == Vector2.ZERO, "헛치게 한 움찔은 0")
 	_expect(errs, HitFeel.moment_of(_strike(Sr.WHIFF, -1.0, {"recovery": 0.0}), dive) == &"", "빈틈 없는 헛침은 비움")
 	_expect(errs, HitFeel.moment_of(_strike(Sr.WHIFF), plain) == &"", "보통 공격의 헛침은 비움")
 
 	# 내가 맞음
-	_expect(errs, HitFeel.moment_of(_strike(Sr.HIT), plain) == HitFeel.HIT_TAKEN and HitFeel.stop_msec(HitFeel.HIT_TAKEN) == 120, "유효타 맞음 120ms")
-	_expect(errs, HitFeel.moment_of(_strike(Sr.GRAZE), plain) == HitFeel.GRAZE_TAKEN and HitFeel.stop_msec(HitFeel.GRAZE_TAKEN) == 70, "스침 맞음 70ms")
+	_expect(errs, HitFeel.moment_of(_strike(Sr.HIT), plain) == HitFeel.HIT_TAKEN and HitFeel.stop_msec(HitFeel.HIT_TAKEN) == 180, "유효타 맞음 180ms")
+	_expect(errs, HitFeel.moment_of(_strike(Sr.GRAZE), plain) == HitFeel.GRAZE_TAKEN and HitFeel.stop_msec(HitFeel.GRAZE_TAKEN) == 100, "스침 맞음 100ms")
 	# 맞은 쪽의 킥(결정 942): 왼쪽에서 온 타격은 -x, 오른쪽은 +x, 찌르기(방향 없음 포함)는 +y. 스침 12px, 유효타 18px.
 	var from_left := AttackData.new()
 	from_left.direction = DT.Direction.LEFT
@@ -194,11 +197,11 @@ func t210_values() -> String:
 	_expect(errs, HitFeel.stop_msec(HitFeel.GRAZE_DEALT, graze2) == stops[HitFeel.SWEEP_OPEN] and HitFeel.stop_msec(HitFeel.GRAZE_DEALT, graze1) < stops[HitFeel.SWEEP_OPEN] \
 			and HitFeel.stop_msec(HitFeel.GRAZE_DEALT, graze1) > 0, "스침 2칸 = 열린 끝 > 스침 1칸 > 0")
 	for key: StringName in stops:
-		_expect(errs, stops[key] <= 150, "%s 멈칫 150ms 이하" % key)
+		_expect(errs, stops[key] <= 200, "%s 멈칫 200ms 이하" % key)
 
 	# 손으로 만든 이벤트: 열쇠가 빠져도 오류 없이 정한 값
 	var handmade_attack := {"type": DuelRecord.ATTACK, "result": Ar.GRAZE, "part": DT.Part.TORSO}
-	_expect(errs, HitFeel.moment_of(handmade_attack, null) == HitFeel.GRAZE_DEALT and HitFeel.stop_msec(HitFeel.GRAZE_DEALT, handmade_attack) == 50 \
+	_expect(errs, HitFeel.moment_of(handmade_attack, null) == HitFeel.GRAZE_DEALT and HitFeel.stop_msec(HitFeel.GRAZE_DEALT, handmade_attack) == 80 \
 			and HitFeel.flinch(HitFeel.GRAZE_DEALT, handmade_attack) == Vector2.ZERO, "열쇠 빠진 ATTACK: 1칸 스침, 움찔 0")
 	_expect(errs, HitFeel.moment_of({"type": DuelRecord.STRIKE, "braced": false}, plain) == &"", "result 없는 STRIKE는 비움")
 	_expect(errs, HitFeel.stop_msec(&"") == 0 and HitFeel.flinch(&"", {}) == Vector2.ZERO, "비운 순간은 0")
@@ -350,8 +353,9 @@ func t211_stop_and_flinch() -> String:
 	var gate := _spawn()
 	var sweep_stop := _stop_after_blocked_end(gate, _sweep_root())
 	var plain_stop := _stop_after_blocked_end(gate, AttackData.new())
-	_expect(errs, sweep_stop == 4, "(7) 휩쓸기 끝의 막기 멈칫 tick %d (기대 4)" % sweep_stop)
+	_expect(errs, sweep_stop == 6, "(7) 휩쓸기 끝의 막기 멈칫 tick %d (기대 6)" % sweep_stop)
 	_expect(errs, plain_stop == 0, "(7) 보통 단발의 막기에 멈칫이 섰다 (%d)" % plain_stop)
+	_expect(errs, roundi(HitFeel.stop_msec(HitFeel.GRAZE_DEALT, {"cells": 1}) * 60.0 / 1000.0) == 5, "(1) 스침 1칸의 멈칫 tick이 5가 아니다")
 	return _result(errs)
 
 
@@ -429,8 +433,9 @@ func t212_stop_budget() -> String:
 		var total := 0.0
 		for msec: int in per_time.values():
 			total += msec / 1000.0
-		# 기준 6%: 계획은 4%였으나 완벽한 패리 봇이 5.6%까지 간다(사용자 2026-11-28 "6%로").
-		_expect(errs, length > 0.0 and total <= length * 0.06, "%s: 멈칫 합 %.2f초 / 판 %.1f초 (6%% = %.2f)" % [path, total, length, length * 0.06])
+		# 기준 10%(계획 H03 결정 944): 멈칫을 늘렸다. 넘으면 열린 패리·무너뜨림을 120으로 내려 다시 잰다 — 기준을 또 올리지 않는다.
+		print("  INFO 멈칫 합 %s: %.2f초 / 판 %.1f초 = %.1f%%" % [path.get_file(), total, length, total / maxf(length, 0.001) * 100.0])
+		_expect(errs, length > 0.0 and total <= length * 0.10, "%s: 멈칫 합 %.2f초 / 판 %.1f초 (10%% = %.2f)" % [path, total, length, length * 0.10])
 	return _result(errs)
 
 
@@ -528,4 +533,238 @@ func t218_shake() -> String:
 			cut.call("start_duel")
 		_expect(errs, _opponent_shake(cut_view, ^"Torso", "_torso_x0") == 0.0 and _opponent_shake(cut_view, ^"Legs", "_legs_x0") == 0.0 \
 				and int(cut.get("_stop_ticks_total")) == 0, "(4) %s가 떨림을 지우지 않았다" % how)
+	return _result(errs)
+
+
+# ================================================================ T219
+
+## 내가 맞은 STRIKE(결정 942). extra로 열쇠를 덮는다.
+func _taken_with(core: DuelCore, result: int, attack: AttackData, extra := {}) -> Dictionary:
+	var ev := _taken_event(core, result, attack)
+	ev.merge(extra, true)
+	return ev
+
+
+func _live_event(duel: Node, ev: Dictionary) -> void:
+	duel.set("_engine_tick", true)
+	duel.call("_on_core_event", ev)
+	duel.set("_engine_tick", false)
+	duel.call("_update_views", 0.0)
+
+
+## 멈칫이 선 채 끝난 판의 첫 시드: _physics_process로 끝 tick까지 걷고 [duel, 끝 tick의 남은 멈칫]을 돌려준다.
+func _run_to_end_via_physics() -> Array:
+	for seed_value in range(1, 6):
+		var duel := _spawn(seed_value)
+		var core: DuelCore = duel.get("core")
+		var driver := Bot.new(core, Bot.first_blood_cfg())
+		for i in 4000:
+			duel.call("_physics_process", DELTA)
+			if core.ended:
+				break
+			driver.update()
+		if core.ended and core.end_reason != DT.EndReason.TIME_UP and int(duel.get("_stop_ticks_left")) > 0:
+			return [duel, int(duel.get("_stop_ticks_left"))]
+	return []
+
+
+func t219_hit_screen() -> String:
+	var errs: Array[String] = []
+
+	# (1) 맞음: 킥의 부호·크기, 비네트가 켜지고 맞은 쪽이 더 짙고 색이 선 색이다, 0.35초 뒤 꺼진다.
+	var from_left := AttackData.new()
+	from_left.direction = DT.Direction.LEFT
+	var duel := _spawn()
+	var core: DuelCore = duel.get("core")
+	var fx: FeelFx = duel.get("_fx")
+	var view: OpponentView = duel.get("_opponent_view")
+	duel.call("advance", DELTA)
+	_live_event(duel, _taken_event(core, Sr.GRAZE, from_left))
+	_expect(errs, view.get("_flinch_vec") == Vector2(-12.0, 0.0), "(1) 킥이 (-12, 0)이 아니다: %s" % str(view.get("_flinch_vec")))
+	var left := fx.edge_alpha(FeelFx.SIDE_LEFT)
+	_expect(errs, left > 0.0 and left > fx.edge_alpha(FeelFx.SIDE_RIGHT) and fx.edge_alpha(FeelFx.SIDE_RIGHT) > 0.0, "(1) 비네트: 왼쪽 %.3f 오른쪽 %.3f" % [left, fx.edge_alpha(FeelFx.SIDE_RIGHT)])
+	_expect(errs, FeelFx.VIGNETTE_COLOR == PlayerSwordView.OUTLINE_COLOR, "(1) 비네트의 색이 화풍의 선 색이 아니다")
+	fx.update_view(0.2)
+	_expect(errs, fx.edge_alpha(FeelFx.SIDE_LEFT) > 0.0, "(1) 0.2초에 비네트가 이미 꺼졌다")
+	fx.update_view(0.2)
+	_expect(errs, fx.edge_alpha(FeelFx.SIDE_LEFT) == 0.0 and fx.edge_alpha(FeelFx.SIDE_RIGHT) == 0.0, "(1) 0.35초 뒤에 비네트가 남았다")
+	# 유효타는 ×1.3
+	_live_event(duel, _taken_event(core, Sr.HIT, from_left))
+	_expect(errs, fx.edge_alpha(FeelFx.SIDE_LEFT) > left * 1.2, "(1) 유효타의 비네트가 스침의 ×1.3이 아니다")
+	# TELL_START가 지운다: 걸음으로 다음 예비 동작까지 걷는다.
+	var tells := core.record.of_type(DuelRecord.TELL_START).size()
+	for i in 1500:
+		duel.call("_physics_process", DELTA)
+		if core.record.of_type(DuelRecord.TELL_START).size() > tells or core.ended:
+			break
+	_expect(errs, core.record.of_type(DuelRecord.TELL_START).size() > tells and fx.edge_alpha(FeelFx.SIDE_LEFT) == 0.0, "(1) TELL_START가 비네트를 지우지 않았다")
+
+	# (2) advance로 직접 걸으면 킥도 비네트도 0
+	var dead := _spawn()
+	var dead_core: DuelCore = dead.get("core")
+	dead.call("advance", DELTA)
+	dead.call("_on_core_event", _taken_event(dead_core, Sr.GRAZE, from_left))
+	dead.call("_update_views", 0.0)
+	_expect(errs, (dead.get("_opponent_view") as Object).get("_flinch_vec") == Vector2.ZERO and (dead.get("_fx") as FeelFx).edge_alpha(FeelFx.SIDE_LEFT) == 0.0, "(2) advance로 걸은 판에 킥·비네트가 섰다")
+
+	# (3) 결과 패널 늦춤: 유효타로 끝난 판은 끝 tick에 안 뜨고 멈칫 + 21번 뒤에 뜬다
+	var run := _run_to_end_via_physics()
+	if run.is_empty():
+		errs.append("(3) 다섯 시드 안에 멈칫이 선 채 끝난 판이 없다")
+	else:
+		var ended_duel: Node = run[0]
+		var stop0: int = run[1]
+		var panel: ResultPanel = ended_duel.get("_result_panel")
+		_expect(errs, not panel.is_showing(), "(3) 끝난 tick에 패널이 떠 있다")
+		# 늦춤 동안 Space·Enter는 판을 넘기지 않고 R은 판을 갈지 않는다
+		var kept_core: DuelCore = ended_duel.get("core")
+		ended_duel.call("_unhandled_input", _action(&"retry"))
+		_expect(errs, ended_duel.get("core") == kept_core and not panel.is_showing(), "(3) 늦춤 동안 R이 판을 갈았다")
+		ended_duel.set("_day_mode", true)
+		ended_duel.call("_unhandled_input", _action(&"ui_accept"))
+		ended_duel.set("_day_mode", false)
+		_expect(errs, not bool(ended_duel.get("_day_reported")) and not panel.is_showing(), "(3) 늦춤 동안 ui_accept가 판을 넘겼다")
+		var calls := 0
+		while not panel.is_showing() and calls < 200:
+			ended_duel.call("_physics_process", DELTA)
+			calls += 1
+		_expect(errs, calls == stop0 + 21, "(3) 패널이 %d번 뒤에 떴다 (기대 멈칫 %d + 21)" % [calls, stop0])
+		# start_duel이 늦춤을 지운다
+		ended_duel.call("start_duel")
+		_expect(errs, int(ended_duel.get("_result_delay_ticks")) == 0 and not bool(ended_duel.get("_result_late")) and not panel.is_showing(), "(3) start_duel이 늦춤을 지우지 않았다")
+
+	# (4) 손으로 세운 끝 tick(대련의 마지막 무너뜨림 — 멈칫 8): 안 뜨고 8 + 21번 뒤에 뜬다. 시간 초과는 곧바로, advance로 끝내면 같은 advance에 뜬다
+	var spar := _spawn()
+	var spar_core: DuelCore = spar.get("core")
+	var spar_panel: ResultPanel = spar.get("_result_panel")
+	spar_core.ended = true
+	spar_core.end_reason = DT.EndReason.CONDITION
+	spar.set("_stop_ticks_left", 8)
+	spar.set("_engine_tick", true)
+	spar.call("advance", DELTA)
+	spar.set("_engine_tick", false)
+	_expect(errs, not spar_panel.is_showing(), "(4) 대련의 끝 tick에 패널이 떠 있다")
+	var spar_calls := 0
+	while not spar_panel.is_showing() and spar_calls < 200:
+		spar.call("_physics_process", DELTA)
+		spar_calls += 1
+	_expect(errs, spar_calls == 8 + 21, "(4) 대련의 패널이 %d번 뒤에 떴다 (기대 8 + 21)" % spar_calls)
+	for mode in ["time_up", "direct"]:
+		var quick := _spawn()
+		var quick_core: DuelCore = quick.get("core")
+		quick_core.ended = true
+		quick_core.end_reason = DT.EndReason.TIME_UP
+		quick.set("_stop_ticks_left", 0 if mode == "time_up" else 8)
+		quick.set("_engine_tick", mode == "time_up")
+		quick.call("advance", DELTA)
+		quick.set("_engine_tick", false)
+		_expect(errs, (quick.get("_result_panel") as ResultPanel).is_showing(), "(4) %s의 끝이 같은 advance에 뜨지 않았다" % mode)
+	return _result(errs)
+
+
+# ================================================================ T220
+
+func _line_kinds(fx: FeelFx) -> Dictionary:
+	var kinds := {}
+	for line in fx.live_lines():
+		kinds[line["kind"]] = int(kinds.get(line["kind"], 0)) + 1
+	return kinds
+
+
+func t220_small_things() -> String:
+	var errs: Array[String] = []
+	var atk := AttackData.new()
+
+	# (1) 자세 칸의 번쩍임: 잃은 칸이 번쩍임 색으로 서고, 코어 0.25초 뒤 빈 칸이고, 끝난 판에서는 없다
+	var duel := _spawn()
+	var core: DuelCore = duel.get("core")
+	var hud: DuelHud = duel.get("_hud")
+	var mine: DuelHud.PostureCells = hud.get("_player_cells")
+	var theirs: DuelHud.PostureCells = hud.get("_opponent_cells")
+	duel.call("advance", DELTA)
+	_live_event(duel, _taken_with(core, Sr.GRAZE, atk, {"posture_loss": 1, "player_posture": 2}))
+	_expect(errs, mine.flash_k >= 0.0 and mine.flash_k < 0.05 and mine.flash_from == 2 and mine.flash_to == 3, "(1) 내 칸의 번쩍임: k %.2f [%d, %d)" % [mine.flash_k, mine.flash_from, mine.flash_to])
+	_expect(errs, DuelHud.FLASH_COLOR == Color(1.0, 0.96, 0.84) and DuelHud.FLASH_COLOR == FeelFx.IVORY, "(1) 번쩍임 색이 상아색이 아니다")
+	_live_event(duel, _taken_with(core, Sr.GRAZE, atk, {"posture_loss": 1, "player_posture": 2, "t": core.time - 0.3}))
+	_expect(errs, mine.flash_k < 0.0, "(1) 0.25초가 지난 번쩍임이 남았다")
+	hud.on_event({"type": DuelRecord.ATTACK, "result": Ar.GRAZE, "opponent_posture": 1, "cells": 2, "t": core.time, "part": DT.Part.TORSO,
+			"direction": 1, "height": 1, "distance": 1, "rash": false, "dodged": false, "lunge": false, "posture_gain": 0, "pressed_distance": 1, "opponent_state": 0})
+	duel.call("_update_views", 0.0)
+	_expect(errs, theirs.flash_k >= 0.0 and theirs.flash_from == 1 and theirs.flash_to == 3, "(1) 상대 칸의 번쩍임 [%d, %d) k %.2f" % [theirs.flash_from, theirs.flash_to, theirs.flash_k])
+	core.ended = true
+	duel.call("_update_views", 0.0)
+	_expect(errs, mine.flash_k < 0.0 and theirs.flash_k < 0.0, "(1) 끝난 판에 번쩍임이 남았다")
+
+	# (2) 불꽃: 패리 8 · 쥐고 막음 4 · 안 열린 패리와 속은 패리와 버티기도 쥐고 막음의 4 · 내 공격의 닿음 5(유효타 8) · 막힘 2
+	var live := _spawn()
+	var live_core: DuelCore = live.get("core")
+	var fx: FeelFx = live.get("_fx")
+	var sword: PlayerSwordView = live.get("_sword_view")
+	live.call("advance", DELTA)
+	var cases := [
+		["열린 패리", Sr.PARRIED, {}, {&"burst": 8}],
+		["막기", Sr.BLOCKED, {}, {&"tick": 4}],
+		["안 열린 패리", Sr.PARRIED, {"closed": true}, {&"tick": 4}],
+		["속은 패리", Sr.PARRIED, {"bitten": true}, {&"tick": 4}],
+		["버티기", Sr.PARRIED, {"braced": true}, {&"tick": 4}],
+	]
+	for item: Array in cases:
+		fx.clear()
+		_live_event(live, _taken_with(live_core, item[1], atk, item[2]))
+		_expect(errs, _line_kinds(fx) == item[3], "(2) %s의 불꽃 %s (기대 %s)" % [item[0], str(_line_kinds(fx)), str(item[3])])
+	fx.clear()
+	fx.on_event(_attack(Ar.GRAZE), sword)
+	fx.update_view(0.0)
+	var graze_lines := fx.live_lines()
+	_expect(errs, _line_kinds(fx) == {&"fan": 5}, "(2) 스침의 닿은 표시 %s" % str(_line_kinds(fx)))
+	var fan_from: Vector2 = fx.contact
+	for line in graze_lines:
+		_expect(errs, ((line["to"] as Vector2) - fx.contact).dot(fx.path_dir) > 0.0, "(2) 닿은 표시의 줄이 온 길의 앞쪽 반평면에 없다")
+	fx.clear()
+	fx.on_event(_attack(Ar.HIT), sword)
+	fx.update_view(0.0)
+	_expect(errs, _line_kinds(fx) == {&"fan": 8}, "(2) 유효타의 닿은 표시 %s" % str(_line_kinds(fx)))
+	fx.clear()
+	fx.on_event(_attack(Ar.BLOCKED), sword)
+	fx.update_view(0.0)
+	_expect(errs, _line_kinds(fx) == {&"kink": 2}, "(2) 막힘의 꺾쇠 %s" % str(_line_kinds(fx)))
+	for line in fx.live_lines():
+		_expect(errs, ((line["to"] as Vector2) - fx.contact).dot(fx.path_dir) < 0.0, "(2) 막힘의 줄이 뒤쪽 반평면에 없다")
+		_expect(errs, (line["from"] as Vector2).distance_to(fan_from) >= 20.0, "(2) 막힘의 시작점이 닿음의 시작점에서 20px 안이다")
+	# 0.12초 뒤 0줄, 층의 차례
+	fx.update_view(0.13)
+	_expect(errs, fx.live_lines().is_empty(), "(2) 0.12초 뒤에 불꽃이 남았다")
+	var ring := (live.get("_opponent_view") as Node).get_node(^"Ring") as CanvasItem
+	var label := (live.get("_opponent_view") as Node).get_node(^"StateLabel") as CanvasItem
+	_expect(errs, fx.z_index == 8 and fx.z_index < ring.z_index and fx.z_index < label.z_index, "(2) FeelFx의 z가 고리·상태 글자보다 아래가 아니다")
+	# advance로 직접 걸으면 0줄
+	var dead := _spawn()
+	var dead_fx: FeelFx = dead.get("_fx")
+	dead.call("advance", DELTA)
+	dead.call("_on_core_event", _taken_event(dead.get("core"), Sr.PARRIED, atk))
+	dead.call("_update_views", 0.0)
+	_expect(errs, dead_fx.live_lines().is_empty(), "(2) advance로 걸은 판에 불꽃이 섰다")
+
+	# (3) 상아색은 뜻이 있는 색·기본 색·고유 검술의 색에서 T114의 잣대로 떨어져 있다(닿음 흰색은 같은 계열이라 일부러 뺀다 — 결정 945)
+	var style: RefCounted = StyleScript.new()
+	var ivory := FeelFx.IVORY
+	var meaning: Array = []
+	for pair: Array in style.call("_state_colors") + style.call("_green_colors"):
+		if pair[1] != OpponentView.COLOR_TOUCHED:
+			meaning.append(pair)
+	for pair: Array in meaning:
+		var dist: float = style.call("_rgb_dist", ivory, pair[1])
+		_expect(errs, dist >= 0.35, "(3) 상아색이 %s와 %.3f (0.35 이상)" % [pair[0], dist])
+	for other: Color in style.call("_base_colors"):
+		_expect(errs, float(style.call("_rgb_dist", ivory, other)) >= 0.35, "(3) 상아색이 기본 색 %s와 가깝다" % str(other))
+	for pair: Array in [["빈틈 파랑", OpponentView.COLOR_RECOVERY], ["타격 빨강", OpponentView.COLOR_STRIKE]] + style.call("_green_colors"):
+		_expect(errs, float(style.call("_hue_gap", ivory, pair[1])) >= 0.06, "(3) 상아색의 색상이 %s와 가깝다" % pair[0])
+	for path: String in StyleScript.OPPONENT_PATHS:
+		var opp := load(path) as OpponentData
+		for list: Array in style.call("_tier_lists", opp):
+			for root: AttackData in list:
+				for route: AttackData in style.call("_routes", root):
+					for strike: AttackData in style.call("_strike_list", route):
+						if float(style.call("_rgb_dist", ivory, strike.pose_color)) < 0.35:
+							errs.append("(3) %s '%s'의 색 %s가 상아색과 0.35 안이다" % [opp.display_name, strike.attack_name, str(strike.pose_color)])
 	return _result(errs)

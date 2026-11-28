@@ -56,6 +56,11 @@ var _pause_drift := 0.0
 var _swallowed_attacks := 0
 
 var _cover_marks: CoverMarks
+var _fx: FeelFx
+## 결과 패널 늦춤(결정 943): 엔진의 걸음에서 끝난 tick에 멈칫이 서 있으면 멈칫 뒤 이만큼의 tick을 더 기다린다.
+const RESULT_DELAY_TICKS := 21
+var _result_late := false
+var _result_delay_ticks := 0
 ## 타격감(계획 H02): 남은 멈칫의 물리 tick 수와 지금 패턴의 뿌리(STRIKE를 받을 때 뇌는 이미 다음 상태다).
 var _stop_ticks_left := 0
 ## 엔진의 걸음(_physics_process)이 advance를 부르는 동안만 참(계획 H03 결정 928). 연출의 "살아 있는 판" 가름이다.
@@ -100,6 +105,9 @@ func _ready() -> void:
 	_cover_marks.name = "CoverMarks"
 	add_child(_cover_marks)
 	move_child(_cover_marks, _opponent_view.get_index() + 1)
+	_fx = FeelFx.new()
+	_fx.name = "FeelFx"
+	add_child(_fx)
 	get_viewport().size_changed.connect(_layout)
 	_layout()
 	start_duel()
@@ -141,6 +149,9 @@ func start_duel() -> void:
 	core.event.connect(_on_core_event)
 	_display_time = 0.0
 	_stop_ticks_left = 0
+	_result_late = false
+	_result_delay_ticks = 0
+	_fx.clear()
 	_clear_shake()
 	_hit_root = null
 	_beeper.clear()
@@ -179,6 +190,8 @@ func _physics_process(delta: float) -> void:
 		_stop_ticks_left -= 1
 		_apply_shake()
 		return
+	if _result_delay_ticks > 0:
+		_result_delay_ticks -= 1
 	_engine_tick = true
 	advance(delta)
 	_engine_tick = false
@@ -198,6 +211,7 @@ func pause(_reason: StringName) -> bool:
 	_hud.set_resume_hold(false)
 	paused = true
 	_stop_ticks_left = 0
+	_fx.clear()
 	_clear_shake()
 	_pause_count += 1
 	_pause_time = core.time
@@ -313,7 +327,10 @@ func advance(delta: float) -> void:
 		_update_aim_from_mouse()
 	core.tick(delta)
 	_beeper.advance_to(core.time)
-	if core.ended and not _result_panel.is_showing():
+	if _engine_tick and core.ended and not _result_late and _stop_ticks_left > 0 and not _result_panel.is_showing():
+		_result_late = true
+		_result_delay_ticks = RESULT_DELAY_TICKS
+	if core.ended and not _result_panel.is_showing() and _result_delay_ticks <= 0:
 		_result_panel.show_result(core, commission)
 	_display_time = core.time
 	# 부드러운 이동과 번쩍임의 시간은 _process가 흘린다(여기서 또 흘리면 두 배가 된다).
@@ -366,6 +383,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _day_mode and event.is_action_pressed(&"retry"):
 		# 하루 중의 결투는 한 번뿐이다. 다시 하기를 듣지 않는다.
 		return
+	if _result_late and not _result_panel.is_showing() and event.is_action_pressed(&"retry"):
+		return
 	# 멈칫 중의 누름은 그 자리에서 코어에 들어가고 멈칫을 끝낸다(결정 922). 막기의 뗌은 코어에 넘기되 멈칫은 둔다(결정 944).
 	if _stop_ticks_left > 0 and STOP_ENDERS.any(func(a: StringName) -> bool: return event.is_action_pressed(a)):
 		if mouse_aim_enabled:
@@ -414,6 +433,8 @@ func _update_views(delta: float) -> void:
 		_sword_view.set_contact(_opponent_view.contact_point(core.attack_part), _opponent_view.contact_rect(core.attack_part))
 	_sword_view.update_view(core, _display_time, get_viewport_rect().size, delta)
 	_hud.refresh(core)
+	var attacking := core.player_state == DT.PlayerState.WINDUP and not core.ended
+	_fx.update_view(delta, _sword_view.tip_global() if attacking else Vector2.INF)
 	if _cover_marks != null:
 		_cover_marks.core = core
 		_cover_marks.queue_redraw()
@@ -429,6 +450,9 @@ func _on_core_event(ev: Dictionary) -> void:
 	_hud.on_event(ev)
 	if ev["type"] == DuelRecord.TELL_START:
 		_hit_root = ev.get("attack") as AttackData
+		_fx.clear()
+	elif _engine_tick:
+		_fx.on_event(ev, _sword_view)
 	var moment := HitFeel.moment_of(ev, _hit_root)
 	# 멈칫과 움찔은 엔진의 걸음 안에서만 선다: advance로 걷는 테스트·찍기·봇은 그대로다(결정 922·923·928).
 	if moment != &"" and _engine_tick:

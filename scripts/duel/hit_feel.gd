@@ -15,12 +15,12 @@ const GRAZE_DEALT := &"graze_dealt"
 const HIT_TAKEN := &"hit_taken"
 const GRAZE_TAKEN := &"graze_taken"
 
-## 멈칫(ms). 스침 넣음은 칸 수로 갈린다(stop_msec).
+## 멈칫(ms, 계획 H03 결정 944). 스침 넣음은 칸 수로 갈린다(stop_msec). PARRY_MID는 표에 없어 0이다.
 const STOP_MSEC := {
-	HIT_DEALT: 120, HIT_TAKEN: 120, PARRY_OPEN: 90, STAGGER: 90,
-	SWEEP_OPEN: 70, DIVE_OPEN: 70, DIVE_WHIFF: 70, GRAZE_TAKEN: 70,
+	HIT_DEALT: 180, HIT_TAKEN: 180, PARRY_OPEN: 130, STAGGER: 130,
+	SWEEP_OPEN: 100, DIVE_OPEN: 100, DIVE_WHIFF: 100, GRAZE_TAKEN: 100,
 }
-const GRAZE_STOP_MSEC := [50, 70]
+const GRAZE_STOP_MSEC := [80, 100]
 ## 내가 맞았을 때 세계의 킥 크기(px, 계획 H03 결정 942). 넣은 쪽의 평행이동은 없다(맞은 포즈·떨림이 갈음한다 — 결정 938).
 const HIT_KICK := 18.0
 const GRAZE_KICK := 12.0

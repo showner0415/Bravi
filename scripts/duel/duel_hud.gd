@@ -55,6 +55,9 @@ const BIND_WARN_TEXT := "칼이 엉킨다!"
 const RESUME_HOLD_TEXT := "다시 시작한다"
 ## 게이지의 짙은 띠와 무대 위 글의 테두리 색(바이블 6절 경고 규칙 2).
 const BAND_COLOR := Color("#2E2620")
+## 자세 칸의 번쩍임(계획 H03 결정 945): 상아색에서 빈 칸의 색으로, 코어 시각 0.25초.
+const FLASH_COLOR := Color(1.0, 0.96, 0.84)
+const FLASH_TIME := 0.25
 ## 패널의 층: 무대(−2)와 상대·내 손(0) 사이라 칼과 손이 패널 위로 지난다(결정 316).
 const BACK_LAYER := -1
 ## 조준 패널의 윗변(아래 앵커 기준). 덧말이 붙으면 한 줄만큼 올라간다.
@@ -299,6 +302,18 @@ class PostureCells extends Control:
 	var fill_color := Color("7A5232")
 	var empty_color := DuelHud.PARCHMENT
 	var centered := true
+	## 방금 잃은 칸 [flash_from, flash_to)의 번쩍임(계획 H03 결정 945). flash_k는 0~1의 진행이고 음수면 없다.
+	var flash_from := 0
+	var flash_to := 0
+	var flash_k := -1.0
+
+	func set_flash(p_from: int, p_to: int, p_k: float) -> void:
+		if p_from == flash_from and p_to == flash_to and is_equal_approx(p_k, flash_k):
+			return
+		flash_from = p_from
+		flash_to = p_to
+		flash_k = p_k
+		queue_redraw()
 
 	func set_values(p_total: int, p_filled: int) -> void:
 		if p_total == total and p_filled == filled:
@@ -312,6 +327,12 @@ class PostureCells extends Control:
 		var x0 := (size.x - width) * 0.5 if centered else 0.0
 		for i in total:
 			var rect := Rect2(x0 + i * (cell.x + gap), 0.0, cell.x, cell.y)
+			if flash_k >= 0.0 and i >= flash_from and i < flash_to:
+				var h := cell.y * (1.0 - 0.4 * sin(PI * flash_k))
+				var shrunk := Rect2(rect.position.x, (cell.y - h) * 0.5, cell.x, h)
+				draw_rect(shrunk, DuelHud.FLASH_COLOR.lerp(empty_color, flash_k))
+				draw_rect(shrunk, DuelHud.INK, false, 1.5)
+				continue
 			draw_rect(rect, fill_color if i < filled else empty_color)
 			if i >= filled:
 				DuelHud.draw_hatch(self, rect, Color(DuelHud.INK, 0.6))
@@ -423,6 +444,8 @@ var _back_root: Control
 var _aim_panel: Panel
 var _opponent_label: Label
 var _opponent_cells: PostureCells
+var _flash_opp := {}
+var _flash_player := {}
 ## 상대에게 걸린 지속 효과(팔 둔함·다리 흔들림. 계획 R02). 걸려 있을 때만 보인다.
 var _effect_label: Label
 var _player_label: Label
@@ -525,6 +548,8 @@ func _ready() -> void:
 
 
 func reset() -> void:
+	_flash_opp = {}
+	_flash_player = {}
 	_log.clear()
 	_log_label.text = ""
 
@@ -557,6 +582,7 @@ func toggle_debug() -> void:
 
 
 func on_event(ev: Dictionary) -> void:
+	_note_posture_loss(ev)
 	var text := _describe(ev)
 	if text == "":
 		return
@@ -566,13 +592,36 @@ func on_event(ev: Dictionary) -> void:
 	_log_label.text = "\n".join(_log)
 
 
+## 잃은 칸의 범위와 코어 시각을 기억한다: 내가 넣은 스침은 상대의 칸, 내가 맞은 스침은 내 칸.
+func _note_posture_loss(ev: Dictionary) -> void:
+	var type: StringName = ev.get("type", &"")
+	if type == DuelRecord.ATTACK and int(ev.get("result", -1)) == DT.AttackResult.GRAZE:
+		if bool(ev.get("spiked", false)) or bool(ev.get("rash", false)) or bool(ev.get("dodged", false)):
+			return
+		var left := int(ev.get("opponent_posture", 0))
+		_flash_opp = {"from": left, "to": left + int(ev.get("cells", 0)), "t": float(ev.get("t", 0.0))}
+	elif type == DuelRecord.STRIKE and int(ev.get("posture_loss", 0)) > 0:
+		var kept := int(ev.get("player_posture", 0))
+		_flash_player = {"from": kept, "to": kept + int(ev["posture_loss"]), "t": float(ev.get("t", 0.0))}
+
+
+## 번쩍임의 진행(0~1, 코어 시각). 없거나 끝났거나 판이 끝났으면 -1.
+static func flash_progress(flash: Dictionary, core: DuelCore) -> float:
+	if flash.is_empty() or core.ended:
+		return -1.0
+	var k := (core.time - float(flash["t"])) / FLASH_TIME
+	return k if k >= 0.0 and k < 1.0 else -1.0
+
+
 func refresh(core: DuelCore) -> void:
 	var opp := core.opponent_data
 	_opponent_label.text = "%s — 자세 %d/%d" % [opp.display_name, core.brain.posture, opp.posture_max]
 	_opponent_cells.set_values(opp.posture_max, core.brain.posture)
+	_opponent_cells.set_flash(int(_flash_opp.get("from", 0)), int(_flash_opp.get("to", 0)), flash_progress(_flash_opp, core))
 	_refresh_effects(core)
 	_player_label.text = "내 자세 %d/%d" % [core.player_posture, core.rules.player_posture_max]
 	_player_cells.set_values(core.rules.player_posture_max, core.player_posture)
+	_player_cells.set_flash(int(_flash_player.get("from", 0)), int(_flash_player.get("to", 0)), flash_progress(_flash_player, core))
 	_distance_label.text = "간격: %s" % DT.DISTANCE_NAMES[core.distance]
 	var bind_warn := bind_warning_now(core)
 	_bind_bar.visible = core.has_bind()

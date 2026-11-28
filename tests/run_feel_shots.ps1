@@ -3,7 +3,7 @@
 #   powershell -ExecutionPolicy Bypass -File tests/run_feel_shots.ps1 -Group A,B,C -Shots "$env:TEMP\bravi-h03-shots"
 #
 # Runs tests/feel_shots.tscn (the duel scene, physics off, stepped with advance). Groups: A = my attack step by step (25 shots),
-# B = the contact frame of 9 cells x engage/close + 3 lunges (21), C = results and short whiffs (16). D = hit poses of 8 opponents (35), E = opponent strikes (15). No -Group = all (112).
+# B = the contact frame of 9 cells x engage/close + 3 lunges (21), C = results and short whiffs (16). D = hit poses of 8 opponents (35), E = opponent strikes (15), F = vignette, sparks, contact marks, afterimage, posture flash (11). No -Group = all (123).
 # Prints one "feel,<name>,dist=..,move=..,kink=..,scale=..,sleeve=..,PASS|FAIL" line per shot.
 # Judges the run: exit code 0, one "FEEL SHOTS OK <n>" line, no ERROR lines, n feel lines all PASS. Without -Shots no PNG is saved (headless).
 param(
@@ -36,8 +36,8 @@ if (-not $SkipImport) {
 	}
 }
 
-$counts = @{ A = 25; B = 21; C = 16; D = 35; E = 15 }
-$groups = if ($Group) { @($Group -split ',' | ForEach-Object { $_.Trim().ToUpper() } | Where-Object { $_ }) } else { @('A', 'B', 'C', 'D', 'E') }
+$counts = @{ A = 25; B = 21; C = 16; D = 35; E = 15; F = 11 }
+$groups = if ($Group) { @($Group -split ',' | ForEach-Object { $_.Trim().ToUpper() } | Where-Object { $_ }) } else { @("A", "B", "C", "D", "E", "F") }
 $expected = 0
 foreach ($g in $groups) { if ($counts.ContainsKey($g)) { $expected += $counts[$g] } }
 $groupArg = if ($Group) { "`"--group=$Group`"" } else { '' }

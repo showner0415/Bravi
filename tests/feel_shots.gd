@@ -1,5 +1,5 @@
 extends Node
-## 타격감 찍기(계획 H03 작업 1-아). 물리를 끄고 advance로 걸으며 내 공격의 순간을 찍는다. 묶음: A 내 공격의 걸음, B 9칸의 접촉, C 결과별·못 미침, D 맞은 포즈(상대 여덟), E 상대의 타격(다가옴·붙들기).
+## 타격감 찍기(계획 H03 작업 1-아). 물리를 끄고 advance로 걸으며 내 공격의 순간을 찍는다. 묶음: A 내 공격의 걸음, B 9칸의 접촉, C 결과별·못 미침, D 맞은 포즈(상대 여덟), E 상대의 타격(다가옴·붙들기), F 얹는 것(비네트·불꽃·닿은 표시·잔상·자세 칸).
 ## 실행: tests/run_feel_shots.ps1 -Group A,B,C -Shots <폴더>. 폴더가 없거나 헤드리스면 그림은 저장하지 않고 수만 잰다.
 ## 장마다 "feel,<이름>,<수...>,PASS|FAIL" 한 줄. 마지막 줄은 "FEEL SHOTS OK <장 수>" 또는 "FEEL SHOTS FAIL ...".
 
@@ -95,6 +95,17 @@ func _build_plan() -> void:
 			for stage in ["swing", "pre1", "post", "p3", "p7"]:
 				_plan.append({"group": "E", "kind": "strike", "name": "E-%s-%s" % [combo[0], stage], "stem": combo[1], "which": combo[0], "stage": stage, "result": combo[2]})
 
+	if _want("F"):
+		var dark := _darkest_stage()
+		for label: Array in [["alley", "alley"], ["dark", dark]]:
+			_plan.append({"group": "F", "kind": "fx", "fx": "vignette", "name": "F-vignette-%s-left-graze" % label[0], "stem": "opponent_01", "stage": label[1], "side": FeelFx.SIDE_LEFT, "strong": false})
+			_plan.append({"group": "F", "kind": "fx", "fx": "vignette", "name": "F-vignette-%s-right-hit" % label[0], "stem": "opponent_01", "stage": label[1], "side": FeelFx.SIDE_RIGHT, "strong": true})
+		for fx_name: String in ["parry", "block", "ring", "posture"]:
+			_plan.append({"group": "F", "kind": "fx", "fx": fx_name, "name": "F-%s" % fx_name, "stem": "opponent_01"})
+		_plan.append({"group": "F", "kind": "fx", "fx": "touch", "name": "F-mark-touch", "dir": 1, "want": {&"fan": 5}})
+		_plan.append({"group": "F", "kind": "fx", "fx": "kink", "name": "F-mark-kink", "dir": 1, "want": {&"kink": 2}})
+		_plan.append({"group": "F", "kind": "fx", "fx": "trail", "name": "F-afterimage", "dir": 0, "want": {}})
+
 
 func _next() -> void:
 	if _node != null:
@@ -115,6 +126,9 @@ func _next() -> void:
 
 
 func _pose(item: Dictionary) -> void:
+	if item.get("kind") == "fx":
+		_pose_fx(item)
+		return
 	if item.has("kind"):
 		_pose_body(item)
 		return
@@ -324,6 +338,11 @@ func _find_attack(opponent: OpponentData, which: String) -> AttackData:
 			"dive":
 				if atk.dive:
 					return atk
+	# 큰 베기는 공격 목록이 아니라 버릇의 응답에 있다(바르톨로 1단).
+	if which == "big":
+		for habit in opponent.habits:
+			if habit.response != null and habit.response.is_big and habit.response.chain.is_empty():
+				return habit.response
 	return null
 
 
@@ -373,3 +392,204 @@ func _emit(line: String) -> void:
 		file.seek_end()
 		file.store_line(line)
 		file.close()
+
+
+# ================================================================ F: 얹는 것(계획 H03 작업 4-바)
+
+## 가장 어두운 무대의 이름(그림 평균 밝기). 못 읽으면 안뜰이다.
+func _darkest_stage() -> String:
+	var best := "court"
+	var best_lum := INF
+	for stage_name in ["alley", "court", "piazza"]:
+		var lum := _stage_luma("res://data/stages/%s.tres" % stage_name)
+		if lum >= 0.0 and lum < best_lum:
+			best_lum = lum
+			best = stage_name
+	return best
+
+
+func _stage_luma(path: String) -> float:
+	var stage := load(path) as StageData
+	if stage == null or stage.texture == null:
+		return -1.0
+	var image := stage.texture.get_image()
+	if image == null or image.is_empty():
+		return -1.0
+	image.resize(16, 9)
+	var sum := 0.0
+	for y in 9:
+		for x in 16:
+			sum += image.get_pixel(x, y).get_luminance()
+	return sum / 144.0
+
+
+## 결투 씬을 물리 없이 세우고 칼을 막기 자리에 놓는다. 불꽃·비네트는 FeelFx의 함수를 직접 불러 고정 시계로 세운다.
+func _fx_base(stage_name: String) -> DuelCore:
+	var core := _make_body_node("opponent_01")
+	var stage := load("res://data/stages/%s.tres" % stage_name) as StageData
+	if stage != null:
+		(_node.get("_stage") as TextureRect).texture = stage.texture
+	core.set_aim(1, 1)
+	core.set_guard(true)
+	for i in 20:
+		_node.call("_update_views", DELTA)
+	return core
+
+
+func _overlap(a: Rect2, b: Rect2) -> float:
+	var inter := a.intersection(b)
+	return maxf(inter.size.x, 0.0) * maxf(inter.size.y, 0.0) if a.intersects(b) else 0.0
+
+
+func _lines_box(fx: FeelFx) -> Rect2:
+	var box := Rect2()
+	var first := true
+	for line in fx.live_lines():
+		for key in ["from", "to"]:
+			if first:
+				box = Rect2(line[key], Vector2.ZERO)
+				first = false
+			else:
+				box = box.expand(line[key])
+	return box
+
+
+## 번호 고리(now·next)의 화면 상자들. 패턴이 없으면 빈 배열이다.
+func _ring_boxes(core: DuelCore, opp: OpponentView) -> Array[Rect2]:
+	var boxes: Array[Rect2] = []
+	for mark in OpponentView.pattern_marks(core.brain, core.time):
+		if mark["role"] == &"now" or mark["role"] == &"next":
+			var centre: Vector2 = opp.to_global(mark["pos"])
+			var radius := OpponentView.MARK_RADIUS * opp.scale.x
+			boxes.append(Rect2(centre - Vector2(radius, radius), Vector2(radius, radius) * 2.0))
+	return boxes
+
+
+func _pose_fx(item: Dictionary) -> void:
+	var fx_kind: String = item["fx"]
+	if fx_kind == "touch" or fx_kind == "kink" or fx_kind == "trail":
+		_pose_fx_attack(item)
+		return
+	var core := _fx_base(item.get("stage", "alley"))
+	var fx := _node.get("_fx") as FeelFx
+	var sword := _node.get("_sword_view") as PlayerSwordView
+	var opp := _node.get("_opponent_view") as OpponentView
+	var hud := _node.get("_hud") as DuelHud
+	var atk := AttackData.new()
+	var strike := {"type": DuelRecord.STRIKE, "result": DT.StrikeResult.PARRIED, "next_strike": -1.0, "braced": false, "closed": false, "attack": atk}
+	var ok := false
+	var line := ""
+	match fx_kind:
+		"vignette":
+			fx.vignette(item["side"], item["strong"])
+			fx.update_view(0.0)
+			fx.update_view(0.03)
+			var edge := fx.edge_alpha(item["side"])
+			var other := fx.edge_alpha(FeelFx.SIDE_RIGHT if item["side"] == FeelFx.SIDE_LEFT else FeelFx.SIDE_LEFT)
+			var band := Rect2(0.0, 0.0, FeelFx.VIGNETTE_WIDTH, SCREEN.y) if item["side"] == FeelFx.SIDE_LEFT else Rect2(SCREEN.x - FeelFx.VIGNETTE_WIDTH, 0.0, FeelFx.VIGNETTE_WIDTH, SCREEN.y)
+			var hud_overlap := 0.0
+			for child in (hud.get("_back_root") as Control).get_children():
+				if child is Panel:
+					hud_overlap += _overlap((child as Panel).get_global_rect(), band)
+			var luma := _stage_luma("res://data/stages/%s.tres" % item["stage"])
+			# 밝기 차: 띠의 평균 밝기에서 비네트의 고동(밝기 0.17)으로 edge만큼 섞은 값을 뺀 것.
+			var contrast := maxf(luma, 0.0) * edge
+			ok = edge > other and other > 0.0
+			line = "edge=%.3f,other=%.3f,hud_overlap=%.0f,stage_luma=%.3f,darkening=%.3f" % [edge, other, hud_overlap, luma, contrast]
+		"parry", "block":
+			if fx_kind == "block":
+				strike["result"] = DT.StrikeResult.BLOCKED
+			fx.on_event(strike, sword)
+			fx.update_view(0.0)
+			fx.update_view(0.03)
+			var counts := _line_counts(fx)
+			ok = counts == ({&"burst": 8} if fx_kind == "parry" else {&"tick": 4})
+			line = "lines=%s,box=%s,layer=%d" % [str(counts), str(_lines_box(fx).size), fx.z_index]
+		"ring":
+			var root: AttackData = null
+			for candidate in core.opponent_data.attacks:
+				if not candidate.chain.is_empty() and not candidate.sweep:
+					root = candidate
+			if root == null:
+				item["ok"] = false
+				item["line"] = "no pattern root"
+				return
+			var shown := States.put(core, DT.OpponentState.TELL, root, 0.9, DT.Distance.ENGAGE)
+			core.brain.pattern_root = root
+			core.brain.step_index = 0
+			_frame(core, shown)
+			fx.on_event(strike, sword)
+			fx.update_view(0.0)
+			fx.update_view(0.03)
+			var boxes := _ring_boxes(core, opp)
+			var overlap := 0.0
+			var spark_box := _lines_box(fx)
+			for ring_box in boxes:
+				overlap += _overlap(spark_box, ring_box)
+			ok = not boxes.is_empty() and _line_counts(fx) == {&"burst": 8}
+			line = "rings=%d,spark_ring_overlap=%.0f,box=%s" % [boxes.size(), overlap, str(spark_box.size)]
+		"posture":
+			hud.on_event({"type": DuelRecord.ATTACK, "result": DT.AttackResult.GRAZE, "opponent_posture": 1, "cells": 2, "t": core.time, "part": DT.Part.TORSO,
+					"direction": 1, "height": 1, "distance": 1, "rash": false, "dodged": false, "lunge": false, "posture_gain": 0, "pressed_distance": 1, "opponent_state": 0})
+			hud.on_event({"type": DuelRecord.STRIKE, "result": DT.StrikeResult.GRAZE, "posture_loss": 1, "player_posture": 2, "situation": DT.Situation.UNGUARDED, "t": core.time})
+			_node.call("_update_views", 0.0)
+			var theirs: DuelHud.PostureCells = hud.get("_opponent_cells")
+			var mine: DuelHud.PostureCells = hud.get("_player_cells")
+			ok = theirs.flash_k >= 0.0 and mine.flash_k >= 0.0
+			line = "theirs=[%d,%d) k=%.2f,mine=[%d,%d) k=%.2f" % [theirs.flash_from, theirs.flash_to, theirs.flash_k, mine.flash_from, mine.flash_to, mine.flash_k]
+	item["ok"] = ok
+	item["line"] = line
+
+
+func _line_counts(fx: FeelFx) -> Dictionary:
+	var counts := {}
+	for line in fx.live_lines():
+		counts[line["kind"]] = int(counts.get(line["kind"], 0)) + 1
+	return counts
+
+
+## 내 공격이 닿거나 막힌 순간의 표시와 잔상: 판정 직전까지 advance로 걷고 마지막 한 걸음만 엔진의 걸음으로 건다.
+func _pose_fx_attack(item: Dictionary) -> void:
+	var recovering: bool = item["fx"] != "kink"
+	var opponent := Plain.of(load(OPPONENT_PATH) as OpponentData)
+	_node = (load(DUEL_PATH) as PackedScene).instantiate()
+	_node.set("practice_opponent", opponent)
+	_node.set("mouse_aim_enabled", false)
+	_node.set("rng_seed", 1)
+	add_child(_node)
+	_node.set_process(false)
+	_node.set_physics_process(false)
+	var core: DuelCore = _node.get("core")
+	var atk: AttackData = core.opponent_data.attacks[0] if recovering else null
+	States.put(core, DT.OpponentState.RECOVERY if recovering else DT.OpponentState.IDLE, atk, 0.0, DT.Distance.ENGAGE)
+	if recovering:
+		core.brain.state_end = core.time + 5.0
+	core.set("_approach_at", INF)
+	(_node.get("_opponent_view") as OpponentView).setup(core.opponent_data, core.weapon, core.opponent_has_hat)
+	(_node.get("_sword_view") as PlayerSwordView).setup()
+	_node.set("_display_time", core.time)
+	_node.call("_update_views", 0.0)
+	core.set_aim(item["dir"], 1)
+	core.press_attack()
+	_node.call("_update_views", 0.0)
+	var windup := core.player_state_end - core.player_state_start
+	var before := core.record.of_type(DuelRecord.ATTACK).size()
+	for i in int(ceil(windup / DELTA)) + 4:
+		var last := core.player_state_end - core.time <= DELTA + 0.0001
+		_node.set("_engine_tick", last)
+		_node.call("advance", DELTA)
+		_node.set("_engine_tick", false)
+		_node.call("_update_views", DELTA)
+		if core.record.of_type(DuelRecord.ATTACK).size() > before:
+			break
+	var fx := _node.get("_fx") as FeelFx
+	fx.update_view(0.02)
+	var counts := _line_counts(fx)
+	var want: Dictionary = item["want"]
+	var half_ok := true
+	for line in fx.live_lines():
+		var side := ((line["to"] as Vector2) - fx.contact).dot(fx.path_dir)
+		half_ok = half_ok and (side > 0.0 if line["kind"] == &"fan" else side < 0.0)
+	var ok := half_ok and (fx.live_trails() >= 1 if item["fx"] == "trail" else counts == want)
+	item["ok"] = ok
+	item["line"] = "lines=%s,trails=%d,half_planes=%s" % [str(counts), fx.live_trails(), half_ok]
