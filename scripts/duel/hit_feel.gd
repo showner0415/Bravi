@@ -5,6 +5,8 @@ extends RefCounted
 
 const HIT_DEALT := &"hit_dealt"
 const PARRY_OPEN := &"parry_open"
+## 패턴 가운데의 패리(멈칫 0 — 스냅·소리·불꽃만. 계획 H03 결정 944).
+const PARRY_MID := &"parry_mid"
 const STAGGER := &"stagger"
 const SWEEP_OPEN := &"sweep_open"
 const DIVE_OPEN := &"dive_open"
@@ -19,11 +21,14 @@ const STOP_MSEC := {
 	SWEEP_OPEN: 70, DIVE_OPEN: 70, DIVE_WHIFF: 70, GRAZE_TAKEN: 70,
 }
 const GRAZE_STOP_MSEC := [50, 70]
-## 상대의 움찔 크기(px). 방향이 있는 것은 flinch가 정한다.
-const HIT_FLINCH := 28.0
-const GRAZE_FLINCH := [10.0, 18.0]
-const PARRY_FLINCH := 14.0
-const OPEN_FLINCH := 10.0
+## 내가 맞았을 때 세계의 킥 크기(px, 계획 H03 결정 942). 넣은 쪽의 평행이동은 없다(맞은 포즈·떨림이 갈음한다 — 결정 938).
+const HIT_KICK := 18.0
+const GRAZE_KICK := 12.0
+## 멈칫 동안 맞은 쪽 그림의 떨림 폭(px, 결정 935). 스침 넣음은 칸 수로 갈린다.
+const SHAKE_PX := {
+	HIT_DEALT: 8.0, HIT_TAKEN: 8.0, GRAZE_TAKEN: 5.0, PARRY_OPEN: 5.0, SWEEP_OPEN: 5.0, DIVE_OPEN: 5.0, STAGGER: 6.0,
+}
+const GRAZE_SHAKE_PX := [4.0, 5.0]
 
 
 ## 이벤트 하나가 어느 순간인가. root는 지금 패턴의 뿌리(TELL_START의 attack)이고 없으면 null이다.
@@ -50,7 +55,7 @@ static func moment_of(ev: Dictionary, root: AttackData) -> StringName:
 				DuelTypes.StrikeResult.GRAZE:
 					return GRAZE_TAKEN
 				DuelTypes.StrikeResult.PARRIED:
-					return PARRY_OPEN if ends else &""
+					return PARRY_OPEN if ends else PARRY_MID
 				DuelTypes.StrikeResult.BLOCKED:
 					if ends and root != null:
 						if root.sweep and not root.chain.is_empty():
@@ -69,23 +74,34 @@ static func stop_msec(moment: StringName, ev: Dictionary = {}) -> int:
 	return STOP_MSEC.get(moment, 0)
 
 
-## 상대의 움찔 벡터(최대). 왼쪽 베기는 +x, 오른쪽 베기는 -x, 찌르기는 -y(뒤로 밀림)다.
+## 세계의 킥(상대 뿌리에 거는 움찔의 길). 내가 맞았을 때만 있다: 왼쪽에서 온 타격은 -x, 오른쪽은 +x, 찌르기는 +y.
+## 넣은 쪽(상대가 맞음·패리당함)은 0이다 — 맞은 포즈·쳐내진 포즈·떨림이 갈음한다(결정 938).
 static func flinch(moment: StringName, ev: Dictionary) -> Vector2:
 	var size := 0.0
 	match moment:
-		HIT_DEALT:
-			size = HIT_FLINCH
-		GRAZE_DEALT:
-			size = GRAZE_FLINCH[1 if int(ev.get("cells", 1)) >= 2 else 0]
-		PARRY_OPEN:
-			return Vector2(0.0, -PARRY_FLINCH)
-		SWEEP_OPEN, DIVE_OPEN:
-			return Vector2(0.0, -OPEN_FLINCH)
+		HIT_TAKEN:
+			size = HIT_KICK
+		GRAZE_TAKEN:
+			size = GRAZE_KICK
 		_:
 			return Vector2.ZERO
-	match int(ev.get("direction", DuelTypes.Direction.CENTER)):
+	var attack: Variant = ev.get("attack")
+	match (attack as AttackData).direction if attack is AttackData else DuelTypes.Direction.CENTER:
 		DuelTypes.Direction.LEFT:
-			return Vector2(size, 0.0)
-		DuelTypes.Direction.RIGHT:
 			return Vector2(-size, 0.0)
-	return Vector2(0.0, -size)
+		DuelTypes.Direction.RIGHT:
+			return Vector2(size, 0.0)
+	return Vector2(0.0, size)
+
+
+## 떨림의 한 tick(결정 935): 멈칫의 남은 tick(remaining)이 전체(total)에서 0으로 곧게 줄고 부호가 뒤집힌다. 받는 쪽은 씬이 가른다.
+static func shake_px(moment: StringName, remaining: int, total: int, ev: Dictionary = {}) -> float:
+	if total <= 0 or remaining <= 0:
+		return 0.0
+	var amount: float = GRAZE_SHAKE_PX[1 if int(ev.get("cells", 1)) >= 2 else 0] if moment == GRAZE_DEALT else SHAKE_PX.get(moment, 0.0)
+	return amount * float(remaining) / float(total) * (1.0 if remaining % 2 == 0 else -1.0)
+
+
+## 떨림을 받는 쪽: 내가 맞음이면 내 손, 아니면 상대.
+static func shakes_me(moment: StringName) -> bool:
+	return moment == HIT_TAKEN or moment == GRAZE_TAKEN

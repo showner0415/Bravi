@@ -118,6 +118,8 @@ var _cue_sx := 0
 var _cue_close := false
 var _cue_core0 := 0.0
 var _cue_clock0 := 0.0
+## 멈칫 동안 내가 맞았을 때의 떨림(계획 H03 결정 935): 화면 x(px). update_view가 멈춘 동안에도 자리에 곧바로 놓는다.
+var _shake_x := 0.0
 
 
 func _ready() -> void:
@@ -201,6 +203,7 @@ func setup() -> void:
 	_rec_set = false
 	_cue_kind = Cue.NONE
 	_cue_armed = false
+	_shake_x = 0.0
 
 
 ## 예비 동안 매 장 부위의 화면 자리와 상자를 받는다(계획 H03 결정 930).
@@ -217,6 +220,12 @@ func tip_global() -> Vector2:
 
 func held_contact() -> Vector2:
 	return _hold_plan.get("contact", Vector2.INF)
+
+
+## 멈칫 동안의 떨림(결정 935)을 곧바로 자리에 놓는다. 0이면 거둔다.
+func set_shake(x: float) -> void:
+	position.x += x - _shake_x
+	_shake_x = x
 
 
 ## 소매 끝(손 그림의 아래 두 모서리)의 가장 높은 y. 그림이 없으면 INF.
@@ -328,7 +337,7 @@ func update_view(core: DuelCore, display_time: float, viewport_size: Vector2, de
 		_blade_rot = pose["blade_rot"]
 		_blade_scale = pose["blade_scale"]
 	var cue := _cue_now(core, display_time)
-	position = _pos + (cue["vec"] as Vector2)
+	position = _pos + (cue["vec"] as Vector2) + Vector2(_shake_x, 0.0)
 	rotation = _rot
 	_sword.rotation = _blade_rot + float(cue["snap"])
 	_sword.color = color

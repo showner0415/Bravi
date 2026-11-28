@@ -1,6 +1,6 @@
 extends RefCounted
-## T213~T214: 접촉(계획 H03 결정 930~933) — 내 칼끝이 부위에 닿는다 / 결과별 회수와 막기·패리·맞음의 내 칼.
-## T213은 결투 씬을 물리 없이 세우고 advance로 걷는다. T214는 칼 뷰만 세워 코어의 값을 손으로 놓는다.
+## T213~T216: 접촉(계획 H03 결정 930~933) — 내 칼끝이 부위에 닿는다 / 결과별 회수와 막기·패리·맞음의 내 칼.
+## T213은 결투 씬을 물리 없이 세우고 advance로 걷는다. T214는 칼 뷰만 세워 코어의 값을 손으로 놓는다. T215·T216은 상대 뷰만 세워 코어의 값을 손으로 놓는다.
 
 const Plain := preload("res://tests/plain_opponent.gd")
 const States := preload("res://tests/opponent_states.gd")
@@ -8,6 +8,10 @@ const DT := preload("res://scripts/duel/duel_types.gd")
 
 const DUEL_PATH := "res://scenes/duel/duel.tscn"
 const VIEW_PATH := "res://scenes/duel/player_sword_view.tscn"
+const OPP_VIEW_PATH := "res://scenes/duel/opponent_view.tscn"
+const OPPONENT_PATH := "res://data/opponents/opponent_01.tres"
+const WEAPON_PATH := "res://data/weapons/rapier.tres"
+const FEEL_PATH := "res://data/hit_feel.tres"
 const DELTA := 1.0 / 60.0
 const SCREEN := Vector2(1280, 720)
 const NEAR := 6.0
@@ -30,6 +34,8 @@ func list(tree: SceneTree) -> Array:
 	return [
 		{"id": "T213", "name": "칼끝이 닿는다: 9칸 × 간격 × 런지에서 판정 뒤 첫 장의 칼끝 ≤ 6px, 2 tick 앞까지는 멀다, 누른 순간부터 움직인다, 닿지 않는 거리는 닿지 않는다, 접촉점 없는 호출은 겨누지 않는다", "fn": t213_reach},
 		{"id": "T214", "name": "결과별 반작용: 닿음·튕김·피함·못 미침의 회수, 첫 갱신이 q 0, 색, 막기·패리·맞음의 내 칼, 열쇠 빠진 이벤트", "fn": t214_recover_and_cues},
+		{"id": "T215", "name": "맞은 포즈: 여섯 부위 x 세 방향의 값, 2칸·유효타·그림별 배율, 거둠, 예비 동작에서 0, 쳐내진 포즈는 열린 끝에만, 읽기 층 그대로", "fn": t215_hit_pose},
+		{"id": "T216", "name": "다가옴과 붙들기: 휘두름 구간의 x1.05와 2 tick 머묾, 읽기 층 그대로, 헛손질·휩쓸기 둘째 점은 x1.00, 타격 포즈 0.10초 붙들기", "fn": t216_approach_and_hold},
 	]
 
 
@@ -370,3 +376,280 @@ func _check_handmade(_errs: Array[String]) -> void:
 			{"type": DuelRecord.ATTACK, "result": DT.AttackResult.GRAZE}, {}]:
 		view.on_event(ev)
 		view.update_view(core, 1.0, SCREEN, 0.0)
+
+
+# ================================================================ T215·T216 (상대의 몸)
+
+## 결정 934의 표(베기, 찌르기). 베기의 lean·head에는 방향 부호 s가, arm·sword에는 칼 팔 쪽 부호가 곱해진다. 찌르기 줄은 이미 최종 값이다.
+const HIT_TABLE := {
+	DT.Part.TORSO: [{"lean": 9.0, "head": -6.0, "arm": 14.0}, {"head": 10.0, "shoulder": Vector2(0.0, -8.0)}],
+	DT.Part.HEAD: [{"lean": 3.0, "head": 22.0}, {"head": -18.0, "shoulder": Vector2(0.0, -4.0)}],
+	DT.Part.SWORD_ARM: [{"lean": 4.0, "arm": 32.0, "sword": 25.0}, {"arm": 32.0, "sword": 25.0}],
+	DT.Part.SWORD_HAND: [{"arm": 18.0, "sword": 45.0}, {"arm": 18.0, "sword": 45.0}],
+	DT.Part.LEGS: [{"lean": 7.0, "shoulder": Vector2(0.0, 10.0)}, {"shoulder": Vector2(0.0, 12.0)}],
+	DT.Part.HAT: [{"head": 8.0}, {"head": -8.0}],
+}
+
+
+func _spawn_opp_view() -> OpponentView:
+	var view := (load(OPP_VIEW_PATH) as PackedScene).instantiate() as OpponentView
+	_tree.root.add_child(view)
+	view.anchor = Vector2(640.0, 446.4)
+	_made.append(view)
+	return view
+
+
+## 포즈를 적용한 노드들의 값(맞기 전과 뺄셈으로 견준다). sword는 지역 각이다.
+func _read_pose(view: OpponentView) -> Dictionary:
+	return {
+		"lean": (view.get_node(^"Torso") as Node2D).rotation_degrees,
+		"head": (view.get_node(^"Torso/Head") as Node2D).rotation_degrees,
+		"arm": (view.get_node(^"Torso/Arm") as Node2D).rotation_degrees,
+		"sword": (view.get_node(^"Torso/Arm/Hand/Sword") as Node2D).rotation_degrees,
+		"shoulder": (view.get_node(^"Torso/Arm") as Node2D).position,
+	}
+
+
+## 맞은 포즈가 더한 값의 기대(노드의 값으로): lean·head·arm, 칼의 지역 각(= sword - arm - lean), 어깨.
+func _want_delta(row: Dictionary, direction: int, out: float, mult: float) -> Dictionary:
+	var s := -1.0 if direction == DT.Direction.RIGHT else 1.0
+	var lean := float(row.get("lean", 0.0)) * s * mult
+	var head := float(row.get("head", 0.0)) * s * mult
+	var arm := float(row.get("arm", 0.0)) * out * mult
+	var sword := float(row.get("sword", 0.0)) * out * mult
+	return {"lean": lean, "head": head, "arm": arm, "sword": sword - arm - lean, "shoulder": Vector2(row.get("shoulder", Vector2.ZERO)) * mult}
+
+
+func _delta_errors(tag: String, before: Dictionary, after: Dictionary, want: Dictionary) -> Array[String]:
+	var errs: Array[String] = []
+	for key in ["lean", "head", "arm", "sword"]:
+		var got: float = after[key] - before[key]
+		if absf(got - float(want[key])) > 0.02:
+			errs.append("%s: %s 변화 %.2f (기대 %.2f)" % [tag, key, got, float(want[key])])
+	var shoulder: Vector2 = after["shoulder"] - before["shoulder"]
+	if not shoulder.is_equal_approx(want["shoulder"]):
+		errs.append("%s: 어깨 변화 %s (기대 %s)" % [tag, shoulder, want["shoulder"]])
+	return errs
+
+
+func _label_points(view: OpponentView) -> Array[Vector2]:
+	return [(view.get_node(^"StateLabel") as Control).global_position, (view.get_node(^"StateHint") as Control).global_position,
+			(view.get_node(^"Ring") as Node2D).global_position]
+
+
+func _thrust_of(opp: OpponentData) -> AttackData:
+	for atk in opp.attacks:
+		if atk.direction == DT.Direction.CENTER and not atk.is_big and not atk.dive and atk.chain.is_empty():
+			return atk
+	return null
+
+
+## 이벤트를 먹이고 같은 시각의 첫 갱신을 그린 뒤 [맞기 전, 후, 시각]을 돌려준다. 이벤트 t는 일부러 tick 끝보다 0.9 tick 앞에 둔다(결정 928).
+func _hit_delta_after(view: OpponentView, core: DuelCore, opp: OpponentData, weapon: WeaponData, ev: Dictionary) -> Array:
+	view.setup(opp, weapon, true)
+	var t := States.put(core, DT.OpponentState.IDLE, null, 0.0, DT.Distance.ENGAGE)
+	view.update_view(core, t, 0.0)
+	var before := _read_pose(view)
+	ev["t"] = t - 0.9 * DELTA
+	view.on_event(ev)
+	view.update_view(core, t, 0.0)
+	return [before, _read_pose(view), t]
+
+
+func t215_hit_pose() -> String:
+	var errs: Array[String] = []
+	var opp: OpponentData = load(OPPONENT_PATH)
+	var weapon: WeaponData = load(WEAPON_PATH)
+	var view := _spawn_opp_view()
+	var core := States.make_core(false)
+	var out := 1.0 if opp.sword_side == DT.Direction.LEFT else -1.0
+	_expect(errs, opp.sword_side == DT.Direction.LEFT, "바르톨로의 칼 팔이 왼쪽이 아님 — 표의 부호 기대가 어긋난다")
+	# 여섯 부위 x 세 방향: 첫 장이 맞기 전 + 표의 값.
+	for part: int in HIT_TABLE:
+		for direction in [DT.Direction.LEFT, DT.Direction.RIGHT, DT.Direction.CENTER]:
+			var ev := {"type": DuelRecord.ATTACK, "result": DT.AttackResult.GRAZE, "part": part, "direction": direction, "cells": 1}
+			var got := _hit_delta_after(view, core, opp, weapon, ev)
+			var row: Dictionary = HIT_TABLE[part][1 if direction == DT.Direction.CENTER else 0]
+			errs.append_array(_delta_errors("부위 %d %s" % [part, DIR_NAMES[direction]], got[0], got[1], _want_delta(row, direction, out, 1.0)))
+	# 몸통을 찌르기로 맞으면 뿌리가 x0.96으로 물러서고 읽기 층의 자리는 그대로다(결정 934·947-2).
+	view.setup(opp, weapon, true)
+	var t := States.put(core, DT.OpponentState.IDLE, null, 0.0, DT.Distance.ENGAGE)
+	view.update_view(core, t, 0.0)
+	var scale_before := view.scale.x
+	var labels := _label_points(view)
+	view.on_event({"type": DuelRecord.ATTACK, "result": DT.AttackResult.GRAZE, "part": DT.Part.TORSO, "direction": DT.Direction.CENTER})
+	view.update_view(core, t, 0.0)
+	_expect(errs, is_equal_approx(view.scale.x / scale_before, 0.96), "찌르기 몸통: 뿌리 크기 x%.3f (기대 0.96)" % (view.scale.x / scale_before))
+	var labels_after := _label_points(view)
+	for i in labels.size():
+		_expect(errs, labels[i].distance_to(labels_after[i]) <= 0.01, "맞은 포즈 전후 읽기 층 %d의 전역 자리가 %.3fpx 움직임" % [i, labels[i].distance_to(labels_after[i])])
+	# 세기: 2칸 x1.4, 유효타 x1.8, 그림별 배율(데이터의 scale_by_art).
+	var strong := {"lean": 9.0, "head": -6.0, "arm": 14.0}
+	var strengths := [["2칸", {"cells": 2}, 1.4], ["유효타", {"result": DT.AttackResult.HIT}, 1.8]]
+	for strength: Array in strengths:
+		var ev := {"type": DuelRecord.ATTACK, "result": DT.AttackResult.GRAZE, "part": DT.Part.TORSO, "direction": DT.Direction.LEFT, "cells": 1}
+		ev.merge(strength[1], true)
+		var got := _hit_delta_after(view, core, opp, weapon, ev)
+		errs.append_array(_delta_errors(strength[0], got[0], got[1], _want_delta(strong, DT.Direction.LEFT, out, strength[2])))
+	_expect(errs, String(view.get("_art_name")) == "bartolo_art.tres", "그림 배율의 열쇠가 그림 파일 이름이 아님: %s" % view.get("_art_name"))
+	var feel := (load(FEEL_PATH) as HitFeelData).duplicate() as HitFeelData
+	feel.scale_by_art = {"bartolo_art.tres": 0.5}
+	view.set("_feel", feel)
+	var halved := _hit_delta_after(view, core, opp, weapon, {"type": DuelRecord.ATTACK, "result": DT.AttackResult.GRAZE, "part": DT.Part.TORSO, "direction": DT.Direction.LEFT})
+	errs.append_array(_delta_errors("그림 배율 0.5", halved[0], halved[1], _want_delta(strong, DT.Direction.LEFT, out, 0.5)))
+	view.set("_feel", load(FEEL_PATH))
+	# 거둠: 코어 0.32초 뒤 맞기 전. 판이 끝났으면 _clock이 거둬도 0.6배가 남는다. setup()이 지운다.
+	var hit_ev := {"type": DuelRecord.ATTACK, "result": DT.AttackResult.GRAZE, "part": DT.Part.TORSO, "direction": DT.Direction.LEFT, "cells": 1}
+	var back := _hit_delta_after(view, core, opp, weapon, hit_ev.duplicate())
+	view.update_view(core, float(back[2]) + 0.33, 0.0)
+	errs.append_array(_delta_errors("0.32초 뒤", back[0], _read_pose(view), _want_delta({}, DT.Direction.LEFT, out, 1.0)))
+	var ended := _hit_delta_after(view, core, opp, weapon, hit_ev.duplicate())
+	core.ended = true
+	view.update_view(core, float(ended[2]), 1.0)
+	errs.append_array(_delta_errors("끝난 판 1초 뒤", ended[0], _read_pose(view), _want_delta(strong, DT.Direction.LEFT, out, 0.6)))
+	core.ended = false
+	var cleared := _hit_delta_after(view, core, opp, weapon, hit_ev.duplicate())
+	view.setup(opp, weapon, true)
+	view.update_view(core, float(cleared[2]), 0.0)
+	errs.append_array(_delta_errors("setup 뒤", cleared[0], _read_pose(view), _want_delta({}, DT.Direction.LEFT, out, 1.0)))
+	_check_hit_pose_in_tell(errs, view, core, opp, weapon, hit_ev)
+	_check_parried_pose(errs, view, core, opp, weapon, out)
+	# 손으로 만든 열쇠 빠진 이벤트가 오류 없이 걸린다(방향은 가운데로 센다).
+	var handmade: Array[Dictionary] = [{"type": DuelRecord.ATTACK, "result": DT.AttackResult.GRAZE, "part": DT.Part.TORSO}, {"type": DuelRecord.ATTACK},
+			{"type": DuelRecord.STRIKE}, {"type": DuelRecord.STRIKE, "result": DT.StrikeResult.PARRIED}, {}]
+	for ev: Dictionary in handmade:
+		view.on_event(ev)
+		view.update_view(core, t, 0.0)
+	return _result(errs)
+
+
+## 예비 동작의 포즈는 맞은 포즈와 상관없이 tell_pose 그대로다(결정 947-1): TELL_START가 오면, 이벤트 없이 TELL이 되어도.
+func _check_hit_pose_in_tell(errs: Array[String], view: OpponentView, core: DuelCore, opp: OpponentData, weapon: WeaponData, hit_ev: Dictionary) -> void:
+	var thrust := _thrust_of(opp)
+	for with_event in [true, false]:
+		_hit_delta_after(view, core, opp, weapon, hit_ev.duplicate())
+		var t := States.put(core, DT.OpponentState.TELL, thrust, 0.5, DT.Distance.ENGAGE)
+		if with_event:
+			view.on_event({"type": DuelRecord.TELL_START, "attack": thrust})
+		view.update_view(core, t, 0.0)
+		var want := OpponentMotion.tell_pose(thrust, opp.idle_pose, 0.5, thrust.tell_time, weapon.parry_window, opp)
+		var got := _read_pose(view)
+		_expect(errs, absf(got["lean"] - want.lean_deg) <= 0.02 and absf(got["arm"] - want.arm_deg) <= 0.02 and absf(got["head"] - want.head_deg) <= 0.02,
+				"예비 동작의 포즈가 tell_pose와 다름(TELL_START %s): 몸 %.2f 팔 %.2f 고개 %.2f" % [with_event, got["lean"], got["arm"], got["head"]])
+
+
+## 쳐내진 포즈: 열린 끝의 패리에만(팔 +28·칼 +50·기울기 4), 휩쓸기를 읽어 연 끝은 60%, 가운데 패리·안 열림·속음·버티기·쥐고 막음은 0.
+func _check_parried_pose(errs: Array[String], view: OpponentView, core: DuelCore, opp: OpponentData, weapon: WeaponData, out: float) -> void:
+	var thrust := _thrust_of(opp)
+	var base := {"type": DuelRecord.STRIKE, "attack": thrust, "next_strike": -1.0, "braced": false, "closed": false}
+	var cases := [
+		["열린 끝 패리", {"result": DT.StrikeResult.PARRIED}, 1.0],
+		["가운데 패리", {"result": DT.StrikeResult.PARRIED, "next_strike": 3.0}, 0.0],
+		["안 열린 패리", {"result": DT.StrikeResult.PARRIED, "closed": true}, 0.0],
+		["속은 패리", {"result": DT.StrikeResult.PARRIED, "bitten": true}, 0.0],
+		["쥐고 막음", {"result": DT.StrikeResult.BLOCKED}, 0.0],
+		["버티기", {"result": DT.StrikeResult.BLOCKED, "braced": true}, 0.0],
+	]
+	for case: Array in cases:
+		var ev := base.duplicate()
+		ev.merge(case[1], true)
+		var got := _hit_delta_after(view, core, opp, weapon, ev)
+		errs.append_array(_delta_errors(case[0], got[0], got[1], _parried_want(out, float(case[2]))))
+	# 휩쓸기를 읽어 연 끝(뿌리가 휩쓸기이고 끝 타격이 막힘): 값의 60%.
+	var sweep := AttackData.new()
+	sweep.sweep = true
+	sweep.chain.append(AttackData.new())
+	view.setup(opp, weapon, true)
+	view.on_event({"type": DuelRecord.TELL_START, "attack": sweep})
+	var t := States.put(core, DT.OpponentState.IDLE, null, 0.0, DT.Distance.ENGAGE)
+	view.update_view(core, t, 0.0)
+	var before := _read_pose(view)
+	var ev := base.duplicate()
+	ev["result"] = DT.StrikeResult.BLOCKED
+	view.on_event(ev)
+	view.update_view(core, t, 0.0)
+	errs.append_array(_delta_errors("휩쓸기를 읽어 연 끝", before, _read_pose(view), _parried_want(out, 0.6)))
+
+
+## 쳐내진 포즈의 기대 변화: 기울기 4, 팔 28, 칼 50(화면 각)에 칼 팔 쪽 부호와 세기를 곱한다.
+func _parried_want(out: float, mult: float) -> Dictionary:
+	var lean := 4.0 * out * mult
+	var arm := 28.0 * out * mult
+	return {"lean": lean, "head": 0.0, "arm": arm, "sword": 50.0 * out * mult - arm - lean, "shoulder": Vector2.ZERO}
+
+
+func t216_approach_and_hold() -> String:
+	var errs: Array[String] = []
+	var opp: OpponentData = load(OPPONENT_PATH)
+	var weapon: WeaponData = load(WEAPON_PATH)
+	var view := _spawn_opp_view()
+	var core := States.make_core(false)
+	var thrust := _thrust_of(opp)
+	var dur := thrust.tell_time
+	var swing := OpponentMotion.swing_time(dur, weapon.parry_window, opp)
+	var base := OpponentView.DISTANCE_SCALE[DT.Distance.ENGAGE]
+	# 휘두름 앞은 간격의 값, state_end와 그 뒤 2 tick은 x1.05, 타격 뒤 0.16초는 다시 간격의 값. 읽기 층의 전역 자리는 같다.
+	view.setup(opp, weapon, false)
+	var t := States.put(core, DT.OpponentState.TELL, thrust, 1.0 - swing / dur - 0.05, DT.Distance.ENGAGE)
+	view.update_view(core, t, 0.0)
+	_expect(errs, absf(view.scale.x - base) <= 0.0005, "휘두름 앞의 크기 %.4f (기대 %.4f)" % [view.scale.x, base])
+	var labels := _label_points(view)
+	t = States.put(core, DT.OpponentState.TELL, thrust, 1.0, DT.Distance.ENGAGE)
+	view.update_view(core, t, 0.0)
+	_expect(errs, absf(view.scale.x - base * 1.05) <= 0.001, "state_end의 크기 %.4f (기대 %.4f)" % [view.scale.x, base * 1.05])
+	var labels_after := _label_points(view)
+	for i in labels.size():
+		_expect(errs, labels[i].distance_to(labels_after[i]) <= 0.01, "다가옴 전후 읽기 층 %d의 전역 자리가 %.3fpx 움직임" % [i, labels[i].distance_to(labels_after[i])])
+	var end := core.brain.state_end
+	view.update_view(core, States.to_idle(core, end, end + 2.0 * DELTA), 0.0)
+	_expect(errs, absf(view.scale.x - base * 1.05) <= 0.001, "타격 뒤 2 tick의 크기 %.4f (기대 %.4f)" % [view.scale.x, base * 1.05])
+	# 붙들기: 막힌 찌르기처럼 회수 0으로 곧장 대기에 가도 타격 포즈가 0.10초 서고(팔 그림 포함), 그 뒤 return_time에 대기로 섞인다.
+	var strike := thrust.strike_pose
+	var idle := opp.idle_pose
+	view.update_view(core, States.to_idle(core, end, end + 0.05), 0.0)
+	var arm := (view.get_node(^"Torso/Arm") as Node2D).rotation_degrees
+	_expect(errs, absf(arm - strike.arm_deg) <= 0.02 and view.get("_art_key") == OpponentArmArt.art_of(strike), "타격 0.05초 뒤: 팔 %.2f(기대 %.2f) 그림 %s" % [arm, strike.arm_deg, view.get("_art_key")])
+	view.update_view(core, States.to_idle(core, end, end + 0.10), 0.0)
+	arm = (view.get_node(^"Torso/Arm") as Node2D).rotation_degrees
+	_expect(errs, absf(arm - strike.arm_deg) <= 0.02, "타격 0.10초 뒤 섞임의 처음이 타격 포즈가 아님 %.2f" % arm)
+	view.update_view(core, States.to_idle(core, end, end + 0.10 + opp.return_time * 0.5), 0.0)
+	arm = (view.get_node(^"Torso/Arm") as Node2D).rotation_degrees
+	var half := lerpf(strike.arm_deg, idle.arm_deg, 0.5)
+	_expect(errs, absf(arm - half) <= 0.05, "0.10 + return_time/2: 팔 %.2f (기대 %.2f)" % [arm, half])
+	view.update_view(core, States.to_idle(core, end, end + 0.10 + opp.return_time + 0.05), 0.0)
+	arm = (view.get_node(^"Torso/Arm") as Node2D).rotation_degrees
+	_expect(errs, absf(arm - idle.arm_deg) <= 0.02 and view.get("_art_key") == OpponentArmArt.art_of(idle), "0.10 + return_time 뒤는 대기: 팔 %.2f 그림 %s" % [arm, view.get("_art_key")])
+	view.update_view(core, States.to_idle(core, end, end + 0.16), 0.0)
+	_expect(errs, absf(view.scale.x - base) <= 0.001, "타격 뒤 0.16초의 크기 %.4f (기대 %.4f)" % [view.scale.x, base])
+	# 헛손질의 걸음에는 다가옴도 붙들기도 없다.
+	var feint := thrust.duplicate() as AttackData
+	feint.feint = true
+	view.setup(opp, weapon, false)
+	t = States.put(core, DT.OpponentState.TELL, feint, 1.0, DT.Distance.ENGAGE)
+	view.update_view(core, t, 0.0)
+	_expect(errs, absf(view.scale.x - base) <= 0.0005, "헛손질의 크기 %.4f (기대 %.4f)" % [view.scale.x, base])
+	end = core.brain.state_end
+	view.update_view(core, States.to_idle(core, end, end + 0.05), 0.0)
+	arm = (view.get_node(^"Torso/Arm") as Node2D).rotation_degrees
+	_expect(errs, absf(arm - strike.arm_deg) > 1.0, "헛손질 뒤에 타격 포즈를 붙들었다 (팔 %.2f)" % arm)
+	# 휩쓸기의 둘째 점부터는 다가옴이 없다.
+	var root := AttackData.new()
+	root.sweep = true
+	var second := thrust.duplicate() as AttackData
+	root.chain.append(second)
+	view.setup(opp, weapon, false)
+	t = States.put(core, DT.OpponentState.TELL, second, 1.0, DT.Distance.ENGAGE)
+	core.brain.pattern_root = root
+	core.brain.step_index = 1
+	core.brain.first_strike_time = t - 1.0
+	view.update_view(core, t, 0.0)
+	_expect(errs, absf(view.scale.x - base) <= 0.0005, "휩쓸기 둘째 점의 크기 %.4f (기대 %.4f)" % [view.scale.x, base])
+	core.brain.pattern_root = null
+	core.brain.step_index = 0
+	# 회수가 있는 결과는 H03 전과 같다: 회수의 포즈가 recover_pose를 따른다.
+	view.setup(opp, weapon, false)
+	t = States.put(core, DT.OpponentState.RECOVERY, thrust, 0.5, DT.Distance.ENGAGE)
+	view.update_view(core, t, 0.0)
+	arm = (view.get_node(^"Torso/Arm") as Node2D).rotation_degrees
+	_expect(errs, absf(arm - OpponentMotion.recover_pose(thrust, 0.5).arm_deg) <= 0.02, "회수의 포즈가 recover_pose와 다름 (팔 %.2f)" % arm)
+	return _result(errs)

@@ -60,6 +60,10 @@ var _cover_marks: CoverMarks
 var _stop_ticks_left := 0
 ## 엔진의 걸음(_physics_process)이 advance를 부르는 동안만 참(계획 H03 결정 928). 연출의 "살아 있는 판" 가름이다.
 var _engine_tick := false
+## 멈칫 동안의 떨림(결정 935): 멈칫의 전체 tick, 떨림을 정한 순간과 그 이벤트.
+var _stop_ticks_total := 0
+var _shake_moment := &""
+var _shake_ev := {}
 var _hit_root: AttackData
 var _display_time := 0.0
 ## 하루 모드인가. _ready에서 한 번 정한다(정산으로 넘긴 뒤 같은 씬에서 R·Esc가 살아나지 않게).
@@ -137,7 +141,9 @@ func start_duel() -> void:
 	core.event.connect(_on_core_event)
 	_display_time = 0.0
 	_stop_ticks_left = 0
+	_clear_shake()
 	_hit_root = null
+	_beeper.clear()
 	_clear_pause()
 	_pause_count = 0
 	_pause_drift = 0.0
@@ -171,6 +177,7 @@ func _physics_process(delta: float) -> void:
 		return
 	if _stop_ticks_left > 0:
 		_stop_ticks_left -= 1
+		_apply_shake()
 		return
 	_engine_tick = true
 	advance(delta)
@@ -191,6 +198,7 @@ func pause(_reason: StringName) -> bool:
 	_hud.set_resume_hold(false)
 	paused = true
 	_stop_ticks_left = 0
+	_clear_shake()
 	_pause_count += 1
 	_pause_time = core.time
 	var exit_text := EXIT_DAY_TEXT if _day_mode else EXIT_PRACTICE_TEXT
@@ -304,6 +312,7 @@ func advance(delta: float) -> void:
 	if mouse_aim_enabled:
 		_update_aim_from_mouse()
 	core.tick(delta)
+	_beeper.advance_to(core.time)
 	if core.ended and not _result_panel.is_showing():
 		_result_panel.show_result(core, commission)
 	_display_time = core.time
@@ -362,6 +371,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if mouse_aim_enabled:
 			_update_aim_from_mouse()
 		_stop_ticks_left = 0
+		_clear_shake()
 	if event.is_action_pressed(&"retry"):
 		start_duel()
 	elif event.is_action_pressed(&"debug_toggle"):
@@ -423,11 +433,36 @@ func _on_core_event(ev: Dictionary) -> void:
 	# 멈칫과 움찔은 엔진의 걸음 안에서만 선다: advance로 걷는 테스트·찍기·봇은 그대로다(결정 922·923·928).
 	if moment != &"" and _engine_tick:
 		var stop := HitFeel.stop_msec(moment, ev) * Engine.physics_ticks_per_second / 1000.0
-		_stop_ticks_left = maxi(_stop_ticks_left, roundi(stop))
+		if roundi(stop) > _stop_ticks_left:
+			_stop_ticks_left = roundi(stop)
+			_stop_ticks_total = _stop_ticks_left
+			_shake_moment = moment
+			_shake_ev = ev
+			_apply_shake()
 		var shove := HitFeel.flinch(moment, ev)
 		if shove != Vector2.ZERO:
 			_opponent_view.start_flinch(shove, ev.get("t", core.time))
 	_beeper.on_event(ev, moment)
+
+
+## 멈칫의 한 tick의 떨림(결정 935): 맞은 쪽 그림만 좌우로 떨고 남은 tick과 함께 0으로 준다.
+func _apply_shake() -> void:
+	if _shake_moment == &"":
+		return
+	var x := HitFeel.shake_px(_shake_moment, _stop_ticks_left, _stop_ticks_total, _shake_ev)
+	if HitFeel.shakes_me(_shake_moment):
+		_sword_view.set_shake(x)
+	else:
+		_opponent_view.set_shake(x)
+	if _stop_ticks_left <= 0:
+		_shake_moment = &""
+
+
+func _clear_shake() -> void:
+	_stop_ticks_total = 0
+	_shake_moment = &""
+	_opponent_view.set_shake(0.0)
+	_sword_view.set_shake(0.0)
 
 
 ## 화면 크기에 맞춰 배치한다. stretch aspect가 keep이라 뷰포트는 늘 1280x720이지만,

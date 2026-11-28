@@ -147,13 +147,40 @@ var _height_shift := 0.0
 var _dive_start := -INF
 var _dive_from_close := false
 ## 움찔(계획 H02 결정 923): 보간하는 기준 자리와 따로 들고 더한다(보간에 섞이면 뭉개지고 돌아오지 않는다).
-const FLINCH_TIME := 0.15
+const FLINCH_TIME := 0.18
 var _base_position := Vector2.ZERO
 var _base_valid := false
 var _flinch_vec := Vector2.ZERO
 var _flinch_core_at := 0.0
 var _flinch_clock_at := 0.0
 var _flinch_now := Vector2.ZERO
+## 맞은 포즈·쳐내진 포즈(계획 H03 결정 934·936): 더하는 포즈, 걸림의 시작(이벤트 뒤 첫 갱신에서 잡는다 — 결정 928), 거두는 시간, 뿌리 크기.
+const FEEL_PATH := "res://data/hit_feel.tres"
+const HOLD_TIME := 0.10
+const APPROACH_SCALE := 0.05
+const APPROACH_HOLD := 0.034
+const APPROACH_RETURN := 0.12
+var _feel: HitFeelData
+var _art_name := ""
+var _root: AttackData
+var _hit_delta: PoseData
+var _hit_armed := false
+var _hit_core0 := 0.0
+var _hit_clock0 := 0.0
+var _hit_return := 0.32
+var _hit_root_scale := 1.0
+var _hit_w := 0.0
+## 상대 타격의 다가옴(결정 937): 지금 쫓는 타격의 시각과 휘두름 길이, 앞 타격의 시각(돌아가는 중).
+var _appr_end := -INF
+var _appr_swing := 0.1
+var _appr_prev_end := -INF
+var _base_scale := Vector2.ONE
+## 타격 포즈 붙들기(결정 937): 붙들 공격과 끝나는 코어 시각.
+var _hold_attack: AttackData
+var _hold_end := -INF
+var _torso_x0 := 0.0
+var _shake_px := 0.0
+var _legs_x0 := 0.0
 ## 다음 갱신에서 크기와 위치를 보간 없이 맞춘다(시작, 다시 하기).
 var _snap := true
 
@@ -191,6 +218,12 @@ func _ready() -> void:
 	_state_label.z_index = 9
 	_build_state_hint()
 	_build_forecast_tag()
+	_feel = load(FEEL_PATH) as HitFeelData
+	if _feel == null:
+		push_warning("OpponentView: data/hit_feel.tres를 읽지 못했다 — 맞은 포즈 없이 그린다")
+		_feel = HitFeelData.new()
+	_torso_x0 = _torso.position.x
+	_legs_x0 = (get_node(^"Legs") as Node2D).position.x
 
 
 ## has_hat: 이 판의 상대가 모자를 쓰는가. 모자는 고정 부위가 아니라 의뢰가 씌운다.
@@ -206,6 +239,17 @@ func setup(opponent: OpponentData, weapon: WeaponData, has_hat := false) -> void
 	_dodge_until = -INF
 	_hop_start = -INF
 	_flinch_vec = Vector2.ZERO
+	_root = null
+	_hit_delta = null
+	_hit_armed = false
+	_hit_w = 0.0
+	_hit_root_scale = 1.0
+	_appr_end = -INF
+	_appr_prev_end = -INF
+	_hold_attack = null
+	_hold_end = -INF
+	_art_name = opponent.art.resource_path.get_file() if opponent.art != null else ""
+	set_shake(0.0)
 	_ring_active = false
 	_snap = true
 	_dodge_k = 0.0
@@ -272,12 +316,15 @@ func _flinch_offset(display_time: float) -> Vector2:
 
 
 func on_event(ev: Dictionary) -> void:
-	match ev["type"]:
+	match ev.get("type", &""):
 		DuelRecord.TELL_START, DuelRecord.PATTERN_STEP:
 			_flinch_vec = Vector2.ZERO
+			_hit_delta = null
+			if ev.get("type", &"") == DuelRecord.TELL_START:
+				_root = ev.get("attack") as AttackData
 		DuelRecord.STRIKE:
 			_flash_until = _clock + FLASH_TIME
-			if ev["braced"]:
+			if ev.get("braced", false):
 				# 들고만 있던 막기로 표시된 공격을 버텼다: 빈틈이 없다는 것을 상태 글자 자리에 잠깐 띄운다.
 				_deflect_text = "밀어붙임"
 				_deflect_until = _clock + DEFLECT_TEXT_TIME
@@ -293,23 +340,111 @@ func on_event(ev: Dictionary) -> void:
 			if ev.get("by", "") == "withdraw":
 				_hop_start = _clock
 		DuelRecord.ATTACK:
-			var result: int = ev["result"]
+			var result: int = ev.get("result", DT.AttackResult.WHIFF)
 			if result == DT.AttackResult.GRAZE or result == DT.AttackResult.HIT:
-				_touched_part = ev["part"]
+				_touched_part = ev.get("part", DT.Part.TORSO)
 				_touched_until = _clock + TOUCH_FLASH_TIME
-			if result == DT.AttackResult.HIT and ev["part"] == DT.Part.HAT:
+			if result == DT.AttackResult.HIT and ev.get("part", DT.Part.TORSO) == DT.Part.HAT:
 				_feather.visible = false
-			if ev["dodged"]:
+			if ev.get("dodged", false):
 				# 얼굴을 지킨다: 고개를 젖혀 피한다.
 				_dodge_until = _clock + _dodge_time
 			if ev.get("spiked", false):
 				_deflect_text = "송곳에 걸렸다"
 				_deflect_until = _clock + DEFLECT_TEXT_TIME
-			elif result == DT.AttackResult.BLOCKED and ev["rash"]:
+			elif result == DT.AttackResult.BLOCKED and ev.get("rash", false):
 				_deflect_text = "받아넘김"
-				if ev["posture_gain"] > 0:
-					_deflect_text += " +%d" % ev["posture_gain"]
+				if ev.get("posture_gain", 0) > 0:
+					_deflect_text += " +%d" % ev.get("posture_gain", 0)
 				_deflect_until = _clock + DEFLECT_TEXT_TIME
+	_arm_hit(ev)
+
+
+## 맞은 포즈·쳐내진 포즈를 건다(결정 934·936). 시작은 이 이벤트 뒤 첫 갱신이다(결정 928). 안 열린 막기·속음·버티기는 moment가 비어 걸리지 않는다.
+func _arm_hit(ev: Dictionary) -> void:
+	var moment := HitFeel.moment_of(ev, _root)
+	var part := int(ev.get("part", DT.Part.TORSO))
+	var direction := int(ev.get("direction", DT.Direction.CENTER))
+	var art_scale := float(_feel.scale_by_art.get(_art_name, 1.0))
+	match moment:
+		HitFeel.GRAZE_DEALT, HitFeel.HIT_DEALT:
+			var strength := _feel.strength_for(ev, _art_name)
+			_hit_delta = _feel.pose_for(part, direction, _sword_side, strength)
+			_hit_root_scale = _feel.root_scale(part, direction, strength)
+			_hit_return = _feel.return_time
+		HitFeel.PARRY_OPEN, HitFeel.SWEEP_OPEN, HitFeel.DIVE_OPEN:
+			_hit_delta = _feel.parried_pose(_sword_side, (1.0 if moment == HitFeel.PARRY_OPEN else 0.6) * art_scale)
+			_hit_root_scale = 1.0
+			_hit_return = _feel.parried_return
+		_:
+			return
+	_hit_armed = true
+
+
+## 맞은 포즈의 무게 w = (1 - k)^2, k는 코어 시각과 _clock 가운데 더 흐른 쪽의 흐름 / 거두는 시간(결정 934).
+## 예비 동작 동안은 늘 0이고(결정 947-1), 판이 끝났으면 end_floor 아래로 내려가지 않는다.
+func _hit_weight(core: DuelCore, display_time: float) -> float:
+	if _hit_delta == null:
+		return 0.0
+	if core.brain.state == DT.OpponentState.TELL:
+		_hit_delta = null
+		_hit_armed = false
+		return 0.0
+	if _hit_armed:
+		_hit_armed = false
+		_hit_core0 = display_time
+		_hit_clock0 = _clock
+	var k := maxf(display_time - _hit_core0, _clock - _hit_clock0) / maxf(_hit_return, 0.001)
+	var w := pow(1.0 - clampf(k, 0.0, 1.0), 2.0)
+	if core.ended:
+		return maxf(w, _feel.end_floor)
+	if k >= 1.0:
+		_hit_delta = null
+	return w
+
+
+## 상대 타격의 다가옴(결정 937): 마지막 휘두름 구간에 ×1.00 → ×1.05, 타격 뒤 2 tick 머문 뒤 0.12초에 돌아온다. 자리는 옮기지 않는다.
+func _approach_scale(core: DuelCore, display_time: float) -> float:
+	var brain := core.brain
+	var atk := brain.current_attack
+	var earned := 0.0
+	if brain.state == DT.OpponentState.TELL and atk != null:
+		if atk.feint or (brain.is_sweep() and brain.step_index > 0):
+			earned = approach_after(display_time - _appr_end)
+		else:
+			if brain.state_end != _appr_end:
+				_appr_prev_end = _appr_end if display_time >= _appr_end else -INF
+				_appr_end = brain.state_end
+				_appr_swing = maxf(OpponentMotion.swing_time(brain.tell_duration, _parry_window, core.opponent_data), 0.001)
+			earned = OpponentMotion.ease_in(clampf((display_time - (_appr_end - _appr_swing)) / _appr_swing, 0.0, 1.0))
+			earned = maxf(earned, approach_after(display_time - _appr_prev_end))
+	elif _appr_end > -INF:
+		if display_time < _appr_end:
+			_appr_end = -INF
+		else:
+			earned = approach_after(display_time - _appr_end)
+	return 1.0 + APPROACH_SCALE * earned
+
+
+## 타격 t초 뒤의 다가옴(0~1): 머문 뒤 돌아간다. 타격 전(t < 0)은 0이다.
+static func approach_after(t: float) -> float:
+	if t < 0.0:
+		return 0.0
+	if t <= APPROACH_HOLD:
+		return 1.0
+	return 1.0 - OpponentMotion.ease_in_out(clampf((t - APPROACH_HOLD) / APPROACH_RETURN, 0.0, 1.0))
+
+
+func _hold_pose(atk: AttackData) -> PoseData:
+	return OpponentMotion.blend(_rest(atk.strike_pose), _rest(atk.strike_pose), 0.0)
+
+
+## 멈칫 동안의 떨림(결정 935): Torso·Legs의 x만 민다(고리·글자·꼬리표는 뿌리의 다른 자식이라 안 떤다). 화면 px를 뿌리 크기로 나눠 넣는다.
+func set_shake(x: float) -> void:
+	_shake_px = x
+	var local := x / maxf(scale.x, 0.01)
+	_torso.position.x = _torso_x0 + local
+	(get_node(^"Legs") as Node2D).position.x = _legs_x0 + local
 
 
 ## display_time은 표시용 시각(코어 시계 + 물리 보간). delta는 부드러운 이동과 번쩍임에만 쓴다.
@@ -334,7 +469,10 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 	var hop_k := (_clock - _hop_start) / HOP_TIME
 	if hop_k >= 0.0 and hop_k < 1.0:
 		target_pos.y -= 4.0 * hop_k * (1.0 - hop_k) * HOP_HEIGHT
-	scale = scale.lerp(Vector2.ONE * target_scale, smooth)
+	_base_scale = _base_scale.lerp(Vector2.ONE * target_scale, smooth)
+	_hit_w = _hit_weight(core, display_time)
+	scale = _base_scale * _approach_scale(core, display_time) * lerpf(1.0, _hit_root_scale, _hit_w)
+	set_shake(_shake_px)
 	if not _base_valid:
 		_base_position = position
 		_base_valid = true
@@ -399,7 +537,7 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 	_dodge_k = lerpf(_dodge_k, 1.0 if _clock < _dodge_until else 0.0, smooth)
 	var shift_height := brain.current_height() if brain.state == DT.OpponentState.TELL else -1
 	_height_shift = lerpf(_height_shift, HEIGHT_SHOULDER_SHIFT[shift_height] if shift_height >= 0 else 0.0, smooth)
-	_apply_pose(_pose, _dodge_k)
+	_apply_pose(OpponentMotion.add(_pose, _hit_delta, _hit_w) if _hit_delta != null and _hit_w > 0.0 else _pose, _dodge_k)
 	_show_arm_art(_art_key)
 	if _art != null:
 		_set_head(head_art)
@@ -599,6 +737,14 @@ func _pose_for(core: DuelCore, display_time: float, complacent: bool) -> PoseDat
 		_phase_key = key
 		_phase_start = start
 		_blend_from = _pose
+		if _last_state != DT.OpponentState.IDLE or brain.state != DT.OpponentState.IDLE:
+			_hold_attack = null
+		# 타격 뒤 곧장 대기로 간 것(막힘·패리·안 열림): 타격 포즈를 0.10초 붙든다(결정 937).
+		if _last_state == DT.OpponentState.TELL and brain.state == DT.OpponentState.IDLE and _last_attack != null \
+				and not _last_attack.feint and start >= _last_state_end - 0.0001:
+			_hold_attack = _last_attack
+			_hold_end = _last_state_end + HOLD_TIME
+			_blend_from = _hold_pose(_last_attack)
 	_last_state = brain.state
 	_last_attack = brain.current_attack
 	_last_state_end = brain.state_end
@@ -622,8 +768,14 @@ func _pose_for(core: DuelCore, display_time: float, complacent: bool) -> PoseDat
 		target = _rest(opp.stagger_pose)
 	elif complacent:
 		target = _rest(opp.complacent_pose)
+	var shift := 0.0
+	if _hold_attack != null and brain.state == DT.OpponentState.IDLE:
+		if display_time < _hold_end:
+			_art_key = OpponentArmArt.art_of(_hold_attack.strike_pose)
+			return _hold_pose(_hold_attack)
+		shift = maxf(_hold_end - start, 0.0)
 	# 돌아감은 빠르게(결정 236): 그때 화면의 포즈에서 return_time초.
-	var k := clampf((display_time - start) / maxf(opp.return_time, 0.001), 0.0, 1.0)
+	var k := clampf((display_time - start - shift) / maxf(opp.return_time, 0.001), 0.0, 1.0)
 	# 섞는 동안은 나온 국면의 그림(결정 268), 끝나면 그 상태 포즈의 그림(결정 285). 거짓이면 섞는 동안도 그 상태의 그림(판 F의 갈래).
 	_art_key = _leave_art if k < 1.0 and opp.strike_art_on_return else OpponentArmArt.art_of(target)
 	return OpponentMotion.blend(_blend_from, target, OpponentMotion.ease_in_out(k))

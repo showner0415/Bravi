@@ -3,7 +3,7 @@
 #   powershell -ExecutionPolicy Bypass -File tests/run_feel_shots.ps1 -Group A,B,C -Shots "$env:TEMP\bravi-h03-shots"
 #
 # Runs tests/feel_shots.tscn (the duel scene, physics off, stepped with advance). Groups: A = my attack step by step (25 shots),
-# B = the contact frame of 9 cells x engage/close + 3 lunges (21), C = results and short whiffs (16). No -Group = all (62).
+# B = the contact frame of 9 cells x engage/close + 3 lunges (21), C = results and short whiffs (16). D = hit poses of 8 opponents (35), E = opponent strikes (15). No -Group = all (112).
 # Prints one "feel,<name>,dist=..,move=..,kink=..,scale=..,sleeve=..,PASS|FAIL" line per shot.
 # Judges the run: exit code 0, one "FEEL SHOTS OK <n>" line, no ERROR lines, n feel lines all PASS. Without -Shots no PNG is saved (headless).
 param(
@@ -36,20 +36,21 @@ if (-not $SkipImport) {
 	}
 }
 
-$counts = @{ A = 25; B = 21; C = 16 }
-$groups = if ($Group) { @($Group -split ',' | ForEach-Object { $_.Trim().ToUpper() } | Where-Object { $_ }) } else { @('A', 'B', 'C') }
+$counts = @{ A = 25; B = 21; C = 16; D = 35; E = 15 }
+$groups = if ($Group) { @($Group -split ',' | ForEach-Object { $_.Trim().ToUpper() } | Where-Object { $_ }) } else { @('A', 'B', 'C', 'D', 'E') }
 $expected = 0
 foreach ($g in $groups) { if ($counts.ContainsKey($g)) { $expected += $counts[$g] } }
 $groupArg = if ($Group) { "`"--group=$Group`"" } else { '' }
 
 if ($Shots) {
 	New-Item -ItemType Directory -Force -Path $Shots | Out-Null
-	$out = cmd /c "`"$Godot`" --path `"$project`" res://tests/feel_shots.tscn --quit-after 60000 -- `"--shots=$Shots`" $groupArg 2>&1"
+	$out = @()
+	cmd /c "`"$Godot`" --path `"$project`" res://tests/feel_shots.tscn --quit-after 60000 -- `"--shots=$Shots`" $groupArg 2>&1" | ForEach-Object { $out += $_; Write-Output $_ }
 } else {
-	$out = cmd /c "`"$Godot`" --headless --path `"$project`" res://tests/feel_shots.tscn --quit-after 60000 -- $groupArg 2>&1"
+	$out = @()
+	cmd /c "`"$Godot`" --headless --path `"$project`" res://tests/feel_shots.tscn --quit-after 60000 -- $groupArg 2>&1" | ForEach-Object { $out += $_; Write-Output $_ }
 }
 $runExit = $LASTEXITCODE
-$out | ForEach-Object { Write-Output $_ }
 
 $errors = @($out | Where-Object { $_ -match $errorPattern })
 $warnings = @($out | Where-Object { $_ -match '^\s*WARNING:' })
