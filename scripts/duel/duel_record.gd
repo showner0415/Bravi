@@ -14,7 +14,8 @@ const TELL_START := &"tell_start"
 ## next_strike(패턴이 이어지면 다음 타격 시각, 아니면 -1.0),
 ## closed(막혔는데 빈틈을 주지 않았는가. 그러면 recovery는 0), closed_streak(이 타격 뒤 연속으로 안 열린 수), miss_limit(상대의 상한. 결정 399),
 ## height(이 타격의 높이, 없으면 -1), guard_miss(막고 있었고 방향도 맞았는데 맞은 까닭: &"height" 높이가 틀림, &"regrip" 휩쓸기에서 떼었다 누름, 아니면 &""),
-## bitten(헛손질에 속은 패턴이라 막아도 빈틈이 없다. 참일 때만 붙는다)
+## bitten(헛손질에 속은 패턴이라 막아도 빈틈이 없다. 참일 때만 붙는다),
+## cover(송곳 가림이 선 판정에만: 가린 세로줄 목록. 결정 828)
 const STRIKE := &"strike"
 ## 헛손질의 시각(판정 없음. 결정 669). attack(헛손질의 타격), root, index(헛손질의 차례, 0부터), bitten(그 칸을 막고 있었는가),
 ## height(헛손질의 높이, 없으면 -1), next_strike(다음 타격 시각, 없으면 -1.0). 뒤이어 PATTERN_STEP이 난다.
@@ -28,7 +29,8 @@ const ATTACK_START := &"attack_start"
 ## pressed_distance(누른 순간의 간격), opponent_posture, opponent_state(판정 직후), rash, posture_gain(섣부른 공격으로 상대가 되찾은 칸 수),
 ## cells(이 공격으로 실제로 깎인 상대 자세 칸 수. 스침이 아니면 0),
 ## dodged(머리를 노렸는데 상대가 피했는가. 피했으면 result는 BLOCKED다),
-## lunge(런지인가. 런지는 멀리에서 눌러 교전에 닿으며 판정한다: pressed_distance는 멀리, distance는 교전이다)
+## lunge(런지인가. 런지는 멀리에서 눌러 교전에 닿으며 판정한다: pressed_distance는 멀리, distance는 교전이다),
+## spiked(송곳에 걸렸는가. 걸린 공격에만 붙는다. result는 BLOCKED이고 빈틈이 닫힌다. 결정 828)
 const ATTACK := &"attack"
 ## 간격 변경. distance, by("player"/"opponent"/"bind" — bind는 엉킴으로 밀려난 것, "withdraw"는 치고 빠지기)
 const DISTANCE := &"distance"

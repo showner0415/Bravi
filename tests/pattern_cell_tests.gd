@@ -20,6 +20,7 @@ const SERAFINA_PATH := "res://data/opponents/opponent_04.tres"
 const AGOSTINO_PATH := "res://data/opponents/opponent_05.tres"
 const BEATRICE_PATH := "res://data/opponents/opponent_06.tres"
 const GUGLIELMO_PATH := "res://data/opponents/opponent_07.tres"
+const CORNELIA_PATH := "res://data/opponents/opponent_08.tres"
 const USURER_PATH := "res://data/commissions/variants/first_blood_usurer.tres"
 const BARTOLO_PATH := "res://data/opponents/opponent_01.tres"
 const RULES_PATH := "res://data/duel_rules.tres"
@@ -488,11 +489,11 @@ func t91_day_patterns() -> String:
 		errs.append("도움말 화면에 이어 베기나 높이의 글이 없음")
 	if not (load(LEGS_ONLY_PATH) as Commission).dialogue.contains("휩쓸"):
 		errs.append("오르솔라의 사연에 휩쓸기의 귀띔이 없음")
-	# 6. 연습의 줄: 상대 일곱(하루의 둘과 셋째, 넷째 세라피나, 다섯째 아고스티노, 여섯째 베아트리체, 일곱째 굴리엘모), 그림 데이터는 섞이지 않는다.
+	# 6. 연습의 줄: 상대 여덟(하루의 둘과 셋째, 넷째 세라피나, 다섯째 아고스티노, 여섯째 베아트리체, 일곱째 굴리엘모, 여덟째 코르넬리아), 그림 데이터는 섞이지 않는다.
 	var trials := Select.load_trials()
-	if trials.size() != 7 or trials[0].resource_path != DAY_PATHS[0] or trials[1].resource_path != DAY_PATHS[1] \
+	if trials.size() != 8 or trials[0].resource_path != DAY_PATHS[0] or trials[1].resource_path != DAY_PATHS[1] \
 			or trials[2].resource_path != LORENZO_PATH or trials[3].resource_path != SERAFINA_PATH \
-			or trials[4].resource_path != AGOSTINO_PATH or trials[5].resource_path != BEATRICE_PATH or trials[6].resource_path != GUGLIELMO_PATH:
+			or trials[4].resource_path != AGOSTINO_PATH or trials[5].resource_path != BEATRICE_PATH or trials[6].resource_path != GUGLIELMO_PATH or trials[7].resource_path != CORNELIA_PATH:
 		errs.append("연습의 상대 %d명" % trials.size())
 	if LORENZO_PATH != DAY_PATHS[2]:
 		errs.append("LORENZO_PATH가 DAY_PATHS[2]와 다름")

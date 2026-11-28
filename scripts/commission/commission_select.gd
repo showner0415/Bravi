@@ -582,6 +582,8 @@ static func help_text(opponent: OpponentData, attacks: Array) -> String:
 	if has_feint:
 		lines.append(DuelHud.HELP_FEINT.trim_prefix(" · "))
 	lines.append(DuelHud.HELP_HEIGHT.trim_prefix(" · ") + DuelHud.opening_help(opponent))
+	if DuelHud.has_cover(attacks):
+		lines.append(DuelHud.HELP_COVER.trim_prefix(" · "))
 	if has_withdraw:
 		lines.append(DuelHud.HELP_WITHDRAW.trim_prefix(" · ") % Controls.help_name(&"step_forward"))
 	if has_dive:

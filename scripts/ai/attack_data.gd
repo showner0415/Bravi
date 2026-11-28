@@ -52,6 +52,10 @@ extends Resource
 ## 길(뿌리·변주)에 거는 칸: 참이면 그 길이 끝나는 판정 뒤(유효타가 아니면) 한 칸 물러난다. 빈틈은 그대로(결정 700).
 @export var withdraw := false
 
+@export_group("송곳 가림 (계획 053)")
+## 길(뿌리·변주)에 거는 칸: 그 길이 끝나 열린 빈틈 동안 이 세로줄(Direction 값)은 닿지 않고 걸리면 빈틈이 닫힌다(결정 828).
+@export var cover_columns: Array[int] = []
+
 @export_group("칸과 변주 (계획 036b)")
 ## 이 타격이 올 수 있는 높이(DuelTypes.Height의 값)의 묶음. 비면 높이가 없는 타격이라 막기가 방향만 본다.
 ## 나올 때마다 하나를 고르게 뽑는다(같은 값을 여러 번 적으면 그만큼 자주 나온다. 결정 384).

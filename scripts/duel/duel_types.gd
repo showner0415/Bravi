@@ -30,5 +30,5 @@ const PLAYER_STATE_NAMES := ["준비", "공격 예비", "공격 회수", "막기
 const SITUATION_NAMES := ["무방비", "틀린 방향 막기", "공격 중"]
 
 ## 지금 누르면 닿는지의 미리 셈한 답(계획 R02). 판정(_verdict)과 같은 말이다. UNSURE는 미리 알 수 없다는 뜻이다.
-enum Forecast { UNSURE, NO_OPENING, REACH, OUT_OF_RANGE, LATE, HEAD_GUARDED, BIND_CUT }
-const FORECAST_NAMES := ["미정", "빈틈 아님", "닿는다", "멀다", "늦다", "피한다", "엉킴"]
+enum Forecast { UNSURE, NO_OPENING, REACH, OUT_OF_RANGE, LATE, HEAD_GUARDED, BIND_CUT, SPIKE_COVERED }
+const FORECAST_NAMES := ["미정", "빈틈 아님", "닿는다", "멀다", "늦다", "피한다", "엉킴", "송곳"]

@@ -36,6 +36,9 @@ var _finisher_arm := false
 var _finisher_head := false
 ## 받는 마디를 참는 봇(계획 048 결정 778): 조건의 게이지가 100이 되기 전에는 받아치지 않는다.
 var _patient := false
+## 송곳 가림(계획 053 결정 837): last면 받아치는 조준이 막은 타격의 칸 그대로(counter를 덮는다), spike는 가림을 읽지 않을 확률.
+var _aim_last := false
+var _spike := 0.0
 ## 받아 주기 의뢰의 판 합: 받아냄을 채운 판, 채운 시각의 합, 먼저 댄 칼의 합(계획 048). 설정마다 비운다.
 var _hold_reached := 0
 var _hold_time_sum := 0.0
@@ -109,6 +112,10 @@ func _initialize() -> void:
 			finisher_arg = arg.trim_prefix("--finisher=")
 		elif arg == "--patient":
 			patient = true
+		elif arg.begins_with("--aim="):
+			_aim_last = arg.trim_prefix("--aim=") == "last"
+		elif arg.begins_with("--spike="):
+			_spike = float(arg.trim_prefix("--spike="))
 		elif arg == "--nine":
 			nine_only = true
 		elif arg.begins_with("--opponent="):
@@ -168,6 +175,10 @@ func _initialize() -> void:
 				guard_tag += ",chase=%.2f" % chase
 			if _patient:
 				guard_tag += ",patient"
+			if _aim_last:
+				guard_tag += ",aim=last"
+			if _spike > 0.0:
+				guard_tag += ",spike=%.2f" % _spike
 			var variants: Array = [["9칸", opponent]] if DuelHud.uses_heights(opponent) else []
 			if not nine_only or variants.is_empty():
 				variants.append(["가로만", opponent.flat()])
@@ -228,6 +239,8 @@ func _play(opponent: OpponentData, seed_value: int, delay: float, miss: float, c
 			return null
 		var atk := ev["attack"] as AttackData
 		var height := int(ev.get("height", -1))
+		if _aim_last:
+			return [atk.direction, height if height >= 0 else DT.Height.MID]
 		match counter:
 			"same":
 				return [atk.direction, height if height >= 0 else DT.Height.MID]
@@ -271,6 +284,12 @@ func _play(opponent: OpponentData, seed_value: int, delay: float, miss: float, c
 		chase_rng.seed = 4000 + seed_value
 		cfg["chase_fn"] = func(_ev: Dictionary) -> bool:
 			return chase_rng.randf() < chase
+	if _spike > 0.0:
+		# 읽지 않을 난수는 가림이 선 빈틈에서만 뽑고 다른 난수와 따로 둔다(결정 837).
+		var spike_rng := RandomNumberGenerator.new()
+		spike_rng.seed = 5000 + seed_value
+		cfg["cover_read_fn"] = func(_ev: Dictionary) -> bool:
+			return spike_rng.randf() >= _spike
 	var bot := Bot.new(core, cfg)
 	while not core.ended and core.time < HARD_STOP:
 		core.tick(DELTA)
@@ -379,6 +398,12 @@ func _print(name: String, kind: String, opening: String, counter: String, delay:
 		print("withdraw,%s,%s,opening=%s%s | 판당 빠짐 %.2f · 열린 빠짐 %.2f · 따라붙어 닿음 %.2f | 닿은 몫 %.2f" % [
 			name, kind, opening, guard_tag, int(wd["빠짐"]) / runs, int(wd["열린 빠짐"]) / runs, int(wd["따라붙어 닿음"]) / runs,
 			float(int(wd["따라붙어 닿음"])) / maxf(1.0, int(wd["열린 빠짐"]))])
+	# 송곳 가림이 선 판이 있을 때만 한 줄 더한다(결정 837). 닿은 몫 = 비껴 닿음 ÷ 가림, 걸린 몫 = 걸림 ÷ 가림.
+	if m.has("covers"):
+		var cv: Dictionary = m["covers"]
+		print("cover,%s,%s,opening=%s%s | 판당 가림 %.2f · 걸림 %.2f · 비껴 닿음 %.2f | 닿은 몫 %.2f · 걸린 몫 %.2f" % [
+			name, kind, opening, guard_tag, int(cv["가림"]) / runs, int(cv["걸림"]) / runs, int(cv["비껴 닿음"]) / runs,
+			float(int(cv["비껴 닿음"])) / maxf(1.0, int(cv["가림"])), float(int(cv["걸림"])) / maxf(1.0, int(cv["가림"]))])
 
 
 ## 의뢰의 충족도 갈림. 부분 점수는 100도 0도 아닌 판이다.

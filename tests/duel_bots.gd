@@ -49,6 +49,9 @@ extends RefCounted
 ##   chase_fn(strike_ev: Dictionary) -> bool — 상대가 치고 빠진 빈틈(core.withdrew_at == 그 STRIKE의 t, 간격 멀리)에서 받아치기 전에 한 번 부른다.
 ##       참이면(없으면 참) 막기를 떼고 한 걸음 들어가 친다. 거짓이면 받아치지 않는다. 빠지는 일이 없으면 불리지 않는다(계획 045 결정 708).
 
+##   cover_read_fn(strike_ev: Dictionary) -> bool — 송곳 가림이 선 STRIKE(cover 열쇠가 있는 것)마다 한 번 부른다. 참이면(없으면 참)
+##       고른 조준이 가린 줄일 때 빈 줄의 첫째(가운데 -> 왼 -> 오)의 중단으로 바꾼다. cover 열쇠가 없으면 부르지도 않는다(계획 053 결정 837).
+
 const DT := preload("res://scripts/duel/duel_types.gd")
 
 const PARRY_LEAD := 0.10
@@ -329,6 +332,7 @@ func _on_strike(ev: Dictionary) -> void:
 		var aim: Variant = cfg["counter_fn"].call(ev)
 		if aim == null:
 			return
+		aim = _read_cover(ev, aim)
 		# 치고 빠진 빈틈이면 따라붙을지 정한다(빠지는 일이 없으면 늘 거짓이라 아래가 전과 같다).
 		var chasing := core.withdrew_at == float(ev["t"]) and core.distance == DT.Distance.FAR
 		if chasing and cfg.has("chase_fn") and not bool(cfg["chase_fn"].call(ev)):
@@ -355,10 +359,27 @@ func _on_strike(ev: Dictionary) -> void:
 		var aim: Variant = cfg["whiff_fn"].call(ev)
 		if aim == null:
 			return
+		aim = _read_cover(ev, aim)
 		_pending_steps = []
 		if core.distance == DT.Distance.FAR:
 			_pending_steps = [1]
 		_pending_attack = aim
+
+
+## 송곳 가림 읽기: 받아칠 조준을 정한 직후(즉시·늦춤·헛침·따라붙기가 모두 여기서 정해 간다) 한 번 부른다.
+## cover 열쇠가 없으면 받은 조준을 그대로 돌려주고 cover_read_fn도 부르지 않는다(난수 0).
+func _read_cover(ev: Dictionary, aim: Variant) -> Variant:
+	if not ev.has("cover"):
+		return aim
+	if cfg.has("cover_read_fn") and not bool(cfg["cover_read_fn"].call(ev)):
+		return aim
+	var covered: Array = ev["cover"]
+	if not covered.has(int((aim as Array)[0])):
+		return aim
+	for column in [DT.Direction.CENTER, DT.Direction.LEFT, DT.Direction.RIGHT]:
+		if not covered.has(column):
+			return [column, DT.Height.MID]
+	return aim
 
 
 ## 들어갔다 나오기: 지금의 게이지와 간격으로 이동을 정한다. 이동하기로 했으면 막기를 풀고 걸음을 예약한다

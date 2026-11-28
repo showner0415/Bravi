@@ -30,6 +30,8 @@ static func summarize(record: DuelRecord) -> Dictionary:
 	# 치고 빠지기(결정 708): 직전 타격의 빈틈과, 열린 빠짐의 빈틈 안에서 아직 닿지 않았는가.
 	var last_recovery := 0.0
 	var chasing := false
+	# 송곳 가림(결정 837): 가림이 선 뒤 아직 내 공격을 만나지 않았는가.
+	var covered := false
 	for ev in record.events:
 		match ev["type"]:
 			DuelRecord.TELL_START:
@@ -37,6 +39,7 @@ static func summarize(record: DuelRecord) -> Dictionary:
 					out["openings"]["안 침"] += 1
 					opening = false
 				chasing = false
+				covered = false
 				out["tells"] += 1
 				var atk := ev["attack"] as AttackData
 				if not atk.chain.is_empty():
@@ -61,6 +64,11 @@ static func summarize(record: DuelRecord) -> Dictionary:
 			DuelRecord.STRIKE:
 				out["strikes"][strike_keys[ev["result"]]] += 1
 				last_recovery = float(ev.get("recovery", 0.0))
+				if ev.has("cover"):
+					if not out.has("covers"):
+						out["covers"] = {"가림": 0, "걸림": 0, "비껴 닿음": 0}
+					out["covers"]["가림"] += 1
+					covered = true
 				if ev.get("bitten", false):
 					out["feints"]["잃은 빈틈"] += 1
 				if ev.get("closed", false):
@@ -84,6 +92,13 @@ static func summarize(record: DuelRecord) -> Dictionary:
 				if ev.get("rash", false):
 					out["rash"] += 1
 				var reached: bool = ev["result"] == DT.AttackResult.GRAZE or ev["result"] == DT.AttackResult.HIT
+				if covered:
+					if ev.get("spiked", false):
+						out["covers"]["걸림"] += 1
+						covered = false
+					elif reached or ev.get("dodged", false):
+						out["covers"]["비껴 닿음"] += 1
+						covered = false
 				if chasing and (reached or ev.get("dodged", false)):
 					chasing = false
 					out["withdraws"]["따라붙어 닿음"] += 1
@@ -138,7 +153,7 @@ static func _reason(ev: Dictionary) -> String:
 	return DT.SITUATION_NAMES[situation] if situation >= 0 else "?"
 
 
-## 패턴의 길: "오상>왼중>중하". 높이가 없으면 방향만. 치고 빠지는 길의 끝은 "^".
+## 패턴의 길: "오상>왼중>중하". 높이가 없으면 방향만. 치고 빠지는 길의 끝은 "^", 송곳 가림 길의 끝은 "#".
 static func _route(root: AttackData, heights: Array) -> String:
 	var points: Array[AttackData] = [root]
 	for step: AttackData in root.chain:
@@ -146,5 +161,5 @@ static func _route(root: AttackData, heights: Array) -> String:
 	var parts: PackedStringArray = []
 	for i in points.size():
 		var h := int(heights[i]) if i < heights.size() else -1
-		parts.append(DIR_LETTERS[points[i].direction] + (HEIGHT_LETTERS[h] if h >= 0 else "") + ("~" if points[i].feint else "") + ("^" if root.withdraw and i == points.size() - 1 else ""))
+		parts.append(DIR_LETTERS[points[i].direction] + (HEIGHT_LETTERS[h] if h >= 0 else "") + ("~" if points[i].feint else "") + ("^" if root.withdraw and i == points.size() - 1 else "") + ("#" if not root.cover_columns.is_empty() and i == points.size() - 1 else ""))
 	return ">".join(parts)

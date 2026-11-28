@@ -6,6 +6,8 @@ const COMMISSION_DIR := "res://data/commissions"
 const OPPONENT_DIR := "res://data/opponents/"
 const SCHEDULE_PATH := "res://data/day_schedule.tres"
 ## 039가 셈한 앞의 다섯 검술. 이 밖의 이름이 새 검술이다.
+## 053b가 그림을 그리면 비운다: 아직 바르톨로의 몸을 빌린 상대(결정 842).
+const ART_PENDING := ["opponent_08.tres"]
 const OLD_STYLES := ["이어 베기", "휩쓸기", "뛰어드는 찌르기", "층층 찌르기", "엇박 찌르기"]
 const NEW_FRAMES := ["pair_hatter", "court_beehive", "noble_baker", "spar"]
 
@@ -76,8 +78,10 @@ func _check_opponents(errs: Array[String], opponents: Array[OpponentData]) -> vo
 				has_signature = true
 		_expect(errs, has_signature, "[③] %s의 1단에 고유 검술(signature)이 없다" % tag)
 		_expect(errs, opp.art != null, "[③] %s의 art가 비었다" % tag)
-		if opp.art != null and opp.display_name != "바르톨로":
-			_expect(errs, opp.art.resource_path.get_file() != "bartolo_art.tres", "[③] %s가 바르톨로의 몸을 빌려 쓴다" % tag)
+		if ART_PENDING.has(tag):
+			print("  INFO %s는 아직 빌린 몸이다(ART_PENDING)" % tag)
+		elif opp.art != null and opp.display_name != "바르톨로":
+			_expect(errs,opp.art.resource_path.get_file() != "bartolo_art.tres", "[③] %s가 바르톨로의 몸을 빌려 쓴다" % tag)
 
 
 ## ④ client_name이 상대의 display_name으로 끝나는 상대 둘 이상("포함"이 아니다 — 이네스는 바르톨로의 누이다).

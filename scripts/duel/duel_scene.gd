@@ -54,6 +54,7 @@ var _pause_time := 0.0
 var _pause_drift := 0.0
 var _swallowed_attacks := 0
 
+var _cover_marks: CoverMarks
 var _display_time := 0.0
 ## 하루 모드인가. _ready에서 한 번 정한다(정산으로 넘긴 뒤 같은 씬에서 R·Esc가 살아나지 않게).
 var _day_mode := false
@@ -84,6 +85,11 @@ func _ready() -> void:
 			commission = session.get("commission")
 		elif session.get("practice_opponent") is OpponentData:
 			practice_opponent = session.get("practice_opponent")
+	# 송곳 가림의 표지는 씬 파일을 고치지 않고 상대 몸 바로 뒤에 붙인다(결정 831).
+	_cover_marks = CoverMarks.new()
+	_cover_marks.name = "CoverMarks"
+	add_child(_cover_marks)
+	move_child(_cover_marks, _opponent_view.get_index() + 1)
 	get_viewport().size_changed.connect(_layout)
 	_layout()
 	start_duel()
@@ -376,6 +382,9 @@ func _update_views(delta: float) -> void:
 	_opponent_view.update_view(core, _display_time, delta)
 	_sword_view.update_view(core, _display_time, get_viewport_rect().size, delta)
 	_hud.refresh(core)
+	if _cover_marks != null:
+		_cover_marks.core = core
+		_cover_marks.queue_redraw()
 	queue_redraw()
 
 
@@ -462,6 +471,11 @@ func _draw_forecast_frame(rect: Rect2, verdict: int) -> void:
 			var color := Color(0.9, 0.4, 1.0, 0.95)
 			for i in 4:
 				draw_dashed_line(corners[i], corners[(i + 1) % 4], color, 4.0, 8.0)
+		DuelTypes.Forecast.SPIKE_COVERED:
+			var color: Color = OpponentView.FORECAST_COLORS[DuelTypes.Forecast.SPIKE_COVERED]
+			draw_rect(rect, color, false, 5.0)
+			var tip := rect.position + Vector2(18.0, 6.0)
+			draw_colored_polygon(PackedVector2Array([tip, tip + Vector2(14.0, 0.0), tip + Vector2(7.0, 26.0)]), color)
 
 
 ## 하루 모드: 끝난 결투의 기록을 day에 넘기고 정산 화면으로 간다. 한 번만 넘긴다.

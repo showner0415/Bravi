@@ -83,8 +83,9 @@ const FORECAST_TAG_Y_RANGE := Vector2(80.0, 520.0)
 const FORECAST_COLORS := {
 	DT.Forecast.REACH: Color(0.45, 1.0, 0.6), DT.Forecast.LATE: Color(1.0, 0.75, 0.2),
 	DT.Forecast.OUT_OF_RANGE: Color(0.8, 0.8, 0.8), DT.Forecast.HEAD_GUARDED: Color(1.0, 0.45, 0.45),
-	DT.Forecast.BIND_CUT: Color(0.9, 0.45, 1.0),
+	DT.Forecast.BIND_CUT: Color(0.9, 0.45, 1.0), DT.Forecast.SPIKE_COVERED: Color(0.80, 0.84, 0.90),
 }
+const COLUMN_NAMES := ["왼쪽", "가운데", "오른쪽"]
 
 ## 교전 거리 기준 위치. 결투 씬이 화면 크기에 맞춰 정한다.
 var anchor := Vector2.ZERO
@@ -272,7 +273,10 @@ func on_event(ev: Dictionary) -> void:
 			if ev["dodged"]:
 				# 얼굴을 지킨다: 고개를 젖혀 피한다.
 				_dodge_until = _clock + _dodge_time
-			if result == DT.AttackResult.BLOCKED and ev["rash"]:
+			if ev.get("spiked", false):
+				_deflect_text = "송곳에 걸렸다"
+				_deflect_until = _clock + DEFLECT_TEXT_TIME
+			elif result == DT.AttackResult.BLOCKED and ev["rash"]:
 				_deflect_text = "받아넘김"
 				if ev["posture_gain"] > 0:
 					_deflect_text += " +%d" % ev["posture_gain"]
@@ -720,6 +724,15 @@ static func recovery_hint_of(core: DuelCore) -> String:
 	var brain := core.brain
 	if brain.state == DT.OpponentState.RECOVERY and core.distance == DT.Distance.FAR and core.withdrew_at == brain.state_start:
 		return "막기 떼고 %s" % Controls.help_name(&"step_forward")
+	if core.spike_live():
+		var open: Array[String] = []
+		for column in 3:
+			if not core.covered_dirs.has(column):
+				open.append(COLUMN_NAMES[column])
+		# 가운데 상단은 머리라 머리가 닫힌 빈틈에서는 막기만으로 닿지 않는다.
+		var tail := "(머리 말고)" if open.size() == 1 and core.covered_dirs.has(0) and core.covered_dirs.has(2) \
+				and not core.head_open_at(core.time) else ""
+		return "송곳 — 빈 줄: %s%s" % [" · ".join(open), tail]
 	return ""
 
 

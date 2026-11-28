@@ -19,15 +19,18 @@ const HELP_LUNGE := "방심한 상대(칼끝을 내린다)에게는 물러나(%s
 const LUNGE_AIM_REACH := "(런지: 닿는다)"
 const LUNGE_AIM_WAIT := "(런지: 예비 동작 중 — 헛칠 때까지 기다린다)"
 const LUNGE_AIM_DODGE := "(런지: 머리는 피한다)"
+const LUNGE_AIM_SPIKE := "(런지: 송곳이 가린 줄 — 걸린다)"
+## 송곳 가림이 있는 상대에만 붙는다(계획 053 결정 831). 연습 화면도 같은 글을 쓴다.
+const HELP_COVER := " · 쇠빛 줄과 송곳 꼭지가 선 세로줄은 빈틈에도 닿지 않는다 — 막은 뒤 다른 줄로 옮겨 쳐라(걸리면 빈틈이 닫힌다. 무너지면 풀린다)"
 ## 조준 미리보기(계획 R02 D3). 칸 테두리·꼬리표·덧말이 같은 말을 쓴다.
 const FORECAST_WORD := {
 	DT.Forecast.REACH: "닿는다", DT.Forecast.LATE: "늦다", DT.Forecast.OUT_OF_RANGE: "멀다",
-	DT.Forecast.HEAD_GUARDED: "피한다", DT.Forecast.BIND_CUT: "엉킴",
+	DT.Forecast.HEAD_GUARDED: "피한다", DT.Forecast.BIND_CUT: "엉킴", DT.Forecast.SPIKE_COVERED: "송곳",
 }
 const FORECAST_NOTE := {
 	DT.Forecast.REACH: "(닿는다)", DT.Forecast.LATE: "(늦다 — 칼이 닿기 전에 빈틈이 끝난다)",
 	DT.Forecast.OUT_OF_RANGE: "(멀리: 닿지 않음)", DT.Forecast.HEAD_GUARDED: "(머리를 지킨다 — 피한다)",
-	DT.Forecast.BIND_CUT: "(엉킴 — 공격이 끊긴다)",
+	DT.Forecast.BIND_CUT: "(엉킴 — 공격이 끊긴다)", DT.Forecast.SPIKE_COVERED: "(송곳이 가린 줄 — 걸린다)",
 }
 const HELP_BIND := " · 밀착은 엉킴이 차면 밀려난다 — 차기 전에 먼저 물러난다(%s)"
 ## 패턴의 막는 법(결정 377). 연습 화면도 같은 글을 쓴다.
@@ -155,6 +158,8 @@ static func help_text(opponent: OpponentData, p_day_mode := false, has_hat := fa
 			break
 	if has_withdraw(opponent.attacks):
 		text += HELP_WITHDRAW % Controls.help_name(&"step_forward")
+	if has_cover(opponent.attacks):
+		text += HELP_COVER
 	if opponent.part_effects != null:
 		text += HELP_PART
 	if opponent.close_hit_posture_loss > 1:
@@ -190,6 +195,17 @@ static func has_withdraw(attacks: Array) -> bool:
 			return true
 		for variant in atk.variants:
 			if variant is AttackData and (variant as AttackData).withdraw:
+				return true
+	return false
+
+
+## 공격 목록의 뿌리나 변주에 송곳 가림이 있는가(결정 831). has_withdraw의 꼴이고 남의 훑기에 기대지 않는다.
+static func has_cover(attacks: Array) -> bool:
+	for atk: AttackData in attacks:
+		if not atk.cover_columns.is_empty():
+			return true
+		for variant in atk.variants:
+			if variant is AttackData and not (variant as AttackData).cover_columns.is_empty():
 				return true
 	return false
 
@@ -668,7 +684,11 @@ static func lunge_aim_note(core: DuelCore, verdict := -1) -> String:
 				return LUNGE_AIM_DODGE
 			DT.Forecast.NO_OPENING:
 				return LUNGE_AIM_WAIT
+			DT.Forecast.SPIKE_COVERED:
+				return LUNGE_AIM_SPIKE
 		return ""
+	if core.lunge_spiked_now():
+		return LUNGE_AIM_SPIKE
 	if core.is_rash_now():
 		return LUNGE_AIM_WAIT
 	if core.current_aim_part() == DuelTypes.Part.HEAD and core.lunge_head_dodged_now():
@@ -736,6 +756,8 @@ func _describe(ev: Dictionary) -> String:
 				DT.AttackResult.WHIFF:
 					return "헛침 (멀리)"
 				DT.AttackResult.BLOCKED:
+					if ev.get("spiked", false):
+						return "송곳에 걸렸다 — 가린 줄(빈틈이 닫혔다)"
 					if ev["dodged"]:
 						return "머리를 피했다 — 패리했거나 큰 공격 뒤에만 닿는다"
 					if ev.get("lunge", false) and ev["rash"]:

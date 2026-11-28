@@ -22,6 +22,8 @@ const TONES := {
 	&"bitten": [170.0, 0.18],
 	## 치고 빠지기로 물러나는 순간: 막힘보다 높고 짧다(결정 702).
 	&"hop": [660.0, 0.05],
+	## 송곳에 걸림: 패리(880)의 옥타브(1760)를 피한 높고 짧은 쇠 소리. H01 표에도 없는 값이다(결정 830).
+	&"spike": [1560.0, 0.05],
 	&"graze": [660.0, 0.09],
 	&"stagger": [220.0, 0.30],
 	&"hit": [990.0, 0.35],
@@ -67,6 +69,9 @@ func on_event(ev: Dictionary) -> void:
 				DuelTypes.StrikeResult.HIT:
 					_play(&"hit")
 		DuelRecord.ATTACK:
+			if ev.get("spiked", false):
+				_play(&"spike")
+				return
 			match ev["result"]:
 				DuelTypes.AttackResult.GRAZE:
 					_play(&"graze")
