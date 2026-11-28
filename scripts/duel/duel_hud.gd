@@ -126,7 +126,13 @@ static func help_text(opponent: OpponentData, p_day_mode := false, has_hat := fa
 	var has_chain := false
 	var has_sweep := false
 	var has_feint := false
+	var flat: Array[AttackData] = []
 	for atk in opponent.attacks:
+		flat.append(atk)
+		for variant in atk.variants:
+			if variant is AttackData:
+				flat.append(variant as AttackData)
+	for atk in flat:
 		if not atk.chain.is_empty():
 			has_sweep = has_sweep or atk.sweep
 			has_chain = has_chain or not atk.sweep
