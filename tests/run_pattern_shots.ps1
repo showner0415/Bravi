@@ -4,14 +4,19 @@
 #   powershell -ExecutionPolicy Bypass -File tests/run_pattern_shots.ps1 -Shots "$env:TEMP\bravi-pattern"
 #   powershell -ExecutionPolicy Bypass -File tests/run_pattern_shots.ps1 -Commission res://data/commissions/feather_cut.tres  (that commission's HUD and hat)
 #
+#   powershell -ExecutionPolicy Bypass -File tests/run_pattern_shots.ps1 -Tier 3 -Shots "$env:TEMP\bravi-pattern-t3"  (the 3rd sword-style tier, 1 = first; "last" = each opponent's last)
+#   With -Tier the shot names become e.g. opponent_01-t3-p1-l0-engage; without it the names are as before.
+#
 # Runs tests/pattern_shots.tscn: every day-opponent pattern, every route (base and variants), three distances.
 # Prints "shot," lines (what was posed) and "overlap," lines (a numbered ring over a HUD panel or label).
+# Also prints "view," (opponent view y and scale per shot) and "label," (ring vs state label overlap) lines: recorded numbers, never judged.
 # Judges the run: exit code 0, one "PATTERN SHOTS OK <n>" line, no ERROR lines. Overlaps are reported, not judged.
 param(
 	[switch]$SkipImport,
 	[string]$Godot,
 	[string]$Shots,
-	[string]$Commission = ""
+	[string]$Commission = "",
+	[string]$Tier = ""
 )
 
 . "$PSScriptRoot\godot_path.ps1"
@@ -39,7 +44,9 @@ if (-not $SkipImport) {
 
 $commissionArg = ""
 $headlessArgs = ""
-if ($Commission) { $commissionArg = " `"--commission=$Commission`""; $headlessArgs = " --$commissionArg" }
+if ($Commission) { $commissionArg = " `"--commission=$Commission`"" }
+if ($Tier) { $commissionArg += " `"--tier=$Tier`"" }
+if ($commissionArg) { $headlessArgs = " --$commissionArg" }
 if ($Shots) {
 	New-Item -ItemType Directory -Force -Path $Shots | Out-Null
 	$out = cmd /c "`"$Godot`" --path `"$project`" res://tests/pattern_shots.tscn --quit-after 20000 -- `"--shots=$Shots`"$commissionArg 2>&1"
@@ -52,15 +59,19 @@ $out | ForEach-Object { Write-Output $_ }
 $errors = @($out | Where-Object { $_ -match $errorPattern })
 $ok = @($out | Where-Object { $_ -match '^PATTERN SHOTS OK \d+$' })
 $overlaps = @($out | Where-Object { $_ -match '^overlap,' })
+# hint, lines: StateHint box vs ring boxes; any nonzero area is a FAIL (plan 041b decision 627).
+$hints = @($out | Where-Object { $_ -match '^hint,' })
+$badHints = @($hints | Where-Object { ($_ -split ',')[3] -ne '0' })
 
 $reasons = @()
 if ($runExit -ne 0) { $reasons += "exit code $runExit" }
 if ($ok.Count -ne 1) { $reasons += 'no "PATTERN SHOTS OK" line' }
 if ($errors.Count -gt 0) { $reasons += "error lines $($errors.Count)" }
+if ($badHints.Count -gt 0) { $reasons += "hint overlap lines $($badHints.Count)" }
 
 Write-Output ''
 if ($reasons.Count -eq 0) {
-	Write-Output "RESULT: OK ($($ok[0]), overlap lines $($overlaps.Count), error lines 0)"
+	Write-Output "RESULT: OK ($($ok[0]), overlap lines $($overlaps.Count), hint lines $($hints.Count), hint overlaps 0, error lines 0)"
 	exit 0
 }
 Write-Output "RESULT: FAIL ($($reasons -join ', '))"

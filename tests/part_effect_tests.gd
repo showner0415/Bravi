@@ -1235,6 +1235,7 @@ func _bound_opponent(button: Button) -> OpponentData:
 func t111_practice_screen() -> String:
 	var errs: Array[String] = []
 	SelectScript._part_effects = false
+	SelectScript._picked_opponent = 0
 	var select: Node = (load(SELECT_PATH) as PackedScene).instantiate()
 	_tree.root.add_child(select)
 	var toggle := select.find_child("PartCounterToggle", true, false) as Button
@@ -1244,25 +1245,31 @@ func t111_practice_screen() -> String:
 		return "반격 실험 또는 베기만 버튼이 없다"
 	if toggle.button_pressed or toggle.text != "반격 실험":
 		errs.append("처음에는 꺼져 있어야 한다")
-	var names := ["TrialDuel0", "TrialDuel1", "TrialDuel2", "PatternDrill0", "SlashDrill", "SpareDrill0"]
+	var one := _bound_opponent(slash)
+	var trial_count := SelectScript.load_trials().size()
 	for state in [false, true]:
 		toggle.button_pressed = state
-		for node_name in names:
-			var button := select.find_child(node_name, true, false) as Button
-			if button == null:
-				errs.append("%s 버튼이 없다" % node_name)
-				continue
-			var bound := _bound_opponent(button)
-			if bound == null:
-				errs.append("%s에 상대가 묶여 있지 않다" % node_name)
-				continue
-			var sent: OpponentData = select.call("_trial_copy", bound)
-			if (sent.part_effects != null) != state:
-				errs.append("%s: 반격 실험 %s인데 part_effects가 %s" % [node_name, state, sent.part_effects])
-			if bound.part_effects != null:
-				errs.append("%s: 묶인 원본을 고쳤다" % node_name)
+		# 상대를 하나씩 골라 그 칸의 버튼을 읽는다(계획 040b).
+		for n in trial_count:
+			select.call("pick_opponent", n)
+			var names: Array[String] = ["TrialDuel0", "PatternDrill0"]
+			if n == 0:
+				names.append("SlashDrill")
+			for node_name in names:
+				var button := select.find_child(node_name, true, false) as Button
+				if button == null:
+					errs.append("상대 %d: %s 버튼이 없다" % [n, node_name])
+					continue
+				var bound := _bound_opponent(button)
+				if bound == null:
+					errs.append("상대 %d: %s에 상대가 묶여 있지 않다" % [n, node_name])
+					continue
+				var sent: OpponentData = select.call("_trial_copy", bound)
+				if (sent.part_effects != null) != state:
+					errs.append("상대 %d: %s: 반격 실험 %s인데 part_effects가 %s" % [n, node_name, state, sent.part_effects])
+				if bound.part_effects != null:
+					errs.append("상대 %d: %s: 묶인 원본을 고쳤다" % [n, node_name])
 	# 베기만: 공격이 단발 베기 하나다.
-	var one := _bound_opponent(slash)
 	if one == null or one.attacks.size() != 1 or not one.attacks[0].chain.is_empty() or one.attacks[0].direction == DT.Direction.CENTER \
 			or one.attacks[0].dive or one.attacks[0].is_big or not one.habits.is_empty():
 		errs.append("베기만의 상대가 단발 베기 하나가 아니다")
@@ -1274,10 +1281,40 @@ func t111_practice_screen() -> String:
 	toggle = select.find_child("PartCounterToggle", true, false) as Button
 	if toggle == null or not toggle.button_pressed:
 		errs.append("다시 열었을 때 켠 것이 남지 않았다")
+	select.free()
+	# 주인 없는 검술의 버튼: 폴더가 비어도 돌도록 시험 공격 하나를 넣은 화면에서 본다.
+	var spare := AttackData.new()
+	spare.attack_name = "시험 찌르기"
+	var spare_list: Array[AttackData] = [spare]
+	var trial_list := SelectScript.load_trials()
+	select = (load(SELECT_PATH) as PackedScene).instantiate()
+	select.set("trial_source", trial_list)
+	select.set("spare_source", spare_list)
+	select.set("commission_source", CommissionLibrary.load_tree("res://data/commissions"))
+	select.set("use_sources", true)
+	_tree.root.add_child(select)
+	select.call("pick_opponent", trial_list.size())
+	toggle = select.find_child("PartCounterToggle", true, false) as Button
+	var spare_button := select.find_child("SpareDrill0", true, false) as Button
+	if toggle == null or spare_button == null:
+		errs.append("SpareDrill0 또는 반격 실험 버튼이 없다")
+	else:
+		for state in [false, true]:
+			toggle.button_pressed = state
+			var bound := _bound_opponent(spare_button)
+			if bound == null:
+				errs.append("SpareDrill0에 상대가 묶여 있지 않다")
+				continue
+			var sent: OpponentData = select.call("_trial_copy", bound)
+			if (sent.part_effects != null) != state:
+				errs.append("SpareDrill0: 반격 실험 %s인데 part_effects가 %s" % [state, sent.part_effects])
+			if bound.part_effects != null:
+				errs.append("SpareDrill0: 묶인 원본을 고쳤다")
 	# 의뢰 카드로 시작하는 판에는 실리지 않는다: 카드의 상대는 하루의 상대 그대로다.
 	for commission in CommissionLibrary.load_all("res://data/commissions"):
 		if commission.opponent != null and commission.opponent.part_effects != null:
 			errs.append("%s의 상대에 part_effects가 있다" % commission.client_name)
 	select.free()
 	SelectScript._part_effects = false
+	SelectScript._picked_opponent = 0
 	return _result(errs)

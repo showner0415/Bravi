@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="Commission" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/commission/commission.gd" id="1_commission"]
+[ext_resource type="Script" path="res://scripts/commission/commission_condition.gd" id="2_condition"]
+[ext_resource type="Script" path="res://scripts/commission/target_part_condition.gd" id="3_target_part"]
+[ext_resource type="Resource" path="res://data/opponents/opponent_06.tres" id="4_opponent"]
+[ext_resource type="Resource" path="res://data/stages/alley.tres" id="5_stage"]
+[ext_resource type="Texture2D" path="res://assets/art/clients/clara.png" id="6_portrait"]
+
+[sub_resource type="Resource" id="condition_sleeve"]
+script = ExtResource("3_target_part")
+target_part = 3
+graze_penalty = 0
+hit_penalty = 30
+
+[resource]
+script = ExtResource("1_commission")
+client_name = "모자 장인 클라라"
+dialogue = "건너편 베아트리체가 제 진열창 앞에서 손님에게 제 모자를 씌워 보이고는 자기 가게 모자를 팔아요. 모자장이 조합의 옛 법도로 겨루기로 했어요. 진 쪽은 칼 든 팔 소매가 갈라진 옷을 입고 사흘 동안 가게 앞에 서요. 그 소매만 갈라 주세요. 살갗은 안 돼요, 제가 곤란해져요.
+그 여자는 휘두르는 척을 섞어요. 모자 고르듯 처음 내민 쪽을 덥석 막지 마세요. 소매는 아주 무너뜨린 뒤 칼 쪽 가운데를 베야 닿을 거예요."
+opponent = ExtResource("4_opponent")
+opponent_posture_max = 7
+opponent_recover_posture = 3
+stage = ExtResource("5_stage")
+client_portrait = ExtResource("6_portrait")
+conditions = Array[ExtResource("2_condition")]([SubResource("condition_sleeve")])
+base_reward = 40
+tip_max = 20
+reputation_effect = {"accept": 0, "success": 3, "fail": -1, "win": 1}
+haggle_min_stars = 4
+success_line = "소매가 갈라진 채로 가게 앞에 서 있어요. 오늘은 손님들이 제 창 앞에 서네요."
+decline_line = "그래요… 법도대로라면 제가 직접 칼을 들어야 하는데."
+fail_line = "그 여자 소매가 멀쩡해요. 사흘 동안 제가 고개를 숙이고 다녀야겠네요. 보수는 없어요."
+partial_line = "소매는 갈랐는데 다른 데 상처가 났다면서요? 곤란해진다고 했잖아요. 깎을게요."
+haggle_agree_line = "좋아요, 그 값에 해요. 대신 소매만이에요, 살갗은 안 돼요."
+haggle_refuse_line = "모자 몇 개 값이에요, 그게. 처음 값으로 해요. 덤은 줄일게요."

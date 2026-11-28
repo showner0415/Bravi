@@ -9,8 +9,15 @@ const ECONOMY_PATH := "res://data/economy_rules.tres"
 const PORTRAITS := {
 	"feather_cut.tres": "clara.png", "first_blood_usurer.tres": "vittorio.png", "first_blood.tres": "emilio.png",
 	"throw_match.tres": "ines.png", "throw_bet.tres": "gasparo.png", "legs_only.tres": "orsola.png",
-	"first_blood_poor.tres": "tomaso.png",
+	"first_blood_poor.tres": "tomaso.png", "spar.tres": "agostino.png",
+	"pair_hatter.tres": "beatrice.png", "after_baker.tres": "beatrice.png", "pair_baker.tres": "guglielmo.png", "after_hatter.tres": "guglielmo.png",
+	"close_baker.tres": "guglielmo.png", "rival_milliner.tres": "clara.png", "dun_master.tres": "vittorio.png",
+	"court_beehive.tres": "cecilia.png", "noble_baker.tres": "leandro.png", "washer_ledger.tres": "nella.png",
 }
+## 그림이 없는 의뢰. 054가 비웠다 — 새 의뢰인이 그림 없이 들어오면 여기에 적는다.
+const NO_PORTRAIT: Array[String] = []
+## T167 ③: 계획 054의 새 셋(챙 · 가발 · 방망이가 틀 안 — 결정 872).
+const NEW_THREE: Array[String] = ["cecilia.png", "leandro.png", "nella.png"]
 const PORTRAIT_DIR := "res://assets/art/clients/"
 const PORTRAIT_SIZE := Vector2i(450, 675)
 ## 앞 띠 첫 행의 아홉 점이 짙은 선이어야 한다(T2: 의뢰인 위에 벽 줄이 얹히지 않는다).
@@ -23,6 +30,7 @@ func list(tree: SceneTree) -> Array:
 	_tree = tree
 	return [
 		{"id": "T77", "name": "카운터 그림: 의뢰인 그림의 자리·대신 서는 도형·이름 글, 배경 두 장과 층, 정산의 그림 경로", "fn": t77_counter_art},
+		{"id": "T167", "name": "의뢰인과 그림: 이름 하나에 그림 하나, 새 셋의 틀", "fn": t167_client_portraits},
 	]
 
 
@@ -91,8 +99,8 @@ func t77_counter_art() -> String:
 	var errs: Array[String] = []
 	var all: Array[Commission] = CommissionLibrary.load_all("res://data/commissions")
 	all.append_array(CommissionLibrary.load_all("res://data/commissions/variants"))
-	if all.size() != PORTRAITS.size():
-		errs.append("의뢰 %d개 (기대 %d)" % [all.size(), PORTRAITS.size()])
+	if all.size() != PORTRAITS.size() + NO_PORTRAIT.size():
+		errs.append("의뢰 %d개 (기대 %d)" % [all.size(), PORTRAITS.size() + NO_PORTRAIT.size()])
 	var art := _art_on()
 	for commission in all:
 		var file := commission.resource_path.get_file()
@@ -163,4 +171,62 @@ func t77_counter_art() -> String:
 		if band == null or not is_equal_approx(band.position.y, Ui.COUNTER_FRONT_Y) or not is_equal_approx(band.position.y + band.size.y, 720.0):
 			errs.append("CounterFront의 자리 %s" % (Rect2(band.position, band.size) if band != null else "없음"))
 		probe.free()
+	return "OK" if errs.is_empty() else ", ".join(errs)
+
+
+# ================================================================ T167 의뢰인과 그림(계획 054, 결정 874)
+## ① client_name → 그림 파일이 한 값(그림 없는 의뢰는 빈 값을 한 값으로 센다), 그림 파일 → client_name도 한 값.
+## 역방향은 그림 없는 의뢰를 뺀다 — 결정 876으로 둘 이상이 도형으로 남아도 빈 값 하나에 이름 둘이 붙는 거짓 실패가 없게.
+func t167_client_portraits() -> String:
+	var errs: Array[String] = []
+	var all: Array[Commission] = CommissionLibrary.load_all("res://data/commissions")
+	all.append_array(CommissionLibrary.load_all("res://data/commissions/variants"))
+	var by_name := {}
+	var by_file := {}
+	for commission in all:
+		var file := commission.client_portrait.resource_path.get_file() if commission.client_portrait != null else ""
+		if by_name.has(commission.client_name) and String(by_name[commission.client_name]) != file:
+			errs.append("[①] %s의 그림이 둘: '%s' · '%s' (%s)" % [commission.client_name, by_name[commission.client_name], file, commission.resource_path.get_file()])
+		by_name[commission.client_name] = file
+		if file == "":
+			continue
+		if by_file.has(file) and String(by_file[file]) != commission.client_name:
+			errs.append("[①] %s를 두 사람이 쓴다: %s · %s" % [file, by_file[file], commission.client_name])
+		by_file[file] = commission.client_name
+	# ② 어느 의뢰도 쓰지 않는 그림은 적기만 한다(053b의 cornelia.png는 057이 건다).
+	var dir := DirAccess.open(PORTRAIT_DIR)
+	if dir == null:
+		errs.append("[②] %s를 열지 못함" % PORTRAIT_DIR)
+	else:
+		for f in dir.get_files():
+			if f.get_extension() == "png" and not by_file.has(f):
+				print("  INFO T167: %s%s는 어느 의뢰도 쓰지 않는다" % [PORTRAIT_DIR, f])
+	# ③ 새 셋의 틀(결정 872): 위 두 모서리 알파 0, 위 4줄 · 위쪽 450행의 좌우 4열에 불투명(알파 ≥ 128) 0.
+	for f in NEW_THREE:
+		var path := PORTRAIT_DIR + f
+		if not ResourceLoader.exists(path):
+			print("  INFO T167: %s가 없다 — ③을 건너뛴다(결정 876)" % path)
+			continue
+		var image := (load(path) as Texture2D).get_image()
+		if image == null:
+			errs.append("[③] %s의 화소를 읽지 못함" % f)
+			continue
+		if image.is_compressed():
+			image.decompress()
+		var w := image.get_width()
+		var h := image.get_height()
+		if image.get_pixel(0, 0).a > 0.0 or image.get_pixel(w - 1, 0).a > 0.0:
+			errs.append("[③] %s: 위 모서리의 알파 %.2f · %.2f" % [f, image.get_pixel(0, 0).a, image.get_pixel(w - 1, 0).a])
+		var top := 0
+		for y in 4:
+			for x in w:
+				if image.get_pixel(x, y).a >= 128.0 / 255.0:
+					top += 1
+		var sides := 0
+		for y in mini(h, 450):
+			for x in [0, 1, 2, 3, w - 4, w - 3, w - 2, w - 1]:
+				if image.get_pixel(x, y).a >= 128.0 / 255.0:
+					sides += 1
+		if top > 0 or sides > 0:
+			errs.append("[③] %s: 위 4줄의 불투명 %d · 위쪽 450행의 좌우 4열의 불투명 %d" % [f, top, sides])
 	return "OK" if errs.is_empty() else ", ".join(errs)

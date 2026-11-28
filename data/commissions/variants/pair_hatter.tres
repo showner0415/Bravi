@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="Commission" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/commission/commission.gd" id="1_commission"]
+[ext_resource type="Script" path="res://scripts/commission/commission_condition.gd" id="2_condition"]
+[ext_resource type="Script" path="res://scripts/commission/target_part_condition.gd" id="3_target_part"]
+[ext_resource type="Resource" path="res://data/opponents/opponent_07.tres" id="4_opponent"]
+[ext_resource type="Resource" path="res://data/stages/piazza.tres" id="5_stage"]
+[ext_resource type="Texture2D" path="res://assets/art/clients/beatrice.png" id="6_portrait"]
+[ext_resource type="Resource" path="res://data/commissions/variants/pair_baker.tres" id="7_partner"]
+
+[sub_resource type="Resource" id="condition_hat"]
+script = ExtResource("3_target_part")
+target_part = 1
+graze_penalty = 0
+hit_penalty = 30
+
+[resource]
+script = ExtResource("1_commission")
+client_name = "모자 가게 베아트리체"
+dialogue = "저 사람 화덕 그을음이 제 가게 창의 흰 깃털을 죄다 잿빛으로 만들었어요. 사과는커녕 빵 냄새 덕에 제 가게에 손님이 든다나요? 둘이 먼저 들어오겠다고 문 앞에서 다투다 같이 들어왔네요. 편을 못 얻은 쪽이 직접 칼을 들기로 했어요. 제 편이시죠? 저 높다란 제빵사 모자만 베어 주세요.
+저 사람은 한 번 찍고는 화들짝 뒤로 뛰어요. 그때 막기를 풀고 따라붙어야 닿잖아요? 모자는 아주 무너뜨린 뒤에나 닿을 거예요."
+opponent = ExtResource("4_opponent")
+opponent_posture_max = 7
+opponent_recover_posture = 3
+opponent_wears_hat = true
+stage = ExtResource("5_stage")
+client_portrait = ExtResource("6_portrait")
+conditions = Array[ExtResource("2_condition")]([SubResource("condition_hat")])
+base_reward = 50
+tip_max = 25
+reputation_effect = {"accept": 0, "success": 2, "fail": -1, "win": 1}
+haggle_min_stars = 3
+success_line = "그 모자, 제 가게 창에 걸어 뒀어요. 그을음이 어디서 오는지 이제 다들 알겠죠?"
+decline_line = "둘 다 돌려보내요? 그럼 저 사람이랑 제가 직접 칼을 뽑으라는 거예요?"
+fail_line = "모자가 아직 그 머리 위에 있잖아요? 오늘도 깃털에 그을음이 앉겠네요. 값은 없어요."
+partial_line = "모자는 떨어졌는데 다른 데도 다쳤다면서요? 저까지 못된 이웃 소리를 듣잖아요?"
+haggle_agree_line = "좋아요, 그 값에 해요. 대신 모자만이에요, 아셨죠?"
+haggle_refuse_line = "모자 하나에 그 값을요? 처음 값으로 해요. 덤도 줄일게요."
+partner = ExtResource("7_partner")
+sets_flags = PackedStringArray("sided_hatter")
+excluded_flags = PackedStringArray("sided_hatter", "sided_baker")

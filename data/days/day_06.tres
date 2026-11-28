@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="DayData" load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://scripts/economy/day_data.gd" id="1_day"]
+[ext_resource type="Script" path="res://scripts/commission/commission.gd" id="2_commission"]
+[ext_resource type="Resource" path="res://data/commissions/variants/pair_hatter.tres" id="3_pair"]
+[ext_resource type="Resource" path="res://data/commissions/variants/dun_master.tres" id="4_dun"]
+[ext_resource type="Resource" path="res://data/commissions/variants/washer_ledger.tres" id="5_washer"]
+[ext_resource type="Resource" path="res://data/commissions/throw_match.tres" id="6_throw"]
+[ext_resource type="Resource" path="res://data/commissions/first_blood.tres" id="7_first"]
+[ext_resource type="Resource" path="res://data/commissions/variants/throw_bet.tres" id="8_bet"]
+[ext_resource type="Resource" path="res://data/commissions/feather_cut.tres" id="9_feather"]
+[ext_resource type="Resource" path="res://data/commissions/variants/legs_only.tres" id="10_legs"]
+
+[resource]
+script = ExtResource("1_day")
+commissions = Array[ExtResource("2_commission")]([ExtResource("3_pair"), ExtResource("4_dun"), ExtResource("5_washer"), ExtResource("6_throw"), ExtResource("7_first"), ExtResource("8_bet"), ExtResource("9_feather"), ExtResource("10_legs")])
+base_guests = 5

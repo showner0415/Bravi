@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="Commission" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/commission/commission.gd" id="1_commission"]
+[ext_resource type="Script" path="res://scripts/commission/commission_condition.gd" id="2_condition"]
+[ext_resource type="Script" path="res://scripts/commission/hold_condition.gd" id="3_hold"]
+[ext_resource type="Resource" path="res://data/opponents/opponent_02.tres" id="4_opponent"]
+[ext_resource type="Resource" path="res://data/stages/piazza.tres" id="5_stage"]
+[ext_resource type="Texture2D" path="res://assets/art/clients/guglielmo.png" id="6_portrait"]
+
+[sub_resource type="Resource" id="condition_hold"]
+script = ExtResource("3_hold")
+blocks_needed = 10
+early_touch_penalty = 35
+early_hint = "아직입죠"
+ready_text = "이제 치십쇼"
+
+[resource]
+script = ExtResource("1_commission")
+client_name = "제빵사 굴리엘모"
+dialogue = "광장의 브루노 양반이 제 빵이 무게가 모자란다며 칼을 뽑았습죠. 군대에서 돌아와 하루 종일 할 일이 없는 양반입죠. 빵 체면이 있으니 지면 안 됩니다. 그래도 단칼에 끝내면 그 양반 다시는 광장에 못 나옵죠. 실컷 휘두르게 받아 주신 뒤에 이겨 주십쇼.
+그 양반은 칼을 크게 휩쓸어 옵죠. 막은 칼을 떼지 말고 끝까지 따라가십쇼. 받아 주는 동안엔 먼저 칼을 대지 마시고요. 식기 전에!"
+opponent = ExtResource("4_opponent")
+opponent_posture_max = 7
+opponent_recover_posture = 3
+stage = ExtResource("5_stage")
+client_portrait = ExtResource("6_portrait")
+conditions = Array[ExtResource("2_condition")]([SubResource("condition_hold")])
+base_reward = 35
+tip_max = 25
+reputation_effect = {"accept": 0, "success": 3, "fail": -1, "win": 1}
+haggle_min_stars = 1
+success_line = "그 양반, 지고도 실컷 휘둘렀다며 웃고 갔습죠. 내일 아침 빵도 사러 온답니다."
+decline_line = "허허, 그럼 제가 밀대라도 들고 나가 봐야겠습죠."
+fail_line = "그 양반 체면이든 제 빵 체면이든 하나는 오늘 무너졌습죠. 값은 못 드립니다."
+partial_line = "이기긴 했는데 그 양반이 제대로 휘둘러 보기도 전에 칼을 대셨습죠. 반쯤만 웃고 갔습죠."
+haggle_agree_line = "얼마든 좋습죠. 대신 그 양반 실컷 휘두르게 해 주십쇼."
+haggle_refuse_line = "빵 판 돈으로 치르는 거라 그건 어렵습죠. 처음 값으로 합죠. 덤도 줄입죠."

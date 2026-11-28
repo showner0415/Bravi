@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>상대 다섯째 아고스티노</title>
+<style>
+/* 계획 042 결정 648~651: 041-fourth-opponent.html에서 틀(선·칠의 규칙, 파츠 단위, 무대)을 옮기고 아고스티노의 파츠를 새로 그렸다(041은 고치지 않는다). 인자: ?hat=1 · ?pose=hold · ?hold= · ?sil=1 · ?neck= · ?dome= · ?cap= · ?face= · 물러날 길 ?beard=1 · ?jacket=dark · ?patch= */
+:root {
+  --ink: #3B2A1E; --ink-soft: #6B5440;
+  --parch-1: #E9D8B4; --parch-2: #D2B98C; --parch-3: #A8895E;
+  --red: #A5533F; --green: #6F7F4F; --blue: #5C6F7E; --ochre: #C08A3E; --wood: #7A5232;
+  --st-shade: #3A3027; --st-sky: #3E4A55; --st-ground: #4E4336; --st-wall: #5E4C39;
+  --st-wall-2: #54473A; --st-wall-3: #4A3F34; --st-timber: #5A4632; --st-wood: #4A3A2C;
+  --st-iron: #2E2620; --st-leaf: #46503A; --st-sil: #2E2A28; --st-emblem: #7A6449;
+  --line: #3B2A1E; --lw: 5.2;
+  --c-doublet: #5C6F7E; --c-doublet-sh: #4A5A67;
+  --c-legs: #6B5440; --c-legs-sh: #57442F;
+  --c-skin: #EBC49F; --c-skin-sh: #C98E66;
+  --c-hat: #A5533F; --c-hat-sh: #84422F;
+  --c-feather: #E9D8B4; --c-steel: #CFC8BA; --c-hair: #3B2A1E;
+  --c-collar: #E9D8B4; --c-boot: #3B2A1E;
+  --in-bg: #D8D8D8;
+}
+/* 아고스티노의 색(결정 650): 밝은 누빔 검술복 바랜 삼베, 가는 양말, 흰 털은 양피지, 정수리의 작은 모자. ?jacket=dark는 판 S0의 물러날 길 ②(한 단 짙게) */
+.who-agostino { --ag-jacket: #B7AD9A; --ag-jacket-sh: #9C927F; --ag-hose: #857868; --ag-hose-sh: #6F6457; --c-collar-sh: #D2B98C; --c-hat: #5E4C39; --c-hat-sh: #4A3F34; }
+.who-agostino.jk-dark { --ag-jacket: #A89E8B; --ag-jacket-sh: #8E8472; }
+.fill > * { fill: var(--base); stroke: none; }
+.line > * { fill: none; stroke: var(--line); stroke-width: var(--lw); stroke-linejoin: round; stroke-linecap: round; }
+.line > .ink { fill: var(--line); stroke: none; }
+.line > .eye-w { fill: var(--c-collar); }
+.line > .thin { stroke-width: calc(var(--lw) * 0.55); }
+.line > .thick { stroke-width: calc(var(--lw) * 1.35); }
+/* 한 색 실루엣(멀리): 칠과 선을 한 색으로 */
+.sil .fill > *, .sil .line > * { fill: #2E2A28 !important; stroke: #2E2A28 !important; }
+.ui { font-family: "Batang", "BatangChe", "Gungsuh", serif; fill: var(--ink); }
+html, body { margin: 0; background: #2A2018; color: #E9D8B4; font-family: "Batang", serif; }
+section { max-width: 1920px; margin: 0 auto 40px; }
+section h2 { font-size: 20px; margin: 0 20px 8px; }
+svg.scene { width: 100%; height: auto; display: block; background: #D2B98C; }
+body.solo h2 { display: none; }
+body.solo section:not(.solo-target) { display: none; }
+body.solo section.solo-target { display: block; margin: 0; max-width: none; }
+body.solo svg.scene { width: var(--w); height: var(--h); }
+body.solo { overflow: hidden; }
+</style>
+</head>
+<body>
+<main id="main"></main>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <pattern id="hatchBg" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(-35)">
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#6B5440" stroke-width="1.1"/>
+    </pattern>
+    <filter id="paper" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.02" numOctaves="3" seed="2" result="big"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="5" result="fine"/>
+      <feColorMatrix in="big" type="matrix" values="0 0 0 0 0.36  0 0 0 0 0.25  0 0 0 0 0.15  0 0 0 0.45 -0.14" result="blot"/>
+      <feColorMatrix in="fine" type="matrix" values="0 0 0 0 0.3  0 0 0 0 0.2  0 0 0 0 0.12  0 0 0 0.3 -0.08" result="grit"/>
+      <feMerge result="all"><feMergeNode in="SourceGraphic"/><feMergeNode in="blot"/><feMergeNode in="grit"/></feMerge>
+      <feComposite in="all" in2="SourceAlpha" operator="in"/>
+    </filter>
+  </defs>
+</svg>
+<script>
+"use strict";
+// ---------------------------------------------------------------- 022-mix.html에서 그대로 옮긴 줄(바르톨로의 주먹·칼, 안뜰). 041 견본의 틀에서 쓰는 것만 남겼다.
+// 겹침 여유(STYLE_BIBLE 5번): 목 밑동은 목 위로 12, 팔 윗끝은 어깨 위로 14
+const P = {
+  fist: "M-17,0 L17,0 Q20,14 17,28 Q0,34 -17,28 Q-20,14 -17,0 Z",
+  blade: "M-4.5,-24 L-4.5,-174 L0,-192 L4.5,-174 L4.5,-24 Z",
+  guard: "M-27,-25 Q-31,-20 -27,-15 L27,-15 Q31,-20 27,-25 Z",
+  grip: "M-4,-15 L4,-15 L4,4 L-4,4 Z",
+};
+const sh = (cls, d, base) => `<path class="${cls}" d="${d}" style="--base: var(${base})"/>`;
+const f = (d, base) => `<path d="${d}" style="--base: var(${base})"/>`;
+const l = (d, cls = "") => `<path${cls ? ` class="${cls}"` : ""} d="${d}"/>`;
+const PART = {
+  Hand: () => `<g class="fill">${f(P.fist, "--c-skin")}</g>
+    <g class="line">${l(P.fist)}${l("M-9,8 L-9,14 M0,8 L0,15 M9,8 L9,14", "thin")}</g>`,
+  Sword: () => `<g class="fill">${f(P.blade, "--c-steel")}${f(P.grip, "--c-boot")}${f(P.guard, "--c-steel")}<circle cx="0" cy="8" r="5" style="--base: var(--c-steel)"/></g>
+    <g class="line">${l(P.blade)}${l("M0,-30 L0,-168", "thin")}${l(P.guard)}${l("M-24,-18 Q-28,8 0,10", "thin")}<circle cx="0" cy="8" r="5"/></g>`,
+};
+
+function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+const paperBg = () => `<rect width="1280" height="720" fill="var(--parch-2)" filter="url(#paper)"/>`;
+// 판석·돌 테두리: 가운데로 모이는 선 없이, 가장자리 띠에만 그린다
+function stones(x0, x1, y0, y1, seed, fill) {
+  const R = rng(seed); let s = "";
+  for (let y = y0, row = 0; y < y1; row++) {
+    const h = 24 + Math.round(R() * 10);
+    for (let x = x0 - (row % 2) * 22; x < x1;) {
+      const w = 38 + Math.round(R() * 34);
+      const xa = Math.max(x, x0), xb = Math.min(x + w, x1);
+      if (xb - xa > 8) s += `<path d="M${xa + 3},${y + 2} L${xb - 2},${y + 1 + R() * 3} L${xb - 3},${y + h - 2} L${xa + 2},${y + h - 1 - R() * 3} Z" fill="${fill}" stroke="var(--ink-soft)" stroke-width="1.4"/>`;
+      x += w;
+    }
+    y += h;
+  }
+  return s;
+}
+function hatchRect(x, y, w, h, op = 0.5) { return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="url(#hatchBg)" opacity="${op}"/>`; }
+function stageCourt() {
+  let s = paperBg();
+  // 가운데의 큰 톤: 그늘진 회벽, 담 위의 밤하늘, 판석 땅
+  s += `<rect x="240" y="0" width="800" height="720" fill="var(--st-wall)"/>`;
+  s += `<path d="M240,0 L1040,0 L1040,88 L700,96 L420,104 L240,108 Z" fill="var(--st-sky)"/>`;
+  s += `<path d="M240,108 L420,104 L700,96 L1040,88 L1040,104 L240,124 Z" fill="var(--st-wall-2)"/>`;
+  s += `<path d="M240,530 L1040,516 L1040,720 L240,720 Z" fill="var(--st-ground)"/>`;
+  // 오른쪽 뒤 벽: 큰 나무 대문 두 짝과 쇠 장식(x 852~1004)
+  s += `<rect x="852" y="186" width="160" height="22" fill="var(--st-wall-2)" stroke="var(--ink)" stroke-width="2.4"/>${hatchRect(852, 186, 160, 22, 0.5)}
+    <rect x="860" y="208" width="144" height="312" fill="var(--st-wood)" stroke="var(--ink)" stroke-width="3"/>
+    <path d="M932,208 L932,520" stroke="var(--ink)" stroke-width="3"/>
+    ${[878, 896, 914, 950, 968, 986].map(x => `<path d="M${x},212 L${x},516" stroke="var(--ink-soft)" stroke-width="1.2"/>`).join("")}
+    <path d="M862,262 L1002,262 M862,462 L1002,462" stroke="var(--st-iron)" stroke-width="9"/><path d="M862,262 L1002,262 M862,462 L1002,462" stroke="var(--ink)" stroke-width="1.2"/>
+    ${[870, 900, 964, 994].map(x => `<circle cx="${x}" cy="262" r="3.4" fill="var(--st-emblem)"/><circle cx="${x}" cy="462" r="3.4" fill="var(--st-emblem)"/>`).join("")}
+    <circle cx="918" cy="366" r="11" fill="none" stroke="var(--st-iron)" stroke-width="4"/><circle cx="946" cy="366" r="11" fill="none" stroke="var(--st-iron)" stroke-width="4"/>`;
+  // 오른쪽 가장자리: 회벽과 창, 화분 상자
+  s += `<path d="M1012,0 L1280,0 L1280,720 L1012,720 L1012,520 L1004,520 L1004,186 L1012,186 Z" fill="var(--parch-1)"/>${hatchRect(1012, 0, 36, 720, 0.5)}
+    <path d="M1012,0 L1012,186 M1012,520 L1012,720" stroke="var(--ink)" stroke-width="3"/>
+    <rect x="1090" y="190" width="110" height="150" fill="var(--parch-3)" stroke="var(--ink)" stroke-width="3"/><path d="M1145,190 L1145,340 M1090,265 L1200,265" stroke="var(--ink)" stroke-width="2"/>${hatchRect(1090, 190, 110, 150, 0.6)}
+    <rect x="1080" y="340" width="130" height="22" fill="var(--wood)" stroke="var(--ink)" stroke-width="2"/>
+    <path d="M1090,340 q10,-30 22,-6 q8,-26 20,-4 q10,-24 22,-2 q10,-22 22,0 q8,-18 18,8" fill="var(--green)" stroke="var(--ink)" stroke-width="2"/>`;
+  // 왼쪽 위: 담 너머 큰 나무의 잎 덩이
+  let leaves = "M0,0 L404,0 ";
+  const R = rng(9);
+  const pts = [[396, 40], [404, 90], [390, 140], [400, 190], [372, 236], [330, 262], [290, 250], [240, 284], [180, 270], [130, 296], [70, 276], [0, 290]];
+  pts.forEach(([x, y]) => { leaves += `Q${x + 12 + R() * 10},${y - 24} ${x},${y} `; });
+  leaves += "Z";
+  s += `<path d="${leaves}" fill="var(--st-leaf)" stroke="var(--ink)" stroke-width="2.6"/>`;
+  let scallop = "";
+  for (let i = 0; i < 26; i++) { const x = 20 + R() * 370, y = 20 + R() * 220; scallop += `M${x},${y} q10,-12 20,0 q10,-12 20,0 `; }
+  s += `<path d="${scallop}" fill="none" stroke="var(--ink-soft)" stroke-width="1.6"/>`;
+  // 왼쪽 가장자리: 담과 돌우물, 두레박, 화분
+  s += `<path d="M0,300 L284,300 L276,720 L0,720 Z" fill="var(--parch-2)"/>${hatchRect(240, 300, 40, 420, 0.5)}<path d="M284,300 L276,720" stroke="var(--ink)" stroke-width="3"/>`;
+  s += `<path d="M84,560 L84,330 M256,560 L256,330 M72,330 L268,330" stroke="var(--wood)" stroke-width="12" fill="none"/><path d="M84,560 L84,330 M256,560 L256,330 M72,330 L268,330" stroke="var(--ink)" stroke-width="1.4" fill="none"/>
+    <rect x="150" y="320" width="40" height="20" rx="8" fill="var(--wood)" stroke="var(--ink)" stroke-width="2"/><path d="M170,340 L170,402" stroke="var(--ink)" stroke-width="2"/>
+    <path d="M152,402 L188,402 L184,440 L156,440 Z" fill="var(--parch-3)" stroke="var(--ink)" stroke-width="2.4"/><path d="M152,412 L188,412" stroke="var(--ink)" stroke-width="2"/>
+    <path d="M60,500 Q170,474 280,500 L280,610 Q170,636 60,610 Z" fill="var(--parch-1)" stroke="var(--ink)" stroke-width="3"/><ellipse cx="170" cy="500" rx="110" ry="24" fill="var(--st-shade)" stroke="var(--ink)" stroke-width="3"/>
+    ${stones(64, 276, 512, 608, 4, "var(--parch-2)")}`;
+  s += `<path d="M10,620 L50,620 L44,676 L16,676 Z" fill="var(--red)" stroke="var(--ink)" stroke-width="2"/><path d="M12,620 q8,-34 18,-8 q8,-30 18,4" fill="var(--green)" stroke="var(--ink)" stroke-width="2"/>`;
+  // 판석의 돌: 가장자리 띠에만
+  s += stones(0, 276, 680, 720, 6, "var(--parch-3)") + stones(284, 425, 560, 720, 8, "var(--st-ground)") + stones(856, 1004, 560, 720, 10, "var(--st-ground)");
+  return s;
+}
+
+const SHEET = [
+  { part: "Head", face: "sly", x: 110, y: 262, label: "Head · 능청" },
+  { part: "Head", face: "oops", x: 280, y: 262, label: "Head · 당황" },
+  { part: "Head", face: "dizzy", x: 450, y: 262, label: "Head · 어지러움" },
+  { part: "Hat", x: 620, y: 240, label: "Hat" },
+  { part: "Feather", x: 700, y: 262, label: "Feather" },
+  { part: "Torso", x: 150, y: 600, label: "Torso" },
+  { part: "Legs", x: 370, y: 440, label: "Legs + 지팡이(따로 선 덩이)" },
+  { part: "Arm", x: 540, y: 450, label: "Arm" },
+  { part: "Hand", x: 660, y: 470, label: "Hand" },
+  { part: "Sword", x: 800, y: 620, label: "Sword" },
+];
+
+// ---------------------------------------------------------------- 아고스티노 (계획 042 "인물", 결정 649~651). 파츠 단위는 바르톨로와 같다(목~골반 200이 기준, 그의 목의 자리는 NECK).
+const Q = new URLSearchParams(location.search);
+const NECK = +(Q.get("neck") || 204);   // 목의 자리 neck.y = -NECK. 굳힌 값 204
+// dome 어깨 돔의 윗선(골반에서), W 돔의 반폭, P 돔 윗선의 평평한 반폭(얼굴 밖으로 보이는 어깨), cap 돔이 가는 허리로 모이는 자리, w 허리의 반폭, hem 저고리 밑단(골반 아래), sh 어깨, arm 팔, s 소매의 반폭, hatAt 모자의 원점(목에서), cane 지팡이의 가운데 x와 윗끝(주먹 뒤), patch 표적 헝겊의 가운데 y
+const AG = { dome: +(Q.get("dome") || 236), W: 90, P: 64, cap: +(Q.get("cap") || -40), w: 46, hem: 34, shX: 82, shY: -188, arm: 100, s: 14, hatAt: -92, caneX: 82, caneTop: -72, patch: +(Q.get("patch") || -112) };
+const BEARD = +(Q.get("beard") || 0);   // 0 그림자 띠만 · 1 그림자 몫을 늘리고 가닥 셋(판 S0의 물러날 길 ①)
+const WHO = "who-agostino" + (Q.get("jacket") === "dark" ? " jk-dark" : "");   // ?jacket=dark = 물러날 길 ②
+const PAIR = /(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/g;
+const sx = (d, k) => d.replace(PAIR, (m, x, y) => `${+(x * k).toFixed(1)},${y}`);
+const mv = (d, dx, dy) => d.replace(PAIR, (m, x, y) => `${+(+x + dx).toFixed(1)},${+(+y + dy).toFixed(1)}`);
+const layer = (fill, line) => `<g class="fill">${fill}</g><g class="line">${line}</g>`;
+const SLEEVE = len => `M${-AG.s},2 Q${-AG.s},-12 0,-12 Q${AG.s},-12 ${AG.s},2 L${AG.s - 1},${len} L${1 - AG.s},${len} Z`;
+const SLEEVE_SH = len => `M5,-11 Q${AG.s},-10 ${AG.s},2 L${AG.s - 1},${len} L6,${len} Z`;
+const SLEEVE_HEM = len => `M${1 - AG.s},${len - 9} L${AG.s - 1},${len - 9}`;
+
+// 얼굴: 능청(눈 위로 늘어진 흰 눈썹 덩이 둘 · 위로 굽은 짧은 선의 웃는 눈 · 한쪽 꼬리만 올라간 입). 콧수염이 없다. 당황은 눈썹이 올라가 점 눈이 드러나고, 어지러움은 표의 줄 그대로다.
+const BROW = "M-38,-75 Q-37,-86 -23,-86 Q-9,-86 -8,-79 Q-8,-73 -16,-73 L-31,-68 Q-38,-68 -38,-75 Z";
+const brow = (k, dy = 0) => `<path class="eye-w" d="${mv(sx(BROW, k), 0, dy)}"/>`;
+const AG_FACES = {
+  sly: `${brow(1)}${brow(-1)}${l("M-29,-56 Q-22,-64 -15,-56")}${l("M15,-56 Q22,-64 29,-56")}${l("M-11,-16 L3,-16 Q9,-16 13,-23")}`,
+  oops: `${brow(1, -9)}${brow(-1, -9)}<circle class="eye-w thin" cx="-22" cy="-58" r="8"/><circle class="eye-w thin" cx="22" cy="-58" r="8"/><circle class="ink" cx="-22" cy="-57" r="3.2"/><circle class="ink" cx="22" cy="-57" r="3.2"/><ellipse class="ink" cx="0" cy="-14" rx="6" ry="6.5"/>`,
+  dizzy: `${brow(1, 1)}${brow(-1, -7)}${l("M-28,-64 L-16,-52 M-16,-64 L-28,-52")}${l("M16,-64 L28,-52 M28,-64 L16,-52")}${l("M-12,-14 q4,-4 8,0 q4,4 8,0 q4,-4 8,0")}`,
+};
+const AG_FACE = "M-46,-8 Q-52,-30 -58,-60 Q-60,-101 0,-101 Q60,-101 58,-60 Q52,-30 46,-8 Q28,6 0,6 Q-28,6 -46,-8 Z";
+const AG_FACE_SH = "M36,-95 Q59,-90 58,-60 Q52,-30 46,-8 Q37,1 26,4 Q44,-40 36,-95 Z";
+const AG_EAR = "M-55,-60 Q-71,-58 -69,-43 Q-67,-31 -52,-34 Z";
+const AG_NOSE = "M-5,-66 Q-16,-42 -11,-31 Q0,-24 12,-31 Q15,-42 5,-66 Z";
+// 옆머리 술(귀 위에서 옆으로 뻗친 두 갈래)과 턱수염(턱에서 아래로 뾰족하게 모인다 — 목의 자리 아래로 내려가는 밑동)
+const AG_TUFT = "M-52,-82 Q-70,-89 -85,-80 Q-89,-74 -81,-72 L-72,-71 Q-83,-67 -81,-61 Q-78,-56 -68,-58 L-54,-62 Z";
+const AG_BEARD = "M-25,-7 Q-27,22 -4,53 Q0,58 4,53 Q27,22 25,-7 Q0,3 -25,-7 Z";
+const AG_BEARD_SH = ["M11,-2 L25,-7 Q27,22 4,53 Q0,58 -1,55 Q15,24 11,-2 Z", "M1,1 L25,-7 Q27,22 4,53 Q0,58 -3,54 Q7,26 1,1 Z"];
+const AG_BEARD_LINES = ["", l("M-11,4 Q-10,22 -4,36 M0,6 L0,42 M11,4 Q10,22 4,36", "thin")];
+
+const AGO = {
+  // 다리 파츠(8번): 엉덩이와 바깥으로 휜 가는 다리 둘(무릎 사이가 비어 있다), 구두 — 그리고 보는 쪽 오른쪽에 따로 선 박자 지팡이. 지팡이의 윗끝은 몸통 파츠의 주먹 뒤로 들어간다
+  Legs: () => {
+    const legs = "M-40,-6 L40,-6 L40,24 Q77,104 37,174 L17,174 Q70,106 4,44 Q0,40 -4,44 Q-70,106 -17,174 L-37,174 Q-77,104 -40,24 Z";
+    const lsh = "M31,-6 L40,-6 L40,24 Q77,104 37,174 L30,174 Q69,104 31,26 Z M-4,44 Q-70,106 -17,174 L-24,174 Q-77,106 -12,50 Z";
+    const shoeR = "M15,170 L38,170 Q54,178 53,187 L14,187 Q12,178 15,170 Z", shoeL = sx(shoeR, -1);
+    const x = AG.caneX, cane = `M${x - 4},${AG.caneTop} L${x + 4},${AG.caneTop} L${x + 4},183 Q${x + 4},186 ${x},186 Q${x - 4},186 ${x - 4},183 Z`;
+    return layer(f(cane, "--c-boot"), l(cane))
+      + layer(f(legs, "--ag-hose") + sh("sh", lsh, "--ag-hose-sh") + f(shoeL, "--c-boot") + f(shoeR, "--c-boot"), l(legs) + l(shoeL) + l(shoeR));
+  },
+  // 몸통 파츠(4번): 솟은 어깨의 돔 하나(가운데가 얕게 꺼져 머리가 앉는다)에서 가는 허리로 모이는 누빔 검술복, 가슴의 짙은 표적 헝겊, 그리고 곧게 내려와 주먹이 지팡이의 머리를 앞에서 덮는 팔(보는 쪽 오른쪽)
+  Torso: (noArm) => {
+    const T = -AG.dome, W = AG.W, P = AG.P, c = AG.cap, w = AG.w, h = AG.hem, at = d => mv(d, AG.shX, AG.shY);
+    const jacket = `M${9 - w},${h} Q${-w},${h} ${-w},${h - 9} L${-w},${c} Q${-w},${c - 36} ${14 - W},${c - 50} Q${-W},${c - 62} ${-W},${c - 94} Q${-W - 2},${T} ${-P},${T} Q0,${T + 12} ${P},${T} Q${W + 2},${T} ${W},${c - 94} Q${W},${c - 62} ${W - 14},${c - 50} Q${w},${c - 36} ${w},${c} L${w},${h - 9} Q${w},${h} ${w - 9},${h} Z`;
+    const jsh = `M32,${h} L${w - 9},${h} Q${w},${h} ${w},${h - 9} L${w},${c} Q${w},${c - 36} ${W - 14},${c - 50} Q${W},${c - 62} ${W},${c - 94} Q${W + 2},${T} ${P},${T} Q${P + 14},${T + 50} ${P - 2},${c - 96} Q40,${c - 44} 32,${c} Z`;
+    return layer(f(jacket, "--ag-jacket") + sh("sh", jsh, "--ag-jacket-sh"),
+        l(jacket) + l(`M-24,${c - 44} L-24,${h - 12} M24,${c - 44} L24,${h - 12}`, "thin") + l(`M${-w},${h - 10} L${w},${h - 10}`, "thin") + `<circle class="ink" cx="0" cy="${AG.patch}" r="17"/>`)
+      + (noArm ? "" : layer(f(at(SLEEVE(AG.arm)), "--ag-jacket") + sh("sh", at(SLEEVE_SH(AG.arm)), "--ag-jacket-sh"), l(at(SLEEVE(AG.arm))) + l(at(SLEEVE_HEM(AG.arm)), "thin"))
+      + `<g transform="translate(${AG.shX},${AG.shY + AG.arm})">${PART.Hand()}</g>`);
+  },
+  // 머리: 정수리 쪽이 넓은 큰 대머리(목~정수리 101 + 선), 콧수염 없음. 턱이 목의 자리보다 6 아래라 돔의 윗선보다 낮다 — 목 밑동을 그리지 않는다
+  Head: fc => layer(f(AG_EAR, "--c-skin") + f(sx(AG_EAR, -1), "--c-skin") + f(AG_FACE, "--c-skin") + sh("sh", AG_FACE_SH, "--c-skin-sh") + f(AG_NOSE, "--c-skin-sh"), l(AG_EAR) + l(sx(AG_EAR, -1)) + l(AG_FACE) + l(AG_NOSE))
+    + layer(f(AG_TUFT, "--c-collar") + f(sx(AG_TUFT, -1), "--c-collar") + f(AG_BEARD, "--c-collar") + sh("sh", AG_BEARD_SH[BEARD], "--c-collar-sh"), l(AG_TUFT) + l(sx(AG_TUFT, -1)) + l(AG_BEARD) + AG_BEARD_LINES[BEARD])
+    + `<g class="line">${AG_FACES[fc || "sly"]}</g>`,
+  // 모자(의뢰가 씌울 때만): 정수리에 얹는 작은 둥근 모자. 머리 위로 13만 솟는다
+  Hat: () => {
+    const cap = "M-31,3 Q-33,-20 0,-22 Q33,-20 31,3 Q0,9 -31,3 Z";
+    return layer(f(cap, "--c-hat") + sh("sh", "M15,-19 Q32,-16 31,3 Q23,6 13,7 Q22,-6 15,-19 Z", "--c-hat-sh"), l(cap) + l("M-30,-4 Q0,2 30,-4", "thin"));
+  },
+  Feather: () => layer(f("M22,-10 Q52,-26 88,-16 Q60,-2 24,-3 Z", "--c-feather"), l("M22,-10 Q52,-26 88,-16 Q60,-2 24,-3 Z") + l("M25,-6 Q56,-14 84,-15", "thin")),
+  Arm: () => layer(f(SLEEVE(AG.arm), "--ag-jacket") + sh("sh", SLEEVE_SH(AG.arm), "--ag-jacket-sh"), l(SLEEVE(AG.arm)) + l(SLEEVE_HEM(AG.arm), "thin")),
+  Hand: PART.Hand,
+  Sword: PART.Sword,
+};
+
+// 바르톨로의 리그와 같은 계층(바이블 5절). 다른 것은 값뿐: 목 (0, -NECK), 어깨 (-shX, shY), 손 (0, arm), 모자의 원점 hatAt. 다리(지팡이)는 기울지 않고 몸통이 그 위에 그려진다.
+function oppA(o) {
+  return `<g class="opp ${WHO}${o.sil ? " sil" : ""}" transform="translate(${o.x},${o.y}) scale(${o.s})">
+  <g>${AGO.Legs()}</g>
+  <g transform="rotate(${o.lean || 0})">${AGO.Torso()}
+    <g transform="translate(0,${-NECK}) rotate(${o.head || 0})">${AGO.Head(o.face)}
+      <g transform="translate(0,${AG.hatAt})"${o.hat ? "" : ` style="display:none"`}>${AGO.Hat()}<g>${AGO.Feather()}</g></g>
+    </g>
+    <g transform="translate(${-AG.shX},${AG.shY}) rotate(${o.armDeg})">${AGO.Arm()}
+      <g transform="translate(0,${AG.arm})">${AGO.Hand()}
+        <g transform="translate(0,15) rotate(${o.swordLocal})">${AGO.Sword()}</g>
+      </g>
+    </g>
+  </g>
+</g>`;
+}
+// 포즈(바이블 15절 표): 대기 팔 23·칼 -21, 큰 베기 hold 팔 160·몸 -4·칼은 팔과 한 줄. ?hold=<각>으로 든 팔의 각만 바꿔 본다.
+const IDLE = { armDeg: 23, swordLocal: -44 };
+const HOLD = { armDeg: +(Q.get("hold") || 160), lean: -4, swordLocal: 180 };
+const SIL = Q.get("sil") === "1", HAT = Q.get("hat") === "1", POSE = Q.get("pose") === "hold" ? HOLD : IDLE;
+const STAGE = stageCourt();
+const cell = (x, inner) => `<svg x="${x}" y="40" width="480" height="660" viewBox="400 0 480 660" overflow="hidden">${inner}</svg>`;
+const cap = (x, t) => `<rect x="${x}" y="0" width="480" height="40" fill="var(--parch-1)"/><text class="ui" x="${x + 14}" y="27" font-size="18">${t}</text>` + (x > 0 ? `<path d="M${x},0 L${x},700" stroke="var(--ink)" stroke-width="3"/>` : "");
+const AIM = `<path d="M400,240 L880,240" stroke="#66E0FF" stroke-width="2.5" stroke-dasharray="12 7" fill="none"/>`;
+// 판 S0의 셋째 줄: 아고스티노만 — 큰 베기 멈칫 / 모자 쓴 장과 상태 글자 상자(노란 점선) / 조준의 윗줄(하늘색 점선 y 240). 한 칸 480 x (40 + 660), 교전(x 640, y 446.4, x0.85)
+function s0Ago() {
+  const box = `<rect x="433" y="62" width="414" height="80" fill="none" stroke="#FFFF66" stroke-width="3" stroke-dasharray="10 6"/>`;
+  const bg = SIL ? `<rect x="400" width="480" height="660" fill="var(--in-bg)"/>` : STAGE, at = { x: 640, y: 446.4, s: 0.85, sil: SIL };
+  return cap(0, "교전 · 큰 베기를 들고 멈춤(든 팔 160, 몸 −4°)") + cell(0, bg + oppA(Object.assign({}, at, HOLD)))
+    + cap(480, "교전 · 모자 · 노란 점선 = 상태 글자 상자") + cell(480, bg + oppA(Object.assign({ hat: true }, at, IDLE)) + box + AIM)
+    + cap(960, "교전 · 하늘색 점선 = 조준의 윗줄 y 240") + cell(960, bg + oppA(Object.assign({}, at, IDLE)) + AIM);
+}
+// 판 S0의 색 장: 무대 위의 교전(x0.85)과 멀리(x0.55, y 406.4) — 흰 턱수염이 밝은 검술복 위에서 묻히지 않는가
+function s0Read() {
+  return cap(0, "교전 x0.85 · 색") + cell(0, STAGE + oppA(Object.assign({ x: 640, y: 446.4, s: 0.85 }, IDLE)))
+    + cap(480, "멀리 x0.55 · 색") + cell(480, STAGE + oppA(Object.assign({ x: 640, y: 406.4, s: 0.55 }, IDLE)));
+}
+
+// 생성에 넣는 그림. 바탕 #D8D8D8 한 색, 글자·띠 없음(바이블 13.8). 크기 2.3은 올린 전신 그림의 배율과 맞다. 모자 없이(전신의 Subject에 모자가 없다). 골반은 (552, 900)
+function inFront() {
+  return `<rect width="1024" height="1536" fill="var(--in-bg)"/>${oppA(Object.assign({ x: 552, y: 900, s: 2.3, hat: HAT, sil: SIL }, POSE))}`;
+}
+function inParts() {
+  let s = "";
+  for (const it of SHEET) {
+    const body = it.part === "Head" ? AGO.Head(it.face) : AGO[it.part]();
+    s += `<g class="${WHO}" transform="translate(${it.x},${it.y}) scale(0.8)">${body}</g>`;
+  }
+  return `<rect width="1536" height="1024" fill="var(--in-bg)"/><g transform="translate(0,${(1024 - 720 * 1.2) / 2}) scale(1.2)">${s}</g>`;
+}
+// 머리 파츠만(판 S0의 ⑤ 머리끼리): 목의 자리가 (320, 400), 2.3화소 = 1단위. ?face=oops|dizzy
+function inHead() {
+  return `<rect width="640" height="640" fill="var(--in-bg)"/><g class="${WHO}${SIL ? " sil" : ""}" transform="translate(320,400) scale(2.3)">${AGO.Head(Q.get("face") || "sly")}${HAT ? `<g transform="translate(0,${AG.hatAt})">${AGO.Hat()}${AGO.Feather()}</g>` : ""}</g>`;
+}
+// 의뢰인 그림에 넣는 허리 위 스케치(계획 042 결정 652): 칼이 없고, 두 손을 몸 앞의 지팡이 머리에 포갠다. 4.6화소 = 1단위(머리 높이 약 490화소 — 034의 의뢰인 스케치 약 555의 ±15% 안, 머리 술이 폭에 들게), 골반은 그림 아래 밖(y 1673)
+function inClient() {
+  const arm = (side, len) => `<g transform="translate(${side * AG.shX},${AG.shY}) rotate(${side * 35})">${layer(f(SLEEVE(len), "--ag-jacket") + sh("sh", SLEEVE_SH(len), "--ag-jacket-sh"), l(SLEEVE(len)) + l(SLEEVE_HEM(len), "thin"))}<g transform="translate(0,${len})">${PART.Hand()}</g></g>`;
+  const cane = "M-4,-80 L4,-80 L4,40 L-4,40 Z";
+  return `<rect width="1024" height="1536" fill="var(--in-bg)"/><g class="${WHO}" transform="translate(512,1673) scale(4.6)">${AGO.Torso(true)}
+    <g transform="translate(0,${-NECK})">${AGO.Head("sly")}</g>${layer(f(cane, "--c-boot"), l(cane))}${arm(1, 118)}${arm(-1, 118)}</g>`;
+}
+
+const SECTIONS = [["in-front", 1024, 1536, inFront], ["s0-ago", 1440, 700, s0Ago], ["s0-read", 960, 700, s0Read], ["in-parts", 1536, 1024, inParts], ["in-head", 640, 640, inHead], ["in-client", 1024, 1536, inClient]];
+const main = document.getElementById("main");
+for (const [id, w, h, fn] of SECTIONS) {
+  main.insertAdjacentHTML("beforeend", `<section id="${id}"><h2>${id}</h2><svg class="scene" style="--w:${w}px;--h:${h}px" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">${fn()}</svg></section>`);
+}
+const hash = decodeURIComponent(location.hash.slice(1));
+if (hash) {
+  const target = document.getElementById(hash);
+  if (target) { document.body.classList.add("solo"); target.classList.add("solo-target"); }
+}
+</script>
+</body>
+</html>

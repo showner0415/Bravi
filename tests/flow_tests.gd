@@ -5,6 +5,7 @@ extends RefCounted
 const Plain := preload("res://tests/plain_opponent.gd")
 const Bot := preload("res://tests/duel_bots.gd")
 const DT := preload("res://scripts/duel/duel_types.gd")
+const SelectScript := preload("res://scripts/commission/commission_select.gd")
 
 const COMMISSION_DIR := "res://data/commissions"
 const DUEL_PATH := "res://scenes/duel/duel.tscn"
@@ -66,7 +67,7 @@ func t21_library() -> String:
 	DirAccess.remove_absolute(TEMP_DIR)
 
 	var real := CommissionLibrary.load_all(COMMISSION_DIR)
-	_expect(errs, real.size() == 3, "%s 에서 %d개 로드 (기대 3)" % [COMMISSION_DIR, real.size()])
+	_expect(errs, real.size() == 4, "%s 에서 %d개 로드 (기대 4)" % [COMMISSION_DIR, real.size()])
 	return _result(errs)
 
 
@@ -93,9 +94,9 @@ func _spawn_duel(commission: Commission) -> Node:
 func t22_flow() -> String:
 	var errs: Array[String] = []
 	var commissions := CommissionLibrary.load_all(COMMISSION_DIR)
-	_expect(errs, commissions.size() == 3, "의뢰 %d개 (기대 3)" % commissions.size())
+	_expect(errs, commissions.size() == 4, "의뢰 %d개 (기대 4)" % commissions.size())
 
-	# 의뢰 3개 각각 입력 없이 → 유효타를 맞아 끝나고, 결과 패널의 점수가 같은 record의 evaluate와 같다.
+	# 의뢰 4개 각각 입력 없이 → 유효타를 맞아 끝나고, 결과 패널의 점수가 같은 record의 evaluate와 같다.
 	for commission in commissions:
 		var duel := _spawn_duel(commission)
 		var panel: ResultPanel = duel.get_node("ResultPanel")
@@ -146,6 +147,10 @@ func t22_flow() -> String:
 	for button in select.find_children("*", "Button", true, false):
 		if (button as Button).text == "이 의뢰를 맡는다":
 			buttons.append(button)
-	_expect(errs, buttons.size() == commissions.size(), "의뢰 선택 화면의 시작 버튼 %d개 (기대 %d)" % [buttons.size(), commissions.size()])
+	# 새 연습 화면은 카드 한 장이라 시작 버튼이 하나이고, 의뢰는 줄(쪽당 LIST_ROWS)로 고른다(계획 040b).
+	_expect(errs, buttons.size() == 1, "의뢰 선택 화면의 시작 버튼 %d개 (기대 1)" % buttons.size())
+	var picks := select.find_children("CommissionPick*", "Button", true, false).size()
+	var want_picks := mini(CommissionLibrary.load_tree(COMMISSION_DIR).size(), SelectScript.LIST_ROWS)
+	_expect(errs, picks == want_picks, "의뢰 선택 화면의 의뢰 줄 %d개 (기대 %d)" % [picks, want_picks])
 	select.free()
 	return _result(errs)

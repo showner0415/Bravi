@@ -19,6 +19,7 @@ const SessionScript := preload("res://scripts/game_session.gd")
 const RESUME_HOLD_MSEC := 400
 const EXIT_DAY_TEXT := "처음 화면으로"
 const EXIT_PRACTICE_TEXT := "연습 고르기로"
+const STOP_ENDERS: Array[StringName] = [&"attack", &"guard", &"step_forward", &"step_back"]
 
 ## 의뢰. 비어 있으면 /root/GameSession에서 받고, 그것도 없으면 자유 결투다.
 @export var commission: Commission
@@ -35,6 +36,8 @@ var _use_virtual_mouse := OS.get_cmdline_user_args().has("--bravi-virtual-mouse"
 var _virtual_mouse := Vector2.ZERO
 ## 0 이상이면 이 시드로 상대의 난수를 고정한다(테스트용).
 var rng_seed := -1
+## -1이면 하루는 날을 따르고 연습은 1단이다. 0 이상이면 그 단(0이 1단)으로 고정한다. start_duel 전에 정한다(결정 580).
+var style_tier := -1
 ## 비어 있지 않으면 로드한 무기 대신 이 무기로 판을 만든다(테스트용).
 var test_weapon: WeaponData
 
@@ -52,6 +55,21 @@ var _pause_time := 0.0
 var _pause_drift := 0.0
 var _swallowed_attacks := 0
 
+var _cover_marks: CoverMarks
+var _fx: FeelFx
+## 결과 패널 늦춤(결정 943): 엔진의 걸음에서 끝난 tick에 멈칫이 서 있으면 멈칫 뒤 이만큼의 tick을 더 기다린다.
+const RESULT_DELAY_TICKS := 21
+var _result_late := false
+var _result_delay_ticks := 0
+## 타격감(계획 H02): 남은 멈칫의 물리 tick 수와 지금 패턴의 뿌리(STRIKE를 받을 때 뇌는 이미 다음 상태다).
+var _stop_ticks_left := 0
+## 엔진의 걸음(_physics_process)이 advance를 부르는 동안만 참(계획 H03 결정 928). 연출의 "살아 있는 판" 가름이다.
+var _engine_tick := false
+## 멈칫 동안의 떨림(결정 935): 멈칫의 전체 tick, 떨림을 정한 순간과 그 이벤트.
+var _stop_ticks_total := 0
+var _shake_moment := &""
+var _shake_ev := {}
+var _hit_root: AttackData
 var _display_time := 0.0
 ## 하루 모드인가. _ready에서 한 번 정한다(정산으로 넘긴 뒤 같은 씬에서 R·Esc가 살아나지 않게).
 var _day_mode := false
@@ -82,6 +100,14 @@ func _ready() -> void:
 			commission = session.get("commission")
 		elif session.get("practice_opponent") is OpponentData:
 			practice_opponent = session.get("practice_opponent")
+	# 송곳 가림의 표지는 씬 파일을 고치지 않고 상대 몸 바로 뒤에 붙인다(결정 831).
+	_cover_marks = CoverMarks.new()
+	_cover_marks.name = "CoverMarks"
+	add_child(_cover_marks)
+	move_child(_cover_marks, _opponent_view.get_index() + 1)
+	_fx = FeelFx.new()
+	_fx.name = "FeelFx"
+	add_child(_fx)
 	get_viewport().size_changed.connect(_layout)
 	_layout()
 	start_duel()
@@ -94,6 +120,13 @@ func start_duel() -> void:
 		opponent = commission.opponent
 	elif commission == null and practice_opponent != null:
 		opponent = practice_opponent
+	# 단은 CurveCheck보다 앞에서 골라 코어·뇌·뷰가 같은 사본을 받는다(결정 580).
+	if style_tier >= 0:
+		opponent = opponent.at_tier(style_tier)
+	elif _day_mode and day != null:
+		opponent = opponent.for_day(day.day_number)
+	if commission != null:
+		opponent = commission.fit_opponent(opponent)
 	# 반응 싸움 확인(계획 030): 켜져 있으면 표시의 곡선만 다른 사본을 코어와 뷰에 준다. 꺼져 있으면 그대로다.
 	opponent = CurveCheck.prepare(opponent)
 	var weapon: WeaponData = test_weapon if test_weapon != null else load(WEAPON_PATH)
@@ -115,6 +148,13 @@ func start_duel() -> void:
 	core.setup(rules, weapon, opponent, rng, conditions, has_hat)
 	core.event.connect(_on_core_event)
 	_display_time = 0.0
+	_stop_ticks_left = 0
+	_result_late = false
+	_result_delay_ticks = 0
+	_fx.clear()
+	_clear_shake()
+	_hit_root = null
+	_beeper.clear()
 	_clear_pause()
 	_pause_count = 0
 	_pause_drift = 0.0
@@ -146,7 +186,15 @@ func _physics_process(delta: float) -> void:
 		_end_hold()
 	if paused:
 		return
+	if _stop_ticks_left > 0:
+		_stop_ticks_left -= 1
+		_apply_shake()
+		return
+	if _result_delay_ticks > 0:
+		_result_delay_ticks -= 1
+	_engine_tick = true
 	advance(delta)
+	_engine_tick = false
 
 
 ## 돌아오기 대기가 끝났는가(시각은 Time.get_ticks_msec()).
@@ -162,6 +210,9 @@ func pause(_reason: StringName) -> bool:
 	_holding = false
 	_hud.set_resume_hold(false)
 	paused = true
+	_stop_ticks_left = 0
+	_fx.clear()
+	_clear_shake()
 	_pause_count += 1
 	_pause_time = core.time
 	var exit_text := EXIT_DAY_TEXT if _day_mode else EXIT_PRACTICE_TEXT
@@ -275,7 +326,11 @@ func advance(delta: float) -> void:
 	if mouse_aim_enabled:
 		_update_aim_from_mouse()
 	core.tick(delta)
-	if core.ended and not _result_panel.is_showing():
+	_beeper.advance_to(core.time)
+	if _engine_tick and core.ended and not _result_late and _stop_ticks_left > 0 and not _result_panel.is_showing():
+		_result_late = true
+		_result_delay_ticks = RESULT_DELAY_TICKS
+	if core.ended and not _result_panel.is_showing() and _result_delay_ticks <= 0:
 		_result_panel.show_result(core, commission)
 	_display_time = core.time
 	# 부드러운 이동과 번쩍임의 시간은 _process가 흘린다(여기서 또 흘리면 두 배가 된다).
@@ -285,7 +340,7 @@ func advance(delta: float) -> void:
 func _process(delta: float) -> void:
 	# 표시용 시각: 고주사율 화면에서도 매끄럽게 움직이도록 물리 tick 사이를 보간한다.
 	# 판정은 건드리지 않는다. 멈춘 동안은 그림도 움직이지 않는다(결정 507).
-	if paused:
+	if paused or _stop_ticks_left > 0:
 		return
 	if core.ended:
 		_display_time = core.time
@@ -328,6 +383,14 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _day_mode and event.is_action_pressed(&"retry"):
 		# 하루 중의 결투는 한 번뿐이다. 다시 하기를 듣지 않는다.
 		return
+	if _result_late and not _result_panel.is_showing() and event.is_action_pressed(&"retry"):
+		return
+	# 멈칫 중의 누름은 그 자리에서 코어에 들어가고 멈칫을 끝낸다(결정 922). 막기의 뗌은 코어에 넘기되 멈칫은 둔다(결정 944).
+	if _stop_ticks_left > 0 and STOP_ENDERS.any(func(a: StringName) -> bool: return event.is_action_pressed(a)):
+		if mouse_aim_enabled:
+			_update_aim_from_mouse()
+		_stop_ticks_left = 0
+		_clear_shake()
 	if event.is_action_pressed(&"retry"):
 		start_duel()
 	elif event.is_action_pressed(&"debug_toggle"):
@@ -365,8 +428,16 @@ static func aim_cell(point: Vector2, size: Vector2) -> Vector2i:
 func _update_views(delta: float) -> void:
 	_opponent_view.set_target(core.current_aim_part())
 	_opponent_view.update_view(core, _display_time, delta)
+	# 접촉점은 맞은 포즈·움찔 전의 자리여야 해서 예비 동안만, 판이 끝나기 전까지만 넘긴다(계획 H03 결정 930).
+	if core.player_state == DT.PlayerState.WINDUP and not core.ended:
+		_sword_view.set_contact(_opponent_view.contact_point(core.attack_part), _opponent_view.contact_rect(core.attack_part))
 	_sword_view.update_view(core, _display_time, get_viewport_rect().size, delta)
 	_hud.refresh(core)
+	var attacking := core.player_state == DT.PlayerState.WINDUP and not core.ended
+	_fx.update_view(delta, _sword_view.tip_global() if attacking else Vector2.INF)
+	if _cover_marks != null:
+		_cover_marks.core = core
+		_cover_marks.queue_redraw()
 	queue_redraw()
 
 
@@ -377,7 +448,45 @@ func _on_core_event(ev: Dictionary) -> void:
 	_opponent_view.on_event(ev)
 	_sword_view.on_event(ev)
 	_hud.on_event(ev)
-	_beeper.on_event(ev)
+	if ev["type"] == DuelRecord.TELL_START:
+		_hit_root = ev.get("attack") as AttackData
+		_fx.clear()
+	elif _engine_tick:
+		_fx.on_event(ev, _sword_view)
+	var moment := HitFeel.moment_of(ev, _hit_root)
+	# 멈칫과 움찔은 엔진의 걸음 안에서만 선다: advance로 걷는 테스트·찍기·봇은 그대로다(결정 922·923·928).
+	if moment != &"" and _engine_tick:
+		var stop := HitFeel.stop_msec(moment, ev) * Engine.physics_ticks_per_second / 1000.0
+		if roundi(stop) > _stop_ticks_left:
+			_stop_ticks_left = roundi(stop)
+			_stop_ticks_total = _stop_ticks_left
+			_shake_moment = moment
+			_shake_ev = ev
+			_apply_shake()
+		var shove := HitFeel.flinch(moment, ev)
+		if shove != Vector2.ZERO:
+			_opponent_view.start_flinch(shove, ev.get("t", core.time))
+	_beeper.on_event(ev, moment)
+
+
+## 멈칫의 한 tick의 떨림(결정 935): 맞은 쪽 그림만 좌우로 떨고 남은 tick과 함께 0으로 준다.
+func _apply_shake() -> void:
+	if _shake_moment == &"":
+		return
+	var x := HitFeel.shake_px(_shake_moment, _stop_ticks_left, _stop_ticks_total, _shake_ev)
+	if HitFeel.shakes_me(_shake_moment):
+		_sword_view.set_shake(x)
+	else:
+		_opponent_view.set_shake(x)
+	if _stop_ticks_left <= 0:
+		_shake_moment = &""
+
+
+func _clear_shake() -> void:
+	_stop_ticks_total = 0
+	_shake_moment = &""
+	_opponent_view.set_shake(0.0)
+	_sword_view.set_shake(0.0)
 
 
 ## 화면 크기에 맞춰 배치한다. stretch aspect가 keep이라 뷰포트는 늘 1280x720이지만,
@@ -403,13 +512,29 @@ func _draw() -> void:
 		if DuelHud.forecast_on(core):
 			_draw_forecast_frame(rect.grow(-10.0), core.attack_forecast()["verdict"])
 		# 높이를 가진 타격이 오는 칸: 예비 색 테두리, 내 막기가 그 칸에 있으면 초록(결정 388).
-		var strike_height := core.brain.current_height()
-		if core.brain.state == DuelTypes.OpponentState.TELL and strike_height >= 0:
-			var strike_dir: int = core.brain.current_attack.direction
-			var guarded := core.player_state == DuelTypes.PlayerState.GUARD and core.aim_direction == strike_dir \
-					and core.aim_height == strike_height
-			var target := Rect2(Vector2(cell.x * strike_dir, cell.y * strike_height), cell).grow(-4.0)
-			draw_rect(target, Color(0.3, 1.0, 0.5, 0.75) if guarded else Color(1.0, 0.9, 0.25, 0.5), false, 4.0)
+		var frame := strike_cell_frame(core)
+		if not frame.is_empty():
+			var unit: Rect2 = frame["rect"]
+			var target := Rect2(unit.position * cell, unit.size * cell).grow(-4.0)
+			draw_rect(target, Color(0.3, 1.0, 0.5, 0.75) if frame["guarded"] else Color(1.0, 0.9, 0.25, 0.5), false, 4.0)
+
+
+## 높이를 가진 타격이 오는 칸의 테두리 값. 빈 사전이면 긋지 않는다. rect는 칸 단위(위치 = 방향·높이, 크기 1x1)이고
+## 헛손질의 예비 동작에는 긋지 않는다: 초록이 속는 손에 "맞게 막았다"를 띄우지 않게(결정 670).
+static func strike_cell_frame(p_core: DuelCore) -> Dictionary:
+	var brain := p_core.brain
+	var strike_height := brain.current_height()
+	if brain.state != DuelTypes.OpponentState.TELL or strike_height < 0:
+		return {}
+	if brain.current_attack.feint:
+		return {}
+	var strike_dir: int = brain.current_attack.direction
+	var guarded := p_core.player_state == DuelTypes.PlayerState.GUARD and p_core.aim_direction == strike_dir \
+			and p_core.aim_height == strike_height
+	return {
+		"rect": Rect2(Vector2(strike_dir, strike_height), Vector2.ONE), "guarded": guarded,
+		"direction": strike_dir, "height": strike_height,
+	}
 
 
 ## 조준 칸의 미리보기 테두리. 색만이 아니라 꼴로 가른다: 닿는다 굵은 실선, 늦다 점선, 멀다 꺾쇠, 피한다 실선과 가위표, 엉킴 잔 점선.
@@ -437,6 +562,11 @@ func _draw_forecast_frame(rect: Rect2, verdict: int) -> void:
 			var color := Color(0.9, 0.4, 1.0, 0.95)
 			for i in 4:
 				draw_dashed_line(corners[i], corners[(i + 1) % 4], color, 4.0, 8.0)
+		DuelTypes.Forecast.SPIKE_COVERED:
+			var color: Color = OpponentView.FORECAST_COLORS[DuelTypes.Forecast.SPIKE_COVERED]
+			draw_rect(rect, color, false, 5.0)
+			var tip := rect.position + Vector2(18.0, 6.0)
+			draw_colored_polygon(PackedVector2Array([tip, tip + Vector2(14.0, 0.0), tip + Vector2(7.0, 26.0)]), color)
 
 
 ## 하루 모드: 끝난 결투의 기록을 day에 넘기고 정산 화면으로 간다. 한 번만 넘긴다.

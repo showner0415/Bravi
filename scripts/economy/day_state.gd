@@ -42,6 +42,8 @@ var reputation := 0
 ## 흥정 주사위의 씨앗. 새로 시작할 때 한 번 뽑고 저장에 든다.
 ## 같은 가게의 같은 날 같은 순번의 손님은 같은 주사위다(haggle_roll).
 var dice_seed := 0
+## 남긴 플래그(계획 047). 맡아 정산한 의뢰의 sets_flags이고 다음 날 아침부터 손님 목록을 거른다(결정 752).
+var flags := PackedStringArray()
 
 # --- 하루의 것 ---
 var phase: int = Phase.COUNTER
@@ -61,6 +63,8 @@ var day_start_reputation := 0
 ## 흥정의 결과와, 그 흥정을 한 손님의 순번. 순번이 지금 손님과 다르면 흥정은 없는 것이다(haggle_state).
 var _haggle: int = Haggle.NONE
 var _haggle_index := -1
+## 짝이 있는 손님 자리에서 지금 말하는 쪽: 0이면 목록의 의뢰, 1이면 그 짝(결정 750).
+var _side := 0
 
 
 ## 일정(p_schedule)이 있으면 p_data는 대체값이다: 일정이 그날의 하루를 주지 못할 때만 쓴다.
@@ -193,7 +197,9 @@ func tomorrow_data() -> DayData:
 	var next: DayData = null
 	if schedule != null:
 		next = schedule.day_for(day_number + 1)
-	return next if next != null else _fallback_data
+	# 오늘 남긴 플래그는 내일 아침부터 거른다(결정 752).
+	var day_data := next if next != null else _fallback_data
+	return day_data.for_flags(flags) if day_data != null else null
 
 
 ## 내일 오는 손님 수. 지금의 평판과 지금 가진 업그레이드가 적용된 결투 수로 계산한다.
@@ -220,7 +226,33 @@ func _guests_for(day_data: DayData) -> int:
 func current_commission() -> Commission:
 	if phase == Phase.CLOSING or index < 0 or index >= commission_count():
 		return null
-	return data.commissions[index]
+	var listed := data.commissions[index]
+	if _side == 1 and listed != null and listed.partner != null:
+		return listed.partner
+	return listed
+
+
+## 말하지 않는 쪽. 짝이 없는 자리면 null.
+func partner_commission() -> Commission:
+	if phase == Phase.CLOSING or index < 0 or index >= commission_count():
+		return null
+	var listed := data.commissions[index]
+	if listed == null or listed.partner == null:
+		return null
+	return listed if _side == 1 else listed.partner
+
+
+## 짝의 말을 들을 수 있는가: 카운터이고 짝이 있고 값을 부르지 않았다(흥정하면 그 편으로 굳는다 — 결정 750).
+func can_switch_side() -> bool:
+	return phase == Phase.COUNTER and partner_commission() != null and haggle_state() == Haggle.NONE
+
+
+## 말하는 쪽을 바꾼다. 상태의 다른 칸은 그대로다.
+func switch_side() -> bool:
+	if not can_switch_side():
+		return false
+	_side = 1 - _side
+	return true
 
 
 ## 오늘 남은 결투 수.
@@ -395,7 +427,7 @@ func saved_state() -> Dictionary:
 	for owned_id in owned:
 		ids.append(String(owned_id))
 	return {"version": SAVE_VERSION, "day": day_to_open, "money": money, "owned": ids,
-		"reputation": reputation, "dice_seed": dice_seed}
+		"reputation": reputation, "dice_seed": dice_seed, "flags": Array(flags)}
 
 
 ## 저장된 아침으로 되돌리고 그날을 시작한다. 읽을 수 없는 저장이면 아무것도 바꾸지 않고 false다.
@@ -412,8 +444,23 @@ func restore(saved: Dictionary) -> bool:
 	var saved_seed: Variant = saved.get("dice_seed")
 	if _is_number(saved_seed):
 		dice_seed = clampi(int(saved_seed), 0, DICE_SEED_MAX)
+	# 플래그가 _begin_day()보다 먼저다: 이어 한 날의 목록이 거른 것이어야 한다(결정 753).
+	flags = _clean_flags(saved.get("flags"))
 	_begin_day()
 	return true
+
+
+## 저장된 플래그 가운데 글이고 비지 않고 64자 이하인 것. 겹치지 않게 64개까지. 배열이 아니면 빈 목록이다.
+static func _clean_flags(value: Variant) -> PackedStringArray:
+	var kept := PackedStringArray()
+	if not (value is Array):
+		return kept
+	for item in value:
+		if kept.size() >= 64:
+			break
+		if typeof(item) == TYPE_STRING and item != "" and String(item).length() <= 64 and not kept.has(item):
+			kept.append(item)
+	return kept
 
 
 ## 저장된 id 가운데 목록에 있는 것. 목록의 순서이고 겹치지 않는다.
@@ -445,10 +492,13 @@ func decline() -> bool:
 	var commission := current_commission()
 	if phase != Phase.COUNTER or commission == null:
 		return false
-	declined.append(commission.client_name)
+	var listed := data.commissions[index]
+	# 둘 다 돌려보낸다: 한 자리는 한 칸이다(폐점의 missed 셈이 맞는다 — 결정 750).
+	declined.append(commission.client_name if listed.partner == null else "%s · %s" % [listed.client_name, listed.partner.client_name])
 	last_declined = {"client_name": commission.client_name, "line": commission.decline_line}
 	if waiting_count() > 0:
 		index += 1
+		_side = 0
 	else:
 		_enter_closing()
 	return true
@@ -491,6 +541,9 @@ func finish_duel(record: DuelRecord) -> bool:
 		reputation = reputation_rules.clamp_value(reputation + ReputationRules.items_total(items))
 		result["reputation_after"] = reputation
 		result["reputation_items"] = items
+	for flag in commission.sets_flags:
+		if flag != "" and not flags.has(flag):
+			flags.append(flag)
 	results.append(result)
 	money += int(result["total"])
 	phase = Phase.SETTLEMENT
@@ -504,6 +557,7 @@ func proceed() -> bool:
 		return false
 	if has_next_commission():
 		index += 1
+		_side = 0
 		phase = Phase.COUNTER
 	else:
 		_enter_closing()
@@ -531,8 +585,10 @@ func next_day() -> bool:
 func _begin_day() -> void:
 	if schedule != null:
 		var scheduled := schedule.day_for(day_number)
-		data = scheduled if scheduled != null else _fallback_data
+		var day_data := scheduled if scheduled != null else _fallback_data
+		data = day_data.for_flags(flags) if day_data != null else null
 	index = 0
+	_side = 0
 	results = []
 	declined = []
 	last_declined = {}

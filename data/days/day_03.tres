@@ -1,16 +1,17 @@
-[gd_resource type="Resource" script_class="DayData" load_steps=10 format=3]
+[gd_resource type="Resource" script_class="DayData" load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/economy/day_data.gd" id="1_day"]
 [ext_resource type="Script" path="res://scripts/commission/commission.gd" id="2_commission"]
 [ext_resource type="Resource" path="res://data/commissions/variants/first_blood_usurer.tres" id="3_usurer"]
-[ext_resource type="Resource" path="res://data/commissions/throw_match.tres" id="4_throw"]
-[ext_resource type="Resource" path="res://data/commissions/variants/first_blood_poor.tres" id="5_poor"]
-[ext_resource type="Resource" path="res://data/commissions/variants/throw_bet.tres" id="6_bet"]
-[ext_resource type="Resource" path="res://data/commissions/feather_cut.tres" id="7_feather"]
-[ext_resource type="Resource" path="res://data/commissions/first_blood.tres" id="8_first"]
-[ext_resource type="Resource" path="res://data/commissions/variants/legs_only.tres" id="9_legs"]
+[ext_resource type="Resource" path="res://data/commissions/variants/close_baker.tres" id="4_close"]
+[ext_resource type="Resource" path="res://data/commissions/throw_match.tres" id="5_throw"]
+[ext_resource type="Resource" path="res://data/commissions/feather_cut.tres" id="6_feather"]
+[ext_resource type="Resource" path="res://data/commissions/variants/first_blood_poor.tres" id="7_poor"]
+[ext_resource type="Resource" path="res://data/commissions/variants/throw_bet.tres" id="8_bet"]
+[ext_resource type="Resource" path="res://data/commissions/first_blood.tres" id="9_first"]
+[ext_resource type="Resource" path="res://data/commissions/variants/legs_only.tres" id="10_legs"]
 
 [resource]
 script = ExtResource("1_day")
-commissions = Array[ExtResource("2_commission")]([ExtResource("3_usurer"), ExtResource("4_throw"), ExtResource("5_poor"), ExtResource("6_bet"), ExtResource("7_feather"), ExtResource("8_first"), ExtResource("9_legs")])
+commissions = Array[ExtResource("2_commission")]([ExtResource("3_usurer"), ExtResource("4_close"), ExtResource("5_throw"), ExtResource("6_feather"), ExtResource("7_poor"), ExtResource("8_bet"), ExtResource("9_first"), ExtResource("10_legs")])
 base_guests = 5

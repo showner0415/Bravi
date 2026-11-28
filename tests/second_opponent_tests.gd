@@ -6,12 +6,28 @@ const BRUNO_PATH := "res://data/opponents/opponent_02.tres"
 const BRUNO_ART_DIR := "res://assets/art/opponents/bruno/"
 const LEGS_ONLY_PATH := "res://data/commissions/variants/legs_only.tres"
 const LORENZO_PATH := "res://data/opponents/opponent_03.tres"
+const AGOSTINO_PATH := "res://data/opponents/opponent_05.tres"
+const SPAR_PATH := "res://data/commissions/spar.tres"
+const COURT_PATH := "res://data/commissions/variants/court_beehive.tres"
+const NOBLE_PATH := "res://data/commissions/variants/noble_baker.tres"
+const SERAFINA_PATH := "res://data/opponents/opponent_04.tres"
+const GUGLIELMO_PATH := "res://data/opponents/opponent_07.tres"
 const USURER_PATH := "res://data/commissions/variants/first_blood_usurer.tres"
+const BEATRICE_PATH := "res://data/opponents/opponent_06.tres"
+const PAIR_HATTER_PATH := "res://data/commissions/variants/pair_hatter.tres"
+const PAIR_BAKER_PATH := "res://data/commissions/variants/pair_baker.tres"
+const AFTER_HATTER_PATH := "res://data/commissions/variants/after_hatter.tres"
+const AFTER_BAKER_PATH := "res://data/commissions/variants/after_baker.tres"
+const CLOSE_BAKER_PATH := "res://data/commissions/variants/close_baker.tres"
+const RIVAL_MILLINER_PATH := "res://data/commissions/variants/rival_milliner.tres"
+const DUN_MASTER_PATH := "res://data/commissions/variants/dun_master.tres"
+const WASHER_LEDGER_PATH := "res://data/commissions/variants/washer_ledger.tres"
 ## 다를 수 있는 칸: 이름·그림·포즈(표시만이고 판정에 쓰지 않는다. 결정 291·357).
 const FREE_FIELDS := ["display_name", "art", "idle_pose", "stagger_pose", "complacent_pose",
 	"tell_pose", "hold_arm_deg", "strike_pose", "recover_arm_deg"]
 ## 공격 목록은 상대마다 다르다(바르톨로는 이어 베기, 브루노는 휩쓸기. 결정 425). 그 밖의 판정 값만 견준다.
-const ATTACK_FIELDS := ["attacks"]
+## 검술의 단과 갈래 이름도 공격 목록과 같은 검술 데이터다(계획 040).
+const ATTACK_FIELDS := ["attacks", "style_name", "tiers"]
 const PARTS := ["legs", "torso", "head", "head_oops", "head_dizzy", "hat", "feather", "arm", "hand", "sword"]
 ## 자른 그림의 크기(작업 6의 출력).
 const SIZES := {
@@ -102,9 +118,21 @@ func t78_second_opponent() -> String:
 	all.append_array(CommissionLibrary.load_all("res://data/commissions/variants"))
 	for c in all:
 		var want: String = BARTOLO_PATH
-		if c.resource_path == LEGS_ONLY_PATH:
+		if c.resource_path == LEGS_ONLY_PATH or c.resource_path == CLOSE_BAKER_PATH:
 			want = BRUNO_PATH
 		elif c.resource_path == USURER_PATH:
+			want = LORENZO_PATH
+		elif c.resource_path == COURT_PATH:
+			want = SERAFINA_PATH
+		elif c.resource_path == NOBLE_PATH:
+			want = GUGLIELMO_PATH
+		elif c.resource_path == SPAR_PATH or c.resource_path == DUN_MASTER_PATH:
+			want = AGOSTINO_PATH
+		elif c.resource_path == PAIR_HATTER_PATH:
+			want = GUGLIELMO_PATH
+		elif c.resource_path == PAIR_BAKER_PATH or c.resource_path == AFTER_BAKER_PATH or c.resource_path == RIVAL_MILLINER_PATH:
+			want = BEATRICE_PATH
+		elif c.resource_path == AFTER_HATTER_PATH or c.resource_path == WASHER_LEDGER_PATH:
 			want = LORENZO_PATH
 		var got: String = c.opponent.resource_path if c.opponent != null else "(없음)"
 		if got != want:

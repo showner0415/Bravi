@@ -271,6 +271,6 @@ func t75_manuscript() -> String:
 	var meter_width := DuelHud.Meter.BAR_WIDTH + 10.0 + body.get_string_size("의심 100 (지금 끝나면 +100)", HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
 	_expect(errs, meter_width <= 316.0, "[글] 조건 게이지와 글의 폭 %.0f (316 안이어야 함)" % meter_width)
 	# 줄 높이는 Godot과 견본(Edge)이 다르게 잰다. 통과 조건이 아니라 판 N에서 눈으로 본다.
-	print("  INFO T75 상태 글자 두 줄의 높이 %.0f (바이블 9절의 상자 80), 가장 넓은 줄 %.0f, 가장 긴 조준 줄 '%s'" % [
-		state_font.get_multiline_string_size("큰 베기!!\n받아낼 준비", HORIZONTAL_ALIGNMENT_CENTER, -1, 28).y, state_width, longest_aim])
+	print("  INFO T75 상태 글자 한 줄의 높이 %.0f (귀띔은 첫 줄 오른쪽에 따로 선다 — 계획 041b), 가장 넓은 귀띔 %.0f, 가장 긴 조준 줄 '%s'" % [
+		state_font.get_string_size("큰 베기!!", HORIZONTAL_ALIGNMENT_CENTER, -1, 28).y, state_width, longest_aim])
 	return "OK" if errs.is_empty() else ", ".join(errs)

@@ -3,6 +3,7 @@ extends Node
 ## 게임 창에서 그 순간을 기다려 잡던 것을 대신한다. 실행: tests/run_pattern_shots.ps1 (-Shots <폴더>면 창을 열어 PNG도 남긴다).
 ## 장마다 "shot,<이름>,<놓은 것>"을 내고, 고리가 HUD의 판과 겹치면 "overlap,<이름>,<번호>,<노드>,<겹친 넓이>"를 낸다.
 ## --commission=<의뢰 경로>를 주면 그 의뢰의 HUD와 모자로 찍는다(없으면 연습의 자유 결투).
+## --tier=<N|last>는 화면의 "N단"(1부터)의 사본으로 찍고 장 이름에 "-tN"을 끼운다(계획 040 결정 592). 없으면 이름이 옛 그대로다.
 ## 겹침은 알릴 뿐 판정하지 않는다. 판은 실제 코어를 돌려 놓는다(예비 동작의 이벤트가 뷰에 그대로 간다).
 
 const DT := preload("res://scripts/duel/duel_types.gd")
@@ -18,6 +19,7 @@ const SETTLE_MSEC := 250
 
 var _shots_dir := ""
 var _commission_path := ""
+var _tier := ""
 var _plan: Array = []
 var _i := -1
 var _node: Node
@@ -36,13 +38,34 @@ func _ready() -> void:
 			_shots_dir = arg.trim_prefix("--shots=")
 		elif arg.begins_with("--commission="):
 			_commission_path = arg.trim_prefix("--commission=")
+		elif arg.begins_with("--tier="):
+			_tier = arg.trim_prefix("--tier=")
 	if _shots_dir != "" and DisplayServer.get_name() != "headless":
 		DirAccess.make_dir_recursive_absolute(_shots_dir)
 	else:
 		_shots_dir = ""
 	var trials := Select.load_trials()
+	var raise_plan: Array = []
 	for t in trials.size():
-		var opponent := trials[t]
+		var source := trials[t]
+		var opponent := source
+		var tag := source.resource_path.get_file().get_basename()
+		if _tier != "":
+			# 단의 사본은 resource_path가 비어 있어 이름은 사본을 만들기 전의 원본에서 잡는다.
+			var count := source.tier_count()
+			var number := count if _tier == "last" else clampi(int(_tier), 1, count)
+			opponent = source.at_tier(number - 1)
+			tag += "-t%d" % number
+		# 올려 막기 공격은 attacks가 아니라 버릇의 반응에 있다(계획 041b 결정 629).
+		var raise_attack: AttackData = null
+		for habit in opponent.habits:
+			if habit.response != null and habit.response.needs_raised_guard:
+				raise_attack = habit.response
+				break
+		raise_plan.append({
+			"name": "%s-raise-engage" % tag, "opponent": opponent, "line": raise_attack,
+			"distance": DT.Distance.ENGAGE,
+		})
 		var p := 0
 		for base in opponent.attacks:
 			if base.chain.is_empty() and not base.dive:
@@ -53,7 +76,7 @@ func _ready() -> void:
 			for l in lines.size():
 				for distance in 3:
 					_plan.append({
-						"name": "%s-p%d-l%d-%s" % [opponent.resource_path.get_file().get_basename(), p, l, DISTANCE_TAGS[distance]],
+						"name": "%s-p%d-l%d-%s" % [tag, p, l, DISTANCE_TAGS[distance]],
 						"opponent": opponent, "line": lines[l], "distance": distance,
 					})
 			p += 1
@@ -66,6 +89,7 @@ func _ready() -> void:
 				"name": "spare-%s-l%d-engage" % [atk.resource_path.get_file().get_basename(), l],
 				"opponent": trials[0], "line": spare_lines[l], "distance": DT.Distance.ENGAGE,
 			})
+	_plan.append_array(raise_plan)
 	_next()
 
 
@@ -80,6 +104,10 @@ func _next() -> void:
 		get_tree().quit(0)
 		return
 	var item: Dictionary = _plan[_i]
+	if item["line"] == null:
+		print("shot,%s,올려 막기 공격 없음" % item["name"])
+		_next()
+		return
 	var note := _pose(item)
 	print("shot,%s,%s" % [item["name"], note])
 	_since = Time.get_ticks_msec()
@@ -92,7 +120,10 @@ func _process(_delta: float) -> void:
 	_frames += 1
 	if _frames >= 3 and Time.get_ticks_msec() - _since >= SETTLE_MSEC:
 		var shot_name: String = _plan[_i]["name"]
+		_report_view(shot_name)
 		_report_overlaps(shot_name)
+		_report_labels(shot_name)
+		_report_hints(shot_name)
 		if _shots_dir != "":
 			get_viewport().get_texture().get_image().save_png(_shots_dir.path_join(shot_name + ".png"))
 		_shot_count += 1
@@ -139,6 +170,10 @@ func _pose(item: Dictionary) -> String:
 	var until := core.brain.state_start + PROGRESS * (core.brain.state_end - core.brain.state_start)
 	while core.time < until and core.brain.state == DT.OpponentState.TELL:
 		core.tick(DELTA)
+	# 뷰는 start_duel에서 멀리로 스냅해 두어, delta 0의 갱신은 간격을 따라가지 않는다. 다시 setup해 스냅시킨다(결정 615).
+	var has_hat := _node.get("commission") != null and (_node.get("commission") as Commission).opponent_wears_hat
+	(_node.get_node("OpponentView") as OpponentView).setup(core.opponent_data, core.weapon, has_hat)
+	(_node.get_node("PlayerSwordView") as PlayerSwordView).setup()
 	_node.set("_display_time", core.time)
 	_node.call("_update_views", 0.0)
 	return "%s · %s · 높이 %s · %s%s" % [
@@ -191,3 +226,72 @@ func _collect(node: Node, boxes: Array) -> void:
 			if rect.size.x < 900.0 and rect.get_area() > 0.0:
 				boxes.append([String(child.name), rect])
 		_collect(child, boxes)
+
+
+## 뷰의 간격 자리: 멈춘 뷰로 찍지 않았는지 보는 줄(결정 615). 판정이 아니라 적는 수다.
+func _report_view(shot: String) -> void:
+	var view := _node.get_node("OpponentView") as Node2D
+	print("view,%s,%.1f,%.3f" % [shot, view.global_position.y, view.global_scale.x])
+
+
+## 번호 고리와 상태 글자의 상자가 겹친 넓이와 높이(결정 616). 판정이 아니라 적는 수라 접두를 overlap과 달리 둔다.
+## 번호 고리가 없는 단발은 Ring의 원점을 번호 0으로 잰다.
+func _report_labels(shot: String) -> void:
+	var core: DuelCore = _node.get("core")
+	var label := _node.get_node("OpponentView/StateLabel") as Label
+	if label.text == "":
+		return
+	var ring := _node.get_node("OpponentView/Ring") as Node2D
+	var xf := ring.get_global_transform()
+	var radius := OpponentView.MARK_RADIUS * xf.get_scale().x
+	var label_box: Rect2 = label.get_global_transform() * Rect2(Vector2.ZERO, label.size)
+	var lines := label.text.count("\n") + 1
+	var marks := OpponentView.pattern_marks(core.brain, core.time)
+	var origin := Vector2.ZERO
+	for mark in marks:
+		if mark["role"] == &"now":
+			origin = mark["pos"]
+	var centers: Array[Vector2] = []
+	for mark in marks:
+		if mark.has("pos"):
+			centers.append(xf * ((mark["pos"] as Vector2) - origin))
+	if centers.is_empty():
+		centers.append(xf * Vector2.ZERO)
+	for n in centers.size():
+		var box := Rect2(centers[n] - Vector2(radius, radius), Vector2(radius, radius) * 2.0)
+		var cut := box.intersection(label_box)
+		print("label,%s,%d,%d,%d,%d" % [shot, n + 1 if not marks.is_empty() else 0, roundi(cut.get_area()), lines, roundi(cut.size.y)])
+
+
+## 귀띔(StateHint)의 실제 노드 상자와 번호 고리·지금 고리의 패리 띠가 겹친 넓이와 높이(계획 041b 결정 627). 0이 아니면 러너가 FAIL을 낸다.
+## 귀띔이 숨어 있으면 내지 않는다. 지금 고리의 상자는 휩쓸기가 아니면 패리 띠의 반지름으로 잰다.
+func _report_hints(shot: String) -> void:
+	var hint := _node.get_node("OpponentView/StateHint") as Label
+	if not hint.visible or hint.text == "":
+		return
+	var core: DuelCore = _node.get("core")
+	var ring := _node.get_node("OpponentView/Ring") as Node2D
+	var xf := ring.get_global_transform()
+	var scale := xf.get_scale().x
+	var hint_box: Rect2 = hint.get_global_transform() * Rect2(Vector2.ZERO, hint.size)
+	var band := OpponentView.RING_SPEED * core.weapon.parry_window * scale
+	var marks := OpponentView.pattern_marks(core.brain, core.time)
+	var origin := Vector2.ZERO
+	for mark in marks:
+		if mark["role"] == &"now":
+			origin = mark["pos"]
+	var boxes: Array = []
+	for mark in marks:
+		if not mark.has("pos"):
+			continue
+		var radius := OpponentView.MARK_RADIUS * scale
+		if mark["role"] == &"now" and not core.brain.is_sweep():
+			radius = maxf(radius, band)
+		boxes.append([xf * ((mark["pos"] as Vector2) - origin), radius])
+	if boxes.is_empty():
+		boxes.append([xf * Vector2.ZERO, maxf(OpponentView.MARK_RADIUS * scale, band)])
+	for n in boxes.size():
+		var center: Vector2 = boxes[n][0]
+		var r: float = boxes[n][1]
+		var cut := Rect2(center - Vector2(r, r), Vector2(r, r) * 2.0).intersection(hint_box)
+		print("hint,%s,%d,%d,%d" % [shot, n + 1 if not marks.is_empty() else 0, roundi(cut.get_area()), roundi(cut.size.y)])

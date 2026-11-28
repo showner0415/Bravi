@@ -8,6 +8,7 @@ extends Node2D
 ## 이 스크립트는 파츠를 Node2D 이상의 타입으로 가정하지 않는다(나중에 Bone2D로 바꿀 수 있게).
 
 const DT := preload("res://scripts/duel/duel_types.gd")
+const Controls := preload("res://scripts/controls.gd")
 const PART_SHADER := preload("res://scenes/duel/opponent_part.gdshader")
 
 const PART_PATHS := {
@@ -41,6 +42,13 @@ const DISTANCE_SCALE: Array[float] = [0.55, 0.85, 1.1]
 const DISTANCE_SHIFT: Array[float] = [-40.0, 0.0, 30.0]
 const DIVE_PULL_SCALE := 0.85
 const DIVE_PULL_SHIFT := -25.0
+## 치고 빠지기(결정 702): 물러나는 순간의 뜀(초, px)과 고리 밑 꺾쇠(폭, 두 줄 사이, 굵기, 고리 가장자리에서의 간격).
+const HOP_TIME := 0.25
+const HOP_HEIGHT := 28.0
+const WITHDRAW_CHEVRON_WIDTH := 24.0
+const WITHDRAW_CHEVRON_GAP := 7.0
+const WITHDRAW_CHEVRON_THICK := 3.0
+const WITHDRAW_CHEVRON_OFFSET := 8.0
 
 ## 줄어드는 고리: 일정한 속도(px/초)로 줄어 0이 되는 순간이 타격이다.
 ## 패리 창에 해당하는 고정 띠(반지름 = 속도 x 패리 창)를 예비 동작 시작부터 그려 둔다.
@@ -51,6 +59,12 @@ const RING_POSITION: Array[Vector2] = [Vector2(-270, -150), Vector2(0, -140), Ve
 const MARK_REPEAT_SHIFT := 36.0
 const MARK_RADIUS := 26.0
 const MARK_FONT_SIZE := 24
+## 번호 고리의 꼴(AttackData.mark_shape). 박자 고리는 앞 타격부터의 기다림을 막대 길이로 보인다(결정 630·632).
+const MARK_SHAPES: Array[StringName] = [&"beat"]
+## 막대의 길이 = 그 타격 앞의 기다림(초) x 이 값(px). 막대의 바탕 높이와 흰 막대의 안쪽 여백.
+const BEAT_BAR_SPEED := 60.0
+const BEAT_BAR_HEIGHT := 14.0
+const BEAT_BAR_INSET := 3.0
 ## 높이를 가진 타격의 고리 줄(상대 기준 y, 상·중·하). 화면의 윗줄·가운뎃줄·아랫줄 안에 온다(결정 388).
 const RING_ROW_Y: Array[float] = [-300.0, -150.0, 80.0]
 ## 예비 동작 동안 높이에 따라 어깨를 옮기는 폭(표시만).
@@ -59,6 +73,8 @@ const HEIGHT_SHOULDER_SHIFT: Array[float] = [-16.0, 0.0, 12.0]
 const SWEEP_DOT_ARRIVE := 0.6
 ## 상태 글자(공격 이름, 빈틈, 무너짐)의 화면 세로 위치. 자세 칸 바로 아래.
 const STATE_LABEL_Y := 62.0
+## 귀띔(StateHint)과 첫 줄의 글 끝 사이의 틈. 임시(계획 041b 결정 625).
+const STATE_HINT_GAP := 24.0
 
 ## 부위 곁의 미리보기 꼬리표(계획 R02 D3): 여유 막대가 가득 차는 여유(초), 막대의 크기, 꼬리표를 놓을 화면 세로 범위.
 const FORECAST_FULL_MARGIN := 0.5
@@ -67,8 +83,9 @@ const FORECAST_TAG_Y_RANGE := Vector2(80.0, 520.0)
 const FORECAST_COLORS := {
 	DT.Forecast.REACH: Color(0.45, 1.0, 0.6), DT.Forecast.LATE: Color(1.0, 0.75, 0.2),
 	DT.Forecast.OUT_OF_RANGE: Color(0.8, 0.8, 0.8), DT.Forecast.HEAD_GUARDED: Color(1.0, 0.45, 0.45),
-	DT.Forecast.BIND_CUT: Color(0.9, 0.45, 1.0),
+	DT.Forecast.BIND_CUT: Color(0.9, 0.45, 1.0), DT.Forecast.SPIKE_COVERED: Color(0.80, 0.84, 0.90),
 }
+const COLUMN_NAMES := ["왼쪽", "가운데", "오른쪽"]
 
 ## 교전 거리 기준 위치. 결투 씬이 화면 크기에 맞춰 정한다.
 var anchor := Vector2.ZERO
@@ -121,9 +138,49 @@ var _ring_remaining := 0.0
 ## 패턴의 번호 고리와 휩쓸기의 길(pattern_marks의 결과). 단발이면 비어 있다.
 var _marks: Array[Dictionary] = []
 var _ring_sweep := false
+## 지금 타격이 헛손질인가(결정 670): 패리의 띠를 그리지 않고 줄어드는 고리가 점선이다.
+var _ring_feint := false
+## 지금 타격이 빠지는 길의 마지막인가(결정 702): 지금 고리의 띠 아래에 꺾쇠를 그린다.
+var _ring_withdraw := false
+var _hop_start := -INF
 var _height_shift := 0.0
 var _dive_start := -INF
 var _dive_from_close := false
+## 움찔(계획 H02 결정 923): 보간하는 기준 자리와 따로 들고 더한다(보간에 섞이면 뭉개지고 돌아오지 않는다).
+const FLINCH_TIME := 0.18
+var _base_position := Vector2.ZERO
+var _base_valid := false
+var _flinch_vec := Vector2.ZERO
+var _flinch_core_at := 0.0
+var _flinch_clock_at := 0.0
+var _flinch_now := Vector2.ZERO
+## 맞은 포즈·쳐내진 포즈(계획 H03 결정 934·936): 더하는 포즈, 걸림의 시작(이벤트 뒤 첫 갱신에서 잡는다 — 결정 928), 거두는 시간, 뿌리 크기.
+const FEEL_PATH := "res://data/hit_feel.tres"
+const HOLD_TIME := 0.10
+const APPROACH_SCALE := 0.05
+const APPROACH_HOLD := 0.034
+const APPROACH_RETURN := 0.12
+var _feel: HitFeelData
+var _art_name := ""
+var _root: AttackData
+var _hit_delta: PoseData
+var _hit_armed := false
+var _hit_core0 := 0.0
+var _hit_clock0 := 0.0
+var _hit_return := 0.32
+var _hit_root_scale := 1.0
+var _hit_w := 0.0
+## 상대 타격의 다가옴(결정 937): 지금 쫓는 타격의 시각과 휘두름 길이, 앞 타격의 시각(돌아가는 중).
+var _appr_end := -INF
+var _appr_swing := 0.1
+var _appr_prev_end := -INF
+var _base_scale := Vector2.ONE
+## 타격 포즈 붙들기(결정 937): 붙들 공격과 끝나는 코어 시각.
+var _hold_attack: AttackData
+var _hold_end := -INF
+var _torso_x0 := 0.0
+var _shake_px := 0.0
+var _legs_x0 := 0.0
 ## 다음 갱신에서 크기와 위치를 보간 없이 맞춘다(시작, 다시 하기).
 var _snap := true
 
@@ -138,6 +195,7 @@ var _snap := true
 @onready var _feather: Sprite2D = $Torso/Head/Hat/Feather
 @onready var _state_label: Label = $StateLabel
 var _ring: Node2D
+var _state_hint: Label
 var _forecast_tag: Label
 var _forecast_bar: ColorRect
 var _forecast_fill: ColorRect
@@ -158,7 +216,14 @@ func _ready() -> void:
 	add_child(_ring)
 	_ring.draw.connect(_draw_ring)
 	_state_label.z_index = 9
+	_build_state_hint()
 	_build_forecast_tag()
+	_feel = load(FEEL_PATH) as HitFeelData
+	if _feel == null:
+		push_warning("OpponentView: data/hit_feel.tres를 읽지 못했다 — 맞은 포즈 없이 그린다")
+		_feel = HitFeelData.new()
+	_torso_x0 = _torso.position.x
+	_legs_x0 = (get_node(^"Legs") as Node2D).position.x
 
 
 ## has_hat: 이 판의 상대가 모자를 쓰는가. 모자는 고정 부위가 아니라 의뢰가 씌운다.
@@ -172,6 +237,19 @@ func setup(opponent: OpponentData, weapon: WeaponData, has_hat := false) -> void
 	_touched_until = -INF
 	_deflect_until = -INF
 	_dodge_until = -INF
+	_hop_start = -INF
+	_flinch_vec = Vector2.ZERO
+	_root = null
+	_hit_delta = null
+	_hit_armed = false
+	_hit_w = 0.0
+	_hit_root_scale = 1.0
+	_appr_end = -INF
+	_appr_prev_end = -INF
+	_hold_attack = null
+	_hold_end = -INF
+	_art_name = opponent.art.resource_path.get_file() if opponent.art != null else ""
+	set_shake(0.0)
 	_ring_active = false
 	_snap = true
 	_dodge_k = 0.0
@@ -219,33 +297,154 @@ func _refresh_target() -> void:
 		line.visible = part == DT.Part.SWORD_HAND
 
 
+## 움찔은 씬이 건다(DuelScene._on_core_event). 코어 시각 at과 지금의 _clock을 기억해 둘 중 먼저 닿는 쪽으로 거둔다.
+func start_flinch(vector: Vector2, at: float) -> void:
+	_flinch_vec = vector
+	_flinch_core_at = at
+	_flinch_clock_at = _clock
+
+
+## 판이 끝나 코어 시각이 서도 _clock이 거두고, 다 거두면 지운다.
+func _flinch_offset(display_time: float) -> Vector2:
+	if _flinch_vec == Vector2.ZERO:
+		return Vector2.ZERO
+	var k := maxf((display_time - _flinch_core_at) / FLINCH_TIME, (_clock - _flinch_clock_at) / FLINCH_TIME)
+	if k >= 1.0:
+		_flinch_vec = Vector2.ZERO
+		return Vector2.ZERO
+	return _flinch_vec * pow(1.0 - clampf(k, 0.0, 1.0), 2.0)
+
+
 func on_event(ev: Dictionary) -> void:
-	match ev["type"]:
+	match ev.get("type", &""):
+		DuelRecord.TELL_START, DuelRecord.PATTERN_STEP:
+			_flinch_vec = Vector2.ZERO
+			_hit_delta = null
+			if ev.get("type", &"") == DuelRecord.TELL_START:
+				_root = ev.get("attack") as AttackData
 		DuelRecord.STRIKE:
 			_flash_until = _clock + FLASH_TIME
-			if ev["braced"]:
+			if ev.get("braced", false):
 				# 들고만 있던 막기로 표시된 공격을 버텼다: 빈틈이 없다는 것을 상태 글자 자리에 잠깐 띄운다.
 				_deflect_text = "밀어붙임"
+				_deflect_until = _clock + DEFLECT_TEXT_TIME
+			elif ev.get("bitten", false):
+				# 헛손질에 속아 막고도 빈틈이 없다(결정 671).
+				_deflect_text = "속았다"
 				_deflect_until = _clock + DEFLECT_TEXT_TIME
 			elif ev.get("closed", false):
 				# 막았는데 빈틈을 주지 않았다(결정 404). 상한에 닿았으면 다음은 열린다고 알린다.
 				_deflect_text = "틈을 안 준다" + (" — 다음은 열린다" if _limit_reached(ev) else "")
 				_deflect_until = _clock + DEFLECT_TEXT_TIME
+		DuelRecord.DISTANCE:
+			if ev.get("by", "") == "withdraw":
+				_hop_start = _clock
 		DuelRecord.ATTACK:
-			var result: int = ev["result"]
+			var result: int = ev.get("result", DT.AttackResult.WHIFF)
 			if result == DT.AttackResult.GRAZE or result == DT.AttackResult.HIT:
-				_touched_part = ev["part"]
+				_touched_part = ev.get("part", DT.Part.TORSO)
 				_touched_until = _clock + TOUCH_FLASH_TIME
-			if result == DT.AttackResult.HIT and ev["part"] == DT.Part.HAT:
+			if result == DT.AttackResult.HIT and ev.get("part", DT.Part.TORSO) == DT.Part.HAT:
 				_feather.visible = false
-			if ev["dodged"]:
+			if ev.get("dodged", false):
 				# 얼굴을 지킨다: 고개를 젖혀 피한다.
 				_dodge_until = _clock + _dodge_time
-			if result == DT.AttackResult.BLOCKED and ev["rash"]:
-				_deflect_text = "받아넘김"
-				if ev["posture_gain"] > 0:
-					_deflect_text += " +%d" % ev["posture_gain"]
+			if ev.get("spiked", false):
+				_deflect_text = "송곳에 걸렸다"
 				_deflect_until = _clock + DEFLECT_TEXT_TIME
+			elif result == DT.AttackResult.BLOCKED and ev.get("rash", false):
+				_deflect_text = "받아넘김"
+				if ev.get("posture_gain", 0) > 0:
+					_deflect_text += " +%d" % ev.get("posture_gain", 0)
+				_deflect_until = _clock + DEFLECT_TEXT_TIME
+	_arm_hit(ev)
+
+
+## 맞은 포즈·쳐내진 포즈를 건다(결정 934·936). 시작은 이 이벤트 뒤 첫 갱신이다(결정 928). 안 열린 막기·속음·버티기는 moment가 비어 걸리지 않는다.
+func _arm_hit(ev: Dictionary) -> void:
+	var moment := HitFeel.moment_of(ev, _root)
+	var part := int(ev.get("part", DT.Part.TORSO))
+	var direction := int(ev.get("direction", DT.Direction.CENTER))
+	var art_scale := float(_feel.scale_by_art.get(_art_name, 1.0))
+	match moment:
+		HitFeel.GRAZE_DEALT, HitFeel.HIT_DEALT:
+			var strength := _feel.strength_for(ev, _art_name)
+			_hit_delta = _feel.pose_for(part, direction, _sword_side, strength)
+			_hit_root_scale = _feel.root_scale(part, direction, strength)
+			_hit_return = _feel.return_time
+		HitFeel.PARRY_OPEN, HitFeel.SWEEP_OPEN, HitFeel.DIVE_OPEN:
+			_hit_delta = _feel.parried_pose(_sword_side, (1.0 if moment == HitFeel.PARRY_OPEN else 0.6) * art_scale)
+			_hit_root_scale = 1.0
+			_hit_return = _feel.parried_return
+		_:
+			return
+	_hit_armed = true
+
+
+## 맞은 포즈의 무게 w = (1 - k)^2, k는 코어 시각과 _clock 가운데 더 흐른 쪽의 흐름 / 거두는 시간(결정 934).
+## 예비 동작 동안은 늘 0이고(결정 947-1), 판이 끝났으면 end_floor 아래로 내려가지 않는다.
+func _hit_weight(core: DuelCore, display_time: float) -> float:
+	if _hit_delta == null:
+		return 0.0
+	if core.brain.state == DT.OpponentState.TELL:
+		_hit_delta = null
+		_hit_armed = false
+		return 0.0
+	if _hit_armed:
+		_hit_armed = false
+		_hit_core0 = display_time
+		_hit_clock0 = _clock
+	var k := maxf(display_time - _hit_core0, _clock - _hit_clock0) / maxf(_hit_return, 0.001)
+	var w := pow(1.0 - clampf(k, 0.0, 1.0), 2.0)
+	if core.ended:
+		return maxf(w, _feel.end_floor)
+	if k >= 1.0:
+		_hit_delta = null
+	return w
+
+
+## 상대 타격의 다가옴(결정 937): 마지막 휘두름 구간에 ×1.00 → ×1.05, 타격 뒤 2 tick 머문 뒤 0.12초에 돌아온다. 자리는 옮기지 않는다.
+func _approach_scale(core: DuelCore, display_time: float) -> float:
+	var brain := core.brain
+	var atk := brain.current_attack
+	var earned := 0.0
+	if brain.state == DT.OpponentState.TELL and atk != null:
+		if atk.feint or (brain.is_sweep() and brain.step_index > 0):
+			earned = approach_after(display_time - _appr_end)
+		else:
+			if brain.state_end != _appr_end:
+				_appr_prev_end = _appr_end if display_time >= _appr_end else -INF
+				_appr_end = brain.state_end
+				_appr_swing = maxf(OpponentMotion.swing_time(brain.tell_duration, _parry_window, core.opponent_data), 0.001)
+			earned = OpponentMotion.ease_in(clampf((display_time - (_appr_end - _appr_swing)) / _appr_swing, 0.0, 1.0))
+			earned = maxf(earned, approach_after(display_time - _appr_prev_end))
+	elif _appr_end > -INF:
+		if display_time < _appr_end:
+			_appr_end = -INF
+		else:
+			earned = approach_after(display_time - _appr_end)
+	return 1.0 + APPROACH_SCALE * earned
+
+
+## 타격 t초 뒤의 다가옴(0~1): 머문 뒤 돌아간다. 타격 전(t < 0)은 0이다.
+static func approach_after(t: float) -> float:
+	if t < 0.0:
+		return 0.0
+	if t <= APPROACH_HOLD:
+		return 1.0
+	return 1.0 - OpponentMotion.ease_in_out(clampf((t - APPROACH_HOLD) / APPROACH_RETURN, 0.0, 1.0))
+
+
+func _hold_pose(atk: AttackData) -> PoseData:
+	return OpponentMotion.blend(_rest(atk.strike_pose), _rest(atk.strike_pose), 0.0)
+
+
+## 멈칫 동안의 떨림(결정 935): Torso·Legs의 x만 민다(고리·글자·꼬리표는 뿌리의 다른 자식이라 안 떤다). 화면 px를 뿌리 크기로 나눠 넣는다.
+func set_shake(x: float) -> void:
+	_shake_px = x
+	var local := x / maxf(scale.x, 0.01)
+	_torso.position.x = _torso_x0 + local
+	(get_node(^"Legs") as Node2D).position.x = _legs_x0 + local
 
 
 ## display_time은 표시용 시각(코어 시계 + 물리 보간). delta는 부드러운 이동과 번쩍임에만 쓴다.
@@ -267,16 +466,30 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 		dive_pull = OpponentMotion.ease_out(clampf((display_time - brain.state_start) / maxf(brain.tell_duration * core.opponent_data.tell_in, 0.001), 0.0, 1.0))
 	var target_scale := DISTANCE_SCALE[core.distance] * lerpf(1.0, DIVE_PULL_SCALE, dive_pull)
 	var target_pos := anchor + Vector2(0, DISTANCE_SHIFT[core.distance] + DIVE_PULL_SHIFT * dive_pull)
-	scale = scale.lerp(Vector2.ONE * target_scale, smooth)
-	position = position.lerp(target_pos, smooth)
+	var hop_k := (_clock - _hop_start) / HOP_TIME
+	if hop_k >= 0.0 and hop_k < 1.0:
+		target_pos.y -= 4.0 * hop_k * (1.0 - hop_k) * HOP_HEIGHT
+	_base_scale = _base_scale.lerp(Vector2.ONE * target_scale, smooth)
+	_hit_w = _hit_weight(core, display_time)
+	scale = _base_scale * _approach_scale(core, display_time) * lerpf(1.0, _hit_root_scale, _hit_w)
+	set_shake(_shake_px)
+	if not _base_valid:
+		_base_position = position
+		_base_valid = true
+	_base_position = _base_position.lerp(target_pos, smooth)
+	_flinch_now = _flinch_offset(display_time)
+	position = _base_position + _flinch_now
 	var inverse := 1.0 / maxf(scale.x, 0.01)
 
 	# --- 상태별 색과 글자. 포즈는 _pose_for가 정한다(결정 258).
 	var tint: Variant = null
 	var text := ""
+	var hint := ""
 	_ring_active = false
 	_marks = []
 	_ring_sweep = false
+	_ring_feint = false
+	_ring_withdraw = false
 	# 머리를 지키는 상대의 머리는 크게 열린 회수에서만 빈틈 색으로 물든다("파랗게 물든 부위가 열린 부위").
 	var head_closed := false
 	var head_art: PartArt = _art.head if _art != null else null
@@ -288,32 +501,20 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 		DT.OpponentState.TELL:
 			var atk := brain.current_attack
 			tint = atk.pose_color
-			text = atk.attack_name + ("!!" if atk.is_big else "")
 			_marks = pattern_marks(brain, display_time)
 			_ring_sweep = brain.is_sweep()
-			if brain.pattern_count() > 1:
-				# 패턴은 뿌리의 이름과 몇째 타격인지를 보인다(결정 374).
-				var root := brain.pattern_root
-				text = "%s (%d/%d)%s" % [root.attack_name, brain.step_index + 1, brain.pattern_count(), "!!" if root.is_big else ""]
-			# 높이를 가진 타격은 막을 칸의 이름을 붙인다(결정 388).
-			var tell_height := brain.current_height()
-			if tell_height >= 0:
-				text += " · %s %s" % [DT.GUARD_NAMES[atk.direction], DT.HEIGHT_NAMES[tell_height]]
-			if brain.pattern_slowed:
-				text += " (둔함)"
-			if _ring_sweep:
-				text += "\n쥐고 끌어라"
-			if atk.dive:
-				text += "\n" + ("막아라" if _dive_from_close else "멀리 물러서거나 막아라")
-			# 표시된 공격은 예비 동작 내내, 지금의 막기가 버티기만 되는지 받아내는지 알려 준다.
-			if brain.step_index == 0 and atk.needs_raised_guard and core.player_state == DT.PlayerState.GUARD:
-				text += "\n" + ("막기를 뗐다 다시 올려라" if core.would_brace_now() else "받아낼 준비")
+			_ring_feint = atk.feint
+			_ring_withdraw = ring_withdraw_of(brain)
+			var tell_parts := tell_texts(core, _dive_from_close)
+			text = tell_parts[0]
+			hint = tell_parts[1]
 			_ring_active = true
 			_ring_remaining = maxf(brain.state_end - display_time, 0.0)
 			_ring.position = _now_mark_position(atk, brain) * inverse
 		DT.OpponentState.RECOVERY:
 			tint = COLOR_RECOVERY
 			text = "빈틈"
+			hint = recovery_hint_of(core)
 			if _art != null:
 				head_art = _art.head_oops
 			if core.opponent_data.guards_head:
@@ -324,6 +525,7 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 		DT.OpponentState.STAGGER:
 			tint = COLOR_STAGGER
 			text = "무너짐!"
+			hint = stagger_hint_of(core)
 			if _art != null:
 				head_art = _art.head_dizzy
 
@@ -335,7 +537,7 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 	_dodge_k = lerpf(_dodge_k, 1.0 if _clock < _dodge_until else 0.0, smooth)
 	var shift_height := brain.current_height() if brain.state == DT.OpponentState.TELL else -1
 	_height_shift = lerpf(_height_shift, HEIGHT_SHOULDER_SHIFT[shift_height] if shift_height >= 0 else 0.0, smooth)
-	_apply_pose(_pose, _dodge_k)
+	_apply_pose(OpponentMotion.add(_pose, _hit_delta, _hit_w) if _hit_delta != null and _hit_w > 0.0 else _pose, _dodge_k)
 	_show_arm_art(_art_key)
 	if _art != null:
 		_set_head(head_art)
@@ -354,17 +556,87 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 	if text == "" and complacent:
 		text = COMPLACENT_TEXT
 
-	_place_labels(text, inverse)
+	_place_labels(text, hint, inverse)
 	_update_forecast_tag(core, inverse)
 
 
+## 조건이 무너짐 동안 띄우길 원하는 귀띔(비어 있지 않은 첫 것). 의뢰·조건이 없는 판은 빈 글이다(계획 043 결정 660).
+static func stagger_hint_of(core: DuelCore) -> String:
+	for condition in core.conditions:
+		if condition != null:
+			var hint_text := condition.stagger_hint(core.record)
+			if hint_text != "":
+				return hint_text
+	return ""
+
+
+## 예비 동작의 글을 [첫 줄, 귀띔]으로 가른다. 상태 글자는 늘 한 줄이고 귀띔은 StateHint가 맡는다(결정 624·625).
+## 귀띔이 둘 이상이면 " · "로 한 줄로 잇는다.
+static func tell_texts(core: DuelCore, dive_from_close: bool) -> PackedStringArray:
+	var brain := core.brain
+	var atk := brain.current_attack
+	var text := atk.attack_name + ("!!" if atk.is_big else "")
+	if brain.pattern_count() > 1:
+		# 패턴은 뿌리의 이름과 몇째 타격인지를 보인다(결정 374).
+		var root := brain.pattern_root
+		text = "%s (%d/%d)%s" % [root.attack_name, brain.step_index + 1, brain.pattern_count(), "!!" if root.is_big else ""]
+	# 높이를 가진 타격은 막을 칸의 이름을 붙인다(결정 388).
+	var tell_height := brain.current_height()
+	if tell_height >= 0:
+		text += " · %s %s" % [DT.GUARD_NAMES[atk.direction], DT.HEIGHT_NAMES[tell_height]]
+	# 헛손질은 칸 이름 대신 알린다(결정 670).
+	if atk.feint:
+		text = text.get_slice(" · ", 0) + " · 헛손질"
+	if brain.pattern_slowed:
+		text += " (둔함)"
+	var hints := PackedStringArray()
+	# 데이터의 세는 말은 귀띔의 맨 앞이고 패턴 내내 같은 글이다(결정 633).
+	if brain.pattern_root != null and brain.pattern_root.tell_hint != "":
+		hints.append(brain.pattern_root.tell_hint)
+	if brain.is_sweep():
+		hints.append("쥐고 끌어라")
+	if atk.dive:
+		hints.append("막아라" if dive_from_close else "멀리 물러서거나 막아라")
+	# 표시된 공격은 예비 동작 내내, 지금의 막기가 버티기만 되는지 받아내는지 알려 준다.
+	if brain.step_index == 0 and atk.needs_raised_guard and core.player_state == DT.PlayerState.GUARD:
+		hints.append("막기를 뗐다 다시 올려라" if core.would_brace_now() else "받아낼 준비")
+	return PackedStringArray([text, " · ".join(hints)])
+
+
+## 귀띔의 왼쪽 끝(화면 x): 가운데 정렬된 첫 줄의 글 끝 + 틈.
+static func hint_left(line_width: float, center_x: float) -> float:
+	return center_x + line_width * 0.5 + STATE_HINT_GAP
+
+
 # 상태 글자와 고리는 간격에 따라 커지거나 움직이지 않게 한다.
-func _place_labels(text: String, inverse: float) -> void:
+func _place_labels(text: String, hint: String, inverse: float) -> void:
 	_state_label.text = text
 	_state_label.scale = Vector2.ONE * inverse
 	_state_label.position = (Vector2(anchor.x - _state_label.size.x * 0.5, STATE_LABEL_Y) - position) * inverse
+	# 글이 바뀐 그 호출에서 새 폭을 얻으려고 reset_size를 부른다(귀띔의 자리가 첫 줄의 글 폭을 따른다).
+	if _state_hint.text != hint:
+		_state_hint.text = hint
+		_state_hint.reset_size()
+	_state_hint.visible = hint != ""
+	_state_hint.scale = Vector2.ONE * inverse
+	_state_hint.position = (Vector2(hint_left(_state_label.get_minimum_size().x, anchor.x), STATE_LABEL_Y) - position) * inverse
 	_ring.scale = Vector2.ONE * inverse
 	_ring.queue_redraw()
+
+
+# 꼴은 상태 글자의 값을 읽어 온다(새 색·크기를 쓰지 않는다. 결정 625).
+func _build_state_hint() -> void:
+	_state_hint = Label.new()
+	_state_hint.name = "StateHint"
+	_state_hint.visible = false
+	_state_hint.z_index = 9
+	_state_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_state_hint.add_theme_font_override(&"font", _state_label.get_theme_font(&"font"))
+	_state_hint.add_theme_font_size_override(&"font_size", _state_label.get_theme_font_size(&"font_size"))
+	_state_hint.add_theme_color_override(&"font_color", _state_label.get_theme_color(&"font_color"))
+	_state_hint.add_theme_color_override(&"font_outline_color", _state_label.get_theme_color(&"font_outline_color"))
+	_state_hint.add_theme_constant_override(&"outline_size", _state_label.get_theme_constant(&"outline_size"))
+	add_child(_state_hint)
 
 
 func _build_forecast_tag() -> void:
@@ -417,6 +689,7 @@ func _update_forecast_tag(core: DuelCore, inverse: float) -> void:
 	if at.x + maxf(width, FORECAST_BAR_SIZE.x * scale.x) > get_viewport_rect().size.x - 8.0:
 		at.x = rect.position.x - 10.0 - maxf(width, FORECAST_BAR_SIZE.x * scale.x)
 	_forecast_tag.scale = Vector2.ONE * inverse
+	at -= _flinch_now
 	_forecast_tag.position = (at - position) * inverse
 	_forecast_tag.visible = true
 
@@ -429,6 +702,22 @@ func _part_screen_rect(part: int) -> Rect2:
 		return sprite.get_global_transform() * sprite.get_rect()
 	var joint := node.global_position
 	return Rect2(joint - Vector2(30.0, 30.0) * scale.x, Vector2(60.0, 60.0) * scale.x)
+
+
+## 내 칼끝이 닿는 자리(화면 좌표): 그 장에 그려진 부위를 가리킨다(계획 H03 결정 930). 칼 든 팔은 어깨와 손목의 가운데, 손은 손목.
+func contact_point(part: int) -> Vector2:
+	if part == DT.Part.SWORD_ARM:
+		return (_arm.global_position + _hand.global_position) * 0.5
+	if part == DT.Part.SWORD_HAND:
+		return _hand.global_position
+	return _part_screen_rect(part).get_center()
+
+
+## 접촉점이 속한 부위의 화면 상자. 닿지 않는 공격의 칼끝이 이 밖에 서게 하려고 넘긴다.
+func contact_rect(part: int) -> Rect2:
+	if part == DT.Part.SWORD_ARM:
+		return Rect2(_arm.global_position, Vector2.ZERO).expand(_hand.global_position).grow(30.0 * scale.x)
+	return _part_screen_rect(part)
 
 
 ## 지금 화면에 둘 포즈. 바뀜의 시작 시각은 알아챈 프레임이 아니라 데이터에서 센다(결정 258, 계획 029 T1).
@@ -448,6 +737,14 @@ func _pose_for(core: DuelCore, display_time: float, complacent: bool) -> PoseDat
 		_phase_key = key
 		_phase_start = start
 		_blend_from = _pose
+		if _last_state != DT.OpponentState.IDLE or brain.state != DT.OpponentState.IDLE:
+			_hold_attack = null
+		# 타격 뒤 곧장 대기로 간 것(막힘·패리·안 열림): 타격 포즈를 0.10초 붙든다(결정 937).
+		if _last_state == DT.OpponentState.TELL and brain.state == DT.OpponentState.IDLE and _last_attack != null \
+				and not _last_attack.feint and start >= _last_state_end - 0.0001:
+			_hold_attack = _last_attack
+			_hold_end = _last_state_end + HOLD_TIME
+			_blend_from = _hold_pose(_last_attack)
 	_last_state = brain.state
 	_last_attack = brain.current_attack
 	_last_state_end = brain.state_end
@@ -471,8 +768,14 @@ func _pose_for(core: DuelCore, display_time: float, complacent: bool) -> PoseDat
 		target = _rest(opp.stagger_pose)
 	elif complacent:
 		target = _rest(opp.complacent_pose)
+	var shift := 0.0
+	if _hold_attack != null and brain.state == DT.OpponentState.IDLE:
+		if display_time < _hold_end:
+			_art_key = OpponentArmArt.art_of(_hold_attack.strike_pose)
+			return _hold_pose(_hold_attack)
+		shift = maxf(_hold_end - start, 0.0)
 	# 돌아감은 빠르게(결정 236): 그때 화면의 포즈에서 return_time초.
-	var k := clampf((display_time - start) / maxf(opp.return_time, 0.001), 0.0, 1.0)
+	var k := clampf((display_time - start - shift) / maxf(opp.return_time, 0.001), 0.0, 1.0)
 	# 섞는 동안은 나온 국면의 그림(결정 268), 끝나면 그 상태 포즈의 그림(결정 285). 거짓이면 섞는 동안도 그 상태의 그림(판 F의 갈래).
 	_art_key = _leave_art if k < 1.0 and opp.strike_art_on_return else OpponentArmArt.art_of(target)
 	return OpponentMotion.blend(_blend_from, target, OpponentMotion.ease_in_out(k))
@@ -611,6 +914,31 @@ func _new_material() -> ShaderMaterial:
 	return mat
 
 
+## 지금 타격이 빠지는 길의 마지막 타격인가(결정 702). 단발이면 그 타격이다.
+static func ring_withdraw_of(brain: OpponentBrain) -> bool:
+	if brain.state != DT.OpponentState.TELL or brain.current_attack == null:
+		return false
+	var root := brain.pattern_root if brain.pattern_root != null else brain.current_attack
+	return root.withdraw and brain.step_index == brain.pattern_count() - 1
+
+
+## 물러난 판정에서 시작된 멀리의 빈틈이면 따라붙는 길의 귀띔, 아니면 빈 글(결정 702).
+static func recovery_hint_of(core: DuelCore) -> String:
+	var brain := core.brain
+	if brain.state == DT.OpponentState.RECOVERY and core.distance == DT.Distance.FAR and core.withdrew_at == brain.state_start:
+		return "막기 떼고 %s" % Controls.help_name(&"step_forward")
+	if core.spike_live():
+		var open: Array[String] = []
+		for column in 3:
+			if not core.covered_dirs.has(column):
+				open.append(COLUMN_NAMES[column])
+		# 가운데 상단은 머리라 머리가 닫힌 빈틈에서는 막기만으로 닿지 않는다.
+		var tail := "(머리 말고)" if open.size() == 1 and core.covered_dirs.has(0) and core.covered_dirs.has(2) \
+				and not core.head_open_at(core.time) else ""
+		return "송곳 — 빈 줄: %s%s" % [" · ".join(open), tail]
+	return ""
+
+
 ## 패턴의 표시 목록(결정 374). 타격마다 {"role": &"now"·&"next"·&"later", "number", "pos", "time"}이고,
 ## 휩쓸기면 끝에 {"role": &"path", "points", "dot"}가 붙는다. 자리는 RING_POSITION의 좌표다(같은 방향이 되풀이되면 아래로 비킨다).
 ## 지난 타격은 넣지 않는다. 패턴이 아니거나 예비 동작 중이 아니면 빈 배열이다.
@@ -634,7 +962,17 @@ static func pattern_marks(brain: OpponentBrain, display_time: float) -> Array[Di
 		if i < brain.step_index:
 			continue
 		var role := &"now" if i == brain.step_index else (&"next" if i == brain.step_index + 1 else &"later")
-		marks.append({"role": role, "number": i + 1, "pos": pos, "time": times[i]})
+		var mark := {"role": role, "number": i + 1, "pos": pos, "time": times[i]}
+		if atk.feint:
+			mark["feint"] = true
+		if root.withdraw and i == times.size() - 1:
+			mark["withdraw"] = true
+		if root.mark_shape != &"":
+			# 막대는 칼 든 팔의 반대쪽으로 뻗는다(예비 동작을 보이는 팔과 칼을 가리지 않게. 결정 632).
+			mark["shape"] = root.mark_shape
+			mark["wait"] = times[i] - times[i - 1] if i > 0 else 0.0
+			mark["side"] = 1 if brain.data.sword_side == DT.Direction.LEFT else -1
+		marks.append(mark)
 	if brain.is_sweep():
 		# 따라가는 점: 첫 점의 시각까지 첫 자리에서 기다리고, 그 뒤 닿는 시각마다 그 점에 오도록 고르게 간다.
 		var dot := points[0]
@@ -644,6 +982,15 @@ static func pattern_marks(brain: OpponentBrain, display_time: float) -> Array[Di
 				dot = points[i - 1].lerp(points[i], k)
 		marks.append({"role": &"path", "points": points, "dot": dot})
 	return marks
+
+
+## 박자 고리의 기다림 막대(바탕) 상자. mark["pos"]와 같은 좌표(상대 기준)이고, 고리의 가장자리에서 side 쪽으로 wait x BEAT_BAR_SPEED px 뻗는다.
+static func beat_bar_rect(mark: Dictionary) -> Rect2:
+	var pos: Vector2 = mark["pos"]
+	var length: float = float(mark["wait"]) * BEAT_BAR_SPEED
+	var side: int = mark["side"]
+	var left := pos.x + MARK_RADIUS if side > 0 else pos.x - MARK_RADIUS - length
+	return Rect2(left, pos.y - BEAT_BAR_HEIGHT * 0.5, length, BEAT_BAR_HEIGHT)
 
 
 ## 지금 타격의 고리 자리. 패턴이면 번호 고리의 자리(되풀이 방향의 비킴 포함)다.
@@ -681,8 +1028,19 @@ func _draw_marks() -> void:
 		var at: Vector2 = mark["pos"] - origin
 		var alpha := 0.95 if mark["role"] == &"now" else (0.8 if mark["role"] == &"next" else 0.4)
 		if mark["role"] != &"now":
-			_ring.draw_circle(at, MARK_RADIUS, Color(0.12, 0.1, 0.08, 0.55 * alpha))
-			_ring.draw_arc(at, MARK_RADIUS, 0.0, TAU, 40, Color(1.0, 1.0, 1.0, alpha), 3.0)
+			if mark.get("feint", false):
+				# 헛손질은 빈 고리: 어두운 바탕 없이 점선 테두리(결정 670).
+				_draw_dashed_circle(at, MARK_RADIUS, Color(1.0, 1.0, 1.0, alpha), 3.0)
+			else:
+				_ring.draw_circle(at, MARK_RADIUS, Color(0.12, 0.1, 0.08, 0.55 * alpha))
+				_ring.draw_arc(at, MARK_RADIUS, 0.0, TAU, 40, Color(1.0, 1.0, 1.0, alpha), 3.0)
+			if mark.has("shape") and MARK_SHAPES.has(mark["shape"]) and float(mark["wait"]) > 0.0:
+				var bar := beat_bar_rect(mark)
+				bar.position -= origin
+				_ring.draw_rect(bar, Color(0.12, 0.1, 0.08, 0.55 * alpha))
+				_ring.draw_rect(bar.grow(-BEAT_BAR_INSET), Color(1.0, 1.0, 1.0, alpha))
+			if mark.get("withdraw", false):
+				_draw_chevrons(at + Vector2(0, MARK_RADIUS + WITHDRAW_CHEVRON_OFFSET), alpha)
 		var label := str(mark["number"])
 		var width := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, MARK_FONT_SIZE).x
 		var base := at + Vector2(-width * 0.5, -MARK_RADIUS - 8.0)
@@ -692,19 +1050,42 @@ func _draw_marks() -> void:
 		_ring.draw_string(font, base, label, HORIZONTAL_ALIGNMENT_LEFT, -1, MARK_FONT_SIZE, Color(1, 1, 1, alpha))
 
 
+## 위로 향한 겹 꺾쇠(︽): 치고 빠지는 길의 표지(결정 702). top은 윗꺾쇠의 가운데 위 끝이다.
+func _draw_chevrons(top: Vector2, alpha: float) -> void:
+	var half := WITHDRAW_CHEVRON_WIDTH * 0.5
+	for k in 2:
+		var tip := top + Vector2(0, WITHDRAW_CHEVRON_GAP * k)
+		var line := PackedVector2Array([tip + Vector2(-half, half * 0.5), tip, tip + Vector2(half, half * 0.5)])
+		_ring.draw_polyline(line, Color(0.12, 0.1, 0.08, alpha), WITHDRAW_CHEVRON_THICK + 3.0, true)
+		_ring.draw_polyline(line, Color(1.0, 1.0, 1.0, alpha), WITHDRAW_CHEVRON_THICK, true)
+
+
+## 점선 원: 짧은 호 열둘(결정 670).
+func _draw_dashed_circle(center: Vector2, radius: float, color: Color, width: float) -> void:
+	var step := TAU / 12.0
+	for k in 12:
+		_ring.draw_arc(center, radius, step * k, step * k + step * 0.5, 8, color, width)
+
+
 func _draw_ring() -> void:
 	if not _ring_active:
 		return
 	_draw_marks()
 	var band := RING_SPEED * _parry_window
 	# 고정 띠(목표 고리): 줄어드는 고리가 이 안에 들어와 있을 때 새로 누르면 패리다. 휩쓸기에는 패리가 없어 그리지 않는다.
-	if not _ring_sweep:
+	# 헛손질에도 그리지 않는다: 받아낼 것이 없다(결정 670).
+	if not _ring_sweep and not _ring_feint:
 		_ring.draw_circle(Vector2.ZERO, band, Color(0.3, 1.0, 0.5, 0.22))
 		_ring.draw_arc(Vector2.ZERO, band, 0.0, TAU, 48, Color(0.3, 1.0, 0.5, 0.95), 3.0)
+	if _ring_withdraw:
+		_draw_chevrons(Vector2(0, maxf(band, MARK_RADIUS) + WITHDRAW_CHEVRON_OFFSET), 0.95)
 	# 줄어드는 고리: 0이 되는 순간이 타격.
 	var radius := _ring_remaining * RING_SPEED
 	if radius > 1.0:
-		_ring.draw_arc(Vector2.ZERO, radius, 0.0, TAU, 64, Color(1.0, 1.0, 1.0, 0.95), 5.0)
+		if _ring_feint:
+			_draw_dashed_circle(Vector2.ZERO, radius, Color(1.0, 1.0, 1.0, 0.95), 5.0)
+		else:
+			_ring.draw_arc(Vector2.ZERO, radius, 0.0, TAU, 64, Color(1.0, 1.0, 1.0, 0.95), 5.0)
 	_ring.draw_circle(Vector2.ZERO, 4.0, Color(1.0, 1.0, 1.0, 0.9))
 
 

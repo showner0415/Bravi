@@ -5,6 +5,7 @@ extends RefCounted
 const Bot := preload("res://tests/duel_bots.gd")
 const DT := preload("res://scripts/duel/duel_types.gd")
 const Session := preload("res://scripts/game_session.gd")
+const SelectScript := preload("res://scripts/commission/commission_select.gd")
 
 const RULES_PATH := "res://data/duel_rules.tres"
 const WEAPON_PATH := "res://data/weapons/rapier.tres"
@@ -29,7 +30,7 @@ func list(tree: SceneTree) -> Array:
 		{"id": "T79", "name": "이어 베기: 걸음의 시각·막힘·끊김·패리·큰 공격·버티기·단발 회귀", "fn": t79_chain},
 		{"id": "T80", "name": "휩쓸기: 쥐고 끌면 막힘, 패리 없음, 떼면 뚫림", "fn": t80_sweep},
 		{"id": "T81", "name": "하루의 상대의 패턴·패턴만 상대·번호 고리의 자리·연습의 길", "fn": t81_trial},
-		{"id": "T95", "name": "다음 상대 몫의 찌르기 둘: 하한을 지키고 어느 상대도 쓰지 않는다", "fn": t95_spare_thrusts},
+		{"id": "T95", "name": "주인 없는 공격의 자리: 비어 있고 어느 상대도 가리키지 않는다", "fn": t95_spare_thrusts},
 	]
 
 
@@ -346,32 +347,32 @@ func t81_trial() -> String:
 	# 6. 연습 화면: 시험용 상대마다 자유 결투, 패턴마다 패턴만, 의뢰 카드는 그대로.
 	var select: Node = (load(Session.SELECT_PATH) as PackedScene).instantiate()
 	_tree.root.add_child(select)
+	# 처음 화면은 첫 상대의 칸 하나, 상대를 돌며 패턴만의 합을 센다(계획 040b).
 	var free_buttons := select.find_children("TrialDuel*", "Button", true, false).size()
-	var drill_buttons := select.find_children("PatternDrill*", "Button", true, false).size()
-	var cards := 0
+	var first_drills := select.find_children("PatternDrill*", "Button", true, false).size()
+	var first_signatures := 0
+	for atk: AttackData in (load(DAY_OPPONENTS[0]) as OpponentData).attacks:
+		if atk.signature:
+			first_signatures += 1
+	var starts := 0
 	for button: Button in select.find_children("*", "Button", true, false):
 		if button.text == "이 의뢰를 맡는다":
-			cards += 1
-	if free_buttons != DAY_OPPONENTS.size() or drill_buttons != pattern_total or cards != 3:
-		errs.append("연습 화면: 자유 결투 %d · 패턴만 %d(기대 %d) · 의뢰 카드 %d" % [free_buttons, drill_buttons, pattern_total, cards])
+			starts += 1
+	var drill_buttons := 0
+	for i in DAY_OPPONENTS.size():
+		select.call("pick_opponent", i)
+		drill_buttons += select.find_children("PatternDrill*", "Button", true, false).size()
+	var trial_count := SelectScript.load_trials().size()
+	var entries := trial_count + (1 if trial_count > 0 and not SelectScript.load_spare_attacks().is_empty() else 0)
+	select.call("pick_opponent", 0)
+	var pick_rows := select.find_children("OpponentPick*", "Button", true, false).size()
+	if free_buttons != 1 or first_drills != first_signatures or starts != 1 or drill_buttons != pattern_total \
+			or pick_rows != mini(entries, SelectScript.LIST_ROWS):
+		errs.append("연습 화면: 자유 결투 %d(기대 1) · 첫 상대의 패턴만 %d(기대 %d) · 시작 버튼 %d(기대 1) · 상대 돌며 패턴만 %d(기대 %d) · 상대 줄 %d(기대 %d)" % [
+			free_buttons, first_drills, first_signatures, starts, drill_buttons, pattern_total, pick_rows, mini(entries, SelectScript.LIST_ROWS)])
 	select.free()
+	SelectScript._picked_opponent = 0
 	return "OK" if errs.is_empty() else ", ".join(errs)
-
-
-## 폴더의 공격을 파일 이름 차례로(내보낸 빌드의 .remap은 떼고 읽는다).
-func _spare_attacks() -> Array[AttackData]:
-	var names: Array[String] = []
-	for file in DirAccess.get_files_at(SPARE_DIR):
-		var clean := file.trim_suffix(".remap")
-		if clean.ends_with(".tres") and not names.has(clean):
-			names.append(clean)
-	names.sort()
-	var out: Array[AttackData] = []
-	for clean in names:
-		var atk := load("%s/%s" % [SPARE_DIR, clean]) as AttackData
-		if atk != null:
-			out.append(atk)
-	return out
 
 
 ## 공격 하나와 그 변주·걸음·포즈가 아닌 하위 공격까지 폴더의 자원인 것이 있는가.
@@ -389,76 +390,14 @@ func _uses_spare(atk: AttackData) -> bool:
 
 func t95_spare_thrusts() -> String:
 	var errs: Array[String] = []
-	var weapon := load(WEAPON_PATH) as WeaponData
-	var bartolo := load(BARTOLO_PATH) as OpponentData
-	# 1. 폴더에 공격 둘: 파일 이름 차례로 엇박, 층층.
-	var spare := _spare_attacks()
-	var names: Array[String] = []
-	for atk in spare:
-		names.append(atk.attack_name)
-		if atk.chain.is_empty() or atk.sweep or atk.dive:
-			errs.append("%s: 걸음이 없거나 휩쓸기·뛰어들기임" % atk.attack_name)
-	if str(names) != str(["엇박 찌르기", "층층 찌르기"]):
-		errs.append("폴더의 공격 이름 %s (기대 [엇박 찌르기, 층층 찌르기])" % str(names))
-		return ", ".join(errs)
-	var offbeat := spare[0]
-	var stair := spare[1]
-	# 2. 바탕과 변주마다 하한(결정 375) + 모든 타격이 가운데.
-	for base in spare:
-		var lines: Array[AttackData] = [base]
-		for variant: AttackData in base.variants:
-			lines.append(variant)
-		for k in lines.size():
-			var label := "%s l%d" % [base.attack_name, k]
-			_check_pattern(errs, bartolo, lines[k], weapon, label)
-			var points: Array[AttackData] = [lines[k]]
-			for step: AttackData in lines[k].chain:
-				points.append(step)
-			for point in points:
-				if point.direction != DT.Direction.CENTER:
-					errs.append("%s: 가운데가 아닌 타격" % label)
-	# 3. 층층: 길마다 타격의 높이가 값 하나씩이고 서로 다르다, 세 길의 차례가 고정이다.
-	var stair_lines: Array[AttackData] = [stair]
-	for variant: AttackData in stair.variants:
-		stair_lines.append(variant)
-	var stair_heights: Array = []
-	for line in stair_lines:
-		var row: Array = []
-		var points: Array[AttackData] = [line]
-		for step: AttackData in line.chain:
-			points.append(step)
-		for point in points:
-			if point.heights.size() != 1:
-				errs.append("층층: 높이가 값 하나가 아닌 타격 (%d개)" % point.heights.size())
-			else:
-				row.append(int(point.heights[0]))
-		var distinct := {}
-		for h in row:
-			distinct[h] = true
-		if distinct.size() != row.size():
-			errs.append("층층: 한 길 안에 같은 높이 %s" % str(row))
-		stair_heights.append(row)
-	if stair_heights != [[0, 1, 2], [2, 1, 0], [1, 2, 0]]:
-		errs.append("층층의 길의 높이 차례 %s (기대 [[0,1,2],[2,1,0],[1,2,0]])" % str(stair_heights))
-	# 4. 엇박: 간격이 고르지 않고 긴 것이 1.3 이하, 모든 타격의 높이가 [1].
-	var offbeat_lines: Array[AttackData] = [offbeat]
-	for variant: AttackData in offbeat.variants:
-		offbeat_lines.append(variant)
-	for k in offbeat_lines.size():
-		var line := offbeat_lines[k]
-		var longest := 0.0
-		var shortest := INF
-		for step: AttackData in line.chain:
-			longest = maxf(longest, step.tell_time)
-			shortest = minf(shortest, step.tell_time)
-		if longest - shortest < 0.5 - EPS or longest > 1.3 + EPS:
-			errs.append("엇박 l%d: 간격 최장 %.2f · 최단 %.2f (차 0.5 이상, 최장 1.3 이하)" % [k, longest, shortest])
-		var points: Array[AttackData] = [line]
-		for step: AttackData in line.chain:
-			points.append(step)
-		for point in points:
-			if point.heights.size() != 1 or point.heights[0] != DT.Height.MID:
-				errs.append("엇박 l%d: 높이 %s (기대 [1])" % [k, str(point.heights)])
+	# 1. 주인 없는 공격이 없다(엇박은 아고스티노가 가져갔다 — 계획 042, 그 확인은 T126 ④로 옮겼다. 층층은 T120 ④).
+	var spare := SelectScript.load_spare_attacks()
+	if not spare.is_empty():
+		var names: Array[String] = []
+		for atk in spare:
+			names.append(atk.attack_name)
+		errs.append("폴더에 주인 없는 공격이 남아 있다 %s (기대 빈 배열)" % str(names))
+	# 2 · 4. 하한·가운데·간격·높이의 확인은 아고스티노의 데이터로 T126 ④가 본다(계획 042).
 	# 5. 어느 상대도 폴더의 공격을 쓰지 않는다(변주·걸음·버릇 반응까지).
 	for file in DirAccess.get_files_at("res://data/opponents"):
 		var clean := file.trim_suffix(".remap")
@@ -473,54 +412,6 @@ func t95_spare_thrusts() -> String:
 		for habit in opp.habits:
 			if _uses_spare(habit.response):
 				errs.append("%s의 버릇 반응이 폴더의 공격을 씀" % clean)
-	# 6. 연습 화면: 넷째 칸의 버튼 둘.
-	var select: Node = (load(Session.SELECT_PATH) as PackedScene).instantiate()
-	_tree.root.add_child(select)
-	var grid := select.find_child("TrialGrid", true, false) as Control
-	var first_free := select.find_child("TrialDuel0", true, false) as Control
-	var caption := select.find_child("SpareCaption", true, false) as Control
-	var spare_buttons := select.find_children("SpareDrill*", "Button", true, false)
-	if grid == null or first_free == null or caption == null:
-		errs.append("연습 화면에 TrialGrid·TrialDuel0·SpareCaption이 없음")
-	else:
-		if spare_buttons.size() != 2:
-			errs.append("SpareDrill 버튼 %d개 (기대 2)" % spare_buttons.size())
-		var seen := {}
-		for button: Button in spare_buttons:
-			if not grid.is_ancestor_of(button):
-				errs.append("%s가 TrialGrid의 자손이 아님" % button.name)
-			if not names.has(button.tooltip_text) or button.text != button.tooltip_text.get_slice(" ", 0):
-				errs.append("%s: 글 '%s' · 설명 '%s'" % [button.name, button.text, button.tooltip_text])
-			seen[button.tooltip_text] = true
-		if seen.size() != names.size():
-			errs.append("버튼 둘이 공격 이름 둘을 하나씩 덮지 않음 %s" % str(seen.keys()))
-		if not is_equal_approx(caption.get_combined_minimum_size().y, first_free.get_combined_minimum_size().y):
-			errs.append("SpareCaption 높이 %.1f · TrialDuel0 높이 %.1f" % [
-				caption.get_combined_minimum_size().y, first_free.get_combined_minimum_size().y])
-		var grid_size := grid.get_combined_minimum_size()
-		print("  INFO 연습의 시험 칸 폭 %d / 1216, 높이 %d" % [int(grid_size.x), int(grid_size.y)])
-	var counts := [
-		select.find_children("PatternDrill*", "Button", true, false).size(),
-		select.find_children("TrialDuel*", "Button", true, false).size(),
-	]
-	if counts != [5, 3]:
-		errs.append("연습 화면의 버튼 (패턴만·자유 결투) %s (기대 [5, 3])" % str(counts))
-	select.free()
-	# 7. 층층 찌르기를 들고 막는 봇으로 30초: 위와 아래의 타격이 둘 다 나오고 번호 고리가 같은 x에서 세로로 선다.
-	var run := _run(_opp(stair), {}, 30.0)
-	var tall := {}
-	for ev in run.record.of_type(DuelRecord.STRIKE):
-		if (ev["attack"] as AttackData).direction == DT.Direction.CENTER:
-			tall[int(ev["height"])] = true
-	if run.record.of_type(DuelRecord.PATTERN_STEP).is_empty() or not tall.has(DT.Height.HIGH) or not tall.has(DT.Height.LOW):
-		errs.append("층층 30초: 걸음 %d · 가운데에서 나온 높이 %s" % [run.record.of_type(DuelRecord.PATTERN_STEP).size(), str(tall.keys())])
-	var shown := _run(_opp(stair), {}, 1.5)
-	var marks := OpponentView.pattern_marks(shown.brain, shown.time)
-	var xs := {}
-	var ys := {}
-	for mark in marks:
-		xs[(mark["pos"] as Vector2).x] = true
-		ys[(mark["pos"] as Vector2).y] = true
-	if marks.size() != 3 or xs.size() != 1 or ys.size() != 3:
-		errs.append("층층의 번호 고리: 수 %d · x %d가지 · y %d가지 (기대 3 · 1 · 3)" % [marks.size(), xs.size(), ys.size()])
+	# 6. 주인 없는 검술의 화면은 T117이 spare_source로 본다(계획 040b).
+	# 7. 층층의 30초 판과 번호 고리는 T121 · T122 ②로 옮겼다(계획 041).
 	return "OK" if errs.is_empty() else ", ".join(errs)

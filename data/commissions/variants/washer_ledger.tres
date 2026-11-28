@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="Commission" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/commission/commission.gd" id="1_commission"]
+[ext_resource type="Script" path="res://scripts/commission/commission_condition.gd" id="2_condition"]
+[ext_resource type="Script" path="res://scripts/commission/hold_condition.gd" id="3_hold"]
+[ext_resource type="Resource" path="res://data/opponents/opponent_03.tres" id="4_opponent"]
+[ext_resource type="Resource" path="res://data/stages/piazza.tres" id="5_stage"]
+[ext_resource type="Texture2D" path="res://assets/art/clients/nella.png" id="6_portrait"]
+
+[sub_resource type="Resource" id="condition_hold"]
+script = ExtResource("3_hold")
+blocks_needed = 8
+early_touch_penalty = 35
+early_hint = "아직이에요"
+ready_text = "이제 쳐요"
+
+[resource]
+script = ExtResource("1_commission")
+client_name = "세탁부 넬라"
+dialogue = "토마소 아저씨가 여긴 품삯 떼인 사람 일도 받는다길래 따라왔거든요. 강 위 염색장이 찌꺼기를 흘려 빨래터 천이 죄다 얼룩이라니까요. 길드가 대리인 결투로 가리래요. 염색장 쪽은 건너편 의뢰소가 멋쟁이 로렌초를 빌려 세웠고, 세라피나가 곁에서 장부를 든대요. 피하거나 먼저 찌르면 비겁했다고 적어서 뒤집는다니까요.
+그 멋쟁이는 몸을 움츠렸다가 뛰어들어요. 이번엔 물러서지 말고 막아서 받아 주세요. 붙으면 엉키기 전에 한 걸음 빼고요. 실컷 받아 준 다음에 이기면 돼요."
+opponent = ExtResource("4_opponent")
+opponent_posture_max = 7
+opponent_recover_posture = 3
+stage = ExtResource("5_stage")
+client_portrait = ExtResource("6_portrait")
+conditions = Array[ExtResource("2_condition")]([SubResource("condition_hold")])
+base_reward = 40
+tip_max = 20
+reputation_effect = {"accept": 1, "success": 3, "fail": -1, "win": 1}
+haggle_min_stars = 2
+success_line = "장부에 비겁했다는 말이 한 줄도 없대요. 염색장이 찌꺼기 통을 치운다니까요. 모은 돈이에요."
+decline_line = "그럼 토마소 아저씨한테 다른 데를 물어봐야겠네요."
+fail_line = "장부엔 우리가 졌다고 적혔대요. 내일도 얼룩진 천을 헹궈야죠. 드릴 돈이 없어요."
+partial_line = "이기긴 했는데 먼저 찔렀다고 한 줄 적혔대요. 길드가 반만 들어줬거든요. 좀 깎을게요."
+haggle_agree_line = "아낙들한테 더 걷어 볼게요. 대신 먼저 찌르면 안 돼요."
+haggle_refuse_line = "빨래 삯을 모은 거라 더는 못 내요. 처음 값으로 해요. 덤도 줄일게요."
+sets_flags = PackedStringArray("washer_done")
+requires_flags = PackedStringArray("tomaso_helped")
+excluded_flags = PackedStringArray("washer_done")

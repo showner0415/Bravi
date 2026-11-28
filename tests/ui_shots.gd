@@ -10,10 +10,21 @@ const Session := preload("res://scripts/game_session.gd")
 const WornEdge := preload("res://scripts/ui/worn_edge.gd")
 const PanelStyle := preload("res://scripts/ui/manuscript_panel_style.gd")
 const Select := preload("res://scripts/commission/commission_select.gd")
+const Practice := preload("res://tests/practice_screen_tests.gd")
 
 const FEATHER_PATH := "res://data/commissions/feather_cut.tres"
 const USURER_PATH := "res://data/commissions/variants/first_blood_usurer.tres"
 const POOR_PATH := "res://data/commissions/variants/first_blood_poor.tres"
+const SPAR_PATH := "res://data/commissions/spar.tres"
+const COURT_PATH := "res://data/commissions/variants/court_beehive.tres"
+const NOBLE_PATH := "res://data/commissions/variants/noble_baker.tres"
+const PAIR_HATTER_PATH := "res://data/commissions/variants/pair_hatter.tres"
+const AFTER_HATTER_PATH := "res://data/commissions/variants/after_hatter.tres"
+const AFTER_BAKER_PATH := "res://data/commissions/variants/after_baker.tres"
+const CLOSE_BAKER_PATH := "res://data/commissions/variants/close_baker.tres"
+const RIVAL_MILLINER_PATH := "res://data/commissions/variants/rival_milliner.tres"
+const DUN_MASTER_PATH := "res://data/commissions/variants/dun_master.tres"
+const WASHER_LEDGER_PATH := "res://data/commissions/variants/washer_ledger.tres"
 ## 카운터의 의뢰인이 미끄러져 들어오는 시간(0.45초)과 간격의 보간이 끝날 때까지 기다린다.
 const SETTLE_MSEC := 900
 const WEAPON_PATH := "res://data/weapons/rapier.tres"
@@ -61,6 +72,14 @@ func _ready() -> void:
 		["quit-confirm", _quit_confirm], ["menu-counter", _menu_counter], ["pause-hold", _pause_hold],
 		["settings-controls", _settings_controls], ["settings-controls-empty", _settings_controls_empty],
 		["settings-display", _settings_display],
+		["select-spare", _select_spare], ["select-many", _select_many], ["select-story", _select_story],
+		["counter-spar", _counter_spar], ["duel-spar-stagger", _duel_spar_stagger], ["settle-spar", _settle_spar],
+		["counter-court", _counter_court], ["counter-noble", _counter_noble],
+		["counter-pair", _counter_pair], ["counter-pair-other", _counter_pair_other], ["counter-pair-haggled", _counter_pair_haggled],
+		["counter-after-hatter", _counter_after_hatter], ["counter-after-baker", _counter_after_baker], ["duel-close-hat", _duel_close_hat],
+		["counter-close-baker", _counter_close_baker], ["counter-rival-milliner", _counter_rival_milliner], ["counter-dun-master", _counter_dun_master],
+		["duel-hold-early", _duel_hold_early], ["duel-hold-full", _duel_hold_full],
+		["counter-washer-ledger", _counter_washer_ledger], ["duel-hold-ledger", _duel_hold_ledger],
 	]
 	_next()
 
@@ -78,6 +97,7 @@ func _next() -> void:
 		# 창이 잠겼고 창을 한 번도 건드리지 않았는지(계획 S04 결정 531). run_ui_shots.ps1이 "display,1,0"만 받는다.
 		if run_settings != null:
 			print("display,%d,%d" % [1 if run_settings.get("window_locked") else 0, int(run_settings.get("_window_calls"))])
+		_reset_select()
 		print("UI SHOTS OK %d" % _plan.size())
 		set_process(false)
 		get_tree().quit(0)
@@ -116,6 +136,7 @@ func _process(_delta: float) -> void:
 			print("fit,%s,%d,%d" % [_plan[_i][0], int(grid.get_global_rect().end.x), int(help.get_global_rect().end.y)])
 			print("practice,%s,%d,%d,%d,%d" % [_plan[_i][0], 1 if _node.find_child("PartCounterToggle", true, false) != null else 0,
 					1 if _node.find_child("SlashDrill", true, false) != null else 0, int(_far_edge(_node).x), int(_far_edge(_node).y)])
+		_practice_lines(String(_plan[_i][0]))
 		_wearhit = 0
 		_wear_lines(_node, String(_plan[_i][0]))
 		print("wearhit,%s,%d" % [_plan[_i][0], _wearhit])
@@ -287,6 +308,71 @@ func _select() -> String:
 	return "연습 선택"
 
 
+## 연습 화면이 남기는 static 다섯을 처음 값으로(앞의 장 `select`가 영향받지 않게 새 장은 뒤에 둔다).
+func _reset_select() -> void:
+	Select._opening_day = 1
+	Select._part_effects = false
+	Select._style_tier = 0
+	Select._picked_opponent = 0
+	Select._picked_commission = 0
+
+
+## 시험 데이터(메모리)로 띄운 연습 화면.
+func _practice_screen(trials: Array[OpponentData], spare: Array[AttackData], commissions: Array[Commission]) -> void:
+	_reset_select()
+	_node = (load(Session.SELECT_PATH) as PackedScene).instantiate()
+	_node.set_meta("wear_screen", true)
+	_node.set("trial_source", trials)
+	_node.set("spare_source", spare)
+	_node.set("commission_source", commissions)
+	_node.set("use_sources", true)
+	add_child(_node)
+
+
+func _select_spare() -> String:
+	var trials := Select.load_trials()
+	_practice_screen(trials, Practice.test_spare(), CommissionLibrary.load_tree(Select.COMMISSION_DIR))
+	_node.call("pick_opponent", trials.size())
+	return "연습 선택: 주인 없는 검술(시험 공격 하나)"
+
+
+func _select_many() -> String:
+	var trials := Practice.big_trials()
+	_practice_screen(trials, Practice.big_spare(), Practice.big_commissions(trials))
+	_node.call("pick_opponent", 7)
+	var pick := _node.find_child("StyleTierPick", true, false) as OptionButton
+	if pick != null:
+		pick.item_selected.emit(pick.item_count - 1)
+	_node.call("pick_commission", 17)
+	return "연습 선택: 상대 12명·의뢰 30개(긴 글), 상대 7의 가장 높은 단, 의뢰 17"
+
+
+func _select_story() -> String:
+	var all: Array[Commission] = CommissionLibrary.load_tree(Select.COMMISSION_DIR)
+	var longest := 0
+	for i in all.size():
+		if Select.story_lines(all[i]) > Select.story_lines(all[longest]):
+			longest = i
+	_practice_screen(Select.load_trials(), Select.load_spare_attacks(), all)
+	_node.call("pick_commission", longest)
+	return "연습 선택: 가장 긴 사연(의뢰 %d, 셈 %d줄)" % [longest, Select.story_lines(all[longest]) if not all.is_empty() else 0]
+
+
+## many,<장>,<x>,<y>,<버튼 줄 수>,<상대 줄>,<의뢰 줄> 과 story,<장>,<놓인 줄>,<칸의 줄>,<내용 높이>,<칸 높이>,<칸 폭>,<셈의 폭>.
+func _practice_lines(shot: String) -> void:
+	if shot == "select-many":
+		var margin := _node.find_child("ScreenMargin", true, false) as Control
+		var grid := _node.find_child("TrialGrid", true, false) as Control
+		var end := margin.get_global_rect().end.max(_far_edge(_node))
+		print("many,%s,%d,%d,%d,%d,%d" % [shot, ceili(end.x), ceili(end.y), ceili(float(grid.get_child_count()) / Select.DRILL_COLUMNS),
+				_node.find_children("OpponentPick*", "Button", true, false).size(), _node.find_children("CommissionPick*", "Button", true, false).size()])
+	elif shot == "select-story":
+		var story := _node.find_child("CommissionStory", true, false) as RichTextLabel
+		if story != null:
+			print("story,%s,%d,%d,%d,%d,%d,%d" % [shot, story.get_line_count(), story.get_visible_line_count(), story.get_content_height(),
+					int(story.size.y), int(story.size.x), Select.STORY_WIDTH])
+
+
 # ---------------------------------------------------------------- 결투
 
 func _duel(commission_path: String, day: DayState = null) -> DuelCore:
@@ -425,6 +511,31 @@ func _counter_day() -> DayState:
 	return day
 
 
+## 대련(계획 043): 카운터에 선 사범의 말풍선 · 조건 글 · "상대:" 줄이 안에 다 서는지.
+func _counter_spar() -> String:
+	var commissions: Array[Commission] = [load(SPAR_PATH), load(USURER_PATH), load(POOR_PATH)]
+	_screen(Session.COUNTER_PATH, _new_day(commissions))
+	return "카운터: 대련 의뢰(첫 손님)"
+
+
+## put 뒤에 advance·tick을 부르지 않는다: 놓은 코어를 걸리면 끝나지 않는 고리다(계획 043 위험 R9).
+func _duel_spar_stagger() -> String:
+	var core := _duel(SPAR_PATH)
+	var now := States.put(core, DT.OpponentState.STAGGER, null, 0.0, DT.Distance.ENGAGE)
+	core.record.add({"type": DuelRecord.STAGGER_START, "t": now, "end_time": core.brain.state_end})
+	_node.set("_display_time", now)
+	_node.call("_update_views", 0.0)
+	return "대련 의뢰 · 무너짐 1/3 · 귀띔 '치지 마라'"
+
+
+func _settle_spar() -> String:
+	var commissions: Array[Commission] = [_scored(SPAR_PATH, 32, 18, 100), load(USURER_PATH), load(POOR_PATH)]
+	var day := _new_day(commissions)
+	day.accept()
+	day.finish_duel(_d._record(DT.EndReason.CONDITION))
+	_screen(Session.SETTLEMENT_PATH, day)
+	return "정산: 대련 100점(고정 점수 의뢰에 사범의 한마디)"
+
 func _quit_confirm() -> String:
 	var day := _counter_day()
 	QuitConfirm.open(_node, Session.quit_note(day, 0))
@@ -477,3 +588,131 @@ func _pause_hold() -> String:
 	_node.call("pause", &"shots")
 	_node.call("resume")
 	return "%s · 이어 베기 예비 동작 중 멈춤 뒤 계속: 돌아오기 대기(물리 걸음이 꺼져 끝나지 않는다)" % solo.attack_name
+
+
+## 법정 대리(계획 046): 5일차 카운터의 첫 손님. 사연 문단 둘 · 조건 글 · "상대:" 줄이 말풍선 안에 서는지(결투 씬이 없어 tick이 없다).
+func _counter_court() -> String:
+	var commissions: Array[Commission] = [load(COURT_PATH), load(NOBLE_PATH), load(POOR_PATH)]
+	var day := _new_day(commissions)
+	day.day_number = 5
+	_screen(Session.COUNTER_PATH, day)
+	return "카운터: 5일차 법정 대리(체칠리아, 그림)"
+
+
+## 귀족의 궂은일(계획 046): 소문 줄 · 흥정 줄 · "상대:" 줄이 말풍선 안에 서는지.
+func _counter_noble() -> String:
+	var commissions: Array[Commission] = [load(NOBLE_PATH), load(COURT_PATH), load(POOR_PATH)]
+	var day := _new_day(commissions)
+	day.day_number = 7
+	_screen(Session.COUNTER_PATH, day)
+	return "카운터: 7일차 귀족의 궂은일(레안드로, 그림)"
+
+
+## 둘이 함께(계획 047): 6일차의 첫 손님. 베아트리체가 말하고 굴리엘모가 뒤에 흐리게 선다. 뒤의 사람이 말하는 쪽의 그림 · 말풍선 · 버튼을 가리지 않는지.
+func _pair_counter_day() -> DayState:
+	var commissions: Array[Commission] = [load(PAIR_HATTER_PATH), load(USURER_PATH), load(POOR_PATH)]
+	var day := _new_day(commissions)
+	day.day_number = 6
+	return day
+
+
+func _counter_pair() -> String:
+	_screen(Session.COUNTER_PATH, _pair_counter_day())
+	return "카운터: 6일차 둘이 함께(베아트리체가 말하고 굴리엘모가 뒤에)"
+
+
+func _counter_pair_other() -> String:
+	var day := _pair_counter_day()
+	day.switch_side()
+	_screen(Session.COUNTER_PATH, day)
+	return "카운터: 6일차 쪽을 바꾼 하루(굴리엘모가 말하고 베아트리체가 뒤에)"
+
+
+func _counter_pair_haggled() -> String:
+	var day := _pair_counter_day()
+	day.haggle(0)
+	_screen(Session.COUNTER_PATH, day)
+	return "카운터: 6일차 값을 부른 뒤(SwitchSide가 꺼진 채)"
+
+
+func _counter_after_hatter() -> String:
+	var commissions: Array[Commission] = [load(AFTER_HATTER_PATH), load(USURER_PATH), load(POOR_PATH)]
+	var day := _new_day(commissions)
+	day.day_number = 7
+	day.flags = PackedStringArray(["sided_hatter"])
+	_screen(Session.COUNTER_PATH, day)
+	return "카운터: 7일차 뒷이야기 — 굴리엘모가 칼 든 손을 맡긴다"
+
+
+func _counter_after_baker() -> String:
+	var commissions: Array[Commission] = [load(AFTER_BAKER_PATH), load(USURER_PATH), load(POOR_PATH)]
+	var day := _new_day(commissions)
+	day.day_number = 7
+	day.flags = PackedStringArray(["sided_baker"])
+	_screen(Session.COUNTER_PATH, day)
+	return "카운터: 7일차 뒷이야기 — 베아트리체가 져 달라 한다"
+
+
+## 모자를 쓴 굴리엘모의 밀착(045b의 모자 한계). put 뒤에 advance · tick을 부르지 않는다(위험 R9).
+func _duel_close_hat() -> String:
+	_pose(_duel(PAIR_HATTER_PATH), DT.Distance.CLOSE, false, DT.PlayerState.READY, DT.Direction.CENTER, DT.Height.MID)
+	return "밀착 대기 · 모자를 쓴 굴리엘모"
+
+
+## 버티기와 속편(계획 048): 새 손님. 3일차(계획 049가 4일차에서 옮겼다) · 5 · 6일차. 사연(문단 둘) · 조건 글 · "상대:" 줄 · 흥정 줄이 말풍선 안에 서는지.
+func _counter_close_baker() -> String:
+	var commissions: Array[Commission] = [load(CLOSE_BAKER_PATH), load(USURER_PATH), load(POOR_PATH)]
+	var day := _new_day(commissions)
+	day.day_number = 3
+	_screen(Session.COUNTER_PATH, day)
+	return "카운터: 3일차 둘째 손님 — 굴리엘모의 받아 주기(브루노)"
+
+
+func _counter_rival_milliner() -> String:
+	var commissions: Array[Commission] = [load(RIVAL_MILLINER_PATH), load(USURER_PATH), load(POOR_PATH)]
+	var day := _new_day(commissions)
+	day.day_number = 5
+	_screen(Session.COUNTER_PATH, day)
+	return "카운터: 5일차 클라라의 맞수(베아트리체 1단, 칼 든 팔)"
+
+
+func _counter_dun_master() -> String:
+	var commissions: Array[Commission] = [load(DUN_MASTER_PATH), load(USURER_PATH), load(POOR_PATH)]
+	var day := _new_day(commissions)
+	day.day_number = 6
+	day.flags = PackedStringArray(["sparred_master"])
+	_screen(Session.COUNTER_PATH, day)
+	return "카운터: 6일차 비토리오의 독촉(대련을 맡은 하루, 소문 −)"
+
+
+## 받아냄을 기록에 더한 뒤 화면만 그린다(States.put · advance · tick 없음, 위험 R9).
+func _hold_screen(count: int, path := CLOSE_BAKER_PATH) -> void:
+	var core := _duel(path)
+	for i in count:
+		core.record.add({"type": DuelRecord.STRIKE, "t": 1.0 + i, "result": DT.StrikeResult.BLOCKED, "braced": false})
+	_node.call("_update_views", 0.0)
+
+
+func _duel_hold_early() -> String:
+	_hold_screen(5)
+	return "버티기의 결투 · 받는 마디 중간(받아냄 5/12 · 아직입죠)"
+
+
+func _duel_hold_full() -> String:
+	_hold_screen((load(CLOSE_BAKER_PATH) as Commission).conditions[0].blocks_needed)
+	return "버티기의 결투 · 게이지가 찬 뒤(받아냄 12/12 · 이제 치십쇼)"
+
+
+## 빨래터의 넬라(계획 049): 6일차 셋째 손님, 토마소의 일을 맡은 하루. 사연(문단 둘) · 조건 글 · "상대:" 줄 · 소문 · 흥정 줄이 말풍선 안에 서는지.
+func _counter_washer_ledger() -> String:
+	var commissions: Array[Commission] = [load(WASHER_LEDGER_PATH), load(USURER_PATH), load(POOR_PATH)]
+	var day := _new_day(commissions)
+	day.day_number = 6
+	day.flags = PackedStringArray(["tomaso_helped", "sparred_master"])
+	_screen(Session.COUNTER_PATH, day)
+	return "카운터: 6일차 셋째 손님 — 세탁부 넬라의 받아 주기(로렌초 1단)"
+
+
+func _duel_hold_ledger() -> String:
+	_hold_screen(9, WASHER_LEDGER_PATH)
+	return "넬라의 결투 · 받아냄 9/10 · 아직이에요가 막대 곁의 자리에 잘리지 않는다"

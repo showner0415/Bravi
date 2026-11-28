@@ -84,3 +84,15 @@ static func _or_rest(pose: PoseData) -> PoseData:
 ## 휩쓸기의 걸음: 앞 점의 타격 포즈에서 이 점의 타격 포즈로 곧게 간다(결정 374). 받은 포즈는 고치지 않는다.
 static func sweep_pose(prev: AttackData, atk: AttackData, p: float) -> PoseData:
 	return blend(_or_rest(prev.strike_pose), _or_rest(atk.strike_pose), clampf(p, 0.0, 1.0))
+
+
+## 포즈에 더하는 값 delta를 w만큼 얹은 새 포즈(계획 H03 결정 934). 받은 포즈는 고치지 않는다. 팔 그림은 pose의 것이다.
+static func add(pose: PoseData, delta: PoseData, w: float) -> PoseData:
+	var r := PoseData.new()
+	r.arm_deg = pose.arm_deg + delta.arm_deg * w
+	r.sword_deg = pose.sword_deg + delta.sword_deg * w
+	r.head_deg = pose.head_deg + delta.head_deg * w
+	r.lean_deg = pose.lean_deg + delta.lean_deg * w
+	r.shoulder = pose.shoulder + delta.shoulder * w
+	r.arm_art = pose.arm_art
+	return r

@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="Commission" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/commission/commission.gd" id="1_commission"]
+[ext_resource type="Script" path="res://scripts/commission/commission_condition.gd" id="2_condition"]
+[ext_resource type="Script" path="res://scripts/commission/target_part_condition.gd" id="3_target_part"]
+[ext_resource type="Resource" path="res://data/opponents/opponent_07.tres" id="4_opponent"]
+[ext_resource type="Resource" path="res://data/stages/alley.tres" id="5_stage"]
+[ext_resource type="Texture2D" path="res://assets/art/clients/leandro.png" id="6_portrait"]
+
+[sub_resource type="Resource" id="condition_legs"]
+script = ExtResource("3_target_part")
+target_part = 5
+graze_penalty = 0
+hit_penalty = 15
+
+[resource]
+script = ExtResource("1_commission")
+client_name = "젊은 백작 레안드로"
+dialogue = "자네 가게는 값만 맞으면 무엇이든 한다지. 내 저택 앞에서 새벽마다 남은 빵을 나눠 주는 제빵사 굴리엘모가 있네. 거지들이 문 앞에 줄을 서니 아침마다 빵 냄새가 창으로 들어오지. 장날에 서지 못하게 다리에 제대로 한 칼 넣어 주게. 세라피나네 가게는 빵 장수 일은 안 받는다더군.
+그 사내는 한 번 찍고는 뜨거운 데서 손 빼듯 뒤로 뛴다네. 물러나면 막기를 떼고 바로 따라붙어 발을 치게. 돈은 얼마든 주지. 소문이야 돈이 덮어 줄 걸세."
+opponent = ExtResource("4_opponent")
+opponent_posture_max = 7
+opponent_recover_posture = 3
+stage = ExtResource("5_stage")
+client_portrait = ExtResource("6_portrait")
+conditions = Array[ExtResource("2_condition")]([SubResource("condition_legs")])
+base_reward = 90
+tip_max = 30
+reputation_effect = {"accept": -2, "success": -4, "fail": -1}
+haggle_min_stars = 1
+success_line = "다리를 절며 화덕 앞에 주저앉았다더군. 아침 공기가 좀 낫겠어. 약속한 돈일세."
+decline_line = "고상한 척은. 세라피나네 가게와 다를 게 없군. 칼은 또 있네."
+fail_line = "다리는 멀쩡하다더군. 오늘도 빵 냄새가 창으로 들어오네. 돈은 없네."
+partial_line = "다리 말고도 여기저기 베었다지. 시끄러워질 일을 만들었으니 그만큼 덜어 내겠네."
+haggle_agree_line = "얼마든 좋네. 대신 다리일세, 다리."
+haggle_refuse_line = "돈이 아까워서가 아니라 자네 말투가 거슬려서일세. 처음 값으로 하지."

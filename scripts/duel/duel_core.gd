@@ -84,6 +84,11 @@ var shoved := false
 # 게이지(0~1)는 값과 그 값을 잰 시각으로 가진다. 매 tick 더하지 않는다(delta에 따라 달라지지 않게).
 ## 안 열린 막기 뒤 섣부른 공격으로 치지 않는 끝 시각(결정 402). 안 열린 타격이 없으면 -INF라 is_rash_now가 전과 같다.
 var _closed_until := -INF
+## 마지막으로 상대가 물러난(치고 빠지기) 판정의 시각. 없으면 -INF(결정 700).
+var withdrew_at := -INF
+## 송곳 가림이 선 회수의 시작 시각과 가린 세로줄(결정 828). 칸이 없는 길이면 -INF와 빈 목록 그대로다.
+var covered_at := -INF
+var covered_dirs: Array[int] = []
 var _bind_value := 0.0
 var _bind_since := 0.0
 var _bind_mode: int = _Bind.HOLD
@@ -112,6 +117,9 @@ func setup(p_rules: DuelRules, p_weapon: WeaponData, p_opponent: OpponentData,
 	brain.opening_chance = rules.opening_chance_for(opponent_data.opening_chance, rules.stage_day)
 	brain.parry_opening_bonus = rules.parry_opening_bonus
 	player_posture = rules.player_posture_max
+	withdrew_at = -INF
+	covered_at = -INF
+	covered_dirs = []
 	distance = Dist.FAR
 	brain.start_idle(0.0)
 	_refresh_approach(0.0)
@@ -199,6 +207,20 @@ func lunge_head_dodged_now() -> bool:
 	return not head_open_at(time)
 
 
+## 지금의 회수에 송곳 가림이 서 있는가(결정 828). 칸이 없으면 늘 거짓이다.
+func spike_live() -> bool:
+	return brain.state == OpS.RECOVERY and covered_at == brain.state_start
+
+
+func covers_now(direction: int) -> bool:
+	return spike_live() and covered_dirs.has(direction)
+
+
+## 지금 런지(가운데 줄)가 송곳에 걸리는가. 조준 글자가 읽는다.
+func lunge_spiked_now() -> bool:
+	return covers_now(Dir.CENTER)
+
+
 ## 내 공격의 예비 시간. press_attack과 미리보기가 함께 쓴다. 부위별 반격의 값이 있으면 노리는 부위의 초를 더한다(밀착 배율 뒤).
 func attack_windup(direction: int, height: int) -> float:
 	var windup := weapon.windup_for(direction, height, distance)
@@ -216,13 +238,13 @@ func attack_forecast() -> Dictionary:
 		return {"verdict": Fc.UNSURE, "margin": 0.0}
 	var lunge := is_lunge_now()
 	var windup := weapon.lunge_windup if lunge else attack_windup(aim_direction, aim_height)
-	return _foresee(current_aim_part(), lunge, time + windup)
+	return _foresee(current_aim_part(), lunge, time + windup, Dir.CENTER if lunge else aim_direction)
 
 
 ## 판정 시각 judge_time의 상대 상태·간격을 미리 셈해 _verdict에 넣는다. 난수와 내 다음 입력 없이 정해지는 것만 센다.
 ## 셈하지 않는 셋은 UNSURE다: 예비 동작 중 타격이 판정보다 먼저 옴, 접근 뒤 새 대기가 판정 전에 끝날 수 있음,
 ## (누를 수 없음은 attack_forecast가 먼저 거른다). 같은 시각은 상대 → 접근 → 나 → 엉킴 순이다(_Ev).
-func _foresee(part: int, lunge: bool, judge_time: float) -> Dictionary:
+func _foresee(part: int, lunge: bool, judge_time: float, direction := -1) -> Dictionary:
 	var unsure := {"verdict": Fc.UNSURE, "margin": 0.0}
 	if rules.time_limit < judge_time:
 		return unsure
@@ -251,7 +273,7 @@ func _foresee(part: int, lunge: bool, judge_time: float) -> Dictionary:
 			return unsure
 	if lunge and dist == Dist.FAR:
 		dist = Dist.ENGAGE
-	var verdict := _verdict(part, lunge, dist, state, state_end, judge_time)
+	var verdict := _verdict(part, lunge, dist, state, state_end, judge_time, direction)
 	if ended_opening and not lunge and verdict == Fc.NO_OPENING:
 		verdict = Fc.LATE
 	var margin := 0.0
@@ -263,9 +285,13 @@ func _foresee(part: int, lunge: bool, judge_time: float) -> Dictionary:
 ## 내 공격이 닿는가의 답 하나. _judge_attack(실제 값)과 _foresee(미리 센 값)가 함께 부른다.
 ## op_state·op_end는 judge_time에 상대가 있는 상태와 그 끝 시각, judge_distance는 판정 때의 간격이다.
 ## LATE는 여기서 나오지 않는다(_foresee가 빈틈이 막 끝난 NO_OPENING에 붙인다).
-func _verdict(part: int, lunge: bool, judge_distance: int, op_state: int, op_end: float, judge_time: float) -> int:
+## direction은 내 공격의 세로줄이다(-1이면 송곳 가림을 보지 않는다. 결정 829).
+func _verdict(part: int, lunge: bool, judge_distance: int, op_state: int, op_end: float, judge_time: float,
+		direction := -1) -> int:
 	if judge_distance == Dist.FAR:
 		return Fc.OUT_OF_RANGE
+	if direction >= 0 and op_state == OpS.RECOVERY and judge_time < op_end and spike_live() and covered_dirs.has(direction):
+		return Fc.SPIKE_COVERED
 	var head_hidden := part == Part.HEAD and not head_open_at(judge_time, op_state)
 	if (op_state == OpS.RECOVERY or op_state == OpS.STAGGER) and judge_time < op_end:
 		return Fc.HEAD_GUARDED if head_hidden else Fc.REACH
@@ -452,7 +478,12 @@ func _on_opponent_state_end() -> void:
 ## 순서: ① 멀리면 헛침 ② GUARD이고 방향이 맞으면 막힘/패리 ③ 그 밖에는 닿음.
 func _resolve_strike() -> void:
 	var atk := brain.current_attack
+	if atk.feint:
+		_pass_feint()
+		return
 	var dive: bool = (brain.pattern_root if brain.pattern_root != null else atk).dive
+	var withdraw: bool = (brain.pattern_root if brain.pattern_root != null else atk).withdraw
+	var cover: Array[int] = (brain.pattern_root if brain.pattern_root != null else atk).cover_columns
 	# 걸음이 넘어가기 전에 이 타격의 높이를 잡아 둔다. -1이면 높이가 없어 방향만 본다(결정 386).
 	var height := brain.current_height()
 	var height_ok := height < 0 or aim_height == height
@@ -493,7 +524,7 @@ func _resolve_strike() -> void:
 	var recovery := brain.resolve_strike(time, result, braced)
 	# 걸음이 남아 상대가 TELL에 머물면 패턴이 이어진다(결정 371·376).
 	var chained := brain.state == OpS.TELL
-	if brain.last_closed:
+	if brain.last_closed or brain.last_bitten:
 		_closed_until = time + rules.closed_counter_grace
 	var strike := {
 		"attack": atk, "result": result, "situation": situation,
@@ -506,6 +537,12 @@ func _resolve_strike() -> void:
 	if brain.last_leg_bonus != &"":
 		strike["leg_bonus"] = brain.last_leg_bonus
 		strike["leg_time"] = brain.last_leg_time
+	if brain.last_bitten:
+		strike["bitten"] = true
+	if not chained and not cover.is_empty() and brain.state == OpS.RECOVERY:
+		covered_at = time
+		covered_dirs = cover.duplicate()
+		strike["cover"] = covered_dirs.duplicate()
 	_emit(DuelRecord.STRIKE, strike)
 	if chained:
 		_emit(DuelRecord.PATTERN_STEP, {
@@ -516,8 +553,33 @@ func _resolve_strike() -> void:
 	# 내 걸음이 간격을 정하고, 유효타로 판이 끝나면 좁히지 않는다(결정 450).
 	if dive and result != SR.HIT and player_state != PlS.STEPPING and distance != Dist.CLOSE:
 		_set_distance(distance + 1, "dive")
+	# 쳤으면 빠진다: 길이 끝난 판정 뒤. 내 걸음이 간격을 정한다(결정 450 · 700).
+	if withdraw and not chained and result != SR.HIT and player_state != PlS.STEPPING and distance != Dist.FAR:
+		withdrew_at = time
+		_set_distance(distance - 1, "withdraw")
 	if result == SR.HIT:
 		_end(End.PLAYER_DEFEATED, "유효타를 맞음")
+
+
+## 헛손질의 시각(결정 669): 판정 없이 다음 걸음으로 넘어간다. 그 칸을 막고 있으면(방향·높이) 속은 것이다. 난수를 부르지 않는다.
+func _pass_feint() -> void:
+	var atk := brain.current_attack
+	var height := brain.current_height()
+	var index := brain.step_index
+	var bitten: bool = distance != Dist.FAR and player_state == PlS.GUARD and aim_direction == atk.direction \
+			and (height < 0 or aim_height == height)
+	brain.pass_feint(time, bitten)
+	var chained := brain.state == OpS.TELL
+	_emit(DuelRecord.FEINT, {
+		"attack": atk, "root": brain.pattern_root, "index": index, "bitten": bitten, "height": height,
+		"next_strike": brain.state_end if chained else -1.0,
+	})
+	if chained:
+		_emit(DuelRecord.PATTERN_STEP, {
+			"attack": brain.current_attack, "root": brain.pattern_root, "index": brain.step_index,
+			"count": brain.pattern_count(), "strike_time": brain.state_end, "duration": brain.tell_duration,
+			"height": brain.current_height(),
+		})
 
 
 ## 스침이 부위에 건 지속 효과를 걸고 이름을 돌려준다(계획 R02 D4·D5). 유효타에는 걸지 않는다(호출이 스침에서만이다).
@@ -597,9 +659,14 @@ func _judge_attack() -> void:
 	var dodged := false
 	# 스침이 건 지속 효과(계획 R02). 없으면 &""이고 이벤트에 칸을 더하지 않는다.
 	var effect := &""
-	match _verdict(attack_part, attack_lunge, distance, brain.state, brain.state_end, time):
+	var spiked := false
+	match _verdict(attack_part, attack_lunge, distance, brain.state, brain.state_end, time, attack_direction):
 		Fc.OUT_OF_RANGE:
 			result = AR.WHIFF
+		Fc.SPIKE_COVERED:
+			# 송곳에 걸린다: 막힘이고 대가는 없으며 그 빈틈이 그 자리에서 끝난다(결정 828).
+			spiked = true
+			brain.start_idle(time)
 		Fc.HEAD_GUARDED:
 			# 상대는 얼굴을 지킨다. 머리가 열리지 않은 때 머리를 노리면 피한다.
 			# 상대의 자세·상태·타이머는 그대로다(회수는 끝나지 않는다). 그 빈틈을 날릴 뿐이다.
@@ -621,7 +688,7 @@ func _judge_attack() -> void:
 	# 섣부른 공격이 막히면 상대가 자세를 되찾는다. 상대의 상태·타이머·연속 막힘은 건드리지 않는다.
 	# 피한 공격은 빈틈에 누른 것이라 대가가 없다.
 	var posture_gain := 0
-	if attack_rash and result == AR.BLOCKED and not dodged:
+	if attack_rash and result == AR.BLOCKED and not dodged and not spiked:
 		posture_gain = brain.regain_posture()
 	var attack_ev := {
 		"result": result, "direction": attack_direction, "height": attack_height,
@@ -633,6 +700,8 @@ func _judge_attack() -> void:
 	if effect != &"":
 		attack_ev["effect"] = effect
 		attack_ev["slow_left"] = brain.slow_tells_left
+	if spiked:
+		attack_ev["spiked"] = true
 	_emit(DuelRecord.ATTACK, attack_ev)
 	if staggered:
 		_emit(DuelRecord.STAGGER_START, {"end_time": brain.state_end})

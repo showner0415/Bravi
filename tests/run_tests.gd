@@ -42,6 +42,27 @@ const TEST_FILES: Array[String] = [
 	"res://tests/controls_tests.gd",
 	"res://tests/display_tests.gd",
 	"res://tests/part_effect_tests.gd",
+	"res://tests/style_tests.gd",
+	"res://tests/practice_screen_tests.gd",
+	"res://tests/fourth_opponent_tests.gd",
+	"res://tests/state_hint_tests.gd",
+	"res://tests/mark_shape_tests.gd",
+	"res://tests/fifth_opponent_tests.gd",
+	"res://tests/spar_tests.gd",
+	"res://tests/feint_tests.gd",
+	"res://tests/sixth_opponent_tests.gd",
+	"res://tests/withdraw_tests.gd",
+	"res://tests/seventh_opponent_tests.gd",
+	"res://tests/court_noble_tests.gd",
+	"res://tests/pair_tests.gd",
+	"res://tests/hold_tests.gd",
+	"res://tests/week_tests.gd",
+	"res://tests/stage6_tests.gd",
+	"res://tests/cover_tests.gd",
+	"res://tests/eighth_opponent_tests.gd",
+	"res://tests/hit_feel_tests.gd",
+	"res://tests/contact_tests.gd",
+	"res://tests/sound_tests.gd",
 ]
 
 var _started := false
@@ -89,8 +110,11 @@ func _process(_delta: float) -> bool:
 		else:
 			settings.set("path", "")
 
+	var only := _only_tokens()
 	var tests: Array = []
 	for path in TEST_FILES:
+		if not only.is_empty() and not _matches(path, only):
+			continue
 		if not ResourceLoader.exists(path):
 			continue
 		var script: GDScript = load(path)
@@ -135,4 +159,19 @@ func _process(_delta: float) -> bool:
 		_exit_code = 1
 	# 종료는 다음 _process 호출들이 한다(위의 QUIT_DELAY_MSEC 참고).
 	_quit_at_msec = Time.get_ticks_msec() + QUIT_DELAY_MSEC
+	return false
+
+
+## --only=a,b: 파일 이름에 그 조각이 든 테스트 파일만 돈다(메모리가 모자랄 때 나눠 돌리려고. 없으면 전부).
+func _only_tokens() -> PackedStringArray:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--only="):
+			return arg.trim_prefix("--only=").split(",", false)
+	return PackedStringArray()
+
+
+func _matches(path: String, tokens: PackedStringArray) -> bool:
+	for token in tokens:
+		if path.get_file().contains(token):
+			return true
 	return false

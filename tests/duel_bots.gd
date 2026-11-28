@@ -42,6 +42,15 @@ extends RefCounted
 ##       (밀려남으로 사라진 공격에는 판정 이벤트가 오지 않는다).
 ##   step_fn(attack: AttackData, index: int) -> StringName — 패턴의 걸음(index는 1부터)에서 쓸 모드.
 ##       없으면 그 패턴의 예비 동작에서 고른 모드를 그대로 쓴다. 걸음은 tells_seen을 올리지 않는다(결정 379).
+##   parry_error_fn(wait: float) -> float — &"parry"를 누르는 때의 어긋남(초). wait는 그 타격의 예비·걸음의 간격(이벤트의 duration).
+##       +면 늦게(늦으면 맞는다), -면 일찍(막힘이지 패리가 아니다). 없으면 0과 같다(계획 042 결정 644).
+##   bite_fn(attack: AttackData) -> bool — 헛손질(attack.feint)의 예비 동작·걸음마다 한 번 부른다. 참이면 헛손질의 칸을 막는다(속는 손).
+##       없거나 거짓이면 속지 않고 그다음 진짜 타격의 칸을 막는다(패리는 막기를 떼고 조준만, 누르기는 진짜의 걸음이 예약한다). 계획 044 결정 677.
+##   chase_fn(strike_ev: Dictionary) -> bool — 상대가 치고 빠진 빈틈(core.withdrew_at == 그 STRIKE의 t, 간격 멀리)에서 받아치기 전에 한 번 부른다.
+##       참이면(없으면 참) 막기를 떼고 한 걸음 들어가 친다. 거짓이면 받아치지 않는다. 빠지는 일이 없으면 불리지 않는다(계획 045 결정 708).
+
+##   cover_read_fn(strike_ev: Dictionary) -> bool — 송곳 가림이 선 STRIKE(cover 열쇠가 있는 것)마다 한 번 부른다. 참이면(없으면 참)
+##       고른 조준이 가린 줄일 때 빈 줄의 첫째(가운데 -> 왼 -> 오)의 중단으로 바꾼다. cover 열쇠가 없으면 부르지도 않는다(계획 053 결정 837).
 
 const DT := preload("res://scripts/duel/duel_types.gd")
 
@@ -60,6 +69,7 @@ var _regrip_at := INF
 var _delayed_counter_at := INF
 var _delayed_counter_aim: Array = []
 var _delayed_counter_release := false
+var _delayed_chase := false
 var _timed_attack_at := INF
 var _timed_attack_aim: Array = []
 var _pending_steps: Array[int] = []
@@ -71,6 +81,8 @@ var _lunge_regrip := false
 var _mode: StringName = &"hold"
 ## &"retreat"로 고른 예비 동작이 끝나기 전: want_distance가 물러선 걸음을 되돌리지 않게 한다(결정 456).
 var _retreating := false
+## 방금 고른 칸이 속지 않는 헛손질이라 그다음 진짜의 칸인가(패리를 누르지 않는다).
+var _skipping := false
 
 
 ## 첫 피를 내는 봇의 설정: 막고, 빈틈이 생기는 공격 뒤에 중단 찌르기, 무너지면 중단 찌르기.
@@ -105,6 +117,11 @@ func update() -> void:
 	var can_attack := core.player_state == DT.PlayerState.READY or core.player_state == DT.PlayerState.GUARD
 	if _delayed_counter_at <= core.time and can_attack:
 		_delayed_counter_at = INF
+		if _delayed_chase and core.distance == DT.Distance.FAR:
+			_delayed_chase = false
+			_chase(_delayed_counter_aim)
+			return
+		_delayed_chase = false
 		_attack(_delayed_counter_aim)
 		if _delayed_counter_release:
 			core.set_guard(false)
@@ -171,7 +188,9 @@ func _on_event(ev: Dictionary) -> void:
 func _on_tell(ev: Dictionary) -> void:
 	tells_seen += 1
 	var atk: AttackData = ev["attack"]
-	var height := _guard_height(ev)
+	var cell := _aim_cell(atk, ev, 0)
+	var direction: int = cell[0]
+	var height: int = cell[1]
 	var mode: StringName = &"hold"
 	if cfg.has("guard_fn"):
 		mode = cfg["guard_fn"].call(atk, tells_seen)
@@ -179,23 +198,25 @@ func _on_tell(ev: Dictionary) -> void:
 	_retreating = mode == &"retreat"
 	match mode:
 		&"hold":
-			core.set_aim(atk.direction, height)
+			core.set_aim(direction, height)
 			if atk.needs_raised_guard:
 				core.set_guard(false)
 			core.set_guard(true)
 		&"wrong_height":
-			core.set_aim(atk.direction, _other_height(ev))
+			core.set_aim(direction, _other_height(int(cell[2]), direction))
 			core.set_guard(true)
 		&"keep":
-			core.set_aim(atk.direction, height)
+			core.set_aim(direction, height)
 			core.set_guard(true)
 		&"wrong":
-			core.set_aim((atk.direction + 1) % 3, height)
+			core.set_aim((direction + 1) % 3, height)
 			core.set_guard(true)
 		&"parry":
 			core.set_guard(false)
-			core.set_aim(atk.direction, height)
-			_parry_press_at = float(ev["strike_time"]) - PARRY_LEAD
+			core.set_aim(direction, height)
+			# 속지 않는 헛손질에서는 누르지 않는다: 패리는 진짜의 PATTERN_STEP이 예약한다(결정 677).
+			if not _skipping:
+				_parry_press_at = _parry_time(ev)
 		&"retreat":
 			core.set_guard(false)
 			_pending_steps = [-1]
@@ -216,21 +237,32 @@ func _on_tell(ev: Dictionary) -> void:
 ## 패턴의 다음 타격: 같은 모드로 그 방향을 따른다. 무방비·후퇴는 아무것도 하지 않는다.
 func _on_step(ev: Dictionary) -> void:
 	var atk: AttackData = ev["attack"]
-	var height := _guard_height(ev)
+	var cell := _aim_cell(atk, ev, int(ev["index"]))
+	var direction: int = cell[0]
+	var height: int = cell[1]
 	var mode := _mode
 	if cfg.has("step_fn"):
 		mode = cfg["step_fn"].call(atk, int(ev["index"]))
 	match mode:
 		&"hold", &"keep":
-			core.set_aim(atk.direction, height)
+			core.set_aim(direction, height)
 		&"wrong_height":
-			core.set_aim(atk.direction, _other_height(ev))
+			core.set_aim(direction, _other_height(int(cell[2]), direction))
 		&"wrong":
-			core.set_aim((atk.direction + 1) % 3, height)
+			core.set_aim((direction + 1) % 3, height)
 		&"parry":
 			core.set_guard(false)
-			core.set_aim(atk.direction, height)
-			_parry_press_at = float(ev["strike_time"]) - PARRY_LEAD
+			core.set_aim(direction, height)
+			if not _skipping:
+				_parry_press_at = _parry_time(ev)
+
+
+## 패리를 누를 코어 시각: 타격 PARRY_LEAD초 전, 키가 있으면 그 어긋남만큼 옮긴다.
+func _parry_time(ev: Dictionary) -> float:
+	var at := float(ev["strike_time"]) - PARRY_LEAD
+	if cfg.has("parry_error_fn"):
+		at += float(cfg["parry_error_fn"].call(float(ev["duration"])))
+	return at
 
 
 ## 막을 높이: 이벤트의 타격 높이, 없으면 중단.
@@ -239,10 +271,46 @@ func _guard_height(ev: Dictionary) -> int:
 	return height if height >= 0 else DT.Height.MID
 
 
+## 이 타격에서 막을 칸 [방향, 막을 높이, 이벤트의 높이(없으면 -1)]. 속지 않는 헛손질이면 그다음 진짜 타격의 칸이다
+## (헛손질에서 bite_fn이 참이면 그 칸 그대로 — 속는 손. 결정 677). 헛손질이 아니면 bite_fn을 부르지 않는다.
+func _aim_cell(atk: AttackData, ev: Dictionary, index: int) -> Array:
+	_skipping = false
+	var raw := int(ev.get("height", -1))
+	var cell := [atk.direction, raw if raw >= 0 else DT.Height.MID, raw]
+	if not atk.feint or (cfg.has("bite_fn") and cfg["bite_fn"].call(atk)):
+		return cell
+	var root := core.brain.pattern_root
+	for j in range(index + 1, root.chain.size() + 1):
+		var next_atk: AttackData = root.chain[j - 1] as AttackData
+		if not next_atk.feint:
+			var next_raw: int = core.brain.strike_heights[j] if j < core.brain.strike_heights.size() else -1
+			_skipping = true
+			return [next_atk.direction, next_raw if next_raw >= 0 else DT.Height.MID, next_raw]
+	return cell
+
+
 ## 일부러 틀리는 높이. 높이 없는 타격이면 중단이다(어느 높이든 막힌다).
-func _other_height(ev: Dictionary) -> int:
-	var height := int(ev.get("height", -1))
-	return (height + 1) % 3 if height >= 0 else DT.Height.MID
+## 헛손질이 있는 패턴에서는 틀린 높이가 헛손질의 칸이 되지 않게 비켜 간다(실수한 봇이 덤으로 속지 않게. 결정 677).
+func _other_height(height: int, direction: int) -> int:
+	if height < 0:
+		return DT.Height.MID
+	var other := (height + 1) % 3
+	if _is_feint_cell(direction, other):
+		other = (height + 2) % 3
+	return other
+
+
+## 지금 패턴에 이 칸(방향, 높이)의 헛손질이 있는가. 헛손질이 없는 패턴에서는 늘 거짓이다.
+func _is_feint_cell(direction: int, height: int) -> bool:
+	var root := core.brain.pattern_root
+	if root == null:
+		return false
+	var heights := core.brain.strike_heights
+	for i in root.chain.size() + 1:
+		var strike: AttackData = root if i == 0 else (root.chain[i - 1] as AttackData)
+		if strike.feint and strike.direction == direction and i < heights.size() and heights[i] == height:
+			return true
+	return false
 
 
 func _on_strike(ev: Dictionary) -> void:
@@ -264,6 +332,11 @@ func _on_strike(ev: Dictionary) -> void:
 		var aim: Variant = cfg["counter_fn"].call(ev)
 		if aim == null:
 			return
+		aim = _read_cover(ev, aim)
+		# 치고 빠진 빈틈이면 따라붙을지 정한다(빠지는 일이 없으면 늘 거짓이라 아래가 전과 같다).
+		var chasing := core.withdrew_at == float(ev["t"]) and core.distance == DT.Distance.FAR
+		if chasing and cfg.has("chase_fn") and not bool(cfg["chase_fn"].call(ev)):
+			return
 		counters_done += 1
 		var parrying := result == DT.StrikeResult.PARRIED
 		var delay := float(cfg.get("counter_delay", 0.0))
@@ -271,6 +344,10 @@ func _on_strike(ev: Dictionary) -> void:
 			_delayed_counter_at = float(ev["t"]) + delay
 			_delayed_counter_aim = aim
 			_delayed_counter_release = parrying
+			_delayed_chase = chasing
+			return
+		if chasing:
+			_chase(aim)
 			return
 		_attack(aim)
 		if parrying:
@@ -282,10 +359,27 @@ func _on_strike(ev: Dictionary) -> void:
 		var aim: Variant = cfg["whiff_fn"].call(ev)
 		if aim == null:
 			return
+		aim = _read_cover(ev, aim)
 		_pending_steps = []
 		if core.distance == DT.Distance.FAR:
 			_pending_steps = [1]
 		_pending_attack = aim
+
+
+## 송곳 가림 읽기: 받아칠 조준을 정한 직후(즉시·늦춤·헛침·따라붙기가 모두 여기서 정해 간다) 한 번 부른다.
+## cover 열쇠가 없으면 받은 조준을 그대로 돌려주고 cover_read_fn도 부르지 않는다(난수 0).
+func _read_cover(ev: Dictionary, aim: Variant) -> Variant:
+	if not ev.has("cover"):
+		return aim
+	if cfg.has("cover_read_fn") and not bool(cfg["cover_read_fn"].call(ev)):
+		return aim
+	var covered: Array = ev["cover"]
+	if not covered.has(int((aim as Array)[0])):
+		return aim
+	for column in [DT.Direction.CENTER, DT.Direction.LEFT, DT.Direction.RIGHT]:
+		if not covered.has(column):
+			return [column, DT.Height.MID]
+	return aim
 
 
 ## 들어갔다 나오기: 지금의 게이지와 간격으로 이동을 정한다. 이동하기로 했으면 막기를 풀고 걸음을 예약한다
@@ -321,6 +415,13 @@ func _lunge_retreat() -> void:
 	core.set_guard(false)
 	_pending_steps = [-1]
 	_lunge_armed = true
+
+
+## 따라붙기: 막기를 먼저 떼고(걸음은 READY에서만 나간다) 한 걸음 들어간 뒤 친다.
+func _chase(aim: Array) -> void:
+	core.set_guard(false)
+	_pending_steps = [1]
+	_pending_attack = aim
 
 
 func _attack(aim: Array) -> void:

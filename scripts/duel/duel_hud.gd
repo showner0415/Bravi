@@ -19,25 +19,34 @@ const HELP_LUNGE := "방심한 상대(칼끝을 내린다)에게는 물러나(%s
 const LUNGE_AIM_REACH := "(런지: 닿는다)"
 const LUNGE_AIM_WAIT := "(런지: 예비 동작 중 — 헛칠 때까지 기다린다)"
 const LUNGE_AIM_DODGE := "(런지: 머리는 피한다)"
+const LUNGE_AIM_SPIKE := "(런지: 송곳이 가린 줄 — 걸린다)"
+## 송곳 가림이 있는 상대에만 붙는다(계획 053 결정 831). 연습 화면도 같은 글을 쓴다.
+const HELP_COVER := " · 쇠빛 줄과 송곳 꼭지가 선 세로줄은 빈틈에도 닿지 않는다 — 막은 뒤 다른 줄로 옮겨 쳐라(걸리면 빈틈이 닫힌다. 무너지면 풀린다)"
 ## 조준 미리보기(계획 R02 D3). 칸 테두리·꼬리표·덧말이 같은 말을 쓴다.
 const FORECAST_WORD := {
 	DT.Forecast.REACH: "닿는다", DT.Forecast.LATE: "늦다", DT.Forecast.OUT_OF_RANGE: "멀다",
-	DT.Forecast.HEAD_GUARDED: "피한다", DT.Forecast.BIND_CUT: "엉킴",
+	DT.Forecast.HEAD_GUARDED: "피한다", DT.Forecast.BIND_CUT: "엉킴", DT.Forecast.SPIKE_COVERED: "송곳",
 }
 const FORECAST_NOTE := {
 	DT.Forecast.REACH: "(닿는다)", DT.Forecast.LATE: "(늦다 — 칼이 닿기 전에 빈틈이 끝난다)",
 	DT.Forecast.OUT_OF_RANGE: "(멀리: 닿지 않음)", DT.Forecast.HEAD_GUARDED: "(머리를 지킨다 — 피한다)",
-	DT.Forecast.BIND_CUT: "(엉킴 — 공격이 끊긴다)",
+	DT.Forecast.BIND_CUT: "(엉킴 — 공격이 끊긴다)", DT.Forecast.SPIKE_COVERED: "(송곳이 가린 줄 — 걸린다)",
 }
 const HELP_BIND := " · 밀착은 엉킴이 차면 밀려난다 — 차기 전에 먼저 물러난다(%s)"
 ## 패턴의 막는 법(결정 377). 연습 화면도 같은 글을 쓴다.
 const HELP_CHAIN := " · 이어 치기는 번호 차례대로 막기를 옮긴다(누른 채 옮기면 막고, 박자마다 새로 누르면 패리)"
 const HELP_SWEEP := " · 휩쓸기는 막기를 쥔 채 점을 따라 끈다(떼면 뚫리고 패리는 없다)"
+## 헛손질이 있는 상대에만 붙는다(결정 669). 연습 화면도 같은 글을 쓴다.
+const HELP_FEINT := " · 점선 고리는 헛손질 — 그 칸을 막고 있으면 속아서 틈이 없다"
 ## 빈틈의 확률이 있는 상대에만 붙는다(결정 404). %s는 상한의 글.
 const HELP_OPENING := " · 막아도 틈을 안 줄 때가 있다(낮은 소리)%s"
 const HELP_HEIGHT := " · 고리가 뜬 칸(방향과 높이)에 마우스를 두고 막는다"
 ## 뛰어드는 찌르기(결정 451·454). 연습 화면도 같은 글을 쓴다.
 const HELP_DIVE := " · 뛰어드는 찌르기는 막기를 떼고 멀리까지 물러서면 헛친다(막으면 밀착으로 밀고 온다)"
+## 치고 빠지기(계획 045 결정 702). %s는 전진 키 이름. 연습 화면도 같은 글을 쓴다.
+const HELP_WITHDRAW := " · 꺾쇠(︽) 고리 뒤에는 물러난다 — 막고 나서 막기를 떼고 %s로 따라붙어 친다(꺾쇠가 없으면 그 자리에서. 방심한 판이면 런지가 한 번 닿는다)"
+## 박자 고리(계획 042a 결정 635). 연습 화면의 막는 법만 쓴다. 칸 안에 들게 줄인 글이다(계획의 줄인 글).
+const HELP_BEAT := " · 엇박은 막대가 길수록 늦게 온다(쥐면 틈이 짧고, 마지막 박에 새로 누르면 크게 열린다)"
 ## 부위별 반격(계획 R02). 연습 화면의 "반격 실험"도 같은 글을 쓴다.
 const HELP_PART := " · 반격 실험: 팔을 스치면 예비 동작이 느려지고, 다리를 스친 뒤 패리는 빈틈이 더 열리며, 머리는 큰 공격 뒤에만 닿는다"
 ## 엉킴 게이지가 이 값 이상이고 간격이 밀착이면 경고를 낸다(게이지의 색, 가운데 글자, 내 칼의 경고 표시).
@@ -46,6 +55,9 @@ const BIND_WARN_TEXT := "칼이 엉킨다!"
 const RESUME_HOLD_TEXT := "다시 시작한다"
 ## 게이지의 짙은 띠와 무대 위 글의 테두리 색(바이블 6절 경고 규칙 2).
 const BAND_COLOR := Color("#2E2620")
+## 자세 칸의 번쩍임(계획 H03 결정 945): 상아색에서 빈 칸의 색으로, 코어 시각 0.25초.
+const FLASH_COLOR := Color(1.0, 0.96, 0.84)
+const FLASH_TIME := 0.25
 ## 패널의 층: 무대(−2)와 상대·내 손(0) 사이라 칼과 손이 패널 위로 지난다(결정 316).
 const BACK_LAYER := -1
 ## 조준 패널의 윗변(아래 앵커 기준). 덧말이 붙으면 한 줄만큼 올라간다.
@@ -119,14 +131,26 @@ static func help_text(opponent: OpponentData, p_day_mode := false, has_hat := fa
 	# 패턴이 있는 상대만 막는 법을 덧붙인다(결정 377).
 	var has_chain := false
 	var has_sweep := false
+	var has_feint := false
+	var flat: Array[AttackData] = []
 	for atk in opponent.attacks:
+		flat.append(atk)
+		for variant in atk.variants:
+			if variant is AttackData:
+				flat.append(variant as AttackData)
+	for atk in flat:
 		if not atk.chain.is_empty():
 			has_sweep = has_sweep or atk.sweep
 			has_chain = has_chain or not atk.sweep
+		has_feint = has_feint or atk.feint
+		for step: Resource in atk.chain:
+			has_feint = has_feint or (step as AttackData).feint
 	if has_chain:
 		text += HELP_CHAIN
 	if has_sweep:
 		text += HELP_SWEEP
+	if has_feint:
+		text += HELP_FEINT
 	if uses_heights(opponent):
 		text += HELP_HEIGHT
 	if opponent.opening_chance < 1.0:
@@ -135,6 +159,10 @@ static func help_text(opponent: OpponentData, p_day_mode := false, has_hat := fa
 		if atk.dive:
 			text += HELP_DIVE
 			break
+	if has_withdraw(opponent.attacks):
+		text += HELP_WITHDRAW % Controls.help_name(&"step_forward")
+	if has_cover(opponent.attacks):
+		text += HELP_COVER
 	if opponent.part_effects != null:
 		text += HELP_PART
 	if opponent.close_hit_posture_loss > 1:
@@ -161,6 +189,28 @@ static func help_text(opponent: OpponentData, p_day_mode := false, has_hat := fa
 			count = "(한 판에 %d번)" % opponent.complacent_limit
 		text += "\n" + HELP_LUNGE % [Controls.help_name(&"step_back"), Controls.help_name(&"attack"), count]
 	return text
+
+
+## 공격 목록의 뿌리나 변주에 치고 빠지는 길이 있는가(결정 702).
+static func has_withdraw(attacks: Array) -> bool:
+	for atk: AttackData in attacks:
+		if atk.withdraw:
+			return true
+		for variant in atk.variants:
+			if variant is AttackData and (variant as AttackData).withdraw:
+				return true
+	return false
+
+
+## 공격 목록의 뿌리나 변주에 송곳 가림이 있는가(결정 831). has_withdraw의 꼴이고 남의 훑기에 기대지 않는다.
+static func has_cover(attacks: Array) -> bool:
+	for atk: AttackData in attacks:
+		if not atk.cover_columns.is_empty():
+			return true
+		for variant in atk.variants:
+			if variant is AttackData and not (variant as AttackData).cover_columns.is_empty():
+				return true
+	return false
 
 
 ## 이 판에서 노릴 수 있는 부위 가운데 스치면 2칸 이상 깎이는 것. {칸 수: [부위 이름, …]}
@@ -252,6 +302,18 @@ class PostureCells extends Control:
 	var fill_color := Color("7A5232")
 	var empty_color := DuelHud.PARCHMENT
 	var centered := true
+	## 방금 잃은 칸 [flash_from, flash_to)의 번쩍임(계획 H03 결정 945). flash_k는 0~1의 진행이고 음수면 없다.
+	var flash_from := 0
+	var flash_to := 0
+	var flash_k := -1.0
+
+	func set_flash(p_from: int, p_to: int, p_k: float) -> void:
+		if p_from == flash_from and p_to == flash_to and is_equal_approx(p_k, flash_k):
+			return
+		flash_from = p_from
+		flash_to = p_to
+		flash_k = p_k
+		queue_redraw()
 
 	func set_values(p_total: int, p_filled: int) -> void:
 		if p_total == total and p_filled == filled:
@@ -265,6 +327,12 @@ class PostureCells extends Control:
 		var x0 := (size.x - width) * 0.5 if centered else 0.0
 		for i in total:
 			var rect := Rect2(x0 + i * (cell.x + gap), 0.0, cell.x, cell.y)
+			if flash_k >= 0.0 and i >= flash_from and i < flash_to:
+				var h := cell.y * (1.0 - 0.4 * sin(PI * flash_k))
+				var shrunk := Rect2(rect.position.x, (cell.y - h) * 0.5, cell.x, h)
+				draw_rect(shrunk, DuelHud.FLASH_COLOR.lerp(empty_color, flash_k))
+				draw_rect(shrunk, DuelHud.INK, false, 1.5)
+				continue
 			draw_rect(rect, fill_color if i < filled else empty_color)
 			if i >= filled:
 				DuelHud.draw_hatch(self, rect, Color(DuelHud.INK, 0.6))
@@ -279,14 +347,25 @@ class Meter extends Control:
 	var label := ""
 	var value := 0
 	var pending := 0
+	var text := ""
 
-	func set_values(p_label: String, p_value: int, p_pending: int) -> void:
-		if p_label == label and p_value == value and p_pending == pending:
+	func set_values(p_label: String, p_value: int, p_pending: int, p_text: String = "") -> void:
+		if p_label == label and p_value == value and p_pending == pending and p_text == text:
 			return
 		label = p_label
 		value = p_value
 		pending = p_pending
+		text = p_text
 		queue_redraw()
+
+	## 막대 곁에 보이는 글. 조건이 글을 주면 그 글이고, 아니면 "이름 값"(+ 지금 끝나면 덧말).
+	func shown_text() -> String:
+		if text != "":
+			return text
+		var shown := "%s %d" % [label, value]
+		if pending > 0:
+			shown += " (지금 끝나면 +%d)" % pending
+		return shown
 
 	func _draw() -> void:
 		var bar := Rect2(0, 0, BAR_WIDTH, size.y)
@@ -302,10 +381,7 @@ class Meter extends Control:
 			var tick := size.y * (0.6 if k == 5 else 0.35)
 			draw_line(Vector2(x, size.y), Vector2(x, size.y - tick), DuelHud.INK, 1.0)
 		draw_rect(bar, DuelHud.INK, false, 1.5)
-		var text := "%s %d" % [label, value]
-		if pending > 0:
-			text += " (지금 끝나면 +%d)" % pending
-		draw_string(get_theme_default_font(), Vector2(BAR_WIDTH + 10, size.y - 4), text,
+		draw_string(get_theme_default_font(), Vector2(BAR_WIDTH + 10, size.y - 4), shown_text(),
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 14, DuelHud.INK)
 
 
@@ -368,6 +444,8 @@ var _back_root: Control
 var _aim_panel: Panel
 var _opponent_label: Label
 var _opponent_cells: PostureCells
+var _flash_opp := {}
+var _flash_player := {}
 ## 상대에게 걸린 지속 효과(팔 둔함·다리 흔들림. 계획 R02). 걸려 있을 때만 보인다.
 var _effect_label: Label
 var _player_label: Label
@@ -470,6 +548,8 @@ func _ready() -> void:
 
 
 func reset() -> void:
+	_flash_opp = {}
+	_flash_player = {}
 	_log.clear()
 	_log_label.text = ""
 
@@ -502,6 +582,7 @@ func toggle_debug() -> void:
 
 
 func on_event(ev: Dictionary) -> void:
+	_note_posture_loss(ev)
 	var text := _describe(ev)
 	if text == "":
 		return
@@ -511,13 +592,36 @@ func on_event(ev: Dictionary) -> void:
 	_log_label.text = "\n".join(_log)
 
 
+## 잃은 칸의 범위와 코어 시각을 기억한다: 내가 넣은 스침은 상대의 칸, 내가 맞은 스침은 내 칸.
+func _note_posture_loss(ev: Dictionary) -> void:
+	var type: StringName = ev.get("type", &"")
+	if type == DuelRecord.ATTACK and int(ev.get("result", -1)) == DT.AttackResult.GRAZE:
+		if bool(ev.get("spiked", false)) or bool(ev.get("rash", false)) or bool(ev.get("dodged", false)):
+			return
+		var left := int(ev.get("opponent_posture", 0))
+		_flash_opp = {"from": left, "to": left + int(ev.get("cells", 0)), "t": float(ev.get("t", 0.0))}
+	elif type == DuelRecord.STRIKE and int(ev.get("posture_loss", 0)) > 0:
+		var kept := int(ev.get("player_posture", 0))
+		_flash_player = {"from": kept, "to": kept + int(ev["posture_loss"]), "t": float(ev.get("t", 0.0))}
+
+
+## 번쩍임의 진행(0~1, 코어 시각). 없거나 끝났거나 판이 끝났으면 -1.
+static func flash_progress(flash: Dictionary, core: DuelCore) -> float:
+	if flash.is_empty() or core.ended:
+		return -1.0
+	var k := (core.time - float(flash["t"])) / FLASH_TIME
+	return k if k >= 0.0 and k < 1.0 else -1.0
+
+
 func refresh(core: DuelCore) -> void:
 	var opp := core.opponent_data
 	_opponent_label.text = "%s — 자세 %d/%d" % [opp.display_name, core.brain.posture, opp.posture_max]
 	_opponent_cells.set_values(opp.posture_max, core.brain.posture)
+	_opponent_cells.set_flash(int(_flash_opp.get("from", 0)), int(_flash_opp.get("to", 0)), flash_progress(_flash_opp, core))
 	_refresh_effects(core)
 	_player_label.text = "내 자세 %d/%d" % [core.player_posture, core.rules.player_posture_max]
 	_player_cells.set_values(core.rules.player_posture_max, core.player_posture)
+	_player_cells.set_flash(int(_flash_player.get("from", 0)), int(_flash_player.get("to", 0)), flash_progress(_flash_player, core))
 	_distance_label.text = "간격: %s" % DT.DISTANCE_NAMES[core.distance]
 	var bind_warn := bind_warning_now(core)
 	_bind_bar.visible = core.has_bind()
@@ -567,7 +671,7 @@ func refresh(core: DuelCore) -> void:
 					break
 	_meter.visible = not meter.is_empty()
 	if not meter.is_empty():
-		_meter.set_values(str(meter["label"]), int(meter["value"]), int(meter["pending"]))
+		_meter.set_values(str(meter["label"]), int(meter["value"]), int(meter["pending"]), str(meter.get("text", "")))
 
 	if _debug_label.visible:
 		var brain := core.brain
@@ -629,7 +733,11 @@ static func lunge_aim_note(core: DuelCore, verdict := -1) -> String:
 				return LUNGE_AIM_DODGE
 			DT.Forecast.NO_OPENING:
 				return LUNGE_AIM_WAIT
+			DT.Forecast.SPIKE_COVERED:
+				return LUNGE_AIM_SPIKE
 		return ""
+	if core.lunge_spiked_now():
+		return LUNGE_AIM_SPIKE
 	if core.is_rash_now():
 		return LUNGE_AIM_WAIT
 	if core.current_aim_part() == DuelTypes.Part.HEAD and core.lunge_head_dodged_now():
@@ -649,6 +757,11 @@ static func _hit_reason(ev: Dictionary) -> String:
 
 func _describe(ev: Dictionary) -> String:
 	match ev["type"]:
+		DuelRecord.DISTANCE:
+			if ev.get("by", "") == "withdraw":
+				return "상대가 물러났다 — 막기 떼고 따라붙어라"
+		DuelRecord.FEINT:
+			return "속았다 — 헛손질을 막았다" if ev["bitten"] else "헛손질 — 흘렸다"
 		DuelRecord.PATTERN_STEP:
 			var step_atk := ev["attack"] as AttackData
 			var step_height := int(ev.get("height", -1))
@@ -661,6 +774,8 @@ func _describe(ev: Dictionary) -> String:
 				return "%s — 틈을 안 줬다%s" % ["헛침" if ev["result"] == DT.StrikeResult.WHIFF \
 						else "패리" if ev["result"] == DT.StrikeResult.PARRIED else "막음",
 					" (다음은 열린다)" if OpponentView._limit_reached(ev) else ""]
+			if ev.get("bitten", false):
+				return "%s — 속아서 틈이 없다" % ("패리" if ev["result"] == DT.StrikeResult.PARRIED else "막음")
 			match ev["result"]:
 				DT.StrikeResult.BLOCKED:
 					if ev["braced"]:
@@ -690,6 +805,8 @@ func _describe(ev: Dictionary) -> String:
 				DT.AttackResult.WHIFF:
 					return "헛침 (멀리)"
 				DT.AttackResult.BLOCKED:
+					if ev.get("spiked", false):
+						return "송곳에 걸렸다 — 가린 줄(빈틈이 닫혔다)"
 					if ev["dodged"]:
 						return "머리를 피했다 — 패리했거나 큰 공격 뒤에만 닿는다"
 					if ev.get("lunge", false) and ev["rash"]:

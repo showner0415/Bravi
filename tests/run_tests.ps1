@@ -12,7 +12,9 @@
 param(
 	# verify.ps1 imports once and passes this.
 	[switch]$SkipImport,
-	[string]$Godot
+	[string]$Godot,
+	# Comma list of file-name fragments: run only those test files (split a run when memory is short).
+	[string[]]$Only = @()
 )
 
 . "$PSScriptRoot\godot_path.ps1"
@@ -41,7 +43,11 @@ if ($importExit -ne 0 -or $importErrors.Count -gt 0) {
 	exit 1
 }
 
-$out = cmd /c "`"$Godot`" --headless --path `"$project`" --script res://tests/run_tests.gd --quit-after 6000 2>&1"
+$userArgs = ''
+$onlyList = @($Only | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' })
+$onlyArg = $onlyList -join ','
+if ($onlyArg -ne '') { $userArgs = " -- --only=`"$onlyArg`"" }
+$out = cmd /c "`"$Godot`" --headless --path `"$project`" --script res://tests/run_tests.gd --quit-after 6000$userArgs 2>&1"
 $testExit = $LASTEXITCODE
 $out | ForEach-Object { Write-Output $_ }
 
@@ -52,6 +58,7 @@ $allPass = @($out | Where-Object { $_ -match '^ALL PASS \d+/\d+\s*$' })
 $reasons = @()
 if ($testExit -ne 0) { $reasons += "exit code $testExit" }
 if ($allPass.Count -ne 1) { $reasons += 'no "ALL PASS" line' }
+if ($onlyArg -ne '' -and $allPass.Count -eq 1 -and $allPass[0] -match '^ALL PASS 0/') { $reasons += 'no test matched -Only' }
 if ($errors.Count -gt 0) { $reasons += "error lines $($errors.Count)" }
 
 Write-Output ''

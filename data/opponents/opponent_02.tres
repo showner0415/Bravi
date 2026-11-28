@@ -1,10 +1,11 @@
-[gd_resource type="Resource" script_class="OpponentData" load_steps=44 format=3]
+[gd_resource type="Resource" script_class="OpponentData" load_steps=74 format=3]
 
 [ext_resource type="Script" path="res://scripts/ai/attack_data.gd" id="1_attack"]
 [ext_resource type="Script" path="res://scripts/ai/habit_data.gd" id="2_habit"]
 [ext_resource type="Script" path="res://scripts/ai/opponent_data.gd" id="3_opponent"]
 [ext_resource type="Script" path="res://scripts/duel/pose_data.gd" id="4_pose"]
 [ext_resource type="Resource" path="res://data/opponents/bruno_art.tres" id="5_art"]
+[ext_resource type="Script" path="res://scripts/ai/style_tier.gd" id="6_tier"]
 
 [sub_resource type="Resource" id="pose_thrust_tell"]
 script = ExtResource("4_pose")
@@ -155,7 +156,7 @@ tell_pose = SubResource("pose_sweep_lr_mid")
 hold_arm_deg = -15.6
 strike_pose = SubResource("pose_sweep_lr_mid")
 recover_arm_deg = -15.6
-pose_color = Color(1, 0.5, 0.1, 1)
+pose_color = Color(0.62, 0.12, 0.5, 1)
 
 [sub_resource type="Resource" id="sweep_lr_end"]
 script = ExtResource("1_attack")
@@ -167,7 +168,7 @@ tell_pose = SubResource("pose_sweep_lr_end")
 hold_arm_deg = -41.9
 strike_pose = SubResource("pose_sweep_lr_end")
 recover_arm_deg = -41.9
-pose_color = Color(1, 0.5, 0.1, 1)
+pose_color = Color(0.62, 0.12, 0.5, 1)
 
 [sub_resource type="Resource" id="sweep_rl_mid"]
 script = ExtResource("1_attack")
@@ -179,7 +180,7 @@ tell_pose = SubResource("pose_sweep_rl_mid")
 hold_arm_deg = -15.6
 strike_pose = SubResource("pose_sweep_rl_mid")
 recover_arm_deg = -15.6
-pose_color = Color(1, 0.5, 0.1, 1)
+pose_color = Color(0.62, 0.12, 0.5, 1)
 
 [sub_resource type="Resource" id="sweep_rl_end"]
 script = ExtResource("1_attack")
@@ -191,7 +192,7 @@ tell_pose = SubResource("pose_sweep_rl_end")
 hold_arm_deg = 10.8
 strike_pose = SubResource("pose_sweep_rl_end")
 recover_arm_deg = 10.8
-pose_color = Color(1, 0.5, 0.1, 1)
+pose_color = Color(0.62, 0.12, 0.5, 1)
 
 [sub_resource type="Resource" id="sweep_lr_down_mid"]
 script = ExtResource("1_attack")
@@ -203,7 +204,7 @@ tell_pose = SubResource("pose_sweep_lr_mid")
 hold_arm_deg = -15.6
 strike_pose = SubResource("pose_sweep_lr_mid")
 recover_arm_deg = -15.6
-pose_color = Color(1, 0.5, 0.1, 1)
+pose_color = Color(0.62, 0.12, 0.5, 1)
 
 [sub_resource type="Resource" id="sweep_lr_down_end"]
 script = ExtResource("1_attack")
@@ -215,7 +216,7 @@ tell_pose = SubResource("pose_sweep_lr_end")
 hold_arm_deg = -41.9
 strike_pose = SubResource("pose_sweep_lr_end")
 recover_arm_deg = -41.9
-pose_color = Color(1, 0.5, 0.1, 1)
+pose_color = Color(0.62, 0.12, 0.5, 1)
 
 [sub_resource type="Resource" id="pattern_sweep_down"]
 script = ExtResource("1_attack")
@@ -230,9 +231,10 @@ tell_pose = SubResource("pose_cut_left_tell")
 hold_arm_deg = 118.0
 strike_pose = SubResource("pose_cut_left_strike")
 recover_arm_deg = 10.8
-pose_color = Color(1, 0.5, 0.1, 1)
+pose_color = Color(0.62, 0.12, 0.5, 1)
 chain = Array[Resource]([SubResource("sweep_lr_down_mid"), SubResource("sweep_lr_down_end")])
 sweep = true
+signature = true
 
 [sub_resource type="Resource" id="sweep_lr_low_mid"]
 script = ExtResource("1_attack")
@@ -244,7 +246,7 @@ tell_pose = SubResource("pose_sweep_lr_mid")
 hold_arm_deg = -15.6
 strike_pose = SubResource("pose_sweep_lr_mid")
 recover_arm_deg = -15.6
-pose_color = Color(1, 0.5, 0.1, 1)
+pose_color = Color(0.62, 0.12, 0.5, 1)
 
 [sub_resource type="Resource" id="sweep_lr_low_end"]
 script = ExtResource("1_attack")
@@ -256,7 +258,7 @@ tell_pose = SubResource("pose_sweep_lr_end")
 hold_arm_deg = -41.9
 strike_pose = SubResource("pose_sweep_lr_end")
 recover_arm_deg = -41.9
-pose_color = Color(1, 0.5, 0.1, 1)
+pose_color = Color(0.62, 0.12, 0.5, 1)
 
 [sub_resource type="Resource" id="pattern_sweep_low"]
 script = ExtResource("1_attack")
@@ -271,9 +273,10 @@ tell_pose = SubResource("pose_cut_left_tell")
 hold_arm_deg = 118.0
 strike_pose = SubResource("pose_cut_left_strike")
 recover_arm_deg = 10.8
-pose_color = Color(1, 0.5, 0.1, 1)
+pose_color = Color(0.62, 0.12, 0.5, 1)
 chain = Array[Resource]([SubResource("sweep_lr_low_mid"), SubResource("sweep_lr_low_end")])
 sweep = true
+signature = true
 
 [sub_resource type="Resource" id="pattern_sweep"]
 script = ExtResource("1_attack")
@@ -289,9 +292,10 @@ tell_pose = SubResource("pose_cut_left_tell")
 hold_arm_deg = 118.0
 strike_pose = SubResource("pose_cut_left_strike")
 recover_arm_deg = 10.8
-pose_color = Color(1, 0.5, 0.1, 1)
+pose_color = Color(0.62, 0.12, 0.5, 1)
 chain = Array[Resource]([SubResource("sweep_lr_mid"), SubResource("sweep_lr_end")])
 sweep = true
+signature = true
 
 [sub_resource type="Resource" id="sweep_rl_up_mid"]
 script = ExtResource("1_attack")
@@ -303,7 +307,7 @@ tell_pose = SubResource("pose_sweep_rl_mid")
 hold_arm_deg = -15.6
 strike_pose = SubResource("pose_sweep_rl_mid")
 recover_arm_deg = -15.6
-pose_color = Color(1, 0.5, 0.1, 1)
+pose_color = Color(0.62, 0.12, 0.5, 1)
 
 [sub_resource type="Resource" id="sweep_rl_up_end"]
 script = ExtResource("1_attack")
@@ -315,7 +319,7 @@ tell_pose = SubResource("pose_sweep_rl_end")
 hold_arm_deg = 10.8
 strike_pose = SubResource("pose_sweep_rl_end")
 recover_arm_deg = 10.8
-pose_color = Color(1, 0.5, 0.1, 1)
+pose_color = Color(0.62, 0.12, 0.5, 1)
 
 [sub_resource type="Resource" id="pattern_sweep_back_up"]
 script = ExtResource("1_attack")
@@ -330,9 +334,10 @@ tell_pose = SubResource("pose_cut_right_tell")
 hold_arm_deg = -88.0
 strike_pose = SubResource("pose_cut_right_strike")
 recover_arm_deg = -41.9
-pose_color = Color(1, 0.5, 0.1, 1)
+pose_color = Color(0.62, 0.12, 0.5, 1)
 chain = Array[Resource]([SubResource("sweep_rl_up_mid"), SubResource("sweep_rl_up_end")])
 sweep = true
+signature = true
 
 [sub_resource type="Resource" id="sweep_rl_low_mid"]
 script = ExtResource("1_attack")
@@ -344,7 +349,7 @@ tell_pose = SubResource("pose_sweep_rl_mid")
 hold_arm_deg = -15.6
 strike_pose = SubResource("pose_sweep_rl_mid")
 recover_arm_deg = -15.6
-pose_color = Color(1, 0.5, 0.1, 1)
+pose_color = Color(0.62, 0.12, 0.5, 1)
 
 [sub_resource type="Resource" id="sweep_rl_low_end"]
 script = ExtResource("1_attack")
@@ -356,7 +361,7 @@ tell_pose = SubResource("pose_sweep_rl_end")
 hold_arm_deg = 10.8
 strike_pose = SubResource("pose_sweep_rl_end")
 recover_arm_deg = 10.8
-pose_color = Color(1, 0.5, 0.1, 1)
+pose_color = Color(0.62, 0.12, 0.5, 1)
 
 [sub_resource type="Resource" id="pattern_sweep_back_low"]
 script = ExtResource("1_attack")
@@ -371,9 +376,10 @@ tell_pose = SubResource("pose_cut_right_tell")
 hold_arm_deg = -88.0
 strike_pose = SubResource("pose_cut_right_strike")
 recover_arm_deg = -41.9
-pose_color = Color(1, 0.5, 0.1, 1)
+pose_color = Color(0.62, 0.12, 0.5, 1)
 chain = Array[Resource]([SubResource("sweep_rl_low_mid"), SubResource("sweep_rl_low_end")])
 sweep = true
+signature = true
 
 [sub_resource type="Resource" id="pattern_sweep_back"]
 script = ExtResource("1_attack")
@@ -389,9 +395,433 @@ tell_pose = SubResource("pose_cut_right_tell")
 hold_arm_deg = -88.0
 strike_pose = SubResource("pose_cut_right_strike")
 recover_arm_deg = -41.9
-pose_color = Color(1, 0.5, 0.1, 1)
+pose_color = Color(0.62, 0.12, 0.5, 1)
 chain = Array[Resource]([SubResource("sweep_rl_mid"), SubResource("sweep_rl_end")])
 sweep = true
+signature = true
+
+[sub_resource type="Resource" id="sweep_lr_top_mid"]
+script = ExtResource("1_attack")
+heights = Array[int]([0])
+attack_name = "휩쓸기"
+direction = 1
+tell_time = 0.6
+tell_pose = SubResource("pose_sweep_lr_mid")
+hold_arm_deg = -15.6
+strike_pose = SubResource("pose_sweep_lr_mid")
+recover_arm_deg = -15.6
+pose_color = Color(0.62, 0.12, 0.5, 1)
+
+[sub_resource type="Resource" id="sweep_rl_top_mid"]
+script = ExtResource("1_attack")
+heights = Array[int]([0])
+attack_name = "되돌려 휩쓸기"
+direction = 1
+tell_time = 0.6
+tell_pose = SubResource("pose_sweep_rl_mid")
+hold_arm_deg = -15.6
+strike_pose = SubResource("pose_sweep_rl_mid")
+recover_arm_deg = -15.6
+pose_color = Color(0.62, 0.12, 0.5, 1)
+
+[sub_resource type="Resource" id="sweep_lr_return_mid"]
+script = ExtResource("1_attack")
+heights = Array[int]([1])
+attack_name = "휩쓸기"
+direction = 1
+tell_time = 0.6
+tell_pose = SubResource("pose_sweep_rl_mid")
+hold_arm_deg = -15.6
+strike_pose = SubResource("pose_sweep_rl_mid")
+recover_arm_deg = -15.6
+pose_color = Color(0.62, 0.12, 0.5, 1)
+
+[sub_resource type="Resource" id="sweep_rl_return_mid"]
+script = ExtResource("1_attack")
+heights = Array[int]([1])
+attack_name = "되돌려 휩쓸기"
+direction = 1
+tell_time = 0.6
+tell_pose = SubResource("pose_sweep_lr_mid")
+hold_arm_deg = -15.6
+strike_pose = SubResource("pose_sweep_lr_mid")
+recover_arm_deg = -15.6
+pose_color = Color(0.62, 0.12, 0.5, 1)
+
+[sub_resource type="Resource" id="sweep_bend"]
+script = ExtResource("1_attack")
+heights = Array[int]([1])
+attack_name = "휩쓸기"
+direction = 0
+tell_time = 1.0
+recovery_time = 1.8
+weight = 1.0
+is_big = true
+tell_pose = SubResource("pose_cut_left_tell")
+hold_arm_deg = 118.0
+strike_pose = SubResource("pose_cut_left_strike")
+recover_arm_deg = 10.8
+pose_color = Color(0.62, 0.12, 0.5, 1)
+chain = Array[Resource]([SubResource("sweep_lr_mid"), SubResource("sweep_lr_end"), SubResource("sweep_lr_down_end")])
+sweep = true
+signature = true
+
+[sub_resource type="Resource" id="sweep_back_bend"]
+script = ExtResource("1_attack")
+heights = Array[int]([1])
+attack_name = "되돌려 휩쓸기"
+direction = 2
+tell_time = 1.0
+recovery_time = 1.8
+weight = 1.0
+is_big = true
+tell_pose = SubResource("pose_cut_right_tell")
+hold_arm_deg = -88.0
+strike_pose = SubResource("pose_cut_right_strike")
+recover_arm_deg = -41.9
+pose_color = Color(0.62, 0.12, 0.5, 1)
+chain = Array[Resource]([SubResource("sweep_rl_mid"), SubResource("sweep_rl_end"), SubResource("sweep_rl_up_end")])
+sweep = true
+signature = true
+
+[sub_resource type="Resource" id="sweep_stair"]
+script = ExtResource("1_attack")
+heights = Array[int]([0])
+attack_name = "휩쓸기"
+direction = 0
+tell_time = 1.0
+recovery_time = 1.8
+weight = 1.0
+is_big = true
+tell_pose = SubResource("pose_cut_left_tell")
+hold_arm_deg = 118.0
+strike_pose = SubResource("pose_cut_left_strike")
+recover_arm_deg = 10.8
+pose_color = Color(0.62, 0.12, 0.5, 1)
+chain = Array[Resource]([SubResource("sweep_lr_top_mid"), SubResource("sweep_lr_mid"), SubResource("sweep_lr_end")])
+sweep = true
+signature = true
+
+[sub_resource type="Resource" id="sweep_back_stair"]
+script = ExtResource("1_attack")
+heights = Array[int]([2])
+attack_name = "되돌려 휩쓸기"
+direction = 2
+tell_time = 1.0
+recovery_time = 1.8
+weight = 1.0
+is_big = true
+tell_pose = SubResource("pose_cut_right_tell")
+hold_arm_deg = -88.0
+strike_pose = SubResource("pose_cut_right_strike")
+recover_arm_deg = -41.9
+pose_color = Color(0.62, 0.12, 0.5, 1)
+chain = Array[Resource]([SubResource("sweep_rl_low_mid"), SubResource("sweep_rl_mid"), SubResource("sweep_rl_end")])
+sweep = true
+signature = true
+
+[sub_resource type="Resource" id="sweep_vert"]
+script = ExtResource("1_attack")
+heights = Array[int]([0])
+attack_name = "휩쓸기"
+direction = 1
+tell_time = 1.0
+recovery_time = 1.6
+weight = 1.0
+is_big = true
+tell_pose = SubResource("pose_big_cut_tell")
+hold_arm_deg = 160.0
+strike_pose = SubResource("pose_big_cut_strike")
+recover_arm_deg = -11.5
+pose_color = Color(0.62, 0.12, 0.5, 1)
+chain = Array[Resource]([SubResource("sweep_lr_mid"), SubResource("sweep_lr_low_mid")])
+sweep = true
+signature = true
+
+[sub_resource type="Resource" id="sweep_back_vert"]
+script = ExtResource("1_attack")
+heights = Array[int]([2])
+attack_name = "되돌려 휩쓸기"
+direction = 1
+tell_time = 1.0
+recovery_time = 1.6
+weight = 1.0
+is_big = true
+tell_pose = SubResource("pose_big_cut_tell")
+hold_arm_deg = 160.0
+strike_pose = SubResource("pose_big_cut_strike")
+recover_arm_deg = -11.5
+pose_color = Color(0.62, 0.12, 0.5, 1)
+chain = Array[Resource]([SubResource("sweep_rl_mid"), SubResource("sweep_rl_top_mid")])
+sweep = true
+signature = true
+
+[sub_resource type="Resource" id="sweep_return"]
+script = ExtResource("1_attack")
+heights = Array[int]([1])
+attack_name = "휩쓸기"
+direction = 0
+tell_time = 1.0
+recovery_time = 1.8
+weight = 1.0
+is_big = true
+tell_pose = SubResource("pose_cut_left_tell")
+hold_arm_deg = 118.0
+strike_pose = SubResource("pose_cut_left_strike")
+recover_arm_deg = 10.8
+pose_color = Color(0.62, 0.12, 0.5, 1)
+chain = Array[Resource]([SubResource("sweep_lr_mid"), SubResource("sweep_lr_end"), SubResource("sweep_lr_return_mid")])
+sweep = true
+signature = true
+
+[sub_resource type="Resource" id="sweep_back_return"]
+script = ExtResource("1_attack")
+heights = Array[int]([1])
+attack_name = "되돌려 휩쓸기"
+direction = 2
+tell_time = 1.0
+recovery_time = 1.8
+weight = 1.0
+is_big = true
+tell_pose = SubResource("pose_cut_right_tell")
+hold_arm_deg = -88.0
+strike_pose = SubResource("pose_cut_right_strike")
+recover_arm_deg = -41.9
+pose_color = Color(0.62, 0.12, 0.5, 1)
+chain = Array[Resource]([SubResource("sweep_rl_mid"), SubResource("sweep_rl_end"), SubResource("sweep_rl_return_mid")])
+sweep = true
+signature = true
+
+[sub_resource type="Resource" id="pattern_sweep_t2"]
+script = ExtResource("1_attack")
+heights = Array[int]([1])
+variants = Array[Resource]([SubResource("pattern_sweep_down"), SubResource("pattern_sweep_low"), SubResource("sweep_bend")])
+attack_name = "휩쓸기"
+direction = 0
+tell_time = 1.0
+recovery_time = 1.6
+weight = 1.0
+is_big = true
+tell_pose = SubResource("pose_cut_left_tell")
+hold_arm_deg = 118.0
+strike_pose = SubResource("pose_cut_left_strike")
+recover_arm_deg = 10.8
+pose_color = Color(0.62, 0.12, 0.5, 1)
+chain = Array[Resource]([SubResource("sweep_lr_mid"), SubResource("sweep_lr_end")])
+sweep = true
+signature = true
+
+[sub_resource type="Resource" id="pattern_sweep_back_t2"]
+script = ExtResource("1_attack")
+heights = Array[int]([1])
+variants = Array[Resource]([SubResource("pattern_sweep_back_up"), SubResource("pattern_sweep_back_low"), SubResource("sweep_back_bend")])
+attack_name = "되돌려 휩쓸기"
+direction = 2
+tell_time = 1.0
+recovery_time = 1.6
+weight = 1.0
+is_big = true
+tell_pose = SubResource("pose_cut_right_tell")
+hold_arm_deg = -88.0
+strike_pose = SubResource("pose_cut_right_strike")
+recover_arm_deg = -41.9
+pose_color = Color(0.62, 0.12, 0.5, 1)
+chain = Array[Resource]([SubResource("sweep_rl_mid"), SubResource("sweep_rl_end")])
+sweep = true
+signature = true
+
+[sub_resource type="Resource" id="pattern_sweep_t4"]
+script = ExtResource("1_attack")
+heights = Array[int]([1])
+variants = Array[Resource]([SubResource("pattern_sweep_down"), SubResource("pattern_sweep_low"), SubResource("sweep_bend"), SubResource("sweep_stair")])
+attack_name = "휩쓸기"
+direction = 0
+tell_time = 1.0
+recovery_time = 1.6
+weight = 1.0
+is_big = true
+tell_pose = SubResource("pose_cut_left_tell")
+hold_arm_deg = 118.0
+strike_pose = SubResource("pose_cut_left_strike")
+recover_arm_deg = 10.8
+pose_color = Color(0.62, 0.12, 0.5, 1)
+chain = Array[Resource]([SubResource("sweep_lr_mid"), SubResource("sweep_lr_end")])
+sweep = true
+signature = true
+
+[sub_resource type="Resource" id="pattern_sweep_back_t4"]
+script = ExtResource("1_attack")
+heights = Array[int]([1])
+variants = Array[Resource]([SubResource("pattern_sweep_back_up"), SubResource("pattern_sweep_back_low"), SubResource("sweep_back_bend"), SubResource("sweep_back_stair")])
+attack_name = "되돌려 휩쓸기"
+direction = 2
+tell_time = 1.0
+recovery_time = 1.6
+weight = 1.0
+is_big = true
+tell_pose = SubResource("pose_cut_right_tell")
+hold_arm_deg = -88.0
+strike_pose = SubResource("pose_cut_right_strike")
+recover_arm_deg = -41.9
+pose_color = Color(0.62, 0.12, 0.5, 1)
+chain = Array[Resource]([SubResource("sweep_rl_mid"), SubResource("sweep_rl_end")])
+sweep = true
+signature = true
+
+[sub_resource type="Resource" id="pattern_sweep_t6"]
+script = ExtResource("1_attack")
+heights = Array[int]([1])
+variants = Array[Resource]([SubResource("pattern_sweep_down"), SubResource("pattern_sweep_low"), SubResource("sweep_bend"), SubResource("sweep_stair"), SubResource("sweep_vert")])
+attack_name = "휩쓸기"
+direction = 0
+tell_time = 1.0
+recovery_time = 1.6
+weight = 1.0
+is_big = true
+tell_pose = SubResource("pose_cut_left_tell")
+hold_arm_deg = 118.0
+strike_pose = SubResource("pose_cut_left_strike")
+recover_arm_deg = 10.8
+pose_color = Color(0.62, 0.12, 0.5, 1)
+chain = Array[Resource]([SubResource("sweep_lr_mid"), SubResource("sweep_lr_end")])
+sweep = true
+signature = true
+
+[sub_resource type="Resource" id="pattern_sweep_back_t6"]
+script = ExtResource("1_attack")
+heights = Array[int]([1])
+variants = Array[Resource]([SubResource("pattern_sweep_back_up"), SubResource("pattern_sweep_back_low"), SubResource("sweep_back_bend"), SubResource("sweep_back_stair"), SubResource("sweep_back_vert")])
+attack_name = "되돌려 휩쓸기"
+direction = 2
+tell_time = 1.0
+recovery_time = 1.6
+weight = 1.0
+is_big = true
+tell_pose = SubResource("pose_cut_right_tell")
+hold_arm_deg = -88.0
+strike_pose = SubResource("pose_cut_right_strike")
+recover_arm_deg = -41.9
+pose_color = Color(0.62, 0.12, 0.5, 1)
+chain = Array[Resource]([SubResource("sweep_rl_mid"), SubResource("sweep_rl_end")])
+sweep = true
+signature = true
+
+[sub_resource type="Resource" id="pattern_sweep_t7"]
+script = ExtResource("1_attack")
+heights = Array[int]([1])
+variants = Array[Resource]([SubResource("pattern_sweep_down"), SubResource("pattern_sweep_low"), SubResource("sweep_bend"), SubResource("sweep_stair"), SubResource("sweep_vert"), SubResource("sweep_return")])
+attack_name = "휩쓸기"
+direction = 0
+tell_time = 1.0
+recovery_time = 1.6
+weight = 1.0
+is_big = true
+tell_pose = SubResource("pose_cut_left_tell")
+hold_arm_deg = 118.0
+strike_pose = SubResource("pose_cut_left_strike")
+recover_arm_deg = 10.8
+pose_color = Color(0.62, 0.12, 0.5, 1)
+chain = Array[Resource]([SubResource("sweep_lr_mid"), SubResource("sweep_lr_end")])
+sweep = true
+signature = true
+
+[sub_resource type="Resource" id="pattern_sweep_back_t7"]
+script = ExtResource("1_attack")
+heights = Array[int]([1])
+variants = Array[Resource]([SubResource("pattern_sweep_back_up"), SubResource("pattern_sweep_back_low"), SubResource("sweep_back_bend"), SubResource("sweep_back_stair"), SubResource("sweep_back_vert"), SubResource("sweep_back_return")])
+attack_name = "되돌려 휩쓸기"
+direction = 2
+tell_time = 1.0
+recovery_time = 1.6
+weight = 1.0
+is_big = true
+tell_pose = SubResource("pose_cut_right_tell")
+hold_arm_deg = -88.0
+strike_pose = SubResource("pose_cut_right_strike")
+recover_arm_deg = -41.9
+pose_color = Color(0.62, 0.12, 0.5, 1)
+chain = Array[Resource]([SubResource("sweep_rl_mid"), SubResource("sweep_rl_end")])
+sweep = true
+signature = true
+
+[sub_resource type="Resource" id="attack_double_thrust"]
+script = ExtResource("1_attack")
+heights = Array[int]([0, 1])
+attack_name = "겹찌르기"
+direction = 1
+tell_time = 0.75
+recovery_time = 0.0
+weight = 1.0
+is_big = false
+tell_pose = SubResource("pose_thrust_tell")
+hold_arm_deg = 93.0
+strike_pose = SubResource("pose_thrust_strike")
+recover_arm_deg = -40.0
+pose_color = Color(1, 0.9, 0.25, 1)
+chain = Array[Resource]([SubResource("attack_thrust")])
+
+[sub_resource type="Resource" id="attack_thrust_slash_right"]
+script = ExtResource("1_attack")
+heights = Array[int]([0, 1])
+attack_name = "찌르고 베기"
+direction = 1
+tell_time = 0.75
+recovery_time = 0.55
+weight = 1.0
+is_big = false
+tell_pose = SubResource("pose_thrust_tell")
+hold_arm_deg = 93.0
+strike_pose = SubResource("pose_thrust_strike")
+recover_arm_deg = -40.0
+pose_color = Color(1, 0.9, 0.25, 1)
+chain = Array[Resource]([SubResource("attack_cut_right")])
+
+[sub_resource type="Resource" id="attack_thrust_slash"]
+script = ExtResource("1_attack")
+heights = Array[int]([0, 1])
+variants = Array[Resource]([SubResource("attack_thrust_slash_right")])
+attack_name = "찌르고 베기"
+direction = 1
+tell_time = 0.75
+recovery_time = 0.55
+weight = 1.0
+is_big = false
+tell_pose = SubResource("pose_thrust_tell")
+hold_arm_deg = 93.0
+strike_pose = SubResource("pose_thrust_strike")
+recover_arm_deg = -40.0
+pose_color = Color(1, 0.9, 0.25, 1)
+chain = Array[Resource]([SubResource("attack_cut_left")])
+
+[sub_resource type="Resource" id="tier_2"]
+script = ExtResource("6_tier")
+from_day = 4
+attacks = Array[ExtResource("1_attack")]([SubResource("attack_thrust"), SubResource("attack_cut_left"), SubResource("attack_cut_right"), SubResource("pattern_sweep_t2"), SubResource("pattern_sweep_back_t2")])
+
+[sub_resource type="Resource" id="tier_3"]
+script = ExtResource("6_tier")
+from_day = 5
+attacks = Array[ExtResource("1_attack")]([SubResource("attack_thrust"), SubResource("attack_cut_left"), SubResource("attack_cut_right"), SubResource("pattern_sweep_t2"), SubResource("pattern_sweep_back_t2"), SubResource("attack_double_thrust")])
+
+[sub_resource type="Resource" id="tier_4"]
+script = ExtResource("6_tier")
+from_day = 6
+attacks = Array[ExtResource("1_attack")]([SubResource("attack_thrust"), SubResource("attack_cut_left"), SubResource("attack_cut_right"), SubResource("pattern_sweep_t4"), SubResource("pattern_sweep_back_t4"), SubResource("attack_double_thrust")])
+
+[sub_resource type="Resource" id="tier_5"]
+script = ExtResource("6_tier")
+from_day = 7
+attacks = Array[ExtResource("1_attack")]([SubResource("attack_thrust"), SubResource("attack_cut_left"), SubResource("attack_cut_right"), SubResource("pattern_sweep_t4"), SubResource("pattern_sweep_back_t4"), SubResource("attack_double_thrust"), SubResource("attack_thrust_slash")])
+
+[sub_resource type="Resource" id="tier_6"]
+script = ExtResource("6_tier")
+from_day = 9
+attacks = Array[ExtResource("1_attack")]([SubResource("attack_thrust"), SubResource("attack_cut_left"), SubResource("attack_cut_right"), SubResource("pattern_sweep_t6"), SubResource("pattern_sweep_back_t6"), SubResource("attack_double_thrust"), SubResource("attack_thrust_slash")])
+
+[sub_resource type="Resource" id="tier_7"]
+script = ExtResource("6_tier")
+from_day = 11
+attacks = Array[ExtResource("1_attack")]([SubResource("attack_thrust"), SubResource("attack_cut_left"), SubResource("attack_cut_right"), SubResource("pattern_sweep_t7"), SubResource("pattern_sweep_back_t7"), SubResource("attack_double_thrust"), SubResource("attack_thrust_slash")])
 
 [sub_resource type="Resource" id="habit_big_cut"]
 script = ExtResource("2_habit")
@@ -404,6 +834,7 @@ description = "공격이 연속 3회 막히면 성질을 못 이기고 크게 �
 [resource]
 script = ExtResource("3_opponent")
 display_name = "브루노"
+style_name = "휩쓸기"
 opening_chance = 0.8
 sword_side = 0
 posture_max = 9
@@ -430,3 +861,4 @@ stagger_pose = SubResource("pose_stagger")
 complacent_pose = SubResource("pose_complacent")
 attacks = Array[ExtResource("1_attack")]([SubResource("attack_thrust"), SubResource("attack_cut_left"), SubResource("attack_cut_right"), SubResource("pattern_sweep"), SubResource("pattern_sweep_back")])
 habits = Array[ExtResource("2_habit")]([SubResource("habit_big_cut")])
+tiers = Array[ExtResource("6_tier")]([SubResource("tier_2"), SubResource("tier_3"), SubResource("tier_4"), SubResource("tier_5"), SubResource("tier_6"), SubResource("tier_7")])

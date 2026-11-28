@@ -13,6 +13,9 @@ extends Resource
 @export var stage: StageData
 ## 카운터와 정산에 서는 의뢰인 그림(결정 347). 비면 색 도형이다.
 @export var client_portrait: Texture2D
+## 상대의 자세 칸을 이 의뢰가 정한다(계획 043 결정 659). 0이면 상대 데이터 그대로다. 두 칸이 0이면 fit_opponent는 같은 객체를 돌려준다.
+@export var opponent_posture_max := 0
+@export var opponent_recover_posture := 0
 @export var conditions: Array[CommissionCondition] = []
 @export var base_reward := 0
 @export var tip_max := 0
@@ -38,6 +41,13 @@ extends Resource
 ## 한 줄로 쓴다(줄바꿈되지 않는 자리다). 까닭(가게의 이름, 별)은 말하지 않는다.
 @export var haggle_agree_line := ""
 @export var haggle_refuse_line := ""
+
+
+## 의뢰의 칸으로 상대의 자세를 맞춘다. 칸이 비면 받은 상대 그 객체다.
+func fit_opponent(base: OpponentData) -> OpponentData:
+	if base == null:
+		return null
+	return base.with_posture(opponent_posture_max, opponent_recover_posture)
 
 
 ## 조건 설명을 한 줄씩.
@@ -67,3 +77,24 @@ func explain(record: DuelRecord) -> Array[String]:
 		if condition != null:
 			lines.append_array(condition.explain(record))
 	return lines
+
+
+## 함께 와서 맞서는 다른 쪽(계획 047). 목록에 서는 의뢰에만 적는다(서로 가리키면 .tres 불러오기가 돈다 — 결정 749).
+@export var partner: Commission
+## 이 의뢰를 맡아 정산했을 때 남기는 플래그. 결과로 갈리지 않는다(결정 752).
+@export var sets_flags := PackedStringArray()
+## 이 플래그가 모두 있어야 하루의 목록에 선다.
+@export var requires_flags := PackedStringArray()
+## 이 플래그가 하나라도 있으면 목록에 서지 않는다.
+@export var excluded_flags := PackedStringArray()
+
+
+## 가진 플래그로 목록에 서는가(결정 752).
+func allowed_by(flags: PackedStringArray) -> bool:
+	for flag in requires_flags:
+		if not flags.has(flag):
+			return false
+	for flag in excluded_flags:
+		if flags.has(flag):
+			return false
+	return true
