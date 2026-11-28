@@ -3,8 +3,8 @@
 #   powershell -ExecutionPolicy Bypass -File tests/run_event_digest.ps1          # compare with tests/golden/event_digest.txt
 #   powershell -ExecutionPolicy Bypass -File tests/run_event_digest.ps1 -Write   # write the golden (only on a commit before the code changes)
 #
-# Runs tests/event_digest.gd: 6 opponents x tier {1, last} x bot {first_blood, parry} = 24 duels (7 seeds x 60 s each),
-# one "digest," line per duel. Judges the run: exit code 0, one "EVENT DIGEST OK" (or "WRITTEN 24") line, no ERROR lines.
+# Runs tests/event_digest.gd: 7 opponents x tier {1, last} x bot {first_blood, parry} = 28 duels (7 seeds x 60 s each),
+# one "digest," line per duel. Judges the run: exit code 0, one "EVENT DIGEST OK" (or "WRITTEN 28") line, no ERROR lines.
 param(
 	[switch]$SkipImport,
 	[switch]$Write,
