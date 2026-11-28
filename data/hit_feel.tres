@@ -1,0 +1,80 @@
+[gd_resource type="Resource" script_class="HitFeelData" load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://scripts/duel/hit_feel_data.gd" id="1_feel"]
+[ext_resource type="Script" path="res://scripts/duel/pose_data.gd" id="2_pose"]
+
+[sub_resource type="Resource" id="torso"]
+script = ExtResource("2_pose")
+arm_deg = 14.0
+lean_deg = 9.0
+head_deg = -6.0
+
+[sub_resource type="Resource" id="head"]
+script = ExtResource("2_pose")
+lean_deg = 3.0
+head_deg = 22.0
+
+[sub_resource type="Resource" id="sword_arm"]
+script = ExtResource("2_pose")
+arm_deg = 32.0
+sword_deg = 25.0
+lean_deg = 4.0
+
+[sub_resource type="Resource" id="sword_hand"]
+script = ExtResource("2_pose")
+arm_deg = 18.0
+sword_deg = 45.0
+
+[sub_resource type="Resource" id="legs"]
+script = ExtResource("2_pose")
+lean_deg = 7.0
+shoulder = Vector2(0, 10)
+
+[sub_resource type="Resource" id="hat"]
+script = ExtResource("2_pose")
+head_deg = 8.0
+
+[sub_resource type="Resource" id="torso_thrust"]
+script = ExtResource("2_pose")
+head_deg = 10.0
+shoulder = Vector2(0, -8)
+
+[sub_resource type="Resource" id="head_thrust"]
+script = ExtResource("2_pose")
+head_deg = -18.0
+shoulder = Vector2(0, -4)
+
+[sub_resource type="Resource" id="legs_thrust"]
+script = ExtResource("2_pose")
+shoulder = Vector2(0, 12)
+
+[sub_resource type="Resource" id="hat_thrust"]
+script = ExtResource("2_pose")
+head_deg = -8.0
+
+[sub_resource type="Resource" id="parried"]
+script = ExtResource("2_pose")
+arm_deg = 28.0
+sword_deg = 50.0
+lean_deg = 4.0
+
+[resource]
+script = ExtResource("1_feel")
+torso = SubResource("torso")
+head = SubResource("head")
+sword_arm = SubResource("sword_arm")
+sword_hand = SubResource("sword_hand")
+legs = SubResource("legs")
+hat = SubResource("hat")
+torso_thrust = SubResource("torso_thrust")
+head_thrust = SubResource("head_thrust")
+legs_thrust = SubResource("legs_thrust")
+hat_thrust = SubResource("hat_thrust")
+parried = SubResource("parried")
+torso_thrust_scale = 0.96
+cells2_scale = 1.4
+hit_scale = 1.8
+return_time = 0.32
+parried_return = 0.45
+end_floor = 0.6
+scale_by_art = {}
