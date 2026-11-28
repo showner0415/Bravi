@@ -74,6 +74,7 @@ func list(tree: SceneTree) -> Array:
 		{"id": "T163", "name": "여덟째 상대: 판정 값이 바르톨로와 같다, 기본 셋의 높이, 송곳 가림 길의 표(방향·높이·간격·가림·빈틈)와 단·가방, 고유 색 하나, 겹침의 몫, 하루에는 서지 않는다, 갈래 글", "fn": t163_eighth_opponent},
 		{"id": "T164", "name": "송곳 가림의 판: 읽는 손은 빈 줄로 스치고 안 읽는 마지막 줄 손은 겹치는 길에서 걸린다, 타격의 시각, cover 열쇠, 같은 씨앗, 봇의 한 판, 실제 코르넬리아", "fn": t164_cover_duel},
 		{"id": "T165", "name": "표시와 연습 화면: 가림의 예고, 첫 줄·귀띔, 일곱 상대는 그대로, 결투 중 도움말, 연습의 둘째 쪽과 막는 법, CoverMarks 노드", "fn": t165_marks_and_practice},
+		{"id": "T166", "name": "그림 데이터: 스물한 장과 팔 셋, 모자 없는 꼭대기·머리 가운데의 자·모자 쓴 꼭대기·발끝, 키가 여덟의 아래쪽 셋, 다리 관절, 몸통 그림의 골반 아래 길이(긴 상자), 의뢰인 그림", "fn": t166_cornelia_art},
 	]
 
 
@@ -574,3 +575,149 @@ func _scene_node(errs: Array[String]) -> void:
 	elif marks.get_index() != opponent_view.get_index() + 1 or marks.get_index() > hud.get_index():
 		errs.append("[④] CoverMarks의 차례 %d (OpponentView %d · HUD %d)" % [marks.get_index(), opponent_view.get_index(), hud.get_index()])
 	scene.free()
+
+# ================================================================ T166 그림 데이터(계획 053b, 결정 856)
+
+const COR_ART_PATH := "res://data/opponents/cornelia_art.tres"
+const COR_ART_DIR := "res://assets/art/opponents/cornelia/"
+## 작업 6이 자른 스물한 장의 크기(파츠는 P1b 시트, 팔은 A1a 시트).
+const COR_ART_SIZES := {
+	"head": Vector2i(226, 223), "head_oops": Vector2i(226, 223), "head_dizzy": Vector2i(225, 223), "hat": Vector2i(253, 79),
+	"feather": Vector2i(173, 85), "torso": Vector2i(353, 551), "legs": Vector2i(189, 306), "arm": Vector2i(79, 243),
+	"hand": Vector2i(88, 76), "sword": Vector2i(137, 483), "arm_up_sword": Vector2i(158, 557), "arm_up": Vector2i(109, 327),
+	"arm_up_fist": Vector2i(116, 78), "arm_thrust": Vector2i(150, 144), "arm_thrust_fist": Vector2i(150, 216),
+	"arm_thrust_sword": Vector2i(283, 297), "arm_thrust_blade": Vector2i(57, 44), "arm_aim": Vector2i(123, 189),
+	"arm_aim_fist": Vector2i(123, 140), "arm_aim_sword": Vector2i(187, 189), "arm_aim_blade": Vector2i(98, 103),
+}
+## 몸의 값의 한계(계획 053b "몸의 값" 표).
+const COR_MIN_NECK_Y := -206.0
+const COR_MAX_NECK_Y := -196.0
+const COR_MIN_BARE_TOP := 312.0
+const COR_MAX_BARE_TOP := 324.0
+const COR_MIN_HEAD_MID := 252.0
+const COR_MAX_HAT_TOP := 355.0
+const COR_MIN_FOOT := 188.0
+const COR_MAX_FOOT := 200.0
+## 키(모자 없는 꼭대기 + 발끝)는 518 이하이고 여덟 가운데 아래쪽 셋(결정 845).
+const COR_MAX_HEIGHT := 518.0
+const COR_MAX_RANK := 3
+## 다리 윗선이 옷자락 뒤에 숨는다.
+const COR_MIN_LEGS_JOINT_Y := 12.0
+## 긴 상자가 데이터에서도 보인다: 몸통 그림이 골반 아래로 50 이상 내려간다(일곱의 값은 문턱이 아니라 INFO — 계획 v2.1 T3).
+const COR_MIN_TORSO_BELOW := 50.0
+
+
+func t166_cornelia_art() -> String:
+	var errs: Array[String] = []
+	var bartolo := load(BARTOLO_PATH) as OpponentData
+	var cor := load(CORNELIA_PATH) as OpponentData
+	if cor == null or cor.art == null or bartolo == null or bartolo.art == null:
+		return "opponent_08.tres나 그 그림이 없음"
+	var art: OpponentArt = cor.art
+	if art.resource_path != COR_ART_PATH:
+		errs.append("그림 데이터 %s (기대 %s)" % [art.resource_path, COR_ART_PATH])
+	if art == bartolo.art:
+		errs.append("바르톨로의 그림을 빌려 쓴다")
+	_cor_check_files(errs, art, bartolo.art)
+	_cor_check_body(errs, art, bartolo.art)
+	var client := "res://assets/art/clients/cornelia.png"
+	if ResourceLoader.exists(client):
+		var tex := load(client) as Texture2D
+		if tex == null or Vector2i(tex.get_size()) != Vector2i(450, 675):
+			errs.append("의뢰인 그림의 크기 %s (기대 450x675)" % (str(Vector2i(tex.get_size())) if tex != null else "읽을 수 없음"))
+	else:
+		print("INFO T166: assets/art/clients/cornelia.png가 아직 없다(위험 R7)")
+	return _ok(errs)
+
+
+func _cor_check_files(errs: Array[String], art: OpponentArt, bartolo_art: OpponentArt) -> void:
+	for part_name: String in Fourth.ART_PARTS:
+		var part := art.get(part_name) as PartArt
+		if part == null or part.texture == null or not part.texture.resource_path.begins_with(COR_ART_DIR):
+			errs.append("그림 %s: 없거나 코르넬리아의 폴더가 아님" % part_name)
+		elif part.units_per_px.x <= 0.0 or part.units_per_px.y <= 0.0:
+			errs.append("그림 %s: units_per_px %s" % [part_name, part.units_per_px])
+	if art.hand != null and art.hand.outline.size() < 6:
+		errs.append("손의 윤곽선이 없음")
+	if art.arm_arts.size() != bartolo_art.arm_arts.size():
+		errs.append("따로 그린 팔 %d개 (바르톨로 %d개)" % [art.arm_arts.size(), bartolo_art.arm_arts.size()])
+	else:
+		for i in art.arm_arts.size():
+			var mine: ArmArt = art.arm_arts[i]
+			var his: ArmArt = bartolo_art.arm_arts[i]
+			if mine.key != his.key or not is_equal_approx(mine.rotation_deg, his.rotation_deg) or mine.layers.size() != his.layers.size():
+				errs.append("팔 %s: 키·회전·층 수가 바르톨로(%s)와 다름" % [mine.key, his.key])
+				continue
+			for k in mine.layers.size():
+				var layer: ArmLayer = mine.layers[k]
+				if layer.part != his.layers[k].part or layer.texture == null or not layer.texture.resource_path.begins_with(COR_ART_DIR):
+					errs.append("팔 %s 층 %d: part·그림이 어긋남" % [mine.key, k])
+				elif (layer.part == 4) != (layer.outline.size() >= 6):
+					errs.append("팔 %s 층 %d: 주먹의 윤곽선이 없거나 주먹이 아닌데 있음" % [mine.key, k])
+	for file: String in COR_ART_SIZES:
+		var tex := load(COR_ART_DIR + file + ".png") as Texture2D
+		if tex == null or Vector2i(tex.get_size()) != COR_ART_SIZES[file]:
+			errs.append("%s.png의 크기 %s (기대 %s)" % [file, Vector2i(tex.get_size()) if tex != null else Vector2i.ZERO, COR_ART_SIZES[file]])
+
+
+## 상자 · 송곳 · 안경 · 모자의 덮음은 그림을 봐야 아는 값이라 판 S2 · S4의 몫이다.
+func _cor_check_body(errs: Array[String], art: OpponentArt, bartolo_art: OpponentArt) -> void:
+	if art.neck.y < COR_MIN_NECK_Y or art.neck.y > COR_MAX_NECK_Y:
+		errs.append("neck.y %.1f (기대 %.0f~%.0f)" % [art.neck.y, COR_MIN_NECK_Y, COR_MAX_NECK_Y])
+	if art.legs == null or art.legs.texture == null or art.torso == null or art.torso.texture == null or art.hat == null or art.head == null:
+		errs.append("다리·몸통·모자·머리 그림 가운데 빈 것이 있다")
+		return
+	var hat_limit: float = minf(_f._hat_top(bartolo_art), COR_MAX_HAT_TOP)
+	var hat_top: float = _f._hat_top(art)
+	var foot: float = _f._foot_tip(art)
+	var joint_y: float = art.legs.joint.y * art.legs.units_per_px.y
+	var below: float = _torso_below(art)
+	print("INFO T166: 모자 쓴 꼭대기 %.1f (바르톨로 %.1f) · 발끝 %.1f · 다리 관절 %.1f · 몸통 그림의 골반 아래 %.1f" % [hat_top, _f._hat_top(bartolo_art), foot, joint_y, below])
+	if hat_top > hat_limit + 0.01:
+		errs.append("모자 쓴 꼭대기 %.2f (바르톨로의 값 %.2f와 %.0f 이하여야 한다)" % [hat_top, _f._hat_top(bartolo_art), COR_MAX_HAT_TOP])
+	for head_part: PartArt in [art.head, art.head_oops, art.head_dizzy]:
+		if head_part == null:
+			errs.append("머리 셋 가운데 빈 것이 있다")
+			continue
+		var top: float = _f._bare_top(art, head_part)
+		var mid: float = top - head_part.joint.y * head_part.units_per_px.y / 2.0
+		if top < COR_MIN_BARE_TOP - 0.01 or top > COR_MAX_BARE_TOP + 0.01:
+			errs.append("모자 없는 꼭대기 %.2f (기대 %.0f~%.0f)" % [top, COR_MIN_BARE_TOP, COR_MAX_BARE_TOP])
+		if mid < COR_MIN_HEAD_MID - 0.01:
+			errs.append("머리 가운데의 자 %.2f (%.0f 이상이어야 한다)" % [mid, COR_MIN_HEAD_MID])
+	if foot < COR_MIN_FOOT - 0.01 or foot > COR_MAX_FOOT + 0.01:
+		errs.append("발끝 %.2f (기대 %.0f~%.0f)" % [foot, COR_MIN_FOOT, COR_MAX_FOOT])
+	if joint_y < COR_MIN_LEGS_JOINT_Y:
+		errs.append("다리 관절의 높이 %.2f (%.0f 이상이어야 윗선이 옷자락 뒤에 숨는다)" % [joint_y, COR_MIN_LEGS_JOINT_Y])
+	if below < COR_MIN_TORSO_BELOW - 0.01:
+		errs.append("몸통 그림의 골반 아래 길이 %.2f (%.0f 이상 — 무릎 위까지의 긴 상자)" % [below, COR_MIN_TORSO_BELOW])
+	_cor_check_height(errs, art)
+
+
+func _torso_below(art: OpponentArt) -> float:
+	return (float(art.torso.texture.get_height()) - art.torso.joint.y) * art.torso.units_per_px.y
+
+
+## 키 = 모자 없는 꼭대기 + 발끝. 여덟 상대의 같은 식을 데이터에서 읽어 그녀가 아래쪽 셋 안인지 본다(결정 845). 일곱의 골반 아래 길이는 INFO로만 적는다.
+func _cor_check_height(errs: Array[String], art: OpponentArt) -> void:
+	var mine: float = _f._bare_top(art, art.head) + _f._foot_tip(art)
+	var lower := 0
+	var dir := DirAccess.open("res://data/opponents")
+	if dir == null:
+		errs.append("data/opponents를 열 수 없음")
+		return
+	for file: String in dir.get_files():
+		if not (file.begins_with("opponent_") and file.ends_with(".tres")):
+			continue
+		var opp := load("res://data/opponents/" + file) as OpponentData
+		if opp == null or opp.art == null or opp.art == art or opp.art.head == null or opp.art.legs == null or opp.art.torso == null:
+			continue
+		var height: float = _f._bare_top(opp.art, opp.art.head) + _f._foot_tip(opp.art)
+		if height < mine:
+			lower += 1
+		print("INFO T166: %s 키 %.1f · 몸통 그림의 골반 아래 %.1f" % [file.get_basename(), height, _torso_below(opp.art)])
+	print("INFO T166: 코르넬리아 키 %.1f (아래에서 %d번째)" % [mine, lower + 1])
+	if mine > COR_MAX_HEIGHT + 0.01:
+		errs.append("키 %.2f (%.0f 이하여야 한다)" % [mine, COR_MAX_HEIGHT])
+	if lower + 1 > COR_MAX_RANK:
+		errs.append("키 %.2f가 여덟 가운데 아래에서 %d번째 (%d번째 안이어야 한다)" % [mine, lower + 1, COR_MAX_RANK])

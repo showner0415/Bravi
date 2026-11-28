@@ -6,8 +6,8 @@ const COMMISSION_DIR := "res://data/commissions"
 const OPPONENT_DIR := "res://data/opponents/"
 const SCHEDULE_PATH := "res://data/day_schedule.tres"
 ## 039가 셈한 앞의 다섯 검술. 이 밖의 이름이 새 검술이다.
-## 053b가 그림을 그리면 비운다: 아직 바르톨로의 몸을 빌린 상대(결정 842).
-const ART_PENDING := ["opponent_08.tres"]
+## 빌린 몸인 상대(결정 842). 새 상대가 빌린 몸으로 들어오면 여기에 적는다 — 053b가 비웠다.
+const ART_PENDING := []
 const OLD_STYLES := ["이어 베기", "휩쓸기", "뛰어드는 찌르기", "층층 찌르기", "엇박 찌르기"]
 const NEW_FRAMES := ["pair_hatter", "court_beehive", "noble_baker", "spar"]
 
