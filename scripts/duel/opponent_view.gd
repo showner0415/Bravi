@@ -566,6 +566,22 @@ func _part_screen_rect(part: int) -> Rect2:
 	return Rect2(joint - Vector2(30.0, 30.0) * scale.x, Vector2(60.0, 60.0) * scale.x)
 
 
+## 내 칼끝이 닿는 자리(화면 좌표): 그 장에 그려진 부위를 가리킨다(계획 H03 결정 930). 칼 든 팔은 어깨와 손목의 가운데, 손은 손목.
+func contact_point(part: int) -> Vector2:
+	if part == DT.Part.SWORD_ARM:
+		return (_arm.global_position + _hand.global_position) * 0.5
+	if part == DT.Part.SWORD_HAND:
+		return _hand.global_position
+	return _part_screen_rect(part).get_center()
+
+
+## 접촉점이 속한 부위의 화면 상자. 닿지 않는 공격의 칼끝이 이 밖에 서게 하려고 넘긴다.
+func contact_rect(part: int) -> Rect2:
+	if part == DT.Part.SWORD_ARM:
+		return Rect2(_arm.global_position, Vector2.ZERO).expand(_hand.global_position).grow(30.0 * scale.x)
+	return _part_screen_rect(part)
+
+
 ## 지금 화면에 둘 포즈. 바뀜의 시작 시각은 알아챈 프레임이 아니라 데이터에서 센다(결정 258, 계획 029 T1).
 func _pose_for(core: DuelCore, display_time: float, complacent: bool) -> PoseData:
 	var brain := core.brain

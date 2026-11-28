@@ -64,7 +64,7 @@ Write-Output 'import: OK'
 
 $scripts = @{
 	tests = 'run_tests.ps1'; smoke = 'run_smoke.ps1'; opponent = 'run_opponent_shots.ps1'
-	ui = 'run_ui_shots.ps1'; pattern = 'run_pattern_shots.ps1'; stats = 'run_duel_stats.ps1'
+	ui = 'run_ui_shots.ps1'; pattern = 'run_pattern_shots.ps1'; feel = 'run_feel_shots.ps1'; stats = 'run_duel_stats.ps1'
 	reach = 'run_part_reach.ps1'; counter = 'run_part_counter_shots.ps1'; partstats = 'run_duel_stats.ps1'
 	tierwrong = 'run_duel_stats.ps1'; tierclean = 'run_duel_stats.ps1'
 	spar = 'run_duel_stats.ps1'; sparwrong = 'run_duel_stats.ps1'; sparparry = 'run_duel_stats.ps1'
@@ -113,7 +113,7 @@ foreach ($step in $steps) {
 		continue
 	}
 	$stepArgs = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $PSScriptRoot $scripts[$step]), '-SkipImport', '-Godot', $Godot)
-	if ($Shots -and @('opponent', 'ui', 'pattern', 'counter') -contains $step) { $stepArgs += @('-Shots', (Join-Path $Shots $step)) }
+	if ($Shots -and @('opponent', 'ui', 'pattern', 'counter', 'feel') -contains $step) { $stepArgs += @('-Shots', (Join-Path $Shots $step)) }
 	if ($extra.ContainsKey($step)) { $stepArgs += $extra[$step] }
 	$stepStart = Get-Date
 	$out = & powershell @stepArgs

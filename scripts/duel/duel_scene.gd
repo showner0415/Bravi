@@ -58,6 +58,8 @@ var _swallowed_attacks := 0
 var _cover_marks: CoverMarks
 ## 타격감(계획 H02): 남은 멈칫의 물리 tick 수와 지금 패턴의 뿌리(STRIKE를 받을 때 뇌는 이미 다음 상태다).
 var _stop_ticks_left := 0
+## 엔진의 걸음(_physics_process)이 advance를 부르는 동안만 참(계획 H03 결정 928). 연출의 "살아 있는 판" 가름이다.
+var _engine_tick := false
 var _hit_root: AttackData
 var _display_time := 0.0
 ## 하루 모드인가. _ready에서 한 번 정한다(정산으로 넘긴 뒤 같은 씬에서 R·Esc가 살아나지 않게).
@@ -170,7 +172,9 @@ func _physics_process(delta: float) -> void:
 	if _stop_ticks_left > 0:
 		_stop_ticks_left -= 1
 		return
+	_engine_tick = true
 	advance(delta)
+	_engine_tick = false
 
 
 ## 돌아오기 대기가 끝났는가(시각은 Time.get_ticks_msec()).
@@ -353,8 +357,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _day_mode and event.is_action_pressed(&"retry"):
 		# 하루 중의 결투는 한 번뿐이다. 다시 하기를 듣지 않는다.
 		return
-	# 멈칫 중의 누름은 그 자리에서 코어에 들어가고 멈칫을 끝낸다(결정 922).
-	if _stop_ticks_left > 0 and (event.is_action_released(&"guard") or STOP_ENDERS.any(func(a: StringName) -> bool: return event.is_action_pressed(a))):
+	# 멈칫 중의 누름은 그 자리에서 코어에 들어가고 멈칫을 끝낸다(결정 922). 막기의 뗌은 코어에 넘기되 멈칫은 둔다(결정 944).
+	if _stop_ticks_left > 0 and STOP_ENDERS.any(func(a: StringName) -> bool: return event.is_action_pressed(a)):
 		if mouse_aim_enabled:
 			_update_aim_from_mouse()
 		_stop_ticks_left = 0
@@ -395,6 +399,9 @@ static func aim_cell(point: Vector2, size: Vector2) -> Vector2i:
 func _update_views(delta: float) -> void:
 	_opponent_view.set_target(core.current_aim_part())
 	_opponent_view.update_view(core, _display_time, delta)
+	# 접촉점은 맞은 포즈·움찔 전의 자리여야 해서 예비 동안만, 판이 끝나기 전까지만 넘긴다(계획 H03 결정 930).
+	if core.player_state == DT.PlayerState.WINDUP and not core.ended:
+		_sword_view.set_contact(_opponent_view.contact_point(core.attack_part), _opponent_view.contact_rect(core.attack_part))
 	_sword_view.update_view(core, _display_time, get_viewport_rect().size, delta)
 	_hud.refresh(core)
 	if _cover_marks != null:
@@ -413,8 +420,8 @@ func _on_core_event(ev: Dictionary) -> void:
 	if ev["type"] == DuelRecord.TELL_START:
 		_hit_root = ev.get("attack") as AttackData
 	var moment := HitFeel.moment_of(ev, _hit_root)
-	# 멈칫과 움찔은 물리 걸음이 도는 살아 있는 판에서만 선다: 테스트·찍기·봇은 그대로다(결정 922·923).
-	if moment != &"" and is_physics_processing():
+	# 멈칫과 움찔은 엔진의 걸음 안에서만 선다: advance로 걷는 테스트·찍기·봇은 그대로다(결정 922·923·928).
+	if moment != &"" and _engine_tick:
 		var stop := HitFeel.stop_msec(moment, ev) * Engine.physics_ticks_per_second / 1000.0
 		_stop_ticks_left = maxi(_stop_ticks_left, roundi(stop))
 		var shove := HitFeel.flinch(moment, ev)

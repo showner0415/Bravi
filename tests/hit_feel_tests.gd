@@ -83,11 +83,12 @@ func _spawn(seed_value := 1, physics := true) -> Node:
 
 
 ## 한 틱씩 걸으며 처음으로 내 공격이 닿은 순간의 이벤트들(그 틱의 것 전부)을 찾는다. 못 찾으면 빈 배열.
-func _until_dealt(duel: Node, driver: Bot, limit_ticks := 4000) -> Array:
+## via_physics가 참이면 엔진의 걸음(_physics_process)으로 걷는다: 멈칫·움찔은 그 안에서만 선다(계획 H03 결정 928).
+func _until_dealt(duel: Node, driver: Bot, limit_ticks := 4000, via_physics := false) -> Array:
 	var core: DuelCore = duel.get("core")
 	var seen := core.record.events.size()
 	for i in limit_ticks:
-		duel.call("advance", DELTA)
+		duel.call("_physics_process" if via_physics else "advance", DELTA)
 		var fresh: Array = core.record.events.slice(seen)
 		seen = core.record.events.size()
 		for ev: Dictionary in fresh:
@@ -233,7 +234,7 @@ func t211_stop_and_flinch() -> String:
 	var core: DuelCore = duel.get("core")
 
 	# (1) 살아 있는 판에서 스치면 멈칫이 선다
-	var fresh := _until_dealt(duel, Bot.new(core, Bot.first_blood_cfg()))
+	var fresh := _until_dealt(duel, Bot.new(core, Bot.first_blood_cfg()), 4000, true)
 	_expect(errs, not fresh.is_empty(), "(1) 내 공격이 닿는 순간을 못 만났다")
 	if fresh.is_empty():
 		return _result(errs)
@@ -250,12 +251,14 @@ func t211_stop_and_flinch() -> String:
 		duel.call("_physics_process", DELTA)
 		_expect(errs, core.time > before, "(2) 멈칫 뒤 첫 걸음이 코어를 움직이지 않았다")
 
-	# (1b) 물리를 끈 판에서는 멈칫도 움찔도 서지 않는다
-	var dead := _spawn(1, false)
-	var dead_core: DuelCore = dead.get("core")
-	var dead_fresh := _until_dealt(dead, Bot.new(dead_core, Bot.first_blood_cfg()))
-	_expect(errs, not dead_fresh.is_empty(), "(1b) 물리를 끈 판에서 내 공격이 닿는 순간을 못 만났다")
-	_expect(errs, int(dead.get("_stop_ticks_left")) == 0 and (dead.get("_opponent_view") as Object).get("_flinch_vec") == Vector2.ZERO, "(1b) 물리를 끈 판에 멈칫·움찔이 섰다")
+	# (1b) advance로 직접 걸으면 물리가 켜져 있어도 꺼져 있어도 멈칫도 움찔도 서지 않는다(결정 928)
+	for physics in [false, true]:
+		var dead := _spawn(1, physics)
+		var dead_core: DuelCore = dead.get("core")
+		var dead_fresh := _until_dealt(dead, Bot.new(dead_core, Bot.first_blood_cfg()))
+		_expect(errs, not dead_fresh.is_empty(), "(1b) advance로 걷는 판(물리 %s)에서 내 공격이 닿는 순간을 못 만났다" % physics)
+		_expect(errs, int(dead.get("_stop_ticks_left")) == 0 and (dead.get("_opponent_view") as Object).get("_flinch_vec") == Vector2.ZERO,
+				"(1b) advance로 걷는 판(물리 %s)에 멈칫·움찔이 섰다" % physics)
 
 	# (3) 멈칫 중 누르면 그 자리의 마우스 칸으로 나가고 멈칫이 끝난다
 	var live := _spawn()
@@ -269,6 +272,12 @@ func t211_stop_and_flinch() -> String:
 	var starts := live_core.record.of_type(DuelRecord.ATTACK_START)
 	_expect(errs, int(live.get("_stop_ticks_left")) == 0, "(3) 누름이 멈칫을 끝내지 않았다")
 	_expect(errs, not starts.is_empty() and starts[-1]["direction"] == 2 and starts[-1]["height"] == 0, "(3) 공격이 누른 순간의 마우스 칸으로 나가지 않았다")
+	# 막기를 떼는 것은 코어에 들어가되 멈칫은 그대로다(결정 944)
+	live_core.set_guard(true)
+	live.set("_stop_ticks_left", 3)
+	live.call("_unhandled_input", _action(&"guard", false))
+	_expect(errs, not live_core.guard_held, "(3) 멈칫 중 막기를 뗀 것이 코어에 들어가지 않았다")
+	_expect(errs, int(live.get("_stop_ticks_left")) == 3, "(3) 막기를 뗌이 멈칫을 끝냈다")
 
 	# (4) pause()·start_duel()이 멈칫을 지운다
 	live.set("_stop_ticks_left", 5)
@@ -332,7 +341,9 @@ func _stop_after_blocked_end(duel: Node, root: AttackData) -> int:
 		"t": core.time, "attack": root, "situation": 0, "recovery_end": core.time + 1.0, "player_posture": 3,
 		"posture_loss": 0, "height": -1, "guard_miss": false, "closed_streak": 0, "miss_limit": 0,
 	})
+	duel.set("_engine_tick", true)
 	duel.call("_on_core_event", ev)
+	duel.set("_engine_tick", false)
 	return int(duel.get("_stop_ticks_left"))
 
 
@@ -344,7 +355,7 @@ func _check_final_flinch(errs: Array[String]) -> void:
 		var last_attack := {}
 		var seen := 0
 		for i in 4000:
-			duel.call("advance", DELTA)
+			duel.call("_physics_process", DELTA)
 			for ev: Dictionary in core.record.events.slice(seen):
 				if ev["type"] == DuelRecord.ATTACK:
 					last_attack = ev
