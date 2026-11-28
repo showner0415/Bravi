@@ -146,6 +146,14 @@ var _hop_start := -INF
 var _height_shift := 0.0
 var _dive_start := -INF
 var _dive_from_close := false
+## 움찔(계획 H02 결정 923): 보간하는 기준 자리와 따로 들고 더한다(보간에 섞이면 뭉개지고 돌아오지 않는다).
+const FLINCH_TIME := 0.15
+var _base_position := Vector2.ZERO
+var _base_valid := false
+var _flinch_vec := Vector2.ZERO
+var _flinch_core_at := 0.0
+var _flinch_clock_at := 0.0
+var _flinch_now := Vector2.ZERO
 ## 다음 갱신에서 크기와 위치를 보간 없이 맞춘다(시작, 다시 하기).
 var _snap := true
 
@@ -197,6 +205,7 @@ func setup(opponent: OpponentData, weapon: WeaponData, has_hat := false) -> void
 	_deflect_until = -INF
 	_dodge_until = -INF
 	_hop_start = -INF
+	_flinch_vec = Vector2.ZERO
 	_ring_active = false
 	_snap = true
 	_dodge_k = 0.0
@@ -244,8 +253,28 @@ func _refresh_target() -> void:
 		line.visible = part == DT.Part.SWORD_HAND
 
 
+## 움찔은 씬이 건다(DuelScene._on_core_event). 코어 시각 at과 지금의 _clock을 기억해 둘 중 먼저 닿는 쪽으로 거둔다.
+func start_flinch(vector: Vector2, at: float) -> void:
+	_flinch_vec = vector
+	_flinch_core_at = at
+	_flinch_clock_at = _clock
+
+
+## 판이 끝나 코어 시각이 서도 _clock이 거두고, 다 거두면 지운다.
+func _flinch_offset(display_time: float) -> Vector2:
+	if _flinch_vec == Vector2.ZERO:
+		return Vector2.ZERO
+	var k := maxf((display_time - _flinch_core_at) / FLINCH_TIME, (_clock - _flinch_clock_at) / FLINCH_TIME)
+	if k >= 1.0:
+		_flinch_vec = Vector2.ZERO
+		return Vector2.ZERO
+	return _flinch_vec * pow(1.0 - clampf(k, 0.0, 1.0), 2.0)
+
+
 func on_event(ev: Dictionary) -> void:
 	match ev["type"]:
+		DuelRecord.TELL_START, DuelRecord.PATTERN_STEP:
+			_flinch_vec = Vector2.ZERO
 		DuelRecord.STRIKE:
 			_flash_until = _clock + FLASH_TIME
 			if ev["braced"]:
@@ -306,7 +335,12 @@ func update_view(core: DuelCore, display_time: float, delta: float) -> void:
 	if hop_k >= 0.0 and hop_k < 1.0:
 		target_pos.y -= 4.0 * hop_k * (1.0 - hop_k) * HOP_HEIGHT
 	scale = scale.lerp(Vector2.ONE * target_scale, smooth)
-	position = position.lerp(target_pos, smooth)
+	if not _base_valid:
+		_base_position = position
+		_base_valid = true
+	_base_position = _base_position.lerp(target_pos, smooth)
+	_flinch_now = _flinch_offset(display_time)
+	position = _base_position + _flinch_now
 	var inverse := 1.0 / maxf(scale.x, 0.01)
 
 	# --- 상태별 색과 글자. 포즈는 _pose_for가 정한다(결정 258).
@@ -517,6 +551,7 @@ func _update_forecast_tag(core: DuelCore, inverse: float) -> void:
 	if at.x + maxf(width, FORECAST_BAR_SIZE.x * scale.x) > get_viewport_rect().size.x - 8.0:
 		at.x = rect.position.x - 10.0 - maxf(width, FORECAST_BAR_SIZE.x * scale.x)
 	_forecast_tag.scale = Vector2.ONE * inverse
+	at -= _flinch_now
 	_forecast_tag.position = (at - position) * inverse
 	_forecast_tag.visible = true
 

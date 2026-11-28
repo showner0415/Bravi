@@ -19,6 +19,7 @@ const SessionScript := preload("res://scripts/game_session.gd")
 const RESUME_HOLD_MSEC := 400
 const EXIT_DAY_TEXT := "처음 화면으로"
 const EXIT_PRACTICE_TEXT := "연습 고르기로"
+const STOP_ENDERS: Array[StringName] = [&"attack", &"guard", &"step_forward", &"step_back"]
 
 ## 의뢰. 비어 있으면 /root/GameSession에서 받고, 그것도 없으면 자유 결투다.
 @export var commission: Commission
@@ -55,6 +56,9 @@ var _pause_drift := 0.0
 var _swallowed_attacks := 0
 
 var _cover_marks: CoverMarks
+## 타격감(계획 H02): 남은 멈칫의 물리 tick 수와 지금 패턴의 뿌리(STRIKE를 받을 때 뇌는 이미 다음 상태다).
+var _stop_ticks_left := 0
+var _hit_root: AttackData
 var _display_time := 0.0
 ## 하루 모드인가. _ready에서 한 번 정한다(정산으로 넘긴 뒤 같은 씬에서 R·Esc가 살아나지 않게).
 var _day_mode := false
@@ -130,6 +134,8 @@ func start_duel() -> void:
 	core.setup(rules, weapon, opponent, rng, conditions, has_hat)
 	core.event.connect(_on_core_event)
 	_display_time = 0.0
+	_stop_ticks_left = 0
+	_hit_root = null
 	_clear_pause()
 	_pause_count = 0
 	_pause_drift = 0.0
@@ -161,6 +167,9 @@ func _physics_process(delta: float) -> void:
 		_end_hold()
 	if paused:
 		return
+	if _stop_ticks_left > 0:
+		_stop_ticks_left -= 1
+		return
 	advance(delta)
 
 
@@ -177,6 +186,7 @@ func pause(_reason: StringName) -> bool:
 	_holding = false
 	_hud.set_resume_hold(false)
 	paused = true
+	_stop_ticks_left = 0
 	_pause_count += 1
 	_pause_time = core.time
 	var exit_text := EXIT_DAY_TEXT if _day_mode else EXIT_PRACTICE_TEXT
@@ -300,7 +310,7 @@ func advance(delta: float) -> void:
 func _process(delta: float) -> void:
 	# 표시용 시각: 고주사율 화면에서도 매끄럽게 움직이도록 물리 tick 사이를 보간한다.
 	# 판정은 건드리지 않는다. 멈춘 동안은 그림도 움직이지 않는다(결정 507).
-	if paused:
+	if paused or _stop_ticks_left > 0:
 		return
 	if core.ended:
 		_display_time = core.time
@@ -343,6 +353,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _day_mode and event.is_action_pressed(&"retry"):
 		# 하루 중의 결투는 한 번뿐이다. 다시 하기를 듣지 않는다.
 		return
+	# 멈칫 중의 누름은 그 자리에서 코어에 들어가고 멈칫을 끝낸다(결정 922).
+	if _stop_ticks_left > 0 and (event.is_action_released(&"guard") or STOP_ENDERS.any(func(a: StringName) -> bool: return event.is_action_pressed(a))):
+		if mouse_aim_enabled:
+			_update_aim_from_mouse()
+		_stop_ticks_left = 0
 	if event.is_action_pressed(&"retry"):
 		start_duel()
 	elif event.is_action_pressed(&"debug_toggle"):
@@ -395,7 +410,17 @@ func _on_core_event(ev: Dictionary) -> void:
 	_opponent_view.on_event(ev)
 	_sword_view.on_event(ev)
 	_hud.on_event(ev)
-	_beeper.on_event(ev)
+	if ev["type"] == DuelRecord.TELL_START:
+		_hit_root = ev.get("attack") as AttackData
+	var moment := HitFeel.moment_of(ev, _hit_root)
+	# 멈칫과 움찔은 물리 걸음이 도는 살아 있는 판에서만 선다: 테스트·찍기·봇은 그대로다(결정 922·923).
+	if moment != &"" and is_physics_processing():
+		var stop := HitFeel.stop_msec(moment, ev) * Engine.physics_ticks_per_second / 1000.0
+		_stop_ticks_left = maxi(_stop_ticks_left, roundi(stop))
+		var shove := HitFeel.flinch(moment, ev)
+		if shove != Vector2.ZERO:
+			_opponent_view.start_flinch(shove, ev.get("t", core.time))
+	_beeper.on_event(ev, moment)
 
 
 ## 화면 크기에 맞춰 배치한다. stretch aspect가 keep이라 뷰포트는 늘 1280x720이지만,

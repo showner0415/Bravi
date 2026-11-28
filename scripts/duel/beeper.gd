@@ -8,13 +8,15 @@ const VOLUME := 0.35
 ## 겹쳐 울릴 수 있는 음의 수.
 const VOICES := 4
 
-## 사건별 [주파수(Hz), 길이(초)].
+## 사건별 [주파수(Hz), 길이(초)] 또는 [주파수, 길이, 둘째 주파수](두 음을 반씩 섞는다).
+## 넣은 쪽(990 이상)과 맞은 쪽(180 이하)을 가른 임시 값이다(계획 H02 결정 924).
 const TONES := {
 	&"tell": [330.0, 0.07],
 	## 뛰어들기의 예비 동작: 예비 동작음보다 낮고 길다(결정 454).
 	&"dive": [200.0, 0.16],
 	&"block": [520.0, 0.06],
-	&"parry": [880.0, 0.12],
+	&"parry": [1400.0, 0.14, 2100.0],
+	&"dodge_open": [1100.0, 0.10],
 	## 막았는데 빈틈을 주지 않았다: 막힘보다 한 옥타브 낮고 길다(결정 404).
 	&"closed": [260.0, 0.10],
 	## 헛손질: 막힘보다 낮고 짧은 바람 소리. 속았으면 안 열림보다 낮고 긴 소리(결정 670).
@@ -24,9 +26,11 @@ const TONES := {
 	&"hop": [660.0, 0.05],
 	## 송곳에 걸림: 패리(880)의 옥타브(1760)를 피한 높고 짧은 쇠 소리. H01 표에도 없는 값이다(결정 830).
 	&"spike": [1560.0, 0.05],
-	&"graze": [660.0, 0.09],
+	&"graze_dealt": [1320.0, 0.08],
+	&"graze_taken": [180.0, 0.12],
 	&"stagger": [220.0, 0.30],
-	&"hit": [990.0, 0.35],
+	&"hit_dealt": [990.0, 0.30, 1485.0],
+	&"hit_taken": [110.0, 0.35, 165.0],
 }
 
 var _streams := {}
@@ -36,15 +40,16 @@ var _next := 0
 
 func _ready() -> void:
 	for key: StringName in TONES:
-		_streams[key] = _make_tone(TONES[key][0], TONES[key][1])
+		var tone: Array = TONES[key]
+		_streams[key] = _make_tone(tone[0], tone[1], tone[2] if tone.size() > 2 else 0.0)
 	for i in VOICES:
 		var player := AudioStreamPlayer.new()
 		add_child(player)
 		_players.append(player)
 
 
-## 코어 이벤트를 받아 해당하는 음을 낸다.
-func on_event(ev: Dictionary) -> void:
+## 코어 이벤트를 받아 해당하는 음을 낸다. moment는 HitFeel.moment_of의 답이다(비면 이벤트만 본다).
+func on_event(ev: Dictionary, moment: StringName = &"") -> void:
 	match ev["type"]:
 		DuelRecord.TELL_START:
 			_play(&"dive" if (ev["attack"] as AttackData).dive else &"tell")
@@ -59,24 +64,30 @@ func on_event(ev: Dictionary) -> void:
 			if ev.get("closed", false):
 				_play(&"closed")
 				return
+			if moment == HitFeel.SWEEP_OPEN or moment == HitFeel.DIVE_OPEN:
+				_play(&"parry")
+				return
+			if moment == HitFeel.DIVE_WHIFF:
+				_play(&"dodge_open")
+				return
 			match ev["result"]:
 				DuelTypes.StrikeResult.BLOCKED:
 					_play(&"block")
 				DuelTypes.StrikeResult.PARRIED:
 					_play(&"parry")
 				DuelTypes.StrikeResult.GRAZE:
-					_play(&"graze")
+					_play(&"graze_taken")
 				DuelTypes.StrikeResult.HIT:
-					_play(&"hit")
+					_play(&"hit_taken")
 		DuelRecord.ATTACK:
 			if ev.get("spiked", false):
 				_play(&"spike")
 				return
 			match ev["result"]:
 				DuelTypes.AttackResult.GRAZE:
-					_play(&"graze")
+					_play(&"graze_dealt")
 				DuelTypes.AttackResult.HIT:
-					_play(&"hit")
+					_play(&"hit_dealt")
 		DuelRecord.STAGGER_START:
 			_play(&"stagger")
 
@@ -96,14 +107,17 @@ func _play(key: StringName) -> void:
 
 
 ## 끝이 부드럽게 줄어드는 16비트 모노 사인파.
-func _make_tone(frequency: float, duration: float) -> AudioStreamWAV:
+func _make_tone(frequency: float, duration: float, second := 0.0) -> AudioStreamWAV:
 	var count := int(MIX_RATE * duration)
 	var data := PackedByteArray()
 	data.resize(count * 2)
 	for i in count:
 		var t := float(i) / MIX_RATE
 		var fade := minf(1.0, float(count - i) / (MIX_RATE * 0.02))
-		var sample := sin(TAU * frequency * t) * VOLUME * fade
+		var wave := sin(TAU * frequency * t)
+		if second > 0.0:
+			wave = (wave + sin(TAU * second * t)) * 0.5
+		var sample := wave * VOLUME * fade
 		data.encode_s16(i * 2, int(clampf(sample, -1.0, 1.0) * 32767.0))
 	var stream := AudioStreamWAV.new()
 	stream.format = AudioStreamWAV.FORMAT_16_BITS
