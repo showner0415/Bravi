@@ -1,5 +1,5 @@
 extends Node
-## 의뢰인 일곱의 카운터 찍기(계획 034 결정 355). 의뢰마다 카운터 한 장, 미끄러짐이 끝난 뒤에 찍는다.
+## 의뢰인 열의 카운터 찍기(계획 034 결정 355, 계획 054가 셋을 더했다). 의뢰마다 카운터 한 장, 미끄러짐이 끝난 뒤에 찍는다.
 ## 실행: tests/run_client_shots.ps1 (창, -- --shots=<폴더>). 폴더가 없거나 헤드리스면 저장하지 않고 돈다.
 ## 장마다 "size,<장>,<w>x<h>"와 "portrait,<장>,<x>,<y>,<w>,<h>"(Portrait의 1280×720 기준 화면 상자, 없으면 내지 않는다)를 낸다.
 
@@ -14,6 +14,9 @@ const SHOTS := [
 	["counter-gasparo", "res://data/commissions/variants/throw_bet.tres"],
 	["counter-orsola", "res://data/commissions/variants/legs_only.tres"],
 	["counter-tomaso", "res://data/commissions/variants/first_blood_poor.tres"],
+	["counter-cecilia", "res://data/commissions/variants/court_beehive.tres"],
+	["counter-leandro", "res://data/commissions/variants/noble_baker.tres"],
+	["counter-nella", "res://data/commissions/variants/washer_ledger.tres"],
 ]
 ## 미끄러짐(0.45초)이 끝나고 한참 뒤에 찍는다.
 const SETTLE_MSEC := 900

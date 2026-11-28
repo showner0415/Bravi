@@ -3,9 +3,9 @@
 #   powershell -ExecutionPolicy Bypass -File tests/run_client_shots.ps1 -Shots "$env:TEMP\bravi-034-clients"
 #   powershell -ExecutionPolicy Bypass -File tests/run_client_shots.ps1 -Shots "$env:TEMP\bravi-034-clients-1600" -Resolution 1600x900
 #
-# Runs tests/client_shots.tscn: one counter shot per commission, after the client has slid in (7 shots).
-# Judges the run: exit code 0, one "CLIENT SHOTS OK 7" line, no ERROR lines, seven "size," lines all equal to the
-# resolution (1280x720 without -Resolution), and seven "portrait," boxes within 2 px of (80, 120) 300x450 (decision 346).
+# Runs tests/client_shots.tscn: one counter shot per commission, after the client has slid in (10 shots - plan 054 added three).
+# Judges the run: exit code 0, one "CLIENT SHOTS OK 10" line, no ERROR lines, ten "size," lines all equal to the
+# resolution (1280x720 without -Resolution), and ten "portrait," boxes within 2 px of (80, 120) 300x450 (decision 346).
 #
 # Godot path: -Godot argument, else the GODOT environment variable, else the candidates in tests/godot_path.ps1.
 param(
@@ -24,7 +24,7 @@ if (-not (Test-Path -LiteralPath $Godot -PathType Leaf)) {
 $project = Split-Path -Parent $PSScriptRoot
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $errorPattern = '^\s*(USER |)(SCRIPT |SHADER |)ERROR'
-$count = 7
+$count = 10
 
 # The first import may log errors while the project theme reads fonts that are not imported yet: import twice, judge the second.
 cmd /c "`"$Godot`" --headless --path `"$project`" --import 2>&1" | Out-Null

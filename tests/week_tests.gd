@@ -377,7 +377,7 @@ func _check_washer_data(errs: Array[String], washer: Commission) -> void:
 	_expect(errs, washer.client_name == "세탁부 넬라", "[①] 이름 '%s'" % washer.client_name)
 	_expect(errs, washer.opponent != null and washer.opponent.resource_path == LORENZO_PATH, "[①] 상대가 로렌초(opponent_03)가 아님")
 	_expect(errs, washer.stage != null and washer.stage.resource_path.get_file() == "piazza.tres", "[①] 무대가 광장이 아님")
-	_expect(errs, washer.client_portrait == null and not washer.opponent_wears_hat, "[①] 그림이 있거나 모자를 쓴다")
+	_expect(errs, washer.client_portrait != null and washer.client_portrait.resource_path.get_file() == "nella.png" and not washer.opponent_wears_hat, "[①] 그림이 nella.png가 아니거나 모자를 쓴다")
 	_expect(errs, washer.conditions.size() == 1 and washer.conditions[0] is HoldCondition, "[①] 조건이 받아 주기 하나가 아님")
 	if washer.conditions.size() == 1 and washer.conditions[0] is HoldCondition:
 		var hold := washer.conditions[0] as HoldCondition

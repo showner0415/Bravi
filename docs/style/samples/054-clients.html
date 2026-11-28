@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>의뢰인 셋 견본</title>
+<style>
+/* 계획 054 결정 864~869: 034 견본(034-counter-clients.html)의 손 — 220×390 틀, 같은 선 굵기, 덩이 수, 그림자 한 단계 — 으로 의뢰인 셋을 그렸다. 034 견본은 고치지 않는다.
+   인자: ?chin=1(체칠리아의 턱 시안 — 입 끝 + 턱) · ?key=1(재기의 부류 확인: 칠마다 한 색, 선은 그대로) */
+:root {
+  --ink: #3B2A1E; --line: #3B2A1E; --lw: 5.2;
+  --c-skin: #EBC49F; --c-skin-sh: #C98E66;
+  /* 결정 868: 대표 면(장밋빛 흙색 · 연보라 · 풀빛)과 딸린 면 */
+  --ce-dress: #C48E80; --ce-dress-sh: #A6766A; --ce-straw: #A8895E; --ce-straw-sh: #8C7050; --ce-veil: #B8B2A6; --ce-veil-sh: #9E988C;
+  --ce-tin: #7F7B74; --ce-tin-sh: #67635D; --ce-bellows: #7A5232; --ce-hair: #E2D3B4;
+  --le-coat: #8E7493; --le-coat-sh: #76607A; --le-wig: #E2DCCF; --le-wig-sh: #C8C0B0; --le-kerchief: #B9C4CC; --le-kerchief-sh: #9EAAB3;
+  --ne-bodice: #749073; --ne-bodice-sh: #5E7A5E; --ne-scarf: #9C7068; --ne-scarf-sh: #80594F; --ne-shirt: #E2D3B4;
+  --ne-apron: #C8BFAE; --ne-apron-sh: #ADA391; --ne-apron-wet: #958B78; --ne-wood: #A8895E; --ne-wood-sh: #8C7050;
+  --in-bg: #D8D8D8;
+}
+/* ?key=1: 부류마다 한 색(lib054 KeyPal과 같은 값) */
+.key { --c-skin: #FF00FF; --c-skin-sh: #FF00FF;
+  --ce-dress: #FF0000; --ce-dress-sh: #FF0000; --ce-straw: #FFFF00; --ce-straw-sh: #FFFF00; --ce-veil: #00FFFF; --ce-veil-sh: #00FFFF; --ce-tin: #0000FF; --ce-tin-sh: #0000FF; --ce-bellows: #00FF00; --ce-hair: #FF8000;
+  --le-coat: #FF0000; --le-coat-sh: #FF0000; --le-wig: #FFFF00; --le-wig-sh: #FFFF00; --le-kerchief: #00FFFF; --le-kerchief-sh: #00FFFF;
+  --ne-bodice: #FF0000; --ne-bodice-sh: #FF0000; --ne-scarf: #FFFF00; --ne-scarf-sh: #FFFF00; --ne-shirt: #00FFFF; --ne-apron: #0000FF; --ne-apron-sh: #0000FF; --ne-apron-wet: #0000FF; --ne-wood: #00FF00; --ne-wood-sh: #00FF00; }
+.fill > * { fill: var(--base); stroke: none; }
+.line > * { fill: none; stroke: var(--line); stroke-width: var(--lw); stroke-linejoin: round; stroke-linecap: round; }
+.line > .ink { fill: var(--line); stroke: none; }
+.line > .thin { stroke-width: calc(var(--lw) * 0.55); }
+.line > .thick { stroke-width: calc(var(--lw) * 1.35); }
+html, body { margin: 0; background: #2A2018; color: #E9D8B4; font-family: "Batang", serif; }
+section { max-width: 1280px; margin: 0 auto 40px; }
+section h2 { font-size: 20px; margin: 0 20px 8px; }
+svg.scene { width: 100%; height: auto; display: block; background: #D8D8D8; }
+body.solo h2 { display: none; }
+body.solo section:not(.solo-target) { display: none; }
+body.solo section.solo-target { display: block; margin: 0; max-width: none; }
+body.solo svg.scene { width: 1024px; height: 1536px; }
+body.solo { overflow: hidden; }
+</style>
+</head>
+<body>
+<main id="main"></main>
+<script>
+"use strict";
+const Q = new URLSearchParams(location.search);
+const CHIN = Q.get("chin") === "1", KEY = Q.get("key") === "1";
+const f = (d, base) => `<path d="${d}" style="--base: var(${base})"/>`;
+const l = (d, cls = "") => `<path${cls ? ` class="${cls}"` : ""} d="${d}"/>`;
+// 한 층 = 칠 다음 선. 뒤에서 앞으로 쌓는다(034의 "칠 다음 모든 선"과 달리 망사 · 가발 · 방망이가 앞의 덩이 뒤로 숨는다).
+const layer = (fills, lines) => `<g class="fill">${fills}</g><g class="line">${lines}</g>`;
+
+// ---------------------------------------------------------------- 양봉가 체칠리아(결정 865): 넓은 챙 아래의 작은 노파. 망사는 걷어 챙 위에 접어 얹고 양옆 · 뒤로만 어깨까지(G8).
+// 얼굴은 곧은 옆면의 둥근 네모(얼굴 상자의 모서리를 위는 머리털, 아래는 숄 깃이 채운다 — 망사가 얼굴 상자에 들지 않게). 굽은 등은 오른쪽 어깨 위의 둥근 선.
+function clientCecilia() {
+  const veil = "M-4,78 L224,78 L212,216 Q210,228 198,228 L22,228 Q10,228 8,216 Z";
+  const veilSh = "M190,78 L224,78 L212,216 Q210,228 198,228 L184,228 Z";
+  const dress = "M46,228 Q50,214 84,210 L136,210 Q160,208 178,196 Q200,200 192,232 L198,392 L22,392 L40,240 Z";
+  const dressSh = "M160,212 Q178,198 190,204 Q198,214 192,232 L198,392 L174,392 Z";
+  const neck = "M92,188 L128,188 L130,216 L90,216 Z";
+  const collar = "M54,218 L54,178 Q54,166 66,166 L98,170 L110,198 L122,170 L154,166 Q166,166 166,178 L166,218 Q110,238 54,218 Z";
+  const collarSh = "M140,168 L154,166 Q166,166 166,178 L166,218 Q156,222 146,224 Z";
+  const bottom = CHIN ? "L160,172 Q160,196 136,199 Q110,208 84,199 Q60,196 60,172" : "L160,172 Q160,198 134,198 L86,198 Q60,198 60,172";
+  const head = `M60,96 Q60,80 76,80 L144,80 Q160,80 160,96 ${bottom} Z`;
+  const headSh = `M146,80 Q160,80 160,96 L160,172 Q160,196 134,199 Q152,168 146,80 Z`;
+  const hairL = "M52,80 L88,80 Q80,94 70,100 Q64,106 64,124 L52,124 Z", hairR = "M168,80 L132,80 Q140,94 150,100 Q156,106 156,124 L168,124 Z";
+  const crown = "M66,70 L66,46 Q66,34 80,34 L140,34 Q154,34 154,46 L154,70 Z";
+  const crownSh = "M136,34 L140,34 Q154,34 154,46 L154,70 L140,70 Z";
+  const band = "M66,58 L154,58 L154,70 L66,70 Z";
+  const brim = "M-8,70 L228,70 Q236,70 236,76 Q236,82 228,82 L-8,82 Q-16,82 -16,76 Q-16,70 -8,70 Z";
+  const brimSh = "M196,70 L228,70 Q236,70 236,76 Q236,82 228,82 L196,82 Z";
+  const fold = "M18,62 L202,62 Q208,62 208,67 Q208,72 202,72 L18,72 Q12,72 12,67 Q12,62 18,62 Z";
+  const sleeveL = "M46,228 Q34,262 60,302 L84,292 Q70,262 76,234 Z", sleeveR = "M190,230 Q194,272 152,318 L136,304 Q166,270 160,236 Z";
+  const bellows = "M126,282 L144,276 Q150,276 150,284 L148,318 Q148,324 142,324 L126,320 Z";
+  const can = "M92,264 Q92,258 98,258 L122,258 Q128,258 128,264 L128,318 Q128,324 122,324 L98,324 Q92,324 92,318 Z";
+  const canSh = "M118,258 L122,258 Q128,258 128,264 L128,318 Q128,324 122,324 L118,324 Z";
+  const spout = "M96,258 L106,236 L114,236 L124,258 Z";
+  const handL = "M78,302 Q72,288 84,280 L100,282 Q104,296 100,310 Q88,316 78,302 Z";
+  const handR = "M118,330 Q114,318 126,316 L146,318 Q154,326 148,336 Q132,342 118,330 Z";
+  // 실눈(결정 869): 평평한 짧은 막대 눈썹 · 짧은 곧은 가로선 눈 · 양 끝이 조금 눌려 내려간 다문 입
+  const face = `${l("M74,112 L94,112", "thick")}${l("M126,112 L146,112", "thick")}${l("M76,127 L92,127")}${l("M128,127 L144,127")}
+    ${l("M108,134 Q102,150 110,154")}${l("M96,175 Q98,171 102,171 L118,171 Q122,171 124,175")}${CHIN ? l("M100,189 Q110,193 120,189", "thin") : ""}`;
+  return `<g class="client" transform="translate(120,164)">
+  ${layer(f(veil, "--ce-veil") + f(veilSh, "--ce-veil-sh"), l(veil) + l("M40,82 L30,220 M180,82 L190,220", "thin"))}
+  ${layer(f(dress, "--ce-dress") + f(dressSh, "--ce-dress-sh"), l(dress) + l("M70,300 L66,360 M150,310 L156,370", "thin"))}
+  ${layer(f(neck, "--c-skin"), l(neck))}
+  ${layer(f(collar, "--ce-dress") + f(collarSh, "--ce-dress-sh"), l(collar))}
+  ${layer(f(head, "--c-skin") + f(headSh, "--c-skin-sh"), l(head))}
+  ${layer(f(hairL, "--ce-hair") + f(hairR, "--ce-hair"), l(hairL) + l(hairR))}
+  ${layer(f(crown, "--ce-straw") + f(crownSh, "--ce-straw-sh") + f(band, "--ce-straw"), l(crown) + `<path class="ink" d="${band}"/>`)}
+  ${layer(f(brim, "--ce-straw") + f(brimSh, "--ce-straw-sh"), l(brim))}
+  ${layer(f(fold, "--ce-veil"), l(fold) + l("M30,67 L190,67", "thin"))}
+  <g class="line">${face}</g>
+  ${layer(f(sleeveL, "--ce-dress") + f(sleeveR, "--ce-dress") + f("M150,262 Q164,250 166,240 L178,252 Q172,282 152,318 L140,306 Z", "--ce-dress-sh"), l(sleeveL) + l(sleeveR))}
+  ${layer(f(bellows, "--ce-bellows"), l(bellows) + l("M132,290 L144,288 M132,304 L144,302", "thin"))}
+  ${layer(f(can, "--ce-tin") + f(canSh, "--ce-tin-sh") + f(spout, "--ce-tin"), l(can) + l(spout) + l("M92,290 L128,290", "thin") + l("M105,236 L115,236", "thick"))}
+  ${layer(f(handL, "--c-skin") + f(handR, "--c-skin"), l(handL) + l(handR) + l("M86,290 L98,291 M86,300 L98,302", "thin") + l("M126,326 L142,326", "thin"))}
+</g>`;
+}
+
+// ---------------------------------------------------------------- 젊은 백작 레안드로(결정 866): 머리보다 큰 곧은 가발 덩이와 양옆의 가로 말 셋, 가장 좁은 어깨, 긴 목, 맨 얼굴.
+// 손수건은 코 옆(뺨)에 댄 손에서 가슴까지 늘어진다 — 눈 · 입은 보인다(G8). 얼굴 윗변은 곧은 가발 선이라 가발이 얼굴 상자에 들지 않는다.
+function clientLeandro() {
+  const wig = "M36,40 Q36,6 70,6 L150,6 Q184,6 184,40 L184,160 Q184,168 176,168 L44,168 Q36,168 36,160 Z";
+  const wigSh = "M160,6 Q184,6 184,40 L184,160 Q184,168 176,168 L164,168 Z";
+  const roll = (x, y) => `M${x + 10},${y} L${x + 32},${y} Q${x + 42},${y} ${x + 42},${y + 10} Q${x + 42},${y + 20} ${x + 32},${y + 20} L${x + 10},${y + 20} Q${x},${y + 20} ${x},${y + 10} Q${x},${y} ${x + 10},${y} Z`;
+  const rolls = [92, 112, 132].map(y => roll(22, y) + " " + roll(156, y)).join(" ");
+  const neck = "M98,180 L122,180 L124,236 L96,236 Z";
+  const coat = "M62,262 Q66,238 96,232 L124,232 Q154,238 158,262 L170,392 L50,392 Z";
+  const coatSh = "M140,240 Q154,244 158,262 L170,392 L148,392 Z";
+  const collar = "M84,240 L86,214 L100,210 L104,244 Z M136,240 L134,214 L120,210 L116,244 Z";
+  const cravat = "M100,210 L120,210 L118,246 Q110,252 102,246 Z";
+  const head = "M64,86 L156,86 L156,174 Q156,198 132,198 L88,198 Q64,198 64,174 Z";
+  const headSh = "M142,86 L156,86 L156,174 Q156,198 132,198 Q148,160 142,86 Z";
+  const sleeveR = "M128,200 L150,198 L160,300 L138,306 Z";
+  const kerchief = "M136,148 L168,154 L164,214 L150,300 L134,222 Z";
+  const kerchiefSh = "M156,152 L168,154 L164,214 L150,300 L148,240 Z";
+  const hand = "M116,146 Q116,138 124,138 L134,140 Q150,150 150,166 L150,196 L130,198 Q124,180 120,166 Q114,156 116,146 Z";
+  const pinky = "M146,160 Q150,144 158,138 Q164,138 162,146 Q156,158 150,170 Z";
+  const sleeveL = "M62,262 Q50,300 62,322 L86,314 Q76,292 80,268 Z";
+  const handL = "M60,332 Q50,320 60,308 L84,308 Q92,322 84,336 Q72,344 60,332 Z";
+  // 질색(결정 869): 높이 든 곧은 막대 눈썹 둘 · 점 눈의 위 절반을 덮는 곧은 눈꺼풀 선 · 아래로 굽은 작게 오므린 호
+  const face = `${l("M74,104 L94,101", "thick")}${l("M126,101 L146,104", "thick")}<circle class="ink" cx="84" cy="125" r="6"/><circle class="ink" cx="136" cy="125" r="6"/>${l("M76,121 L92,121", "thick")}${l("M128,121 L144,121", "thick")}
+    ${l("M108,130 Q102,150 112,154")}${l("M94,177 Q104,169 114,177")}`;
+  return `<g class="client" transform="translate(120,164)">
+  ${layer(f(wig, "--le-wig") + f(wigSh, "--le-wig-sh"), l(wig))}
+  ${layer(f(rolls, "--le-wig"), l(rolls))}
+  ${layer(f(neck, "--c-skin"), l(neck))}
+  ${layer(f(coat, "--le-coat") + f(coatSh, "--le-coat-sh"), l(coat) + l("M110,252 L110,392", "thin"))}
+  ${layer(f(collar, "--le-coat") + f(cravat, "--le-kerchief"), l(collar) + l(cravat) + l("M104,226 Q110,232 116,226", "thin"))}
+  ${layer(f(head, "--c-skin") + f(headSh, "--c-skin-sh"), l(head))}
+  <g class="line">${face}<circle class="ink" cx="110" cy="276" r="3.4"/><circle class="ink" cx="110" cy="304" r="3.4"/><circle class="ink" cx="110" cy="332" r="3.4"/></g>
+  ${layer(f(sleeveR, "--le-coat"), l(sleeveR))}
+  ${layer(f(kerchief, "--le-kerchief") + f(kerchiefSh, "--le-kerchief-sh"), l(kerchief) + l("M158,170 L152,250", "thin"))}
+  ${layer(f(hand, "--c-skin") + f(pinky, "--c-skin"), l(hand) + l(pinky) + l("M124,150 L140,156 M126,162 L142,168", "thin"))}
+  ${layer(f(sleeveL, "--le-coat") + f(handL, "--c-skin"), l(sleeveL) + l(handL))}
+</g>`;
+}
+
+// ---------------------------------------------------------------- 세탁부 넬라(결정 867): 넓은 어깨, 걷은 소매 아래 굵은 맨 팔뚝, 손바닥을 위로 내민 따지는 손짓, 어깨에 멘 방망이.
+// 방망이는 주먹이 어깨 위에서 손잡이를 쥐고 판이 어깨 뒤로 늘어진다(얼굴에서 먼 쪽, 판의 일부가 팔 바깥에 보인다). 공격의 표지는 이것 하나 — 주먹을 허리에 짚지 않고 이를 보이지 않는다.
+function clientNella() {
+  const handle = "M-7,-6 Q-7,-10 0,-10 Q7,-10 7,-6 L7,40 L-7,40 Z";
+  const paddle = "M-23,44 Q-23,36 -15,36 L15,36 Q23,36 23,44 L23,154 Q23,162 15,162 L-15,162 Q-23,162 -23,154 Z";
+  const paddleSh = "M9,36 L15,36 Q23,36 23,44 L23,154 Q23,162 15,162 L9,162 Z";
+  const beater = `<g transform="translate(78,216) rotate(34)">${layer(f(handle, "--ne-wood") + f(paddle, "--ne-wood") + f(paddleSh, "--ne-wood-sh"), l(handle) + l(paddle) + l("M-8,60 L-8,144 M4,56 L4,140", "thin"))}</g>`;
+  // 머릿수건(메인의 판 D0 답): 천으로 읽히게 — 앞 가장자리는 이마를 따라 둥글게, 매듭은 목덜미 쪽 옆(정수리에 솟지 않는다)에 두고 두 끝이 늘어진다.
+  const scarf = "M72,100 Q70,66 128,64 Q186,66 186,100 L188,146 Q190,156 180,160 L84,160 Q72,156 72,146 Z";
+  const scarfSh = "M164,66 Q186,70 186,100 L188,146 Q190,156 180,160 L172,160 Z";
+  const cap = "M74,108 Q72,66 128,64 Q184,66 182,108 Q128,74 74,108 Z", capSh = "M160,68 Q182,74 182,108 Q172,100 162,96 Z";
+  const knot = "M178,150 Q176,140 186,138 L194,140 Q200,148 194,156 L184,158 Q178,156 178,150 Z";
+  const tails = "M186,156 L196,154 L208,186 Q206,194 198,190 Z M190,156 L182,158 L184,196 Q188,202 194,196 Z";
+  const neck = "M110,190 L146,190 L148,226 L108,226 Z";
+  const shirt = "M48,240 Q58,224 104,220 L152,220 Q198,224 208,240 L214,392 L42,392 Z";
+  const bodice = "M64,262 Q70,238 104,232 Q128,262 152,232 Q186,238 192,262 L198,392 L58,392 Z";
+  const bodiceSh = "M170,240 Q188,246 192,262 L198,392 L176,392 Z";
+  const apron = "M58,330 L198,330 L202,392 L54,392 Z", apronWet = "M56,366 L200,366 L202,392 L54,392 Z", apronSh = "M178,330 L198,330 L202,392 L184,392 Z";
+  const tie = "M56,326 L200,326 L200,338 L56,338 Z";
+  const head = "M80,86 L176,86 L176,176 Q176,200 152,200 L104,200 Q80,200 80,176 Z";
+  const headSh = "M162,86 L176,86 L176,176 Q176,200 152,200 Q168,162 162,86 Z";
+  const armL = "M48,240 Q34,252 36,300 L72,302 Q74,264 70,242 Z", cuffL = "M34,286 L74,286 L74,306 L34,306 Z";
+  const foreL = "M36,315 L50,232 L98,240 L84,322 Q60,334 36,315 Z";
+  const fist = "M58,226 Q52,206 68,200 L92,202 Q102,214 96,232 Q78,242 58,226 Z";
+  const armR = "M208,240 Q222,256 218,300 L188,304 Q190,270 186,244 Z", cuffR = "M184,286 L222,286 L222,306 L184,306 Z";
+  const foreR = "M220,300 L182,278 L158,320 L196,342 Q218,338 220,300 Z";
+  // "보세요" 손짓: 손바닥을 위로 한 얕은 그릇 꼴, 손끝이 조금 들리고 엄지는 뒤에서 위로
+  const palm = "M122,296 Q120,286 130,286 L170,284 Q178,286 176,294 L172,306 Q168,312 160,312 L134,312 Q124,310 122,300 Z";
+  const thumb = "M164,286 Q164,272 172,270 Q178,272 176,284 Z";
+  // 억울함(결정 869, 메인의 판 D0 답): 안쪽 끝이 들린 곧은 막대 눈썹 — 한쪽을 조금 낮춰 비대칭(토마소의 대칭 근심과 갈린다) · 점 눈 ·
+  // 따지며 말하는 입: 입꼬리가 내려간 열린 꼴(아래가 넓은 둥근 사다리꼴, 안은 선 색, 이는 없다) — 판 D0 둘째 답으로 0.6배(크면 소리치는 입으로 기운다)
+  const face = `${l("M92,109 L112,101", "thick")}${l("M144,106 L164,112", "thick")}<circle class="ink" cx="104" cy="125" r="6"/><circle class="ink" cx="152" cy="126" r="6"/>
+    ${l("M126,133 Q120,150 130,154")}<path class="ink" transform="translate(128,176) scale(0.6) translate(-128,-176)" d="M121,166 L135,166 Q139,166 141,170 L147,180 Q149,185 144,185 L112,185 Q107,185 109,180 L115,170 Q117,166 121,166 Z"/>`;
+  return `<g class="client" transform="translate(128,164)">
+  ${beater}
+  ${layer(f(neck, "--c-skin"), l(neck))}
+  ${layer(f(shirt, "--ne-shirt") + f(bodice, "--ne-bodice") + f(bodiceSh, "--ne-bodice-sh"), l(shirt) + l(bodice) + l("M128,262 L128,326", "thin"))}
+  ${layer(f(apron, "--ne-apron") + f(apronWet, "--ne-apron-wet") + f(apronSh, "--ne-apron-sh") + f(tie, "--ne-apron"), l(apron) + l("M56,366 L200,366", "thin") + l(tie) + l("M150,338 L144,356 M156,338 L162,356", "thin"))}
+  ${layer(f(scarf, "--ne-scarf") + f(scarfSh, "--ne-scarf-sh"), l(scarf))}
+  ${layer(f(head, "--c-skin") + f(headSh, "--c-skin-sh"), l(head))}
+  ${layer(f(cap, "--ne-scarf") + f(capSh, "--ne-scarf-sh"), l(cap) + l("M104,76 Q128,72 150,78", "thin"))}
+  ${layer(f(tails, "--ne-scarf") + f(knot, "--ne-scarf"), l(tails) + l(knot) + l("M176,112 Q182,128 184,138", "thin"))}
+  <g class="line">${face}</g>
+  ${layer(f(armL, "--ne-shirt") + f(cuffL, "--ne-shirt"), l(armL) + l(cuffL) + l("M36,296 L72,296", "thin"))}
+  ${layer(f(foreL, "--c-skin") + f("M84,241 L98,240 L84,322 Q78,325 74,325 Z", "--c-skin-sh"), l(foreL))}
+  ${layer(f(fist, "--c-skin"), l(fist) + l("M70,208 L72,226 M80,206 L82,228 M88,208 L90,228", "thin"))}
+  ${layer(f(armR, "--ne-shirt") + f(cuffR, "--ne-shirt"), l(armR) + l(cuffR) + l("M186,296 L220,296", "thin"))}
+  ${layer(f(foreR, "--c-skin"), l(foreR))}
+  ${layer(f(palm, "--c-skin") + f(thumb, "--c-skin"), l(palm) + l(thumb) + l("M124,292 Q120,284 128,282", "thin") + l("M134,300 Q148,305 164,298", "thin"))}
+</g>`;
+}
+
+const CLIENTS = { cecilia: clientCecilia, leandro: clientLeandro, nella: clientNella };
+// 생성에 넣는 그림(034의 inClient와 같은 변환): 바탕 #D8D8D8 한 색, 글자 없음(H4).
+function inClient(name) {
+  return `<rect width="1024" height="1536" fill="var(--in-bg)"/><g class="${KEY ? "key" : ""}" transform="translate(116,90) scale(3.6) translate(-120,-164)">${CLIENTS[name]()}</g>`;
+}
+const main = document.getElementById("main");
+for (const n of Object.keys(CLIENTS)) {
+  main.insertAdjacentHTML("beforeend", `<section id="in-client-${n}"><h2>in-client-${n}</h2><svg class="scene" viewBox="0 0 1024 1536" width="1024" height="1536">${inClient(n)}</svg></section>`);
+}
+const hash = decodeURIComponent(location.hash.slice(1));
+if (hash) {
+  const target = document.getElementById(hash);
+  if (target) { document.body.classList.add("solo"); target.classList.add("solo-target"); }
+}
+</script>
+</body>
+</html>

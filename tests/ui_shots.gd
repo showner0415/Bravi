@@ -596,7 +596,7 @@ func _counter_court() -> String:
 	var day := _new_day(commissions)
 	day.day_number = 5
 	_screen(Session.COUNTER_PATH, day)
-	return "카운터: 5일차 법정 대리(체칠리아, 색 도형)"
+	return "카운터: 5일차 법정 대리(체칠리아, 그림)"
 
 
 ## 귀족의 궂은일(계획 046): 소문 줄 · 흥정 줄 · "상대:" 줄이 말풍선 안에 서는지.
@@ -605,7 +605,7 @@ func _counter_noble() -> String:
 	var day := _new_day(commissions)
 	day.day_number = 7
 	_screen(Session.COUNTER_PATH, day)
-	return "카운터: 7일차 귀족의 궂은일(레안드로, 색 도형)"
+	return "카운터: 7일차 귀족의 궂은일(레안드로, 그림)"
 
 
 ## 둘이 함께(계획 047): 6일차의 첫 손님. 베아트리체가 말하고 굴리엘모가 뒤에 흐리게 선다. 뒤의 사람이 말하는 쪽의 그림 · 말풍선 · 버튼을 가리지 않는지.

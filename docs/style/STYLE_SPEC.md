@@ -77,7 +77,11 @@
   | 떠보기 | 한쪽은 높이 든 호, 다른 쪽은 낮은 곧은 막대 | 한쪽으로 몰린 점 둘(곁눈) | 양 끝이 같이 오른 다문 작은 호 |
   | 들뜸 | 둘 다 높이 든 호 | 점 | 크게 벌린 반달(아래가 둥글고 안은 선 색) |
   | 검사 | 한쪽은 바깥 끝이 들린 높은 곧은 막대, 다른 쪽은 안경테 윗선에 눌러 붙인 낮은 곧은 막대 | 둥근 렌즈의 아래쪽에 붙은 점 | 두 눈 사이보다 넓은 다문 긴 곧은 선 |
+  | 실눈 | 평평한 짧은 막대 둘 | 짧은 곧은 가로선 둘(햇빛을 보는 실눈, 두 눈 다) | 굳게 다문 작은 곧은 선, 양 끝이 아주 조금 눌려 내려감 |
+  | 질색 | 둘 다 높이 든 곧은 막대 | 위 절반을 곧은 눈꺼풀 선이 덮은 점 | 아래로 굽은 작게 오므린 호 |
+  | 억울함 | 안쪽 끝이 들린 곧은 막대 둘, 한쪽이 조금 더 낮다(비대칭) | 점 | 따지며 말하는 중에 넓게 열린 입, 입꼬리가 내려간 아래가 넓은 둥근 사다리꼴(안은 선 색, 이는 보이지 않는다) |
 
+- 실눈 · 질색 · 억울함은 의뢰인 셋(체칠리아 · 레안드로 · 넬라)의 표정이다(계획 054 결정 869). 실눈은 조는 얼굴이 아니라 고집이라 입 끝을 눌러 내리고, 억울함은 따지는 손님이라 이를 보이지 않는다. 화남(이를 드러낸 네모)은 결투 상대의 표정이라 의뢰인에게 쓰지 않는다.
 - 홍조, 땀방울, 눈물, 눈 하이라이트, 속눈썹, 입술 색, 볼의 빗금은 없다.
 
 ## 무대
@@ -133,6 +137,15 @@
 | `--gu-apron` / `-sh` | `#F0ECE2` / `#D8D2C4` | S6 V94 / S9 V85 | 0.93 / 0.82 | 굴리엘모 앞치마·천 모자(계획 045b) |
 | `--co-coat` / `-sh` | `#A59EBA` / `#89829D` | S15 V73 / S17 V62 | 0.63 / 0.52 | 코르넬리아 망토·제복·소매·바지·원통 모자(계획 053b) |
 | `--co-brass` | `#B08D45` | S61 V69 | 0.56 | 코르넬리아 단추·배지(계획 053b) |
+| `--ce-dress` / `-sh` | `#C48E80` / `#A6766A` | S35 V77 / S36 V65 | 0.60 / 0.50 | 체칠리아 드레스·숄 깃(계획 054) |
+| `--ce-veil` / `-sh` | `#B8B2A6` / `#9E988C` | S10 V72 / S11 V62 | 0.70 / 0.60 | 체칠리아 양봉 망사(계획 054) |
+| `--ce-tin` / `-sh` | `#7F7B74` / `#67635D` | S9 V50 / S10 V40 | 0.48 / 0.39 | 체칠리아 연기 깡통(계획 054. 풀무는 `--wood`, 밀짚 챙은 `--parch-3` · `--vi-fur-sh`, 머리털은 `--cl-ribbon`의 값) |
+| `--le-coat` / `-sh` | `#8E7493` / `#76607A` | S21 V58 / S21 V48 | 0.49 / 0.40 | 레안드로 저고리(계획 054) |
+| `--le-wig` / `-sh` | `#E2DCCF` / `#C8C0B0` | S8 V89 / S12 V78 | 0.86 / 0.76 | 레안드로 분칠한 가발(계획 054. 바탕과 가까워 닫힌 선 안에만 둔다) |
+| `--le-kerchief` / `-sh` | `#B9C4CC` / `#9EAAB3` | S9 V80 / S12 V70 | 0.76 / 0.66 | 레안드로 손수건·크라바트(계획 054) |
+| `--ne-bodice` / `-sh` | `#749073` / `#5E7A5E` | S20 V57 / S23 V48 | 0.53 / 0.45 | 넬라 몸판(계획 054) |
+| `--ne-scarf` / `-sh` | `#9C7068` / `#80594F` | S33 V61 / S38 V50 | 0.47 / 0.38 | 넬라 머릿수건(계획 054) |
+| `--ne-apron` / `-sh` · 젖은 아랫부분 | `#C8BFAE` / `#ADA391` · `#958B78` | S13 V78 / S16 V68 · S20 V58 | 0.75 / 0.64 · 0.55 | 넬라 앞치마(계획 054. 셔츠는 `--cl-ribbon`의 값, 방망이는 `--parch-3` · `--vi-fur-sh`) |
 | `--st-shade` | `#3A3027` | S33 V23 | 0.19 | 무대 가운데 그늘 |
 | `--st-sky` | `#3E4A55` | S27 V33 | 0.28 | 밤하늘 |
 | `--st-ground` | `#4E4336` | S31 V31 | 0.27 | 땅 |
@@ -1452,6 +1465,54 @@ Colors: The wall parchment E9D8B4 with a slightly darker parchment D2B98C, the h
 - 색 첫째 줄: `- Main fills and their shadow tones: slate grey with a faint violet cast A59EBA with shadow 89829D for the cape, the coat, the sleeves and the cap, brass B08D45 for the buttons and the badge, brick red A5533F for the small seal, skin EBC49F.`
 - 색 둘째 줄(송곳): `- The awl has its own colors: wood A8895E with shadow 8C7050 for the T handle, iron CFC8BA for the thin spike only, paper F0ECE2 with shadow D8D2C4 for the tag.`
 - 판정(계획 053b 판 S5): 034 작업 4의 굳은 확인(H3 · H4 · H5 · K1 · K2′ · K3′ · K5 · K6 · G8, 머리 높이 — 턱~원통 모자 윗면 — 가 클라라 · 비토리오 평균의 ±15%), 같은 사람(제복의 잰 색이 올린 전신과 채널 차 12 안), 손질본 450×675 · 모서리 알파 0 · 위 가장자리 4줄의 불투명 0 · 송곳의 양 끝이 틀 안(왼 · 오른 가장자리 4열의 불투명 0), 아고스티노(지팡이) · 굴리엘모(밀대) · 비토리오와 나란히.
+
+# 계획 054의 줄 (의뢰인 셋 — 양봉가 체칠리아 · 젊은 백작 레안드로 · 세탁부 넬라. 결정 863~873)
+
+차례와 줄은 034의 의뢰인 프롬프트(`prompts/034-E1a-client-emilio.txt`) 그대로이고 아래만 바꾼다(결정 873). 넣는 그림은 그 사람의 허리 위 스케치 하나다(`generated/in/054-in-client-<이름>.png` — 견본 `samples/054-clients.html`의 `in-client-<이름>`을 구운 것, 1024×1536, 바탕 `#D8D8D8` 한 색. 결정 349의 한 장 길). 그래서 지시 블록은 034 그대로(한 장)이다. `Image:`, 구도의 첫째 항목, 화풍의 머리 줄과 첫째 · 넷째(선) · 여섯째(그림자) · 일곱째(Do not add) 항목, 색 블록의 둘째 줄, `Background:`는 E1a 그대로다. 화풍의 첫째 항목은 042 의뢰인 줄의 첫째 항목(곧은 변 · 둥근 모서리, 부풀거나 굽이치는 꼴 없음)과 그림 이름만 다르다(`the attached reference image`) — 망사 · 가발 · 앞치마가 부풀지 않게 이 항목을 그대로 둔다.
+
+- `Subject:`에는 직업 · 몸 · 옷 · 소품만 쓰고 사연(소송 · 결투 · 부탁)을 쓰지 않는다(034의 배운 것 — 막힘). 영어 · ASCII · 큰따옴표 없음.
+- 얼굴을 가리는 꼴은 걷거나 옮겨 말한다(결정 864, G8): 망사는 앞을 걷어 챙 위에 접어 얹고 양옆 · 뒤로만 어깨까지, 손수건은 코 옆에 대고 두 눈 · 입이 보인다. 벌 · 연기 · 물방울은 그리지 않는다.
+- 구도의 셋째 항목(E1a의 `Nothing covers the face. …`)은 틀 안에 둘 것을 사람마다 덧붙인다(053b의 넷째 항목과 같은 길 — 판의 굳은 확인 ⓒ: 위 4줄 · 위쪽 450행의 좌우 4열 불투명 0).
+- **없어야 할 말**(바꾸는 줄에서 셈 — 막는 구절 `No …` · `no …` · `with no …` 안의 말과 바꾸지 않는 블록은 세지 않는다): `curly` · `curled` · `ringlet` · `puffy` · `ruffle` · `frill` · `lace` · `blush` · `rosy` · `beauty mark` · `bees` · `insect` · `smoke rising` · `cloud` · `drop` · `drip` · `splash` · `foam` · `sweat` · `club` · `bat` · `beat `(빈칸까지) · `beating` · `weapon` · `sword` · `over her face` · `covering`, 넬라의 줄에서만 `angry` · `teeth` · `fist` · `hip` · `raised`.
+- 색 블록의 둘째 줄은 비토리오와 같다: `- Avoid bright saturated yellow, orange, red, blue, purple or green, and pure white. Large areas are greyish and low in saturation.`
+- 판정(판 D1~D3): 034 작업 4의 굳은 확인(H3 · H4 · H5 · K1 · K2′(부드러움) · K3′ · K5(스케치와의 비를 적는다) · K6 · G8) + 판 D0의 ⓐ~ⓕ를 생성 그림의 잰 색으로(계획 054 "그림" 절의 재는 법 — 450×675 손질본에서) + 손질본 450×675 · 모서리 알파 0 · 안쪽 구멍 0.
+
+## 체칠리아 의뢰인 C1a (계획 054 결정 865 — 넣는 그림은 `generated/in/054-in-client-cecilia.png`)
+
+- Subject: `Subject: Cecilia, a beekeeper from a Renaissance-era Italian town, a small old woman with narrow rounded shoulders and a slightly bent back, seen in a slight three-quarter view. She wears a wide flat straw beekeeper's hat whose brim is much wider than her shoulders. A plain grey veil hangs from the brim at the sides and at the back down to her shoulders; at the front the veil is lifted and folded up onto the brim, so her whole face is uncovered. Short pale hair shows at her temples under the brim. She wears a plain faded rose-clay dress with a simple shawl collar. With both hands in front of her chest she holds a small bee smoker upright: a tin can with a cone-shaped spout on top and a small pair of wooden bellows on its side.`
+- 구도 둘째: `- Front view or a slight three-quarter view, head straight, both hands visible above waist level, holding the smoker in front of her chest (she stands behind a shop counter that is not drawn).`
+- 구도 셋째: `- Nothing covers the face. The whole figure from the waist up is inside the image with a margin, including the whole hat and both ends of its wide brim.`
+- 표정 문장(실눈 — 판 D0에서 메인이 "입 끝만" 시안을 고르면 이대로, "입 끝 + 턱"을 고르면 입 다음에 `Her chin juts forward a little.`을 더한다. 결정 865): `Her eyebrows are short flat bars. Her eyes are two short straight horizontal lines, squinting as if in bright sun. Her mouth is a small firmly closed line with its corners pressed slightly down. Her character shows in the expression: stubborn, patient and unafraid, wide awake.`
+- 셋째 항목: `- Keep it nearly as simple as the reference image: the same small number of shapes. Improve the craft: clean construction, good proportions, parts that join properly and hands with fingers that really hold the smoker. Add only a little detail inside the shapes: one band around the crown of the hat, the folded edge of the lifted veil on the brim, the seam of the tin can, two short lines on the bellows, one or two short fold lines on the dress. Nothing else is added. No mesh pattern, no smoke, no flowers, no wrinkles.`
+- 다섯째 항목: `- Fills: flat solid colors, muted and faded. The crown band of the hat is the same very dark brown as the outlines. The veil is one flat plain grey.`
+- 색 첫째 줄: `- Main fills and their shadow tones: faded rose-clay C48E80 with shadow A6766A for the dress, ochre brown straw A8895E with shadow 8C7050 for the hat, plain grey B8B2A6 with shadow 9E988C for the veil, dull pewter 7F7B74 with shadow 67635D for the tin can, wood brown 7A5232 for the bellows, pale parchment E2D3B4 for the hair, skin EBC49F.`
+- 판정(판 D1): 위의 공통 판정 + 체칠리아의 표지(챙 ÷ 어깨 ≥ 1.40이고 열하나의 같은 비의 가장 큰 값 × 1.15 이상 · 챙 두께 ÷ 폭 ≤ 0.12 · 망사 화소가 얼굴 상자 안에 0 · 깡통 덩이의 높이 ÷ 폭 ≥ 1.15, 위 끝이 턱 아래, 얼굴 상자와 겹치지 않음), 에밀리오와의 대표 면을 잰 색 둘로 다시 셈. 판 D0에서 메인이 "입 끝만"을 골랐다(결정 865a) — 표정 문장은 위 그대로다.
+
+## 레안드로 의뢰인 L1a (계획 054 결정 866 — 넣는 그림은 `generated/in/054-in-client-leandro.png`)
+
+- Subject: `Subject: Leandro, a young count from a Renaissance-era Italian town, a thin young man with very narrow shoulders and a long thin neck, clean-shaven. On his head sits a huge powdered wig, wider than his head and rising high above it: one tall block with straight sides and a rounded flat top, with three plain horizontal rolls stacked on each side over the ears. He wears a fitted faded mauve coat with a high collar and a plain pale cravat. One hand is raised to his face and holds a long pale handkerchief lightly against the side of his nose, with the little finger lifted; the handkerchief hangs down in a long point to his chest. His eyes and his mouth stay uncovered. His other hand rests at his waist.`
+- 구도 둘째: `- Front view or a slight three-quarter view, head straight, one hand raised to the side of his nose and the other hand at waist level (he stands behind a shop counter that is not drawn).`
+- 구도 셋째: `- Nothing covers the face. The whole figure from the waist up is inside the image with a margin, including the whole wig.`
+- 표정 문장(질색): `Both of his eyebrows are straight bars raised high. His eyes are two dots, each half covered by a straight heavy eyelid line. His mouth is a small pursed curve turned down. His character shows in the expression: fastidious and disgusted.`
+- 셋째 항목: `- Keep it nearly as simple as the reference image: the same small number of shapes. Improve the craft: clean construction, good proportions, parts that join properly and a raised hand with fingers that really hold the handkerchief. Add only a little detail inside the shapes: the three rolls on each side of the wig, two or three coat buttons, the fold of the cravat, one fold line on the handkerchief. Nothing else is added. No ruffles, no jewelry, no extra wrinkles.`
+- 다섯째 항목: `- Fills: flat solid colors, muted and faded. The wig is pale powder grey, not white, drawn with the dark outline.`
+- 색 첫째 줄: `- Main fills and their shadow tones: faded mauve 8E7493 with shadow 76607A for the coat, pale powder grey E2DCCF with shadow C8C0B0 for the wig, pale blue-grey B9C4CC with shadow 9EAAB3 for the handkerchief and the cravat, skin EBC49F.`
+- 판정(판 D2): 위의 공통 판정 + 레안드로의 표지(가발의 솟음 ≥ 0.55 Fh · 가발 폭 ÷ 얼굴 폭 ≥ 1.45이고 덩이 자로 잰 열하나의 최대 × 1.15 = 1.631 이상(결정 871a) · 가발 채움 ÷ 볼록 껍질 ≥ 0.85 · 어깨 ÷ 얼굴 폭 ≤ 1.165 · 어깨 ÷ 가발 ≤ 1.25 · 손수건 높이 ≥ 0.8 Fh이고 얼굴 상자와 겹침 · 손수건 화소가 눈 · 입 상자 안에 0 · 입 덩이가 있다), 가발이 흰색이 아닌지(잰 Y ≤ 0.90 — R2).
+
+## 넬라 의뢰인 N1a (계획 054 결정 867 · 867a · 867b — 넣는 그림은 `generated/in/054-in-client-nella.png`, 판 D0에서 고친 스케치)
+
+계획의 프롬프트 뼈대(넬라)에서 고친 스케치를 따라 셋을 바꿨다: 머릿수건의 매듭 자리(정수리 → 목덜미 쪽 옆, 늘어진 두 끝), 입(작게 열린, 아래가 넓고 입꼬리가 내려간 꼴), 손바닥 손짓을 구도 둘째 항목에서 또렷이. 그녀의 바꾸는 줄에는 막는 구절 밖에서 `angry` · `teeth` · `fist` · `hip` · `raised`가 없다.
+
+- Subject: `Subject: Nella, a washerwoman from a Renaissance-era Italian town, a strong young woman with broad shoulders and thick, strong forearms. Her sleeves are rolled up above the elbows, showing her bare forearms. Her hair is tied up under a plain cloth headscarf that fits close to her head; its front edge follows her forehead in a soft curve, and it is knotted at the back of her neck on one side, with two short ends hanging down. She wears a faded leaf green bodice over a pale shirt, and a plain linen apron wrapped around her waist; the lower part of the apron is soaked and is one flat darker tone. A flat wooden laundry beater lies on her shoulder on the side away from her face: one hand holds its short round handle at the shoulder, and the broad flat paddle, a washing tool for linen, hangs down behind her back, with part of it showing beside her shoulder. Her other hand is held out in front of her, palm up, as if saying look at this.`
+- 구도 둘째: `- Front view or a slight three-quarter view, head straight, one hand on the handle of the beater at her shoulder and the other hand held out in front of her chest, open and palm up, the empty palm clearly visible, as if saying look at this (she stands behind a shop counter that is not drawn).`
+- 구도 셋째: `- Nothing covers the face. The whole figure from the waist up is inside the image with a margin, including the whole headscarf with its knot and the visible part of the beater.`
+- 표정 문장(억울함 — 표정 표의 고친 줄): `Her eyebrows are two straight bars with their inner ends lifted, one set a little lower than the other. Her eyes are two dots. Her mouth is open in mid-sentence, a small rounded shape that is wider at the bottom with its corners turned down, filled with the same dark brown as the outlines, with no teeth showing. Her character shows in the expression: indignant, quick and outspoken, a wronged customer who has come to complain.`
+- 셋째 항목: `- Keep it nearly as simple as the reference image: the same small number of shapes. Improve the craft: clean construction, good proportions, parts that join properly, a hand with fingers that really holds the beater handle and an open hand with its palm up. Add only a little detail inside the shapes: the rolled cuffs above the elbows, the knot and the two hanging ends of the headscarf, the tie of the apron at the waist, one or two straight grain lines on the beater, one or two short fold lines on the shirt. Nothing else is added. No water, no splashes, no stains, no extra wrinkles.`
+- 다섯째 항목: `- Fills: flat solid colors, muted and faded. The soaked lower part of the apron is one flat darker linen tone with a straight upper edge.`
+- 색 첫째 줄: `- Main fills and their shadow tones: faded leaf green 749073 with shadow 5E7A5E for the bodice, faded madder red 9C7068 with shadow 80594F for the headscarf, pale parchment E2D3B4 for the shirt, linen C8BFAE with shadow ADA391 for the apron and darker linen 958B78 for its soaked lower part, wood A8895E with shadow 8C7050 for the beater, skin EBC49F with shadow C98E66 for the face and the forearms.`
+- 판정(판 D3): 위의 공통 판정 + 넬라의 표지(머릿수건의 솟음 ≤ 0.35 Fh · 팔뚝 ≥ 0.30 Fw이고 에밀리오 × 1.2 = 58.9px 이상 · 방망이 길이 ≥ 1.0 Fh, 판 ÷ 길이 ≥ 0.22, 판 ÷ 손잡이 ≥ 2.0, 판 ≥ 0.35 Fw, 손잡이 끝이 어깨 줄 ± 0.5 Fh이고 판 끝이 그보다 아래, 세로에서 0~40°, 얼굴 상자와 ≥ 0.1 Fw · 입 안의 밝은 화소 ≤ 5%), 눈 확인 — 따지는 손님이지 위협하는 사람이 아니다(걸리면 결정 867의 `Change:` 한 줄).
+- **N1b**(다시 그리기 — 결정 867c): N1a의 눈썹이 안쪽 끝이 내려간 V자로 나왔다(판 D3의 눈썹 자: 바깥 끝 y − 안쪽 끝 y가 −9.1 / −8.3px, −13.9° / −12.6° — 고친 스케치는 +15.4 / +11.6px). 억울함이 아니라 화남으로 읽혀 한 가지만 고친다. 프롬프트는 N1a 그대로에 아래 `Change:` 한 줄을 `Pose and layout:` 블록 뒤에 둔다(바이블 13.3 "시트·사람 고치기"의 차례). 넣는 그림은 N1a의 그림이 아니라 같은 스케치다(생성 그림을 넣으면 V자 눈썹을 따라 그린다). 바꾼 줄에는 `angry` · `frown` 같은 말을 쓰지 않는다.
+- N1b의 `Change:`: `Change: her two eyebrows are straight bars whose inner ends, near the nose, sit higher than their outer ends, like someone pleading that she has been wronged; the eyebrows must not slant down toward the nose.`
 
 # 계획 033b의 블록 (그린 질감: 종이·테두리·버튼. 결정 488~493)
 
